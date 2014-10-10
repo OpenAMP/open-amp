@@ -1,0 +1,32 @@
+
+include ../Makefile.commons
+
+SAMPLE_OUT := samples/remote/baremetal/matrix_multiply/matrix_multiply.out
+SAMPLE_SRC := samples/remote/baremetal/matrix_multiply/matrix_multiply.c samples/remote/baremetal/matrix_multiply/rsc_table.c
+
+SAMPLEOBJFILES := $(patsubst %.c, %.o, $(SAMPLE_SRC))
+SAMPLE_DEPS := $(patsubst %.c, %.d, $(SAMPLE_SRC))
+SAMPLE_MAP := $(patsubst %.out, %.map, $(SAMPLE_OUT))
+
+$(SAMPLE_OUT): $(SAMPLEOBJFILES) 
+	@echo 'Building matrix multiplication sample for baremetal environment : $@'
+	$(LD) -Wl,-Map=samples/remote/baremetal/matrix_multiply/matrix_multiply.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(PLAT)/baremetal/linker_remote.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(PLAT)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) -lopen_amp -lbaremetal_remote -lc -lm -lstdc++ -lcs3 -lcs3arm -lcs3unhosted -Wl,--end-group 	
+	@echo 'Finished building target: $@'
+
+	@echo 'Copying ELF image to firmware folder'
+	$(CP) $(SAMPLE_OUT) firmware/$(PLAT)/$(OS)/matrix_multiply/firmware
+
+%.o:%.c
+	@echo CC $(<:.c=.o)
+	@$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
+
+clean:
+	-$(RM) $(SAMPLEOBJFILES) $(SAMPLE_DEPS) $(SAMPLE_OUT) $(SAMPLE_MAP)
+	
+post-build:
+	-@echo ' '
+
+secondary-outputs:
+
+PHONY: all clean dependents
+.SECONDARY: post-build

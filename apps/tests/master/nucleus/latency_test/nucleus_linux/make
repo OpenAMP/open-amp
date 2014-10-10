@@ -1,0 +1,49 @@
+
+include ../Makefile.commons
+
+SAMPLE_OUT := tests/master/nucleus/latency_test/nucleus_linux/latency_test.out
+SAMPLE_C_SRC := tests/master/nucleus/latency_test/nucleus_linux/latency_test.c
+REMOTE_OUT   := latency_test.out
+DST_DIR := tests/master/nucleus/latency_test/nucleus_linux
+LINUX_SRC_DIR := firmware/$(PLAT)/linux
+
+SAMPLEOBJFILES := $(patsubst %.c, %.o, $(SAMPLE_C_SRC))
+SAMPLE_DEPS := $(patsubst %.c, %.d, $(SAMPLE_C_SRC))
+SAMPLE_MAP := $(patsubst %.out, %.map, $(SAMPLE_OUT))
+SAMPLE_BIN := $(patsubst %.out, %.bin, $(SAMPLE_OUT))
+
+$(SAMPLE_OUT): $(REMOTE_OUT)$(SAMPLEOBJFILES)
+
+	@echo 'Building latency test for nucleus : $@'
+
+	$(LD)  -Wl,-Map=tests/master/nucleus/latency_test/nucleus_linux/latency_test.map  -nostartfiles -Wl,--gc-sections -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free -T"$(OHOME)/libs/system/$(PLAT)/nucleus/linker_master.ld" -L"$(OHOME)/libs/system/$(PLAT)/nucleus/lib/$(CROSS)/master" -L"$(OHOME)/libs/open_amp" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(DST_DIR)/firmware1.o $(DST_DIR)/firmware2.o -lnucleus_master -lopen_amp -lc -lm -lstdc++ -Wl,--end-group 	
+	
+	$(OBJCPY) -O binary $(SAMPLE_OUT) $(SAMPLE_BIN)
+		
+	@echo 'Finished building target: $@'
+	
+%.o:%.c
+	@echo CC $(<:.c=.o)
+	@$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
+	
+%.o:%.S
+	@$(AS) -c -mcpu=cortex-a9 $(ARCH_ASFLAGS) $(INCLUDE) $< -o $@
+
+$(REMOTE_OUT):
+	cd $(LINUX_SRC_DIR)/; cp firmware firmware1; \
+	$(OBJCPY) -I binary -O elf32-littlearm -B arm firmware1 firmware1.o
+	mv $(LINUX_SRC_DIR)/firmware1.o $(DST_DIR)/firmware1.o
+	cd $(LINUX_SRC_DIR)/; cp firmware firmware2; \
+	$(OBJCPY) -I binary -O elf32-littlearm -B arm firmware2 firmware2.o
+	mv $(LINUX_SRC_DIR)/firmware2.o $(DST_DIR)/
+	cd $(LINUX_SRC_DIR)/; rm firmware1; rm firmware2;
+clean:
+	-$(RM) $(SAMPLEOBJFILES) $(SAMPLE_DEPS) $(SAMPLE_OUT) $(SAMPLE_BIN) $(DST_DIR)/firmware1.o $(DST_DIR)/firmware2.o $(SAMPLE_MAP)
+	
+post-build:
+	-@echo ' '
+
+secondary-outputs:
+
+PHONY: all clean dependents
+.SECONDARY: post-build

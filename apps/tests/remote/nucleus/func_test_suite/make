@@ -1,0 +1,37 @@
+
+include ../Makefile.commons
+
+SAMPLE_OUT := tests/remote/nucleus/func_test_suite/func_test_suite.out
+SAMPLE_SRC := tests/remote/nucleus/func_test_suite/func_test_suite.c tests/remote/nucleus/func_test_suite/rsc_table.c
+
+SAMPLEOBJFILES := $(patsubst %.c, %.o, $(SAMPLE_SRC))
+
+SAMPLE_DEPS   := $(patsubst %.c, %.d, $(SAMPLE_SRC))
+
+SAMPLE_MAP := $(patsubst %.out, %.map, $(SAMPLE_OUT))
+
+$(SAMPLE_OUT): $(SAMPLEOBJFILES) 
+
+	@echo 'Building echo test for nucleus : $@'
+
+	$(LD)  -Wl,-Map=tests/remote/nucleus/func_test_suite/func_test_suite.map  -nostartfiles -Wl,--gc-sections -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free -T"$(OHOME)/libs/system/$(PLAT)/nucleus/linker_remote.ld" -L"$(OHOME)/libs/system/$(PLAT)/nucleus/lib/$(CROSS)/remote" -L"$(OHOME)/libs/open_amp" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) -lnucleus_remote -lopen_amp -lc -lm -lstdc++ -Wl,--end-group 	
+	
+	@echo 'Copying ELF image to firmware folder'
+	$(CP) $(SAMPLE_OUT) firmware/$(PLAT)/$(OS)/func_test_suite/firmware
+	
+	@echo 'Finished building target: $@'
+	
+%.o:%.c 
+	@echo CC $(<:.c=.o)
+	@$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
+
+clean:
+	-$(RM) $(SAMPLEOBJFILES) $(SAMPLE_DEPS) $(SAMPLE_OUT) $(SAMPLE_MAP)
+	
+post-build:
+	-@echo ' '
+
+secondary-outputs:
+
+PHONY: all clean dependents
+.SECONDARY: post-build

@@ -1,0 +1,29 @@
+# Include commons make file to get platform and tool chain specific variables.
+include Makefile.commons
+
+LIB_REMOTE := libbaremetal_remote_rpc.a
+
+CFLAGS+=-D"RTL_RPC=1"
+	
+SRCFILES += \
+$(wildcard *.c) 
+
+OBJFILES := $(patsubst %.c, %.o, $(SRCFILES))
+
+DEPFILES := $(patsubst %.c, %.d, $(SRCFILES))
+
+all: $(LIB_REMOTE) 
+
+$(LIB_REMOTE): $(OBJFILES)
+
+	@echo AR $@
+	@$(AR) -r $@ $(OBJFILES)
+	
+%.o:%.c $(HEADERS)
+	@echo CC $(<:.c=.o)
+	@$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
+
+clean:
+	-$(RM) $(LIB) $(OBJFILES) $(DEPFILES)
+
+PHONY: all clean

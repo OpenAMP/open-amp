@@ -1,0 +1,51 @@
+
+include ../Makefile.commons
+
+SAMPLE_OUT := tests/master/baremetal/echo_test/echo_test.out
+SAMPLE_SRC := tests/master/baremetal/echo_test/echo_test.c
+
+
+REMOTE_OUT   := echo_test.out
+LINUX_SRC_DIR := firmware/$(PLAT)/linux
+DST_DIR := tests/master/baremetal/echo_test
+
+SAMPLEOBJFILES := $(patsubst %.c, %.o, $(SAMPLE_SRC))
+
+SAMPLE_DEPS   := $(patsubst %.c, %.d, $(SAMPLE_SRC))
+
+SAMPLE_MAP := $(patsubst %.out, %.map, $(SAMPLE_OUT))
+SAMPLE_BIN := $(patsubst %.out, %.bin, $(SAMPLE_OUT))
+
+$(SAMPLE_OUT): $(REMOTE_OUT)  $(SAMPLEOBJFILES) 
+
+	@echo 'Building echo test for baremetal : $@'
+
+	$(LD)  -Wl,-Map=tests/master/baremetal/echo_test/echo_test.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(PLAT)/baremetal/linker_master.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(PLAT)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(DST_DIR)/firmware1.o $(DST_DIR)/firmware2.o -lopen_amp -lbaremetal_master -lc -lm -lstdc++ -lcs3 -lcs3arm -lcs3unhosted -Wl,--end-group 	
+	
+	$(OBJCPY) -O binary $(SAMPLE_OUT) $(SAMPLE_BIN)
+		
+	@echo 'Finished building target: $@'
+	
+%.o:%.c
+	@echo CC $(<:.c=.o)
+	@$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
+
+$(REMOTE_OUT):
+	cd $(LINUX_SRC_DIR)/; cp firmware firmware1; \
+	$(OBJCPY) -I binary -O elf32-littlearm -B arm firmware1 firmware1.o
+	mv $(LINUX_SRC_DIR)/firmware1.o $(DST_DIR)/firmware1.o
+	cd $(LINUX_SRC_DIR)/; cp firmware firmware2; \
+	$(OBJCPY) -I binary -O elf32-littlearm -B arm firmware2 firmware2.o
+	mv $(LINUX_SRC_DIR)/firmware2.o $(DST_DIR)/
+	cd $(LINUX_SRC_DIR)/; rm firmware1; rm firmware2;
+
+clean:
+	-$(RM) $(SAMPLEOBJFILES) $(SAMPLE_DEPS) $(SAMPLE_OUT) $(SAMPLE_MAP) $(SAMPLE_BIN) $(DST_DIR)/firmware1.o $(DST_DIR)/firmware2.o
+	
+post-build:
+	-@echo ' '
+
+secondary-outputs:
+
+PHONY: all clean dependents
+.SECONDARY: post-build

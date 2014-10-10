@@ -1,0 +1,40 @@
+
+include ../Makefile.commons
+
+SAMPLE_OUT := samples/remote/nucleus/rpc_demo/rpc_demo.out
+
+SAMPLE_SRC := samples/remote/nucleus/rpc_demo/rpc_demo.c samples/remote/nucleus/rpc_demo/rsc_table.c ../proxy/remote/rpmsg_retarget/rpmsg_retarget.c
+APP_INCLUDE := -I"../proxy/remote/rpmsg_retarget"
+
+
+SAMPLEOBJFILES := $(patsubst %.c, %.o, $(SAMPLE_SRC))
+
+SAMPLE_DEPS   := $(patsubst %.c, %.d, $(SAMPLE_SRC))
+
+SAMPLE_MAP := $(patsubst %.out, %.map, $(SAMPLE_OUT))
+
+$(SAMPLE_OUT): $(SAMPLEOBJFILES)
+
+	@echo 'Building rpc demo application : $@'
+
+	$(LD)  -Wl,-Map=samples/remote/nucleus/rpc_demo/rpc_demo.map  -nostartfiles -Wl,--gc-sections -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free -T"$(OHOME)/libs/system/$(PLAT)/nucleus/linker_remote.ld" -L"$(OHOME)/libs/system/$(PLAT)/nucleus/lib/$(CROSS)/remote_proxy" -L"$(OHOME)/libs/open_amp" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) -lnucleus_remote -lopen_amp -lc -lm -lstdc++ -Wl,--end-group 	
+	
+	@echo 'Copying ELF image to firmware folder'
+	$(CP) $(SAMPLE_OUT) firmware/$(PLAT)/$(OS)/rpc_demo/firmware
+
+    @echo 'Finished building target: $@'
+	
+%.o:%.c 
+	@echo CC $(<:.c=.o)
+	@$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) $(APP_INCLUDE)  -c $< -o $@
+
+clean:
+	-$(RM) $(SAMPLEOBJFILES) $(SAMPLE_DEPS) $(SAMPLE_OUT) $(SAMPLE_MAP)
+	
+post-build:
+	-@echo ' '
+
+secondary-outputs:
+
+PHONY: all clean dependents
+.SECONDARY: post-build

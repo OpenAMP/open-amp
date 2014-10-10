@@ -1,0 +1,29 @@
+# Include commons make file to get platform and tool chain specific variables.
+include Makefile.commons
+
+LIB_MASTER := libbaremetal_master.a
+
+CFLAGS+=-D"BAREMETAL_MASTER=1"
+	
+SRCFILES += \
+$(wildcard *.c) 
+
+OBJFILES := $(patsubst %.c, %.o, $(SRCFILES))
+
+DEPFILES := $(patsubst %.c, %.d, $(SRCFILES))
+
+all: $(LIB_MASTER) 
+
+$(LIB_MASTER): $(OBJFILES)
+
+	@echo AR $@
+	@$(AR) -r $@ $(OBJFILES)
+	
+%.o:%.c $(HEADERS)
+	@echo CC $(<:.c=.o)
+	@$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
+
+clean:
+	-$(RM) $(LIB) $(OBJFILES) $(DEPFILES)
+
+PHONY: all clean

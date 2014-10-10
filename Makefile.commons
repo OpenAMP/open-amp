@@ -1,0 +1,85 @@
+
+TOOLSET          := csgnu
+CROSS            := arm-xilinx-eabi-
+CFLAGS           := -Wall -ffunction-sections -fdata-sections -O0 -g3 -MMD 
+CXXFLAGS         := -Wall -fno-enforce-eh-specs -MMD
+ASFLAGS          := -gdwarf2 -meabi=4 -mcpu=cortex-a9 -mfpu=neon
+ARFLAGS          := 
+ARCH_CFLAGS      := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
+ARCH_CXXFLAGS    := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
+ARCH_ASFLAGS     := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
+ARCH_ARFLAGS     := 
+CC               = $(CROSS)gcc
+CXX              = $(CROSS)g++
+AS               = $(CROSS)as
+AR               = $(CROSS)ar
+LD               = $(CROSS)gcc
+OBJCPY           = $(CROSS)objcopy
+INCLUDE          := 
+RM               := rm -f
+CP               := cp
+OHOME            := $(OPENAMP)
+
+ifeq ($(PLAT),)
+export PLAT := zc702evk
+endif
+
+ifeq ($(OS),)
+export OS := nucleus
+endif
+
+BAREMETAL_INCLUDES := -I"$(OHOME)/libs/system/$(PLAT)/baremetal"
+NUCLEUS_INCLUDES := -I"$(OHOME)/libs/system/$(PLAT)/nucleus/arch/arm/tool-csgnu_arm" -I"$(OHOME)/libs/system/$(PLAT)/nucleus/bsp/arch/plat-zynq7000" -I"$(OHOME)/libs/system/$(PLAT)/nucleus" -I"$(OHOME)/libs/system/$(PLAT)/nucleus/arch/arm" 
+GENERAL_INCLUDES := -I"$(OHOME)/include"
+
+ifeq ($(OS),nucleus)
+CFLAGS += $(NUCLEUS_INCLUDES)
+CFLAGS +=-D"ENV=0"
+ifeq ($(ROLE),master)
+CFLAGS +=-I"$(OHOME)/libs/system/$(PLAT)/nucleus/lib/$(CROSS)/master"
+CFLAGS+=-D"MASTER=1"
+else
+CFLAGS +=-I"$(OHOME)/libs/system/$(PLAT)/nucleus/lib/$(CROSS)/remote"
+CFLAGS+=-D"MASTER=0"
+endif
+endif
+
+ifeq ($(OS),baremetal)
+CFLAGS += $(BAREMETAL_INCLUDES)
+CFLAGS +=-D"ENV=1"
+
+ifeq ($(ROLE),master)
+CFLAGS+=-D"MASTER=1"
+else
+CFLAGS+=-D"MASTER=0"
+endif
+endif
+
+ifeq ($(BENCHMARK),1)
+CFLAGS+=-D"OPENAMP_BENCHMARK_ENABLE"
+endif
+
+ifeq ($(LINUXREMOTE),1)
+CFLAGS+=-D"OPENAMP_REMOTE_LINUX_ENABLE"
+endif
+
+CFLAGS += $(GENERAL_INCLUDES)
+
+#The example make file for csgnu and zynq platform would look like below
+
+#TOOLSET          := csgnu
+#CROSS            := arm-none-eabi-
+#CFLAGS           := -Wall -ffunction-sections -fdata-sections -O0 -g3
+#CXXFLAGS         := -Wall -fno-enforce-eh-specs
+#ASFLAGS          := -gdwarf2 -meabi=4 -mcpu=cortex-a9 -mfpu=neon
+#ARFLAGS          := 
+#ARCH_CFLAGS      := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
+#ARCH_CXXFLAGS    := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
+#ARCH_ASFLAGS     := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
+#ARCH_ARFLAGS     := 
+#CC               = $(CROSS)gcc
+#CXX              = $(CROSS)g++
+#AS               = $(CROSS)as
+#AR               = $(CROSS)ar
+#INCLUDE          := 
+#RM               := rm -f
