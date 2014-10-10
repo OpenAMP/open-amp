@@ -11,6 +11,7 @@ This repository is a place holder for Open Asymmetric Multi Processing (OpenAMP)
 4. Performance tests have been conducted and OpenAMP latency measurements have been quantified and documented.
 
 Following are the known limitations:
+
 1. In rpc_demo.c(the remote demonstration application that showcases usage of rpmsg retargetting infrastructure),  the bindings for the flag input parameter in open() system call has been redefined. The GCC tool library bindings for this input argument is different between arm-xilinx/none-eabi, and arm-linux-eabi toolchains. For this reason, redefinition is required for compatibility with proxy on Linux master.
 
 
