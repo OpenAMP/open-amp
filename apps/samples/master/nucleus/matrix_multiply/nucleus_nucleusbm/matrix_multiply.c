@@ -187,7 +187,7 @@ static void matrix_multiply_shell(void)
     for ( ; ; )
     {
         printf("\r\n **************************************** \r\n");
-        printf(" Please enter command and press enter key\r\n");
+        printf(" Please enter command.\r\n");
         printf(" **************************************** \r\n");
         printf(" 1 - Generates random 6x6 matrices and transmits them to remote core over rpmsg .. \r\n"); 
         printf(" 2 - Quit this application .. \r\n");
