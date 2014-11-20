@@ -35,13 +35,13 @@
  * DESCRIPTION
  *
  *       This file implements APIs to get platform specific
- *       information for OpenAMP. 
+ *       information for OpenAMP.
  *
  **************************************************************************/
 
 #include "platform.h"
 
-/* Reference implementation that show cases platform_get_cpu_info and 
+/* Reference implementation that show cases platform_get_cpu_info and
  platform_get_for_firmware API implementation for Bare metal environment */
 
 extern struct hil_platform_ops proc_ops;
@@ -231,3 +231,4 @@ int platform_get_processor_for_fw(char *fw_name) {
 
     return 1;
 }
+
