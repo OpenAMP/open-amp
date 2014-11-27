@@ -24,25 +24,8 @@ ifeq ($(PLAT),)
 export PLAT := zc702evk
 endif
 
-ifeq ($(OS),)
-export OS := nucleus
-endif
-
 BAREMETAL_INCLUDES := -I"$(OHOME)/libs/system/$(PLAT)/baremetal"
-NUCLEUS_INCLUDES := -I"$(OHOME)/libs/system/$(PLAT)/nucleus/arch/arm/tool-csgnu_arm" -I"$(OHOME)/libs/system/$(PLAT)/nucleus/bsp/arch/plat-zynq7000" -I"$(OHOME)/libs/system/$(PLAT)/nucleus" -I"$(OHOME)/libs/system/$(PLAT)/nucleus/arch/arm" 
 GENERAL_INCLUDES := -I"$(OHOME)/include"
-
-ifeq ($(OS),nucleus)
-CFLAGS += $(NUCLEUS_INCLUDES)
-CFLAGS +=-D"ENV=0"
-ifeq ($(ROLE),master)
-CFLAGS +=-I"$(OHOME)/libs/system/$(PLAT)/nucleus/lib/$(CROSS)/master"
-CFLAGS+=-D"MASTER=1"
-else
-CFLAGS +=-I"$(OHOME)/libs/system/$(PLAT)/nucleus/lib/$(CROSS)/remote"
-CFLAGS+=-D"MASTER=0"
-endif
-endif
 
 ifeq ($(OS),baremetal)
 CFLAGS += $(BAREMETAL_INCLUDES)

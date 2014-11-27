@@ -1,10 +1,8 @@
-
 # This scripts automates the process of PetaLinux project creation.
-
 PRESENT=$(pwd)
 
 if [ "$1" == "master" ]; then
-	
+
 	# Change directory to the master PetaLinux project directory
 	cd "$2"
 
@@ -63,30 +61,6 @@ if [ "$1" == "master" ]; then
 
 
 	#Firmware Installation
-
-	#Nucleus Matrix Multiply Sample
-	
-	petalinux-create -t apps --template install -n mat_mul_nucleus_fw --enable
-
-	cp $OPENAMP/apps/firmware/zc702evk/nucleus/matrix_multiply/firmware ./components/apps/mat_mul_nucleus_fw/data/firmware
-
-	cp $OPENAMP/libs/system/zc702evk/linux/scripts/makefiles/mat_mul_nucleus_fw/Makefile ./components/apps/mat_mul_nucleus_fw/Makefile
-
-	#Nucleus Echo Test
-
-	petalinux-create -t apps --template install -n echo_test_nucleus_fw --enable
- 
-	cp $OPENAMP/apps/firmware/zc702evk/nucleus/echo_test/firmware ./components/apps/echo_test_nucleus_fw/data/firmware
-
-	cp $OPENAMP/libs/system/zc702evk/linux/scripts/makefiles/echo_test_nucleus_fw/Makefile ./components/apps/echo_test_nucleus_fw/Makefile
-	
-	#Nucleus RPC Demo
-
-	petalinux-create -t apps --template install -n rpc_demo_nucleus_fw --enable
-
-	cp $OPENAMP/apps/firmware/zc702evk/nucleus/rpc_demo/firmware ./components/apps/rpc_demo_nucleus_fw/data/firmware
-
-	cp $OPENAMP/libs/system/zc702evk/linux/scripts/makefiles/rpc_demo_nucleus_fw/Makefile ./components/apps/rpc_demo_nucleus_fw/Makefile
 
 	#Bare-metal Matrix Multiply Sample
 
@@ -170,3 +144,4 @@ fi
 
 # Return
 cd $PRESENT
+

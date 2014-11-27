@@ -422,15 +422,4 @@ void env_disable_cache();
 
 typedef void LOCK;
 
-/*
- * Macros to enable BM or Nucleus environment.
- */
-
-#define NU_ENV 0
-#define BM_ENV 1
-
-#ifndef ENV
-#define ENV    NU_ENV
-#endif
-
 #endif /* _ENV_H_ */

@@ -42,177 +42,7 @@
 #include "platform.h"
 
 /* Reference implementation that show cases platform_get_cpu_info and 
- platform_get_for_firmware API implementation for Nucleus RTOS
- and Bare metal environments */
-
-#if (ENV == NU_ENV)
-
-#include "nucleus.h"
-#include "kernel/nu_kernel.h"
-#include "services/nu_services.h"
-
-char base_key[] = "/zc702evk/remote_proc";
-
-extern struct hil_platform_ops proc_ops;
-
-/**
- *
- * platform_get_processor_info
- *
- * This function gets platform specific configuration parameters
- * from the Nucleus platform definition file.
- *
- */
-int platform_get_processor_info(struct hil_proc *proc, int cpu_id) {
-    STATUS reg_status = NU_SUCCESS;
-    struct proc_shm *sb_info;
-    struct proc_intr *intr_info;
-    UINT32 num_vring;
-    UINT32 temp32;
-    UINT8 temp8;
-    CHAR key[REG_MAX_KEY_LENGTH];
-    CHAR reg_path[REG_MAX_KEY_LENGTH];
-    INT i;
-    struct hil_proc *rproc = proc;
-    struct proc_vdev *hil_vdev;
-    CHAR ch_name[32];
-    BOOLEAN dev_found = NU_FALSE;
-
-    if (cpu_id == HIL_RSVD_CPU_ID) {
-        sprintf(key, "%s%i", base_key, 0);
-        dev_found = NU_TRUE;
-    } else {
-        for (i = 0; (i < HIL_MAX_CORES) && (reg_status == NU_SUCCESS); i++) {
-            sprintf(key, "%s%i", base_key, i);
-            reg_status = REG_Get_UINT32_Value(key, "/dev_settings/cpu_id",
-                            &temp32);
-            if (reg_status == NU_SUCCESS) {
-                if (temp32 == cpu_id) {
-                    dev_found = NU_TRUE;
-                    break;
-                }
-            }
-        }
-    }
-
-    if (!dev_found) {
-        return -1;
-    }
-    /* Get IPC device level features */
-    reg_status = REG_Get_UINT32_Value(key, "/dev_settings/cpu_id", &temp32);
-
-    if (reg_status == NU_SUCCESS) {
-        /* In case of reserved cpu id as parameter get the cpu id from the platform file and
-         * dont compare it with the given CPU ID.
-         */
-
-        rproc->cpu_id = temp32;
-        reg_status = REG_Get_UINT8_Value(key, "/dev_settings/num_chnls",
-                        &temp8);
-        if (reg_status == NU_SUCCESS) {
-            rproc->num_chnls = temp8;
-        }
-    }
-
-    /* Get shared memory information - provides buffer that are used in vrings */
-    reg_status = REG_Get_UINT32_Value(key, "/shared_buffers/start_addr",
-                    &temp32);
-    if (reg_status == NU_SUCCESS) {
-        sb_info = &rproc->sh_buff;
-        sb_info->start_addr = (void *) temp32;
-        reg_status = REG_Get_UINT32_Value(key, "/shared_buffers/size", &temp32);
-        if (reg_status == NU_SUCCESS) {
-            sb_info->size = temp32;
-        }
-    }
-
-    /* Get channels info */
-    for (i = 0; (i < rproc->num_chnls) && (reg_status == NU_SUCCESS); i++) {
-        sprintf(reg_path, "%s/%s%i", key, "channel", i);
-        reg_status = REG_Get_String_Value(reg_path, "/id", ch_name, 32);
-        if (reg_status == NU_SUCCESS) {
-            strncpy(rproc->chnls[i].name, ch_name,
-                            sizeof(rproc->chnls[i].name));
-        }
-    }
-
-    /* Get vring attributes */
-    if (reg_status == NU_SUCCESS) {
-        hil_vdev = &rproc->vdev;
-        reg_status = REG_Get_UINT32_Value(key, "/vrings/num_vrings",
-                        &num_vring);
-        if (reg_status == NU_SUCCESS) {
-            if (num_vring > (HIL_MAX_NUM_VRINGS)) {
-                reg_status = REG_TYPE_ERROR;
-            } else {
-                hil_vdev->num_vrings = num_vring;
-            }
-            for (i = 0; (reg_status == NU_SUCCESS) && (i < num_vring); i++) {
-                intr_info = &hil_vdev->vring_info[i].intr_info;
-                reg_status = REG_Get_UINT32_Value(key, "/vrings/ipi_priority",
-                                &temp32);
-                if (reg_status == NU_SUCCESS) {
-                    intr_info->priority = temp32;
-                    reg_status = REG_Get_UINT32_Value(key,
-                                    "/vrings/ipi_trigger_type", &temp32);
-
-                    if (reg_status == NU_SUCCESS) {
-                        intr_info->trigger_type =
-                                        (ESAL_GE_INT_TRIG_TYPE) temp32;
-                        if (reg_status == NU_SUCCESS) {
-                            sprintf(reg_path, "%s/%s%i", key, "vrings/ipi", i);
-                            reg_status = REG_Get_UINT32(reg_path , &temp32);
-                            if (reg_status == NU_SUCCESS) {
-                                intr_info->vect_id =
-                                                temp32 - ESAL_AR_INT_VECTOR_ID_DELIMITER;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (reg_status == NU_SUCCESS) {
-        proc->ops = &proc_ops;
-    }
-
-    return reg_status;
-}
-
-int platform_get_processor_for_fw(char *fw_name) {
-    STATUS reg_status = NU_SUCCESS;
-    UINT32 temp32;
-    CHAR key[REG_MAX_KEY_LENGTH];
-    CHAR reg[REG_MAX_KEY_LENGTH];
-    CHAR fw_name_loc[32];
-    INT i, j;
-    UINT32 num_fws;
-
-    /* Get channels info */
-    for (i = 0; (i < HIL_MAX_CORES) && (reg_status == NU_SUCCESS); i++) {
-        sprintf(key, "%s%i", base_key, i);
-        reg_status = REG_Get_UINT32_Value(key, "/dev_settings/num_fws",
-                        &num_fws);
-        for (j = 0; j < num_fws; j++) {
-            sprintf(reg, "%s%s%i", key, "/dev_settings/fw_name", j);
-            reg_status = REG_Get_String(reg, fw_name_loc ,32);
-            if (reg_status == NU_SUCCESS) {
-                if (!strncmp(fw_name_loc, fw_name, 32)) {
-                    reg_status = REG_Get_UINT32_Value(key,
-                                    "/dev_settings/cpu_id", &temp32);
-                    if (reg_status == NU_SUCCESS) {
-                        return temp32;
-                    }
-                }
-            }
-        }
-    }
-
-    return -1;
-}
-
-#elif (ENV == BM_ENV)
+ platform_get_for_firmware API implementation for Bare metal environment */
 
 extern struct hil_platform_ops proc_ops;
 
@@ -259,10 +89,10 @@ extern struct hil_platform_ops proc_ops;
  *
  * 2)Second node is required by the master and it defines remote CPU ID,
  *   shared memory and interrupts info. In general no channel info is required by the
- *   Master node, however in baremetal/Nucleus master and linux remote case the linux
+ *   Master node, however in baremetal master and linux remote case the linux
  *   rpmsg bus driver behaves as master so the rpmsg driver on linux side still needs
- *   channel info. This information is not required by the masters for Nucleus
- *   and baremetal remotes. 
+ *   channel info. This information is not required by the masters for baremetal
+ *   remotes. 
  *
  */
 struct hil_proc proc_table []=
@@ -401,5 +231,3 @@ int platform_get_processor_for_fw(char *fw_name) {
 
     return 1;
 }
-#endif /* #if (ENV == NU_ENV) */
-

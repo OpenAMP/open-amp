@@ -110,7 +110,7 @@ file. The following encodings are currently defined. */
 #define     ELFDATA2LSB     1               /* See Data encodings, below */
 #define     ELFDATA2MSB     2               /* See Data encodings, below */
 
-/* EI_OSABI - We do not define a Nucleus specific OS ABI */
+/* EI_OSABI - We do not define an OS specific ABI */
 #define     ELFOSABI_NONE   0
 
 /* ELF section header. */

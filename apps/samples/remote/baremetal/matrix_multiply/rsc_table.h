@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* This file populates resource table for Nucleus and BM remotes
+/* This file populates resource table for BM remote
  * for use by the Linux Master */
 
 #include <stddef.h>

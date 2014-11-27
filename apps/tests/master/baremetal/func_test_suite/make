@@ -14,7 +14,7 @@ SAMPLE_BIN := $(patsubst %.out, %.bin, $(SAMPLE_OUT))
 
 $(SAMPLE_OUT): $(REMOTE_OUT)$(SAMPLEOBJFILES)
 
-	@echo 'Building func_test_suite test for nucleus : $@'
+	@echo 'Building func_test_suite test for baremetal : $@'
 
 	$(LD)  -Wl,-Map=tests/master/baremetal/func_test_suite/func_test_suite.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(PLAT)/baremetal/linker_master.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(PLAT)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(DST_DIR)/firmware1.o $(DST_DIR)/firmware2.o -lopen_amp -lbaremetal_master -lc -lm -lstdc++ -lcs3 -lcs3arm -lcs3unhosted -Wl,--end-group	
 	

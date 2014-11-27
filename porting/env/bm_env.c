@@ -43,8 +43,6 @@
 #include "env.h"
 #include "../config/config.h"
 
-#if (ENV == BM_ENV)
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -553,8 +551,3 @@ static void release_spin_lock(void *plock)
 
     *((int *)plock) = 1;
 }
-
-#endif /* (ENV == BM_ENV) */
-
-
-

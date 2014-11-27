@@ -34,7 +34,7 @@
  *
  * DESCRIPTION
  *
- *       This file is Nucleus Implementation of IPC hardware layer interface
+ *       This file is the Implementation of IPC hardware layer interface
  *       for Xilinx Zynq ZC702EVK platform.
  *
  **************************************************************************/

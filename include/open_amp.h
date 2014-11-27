@@ -27,11 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef MEMF_H_
-#define MEMF_H_
+#ifndef OPEN_AMP_H_
+#define OPEN_AMP_H_
 
 #include "../rpmsg/rpmsg.h"
 #include "../remoteproc/remoteproc.h"
 
 
-#endif /* MEMF_H_ */
+#endif /* OPEN_AMP_H_ */
