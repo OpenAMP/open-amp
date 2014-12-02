@@ -1,2 +1,8 @@
 *.o
 *~
+*.bin
+*.map
+*.out
+*.log
+*.d
+firmware
