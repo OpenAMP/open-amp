@@ -286,8 +286,10 @@ int main(int argc, char *argv[])
 
 	/* Send shutdown signal to remote application */
 	terminate_rpc_app();
-	/* FIXME: May be wait here for sometime to allow remote application
-	to complete its uninitialization. */
+
+	/* Need to wait here for sometime to allow remote application to
+ 	complete its unintialization */
+	sleep(1);
 
 	/* Close proxy rpmsg device */
 	close(proxy->rpmsg_proxy_fd);
