@@ -8,22 +8,28 @@ CFLAGS+=-D"BAREMETAL_MASTER=0"
 SRCFILES += \
 $(wildcard *.c) 
 
-OBJFILES := $(patsubst %.c, %.o, $(SRCFILES))
+OBJDIR := .build/baremetal_remote
 
-DEPFILES := $(patsubst %.c, %.d, $(SRCFILES))
+OBJFILES := $(patsubst %.c, $(OBJDIR)/%.o, $(SRCFILES))
+
+DEPFILES := $(patsubst %.c, $(OBJDIR)/%.d, $(SRCFILES))
 
 all: $(LIB_REMOTE) 
 
 $(LIB_REMOTE): $(OBJFILES)
 
 	@echo AR $@
-	@$(AR) -r $@ $(OBJFILES)
-	
-%.o:%.c $(HEADERS)
+	$(AR) -r $@ $(OBJFILES)
+
+$(OBJDIR)/%.o:%.c $(HEADERS) $(OBJDIR)
 	@echo CC $(<:.c=.o)
-	@$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
+	$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
+
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
 
 clean:
-	-$(RM) $(LIB) $(OBJFILES) $(DEPFILES)
+	-$(RM) $(LIB_REMOTE)
+	-$(RM) -r $(OBJDIR)
 
 PHONY: all clean
