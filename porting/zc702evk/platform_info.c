@@ -35,13 +35,13 @@
  * DESCRIPTION
  *
  *       This file implements APIs to get platform specific
- *       information for OpenAMP. 
+ *       information for OpenAMP.
  *
  **************************************************************************/
 
 #include "platform.h"
 
-/* Reference implementation that show cases platform_get_cpu_info and 
+/* Reference implementation that show cases platform_get_cpu_info and
  platform_get_for_firmware API implementation for Bare metal environment */
 
 extern struct hil_platform_ops proc_ops;
@@ -49,8 +49,8 @@ extern struct hil_platform_ops proc_ops;
 /* IPC Device parameters */
 #define SHM_ADDR                          (void *)0x08008000
 #define SHM_SIZE                          0x00200000
-#define VRING0_IPI_VECT                   6
-#define VRING1_IPI_VECT                   3
+#define VRING0_IPI_VECT                   15
+#define VRING1_IPI_VECT                   14
 #define MASTER_CPU_ID                     0
 #define REMOTE_CPU_ID                     1
 
@@ -231,3 +231,4 @@ int platform_get_processor_for_fw(char *fw_name) {
 
     return 1;
 }
+
