@@ -402,7 +402,7 @@ void env_enable_interrupt(unsigned int vector , unsigned int priority ,
         {
             isr_table[idx].priority = priority;
             isr_table[idx].type = polarity;
-            zc702evk_gic_interrupt_enable(vector, polarity, priority);
+            platform_interrupt_enable(vector, polarity, priority);
             break;
         }
     }
@@ -420,7 +420,7 @@ void env_enable_interrupt(unsigned int vector , unsigned int priority ,
 
 void env_disable_interrupt(unsigned int vector)
 {
-    zc702evk_gic_interrupt_disable(vector);
+    platform_interrupt_disable(vector);
 }
 
 /**
@@ -454,7 +454,7 @@ void env_map_memory(unsigned int pa, unsigned int va, unsigned int size,
         cache_type = NOCACHE;
     }
 
-    arm_ar_map_mem_region(va, pa, size, is_mem_mapped, cache_type);
+    platform_map_mem_region(va, pa, size, is_mem_mapped, cache_type);
 }
 
 /**
@@ -465,8 +465,8 @@ void env_map_memory(unsigned int pa, unsigned int va, unsigned int size,
  */
 
 void env_disable_cache() {
-    ARM_AR_MEM_CACHE_ALL_FLUSH_INVALIDATE();
-    ARM_AR_MEM_CACHE_DISABLE();
+    platform_cache_all_flush_invalidate();
+    platform_cache_disable();
 }
 
 /**

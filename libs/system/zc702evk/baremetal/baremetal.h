@@ -665,4 +665,11 @@ void restore_global_interrupts();
 void disable_global_interrupts();
 void init_arm_stacks(void);
 
+/* define function macros for OpenAMP */
+#define platform_cache_all_flush_invalidate() ARM_AR_MEM_DCACHE_ALL_INVALIDATE()
+#define platform_cache_disable() ARM_AR_MEM_CACHE_DISABLE()
+#define platform_interrupt_enable(...) zc702evk_gic_interrupt_enable(__VA_ARGS__)
+#define platform_interrupt_disable(...) zc702evk_gic_interrupt_disable(__VA_ARGS__)
+#define platform_map_mem_region(...) arm_ar_map_mem_region(__VA_ARGS__)
+
 #endif /* _BAREMETAL_H */
