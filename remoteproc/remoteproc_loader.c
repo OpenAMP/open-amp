@@ -87,7 +87,7 @@ struct remoteproc_loader * remoteproc_loader_init(enum loader_type type) {
  */
 int remoteproc_loader_delete(struct remoteproc_loader *loader) {
 
-    int status;
+    int status = 0;
 
     if (!loader) {
         return RPROC_ERR_PARAM;
