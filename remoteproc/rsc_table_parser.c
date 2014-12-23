@@ -57,7 +57,7 @@ int handle_rsc_table(struct remote_proc *rproc, struct resource_table *rsc_table
     unsigned char *rsc_start;
     unsigned int *rsc_offset;
     unsigned int rsc_type;
-    int idx, status;
+    int idx, status = 0;
 
     /* Validate rsc table header fields*/
 
