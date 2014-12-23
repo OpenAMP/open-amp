@@ -1,20 +1,3 @@
-
-TOOLSET          := csgnu
-CROSS            := arm-xilinx-eabi-
-CFLAGS           := -Wall -ffunction-sections -fdata-sections -O0 -g3 -MMD 
-CXXFLAGS         := -Wall -fno-enforce-eh-specs -MMD
-ASFLAGS          := -gdwarf2 -meabi=4 -mcpu=cortex-a9 -mfpu=neon
-ARFLAGS          := 
-ARCH_CFLAGS      := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
-ARCH_CXXFLAGS    := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
-ARCH_ASFLAGS     := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
-ARCH_ARFLAGS     := 
-CC               = $(CROSS)gcc
-CXX              = $(CROSS)g++
-AS               = $(CROSS)as
-AR               = $(CROSS)ar
-LD               = $(CROSS)gcc
-OBJCPY           = $(CROSS)objcopy
 INCLUDE          := 
 RM               := rm -f
 CP               := cp
@@ -23,6 +6,8 @@ OHOME            := $(OPENAMP)
 ifeq ($(PLAT),)
 export PLAT := zc702evk
 endif
+
+include $(OHOME)/Makefile.commons.$(PLAT)
 
 BAREMETAL_INCLUDES := -I"$(OHOME)/libs/system/$(PLAT)/baremetal"
 GENERAL_INCLUDES := -I"$(OHOME)/include"
@@ -48,21 +33,3 @@ endif
 
 CFLAGS += $(GENERAL_INCLUDES)
 
-#The example make file for csgnu and zynq platform would look like below
-
-#TOOLSET          := csgnu
-#CROSS            := arm-none-eabi-
-#CFLAGS           := -Wall -ffunction-sections -fdata-sections -O0 -g3
-#CXXFLAGS         := -Wall -fno-enforce-eh-specs
-#ASFLAGS          := -gdwarf2 -meabi=4 -mcpu=cortex-a9 -mfpu=neon
-#ARFLAGS          := 
-#ARCH_CFLAGS      := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
-#ARCH_CXXFLAGS    := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
-#ARCH_ASFLAGS     := -gdwarf-2 -mthumb-interwork -mcpu=cortex-a9
-#ARCH_ARFLAGS     := 
-#CC               = $(CROSS)gcc
-#CXX              = $(CROSS)g++
-#AS               = $(CROSS)as
-#AR               = $(CROSS)ar
-#INCLUDE          := 
-#RM               := rm -f
