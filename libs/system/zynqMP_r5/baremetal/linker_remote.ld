@@ -301,5 +301,4 @@ _SDA2_BASE_ = __sdata2_start + ((__sbss2_end - __sdata2_start) / 2 );
 } > ps8_ocm_ram_0_S_AXI_BASEADDR
 
 _end = .;
-end = .;
 }
