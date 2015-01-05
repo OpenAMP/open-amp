@@ -42,9 +42,10 @@
 ******************************************************************************/
 
 #include <sys/types.h>
+#include <errno.h>
 
-extern int  _heap_start;
-extern int _heap_end;
+extern unsigned char _heap_start[];
+extern unsigned char _heap_end[];
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,7 +59,7 @@ __attribute__((weak)) caddr_t _sbrk ( int incr )
   unsigned char *prev_heap;
 
   if (heap == NULL) {
-    heap = (unsigned char *)&_heap_start;
+    heap = _heap_start;
   }
   prev_heap = heap;
 
