@@ -19,7 +19,7 @@ $(SAMPLE_OUT): $(SAMPLEOBJFILES)
 
 	@echo 'Building echo test for baremetal : $@'
 
-	$(LD) -v -Wl,-Map=echo_test.map -Wl,--gc-sections -T"linker_remote.ld" $(LDFLAGS) -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) -lxil -lbaremetal_remote -lopen_amp -lgcc -lc -lm -Wl,--end-group
+	$(LD) -v -Wl,-Map=echo_test.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(PLAT)/baremetal/linker_remote.ld" $(LDFLAGS) -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) -lxil -lbaremetal_remote -lopen_amp -lgcc -lc -lm -Wl,--end-group
 	
 	@echo 'Finished building target: $@'
 	
