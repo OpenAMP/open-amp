@@ -29,7 +29,11 @@ extern const struct remote_resource_table resources;
 /* Application entry point */
 int main() {
 	
+	/* Switch to System Mode */
 	SWITCH_TO_SYS_MODE();
+
+	/* Initialize HW system components */
+	init_system();
 
 	rsc_info.rsc_tab = (struct resource_table *)&resources;
 	rsc_info.size = sizeof(resources);
@@ -58,4 +62,13 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 		/* Send data back to master */
 		rpmsg_send(rp_chnl, data, len);
 	}
+}
+
+static void init_system() {
+
+	/* To Do -- Fix Me later */
+	/* Place the vector table -- Do we need it? */
+	/* Initialize stacks -- Do we need it? */
+	/* Initilaize GIC */
+	zynqMP_r5_gic_initialize();
 }
