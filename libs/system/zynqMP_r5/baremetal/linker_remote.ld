@@ -60,23 +60,23 @@ _binary_firmware2_end = 0;
    *(.vfp11_veneer)
    *(.ARM.extab)
    *(.gnu.linkonce.armextab.*)
-} > ps8_ocm_ram_0_S_AXI_BASEADDR
+} > ps8_ocm_ram_1_S_AXI_BASEADDR
 
 .init : {
    KEEP (*(.init))
-} > ps8_ocm_ram_0_S_AXI_BASEADDR
+} > ps8_ocm_ram_1_S_AXI_BASEADDR
 
 .fini : {
    KEEP (*(.fini))
-} > ps8_ocm_ram_0_S_AXI_BASEADDR
+} > ps8_ocm_ram_1_S_AXI_BASEADDR
 
 .interp : {
    KEEP (*(.interp))
-} > ps8_ocm_ram_0_S_AXI_BASEADDR
+} > ps8_ocm_ram_1_S_AXI_BASEADDR
 
 .note-ABI-tag : {
    KEEP (*(.note-ABI-tag))
-} > ps8_ocm_ram_0_S_AXI_BASEADDR
+} > ps8_ocm_ram_1_S_AXI_BASEADDR
 
 .rodata : {
    __rodata_start = .;
