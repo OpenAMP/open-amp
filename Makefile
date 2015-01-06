@@ -6,20 +6,21 @@ include Makefile.commons
 LIB := libs/open_amp/libopen_amp.a
 
 HEADERS += \
-$(wildcard */*.h) \
-$(wildcard *.h)
+$(wildcard include/*.h)
 
 C_SRCFILES += \
-$(wildcard *.c) \
-$(wildcard */*.c) \
-$(wildcard */*/*/*.c) \
-$(wildcard */*/*.c)
+$(wildcard remoteproc/*.c) \
+$(wildcard virtio/*.c) \
+$(wildcard rpmsg/*.c) \
+$(wildcard common/hil/*.c) \
+$(wildcard common/llist/*.c) \
+$(wildcard common/shm/*.c) \
+$(wildcard porting/config/*.c) \
+$(wildcard porting/env/*.c) \
+$(wildcard porting/$(PLAT)/*.c)
 
 AS_SRCFILES += \
-$(wildcard *.S) \
-$(wildcard */*.S) \
-$(wildcard */*/*/*.S) \
-$(wildcard */*/*.S)
+$(wildcard porting/$(PLAT)/*.S)
 
 OBJFILES := $(patsubst %.c, %.o, $(C_SRCFILES)) $(patsubst %.S, %.o, $(AS_SRCFILES))
 
@@ -29,15 +30,15 @@ all: $(LIB)
 
 $(LIB): $(OBJFILES)
 	@echo AR $@
-	@$(AR) -r $@ $(OBJFILES)
+	$(AR) -r $@ $(OBJFILES)
 
 %.o:%.c $(HEADERS)
 	@echo CC $(<:.c=.o)
-	@$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
+	$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
 
 %.o:%.S
 	@echo AS $(<:.S=.o)
-	@$(AS) $(ARCH_ASFLAGS) $(INCLUDE) $< -o $@
+	$(AS) $(ARCH_ASFLAGS) $(INCLUDE) $< -o $@
 
 clean:
 	-$(RM) $(LIB) $(OBJFILES) $(DEPFILES)
