@@ -106,6 +106,8 @@ typedef enum {
 void zynqMP_r5_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
 		unsigned int size, int is_mem_mapped, CACHE_TYPE cache_type);
 
+int zynqMP_r5_gic_initialize();
+
 int zynqMP_r5_gic_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
 		int priority);
 int zynqMP_r5_gic_interrupt_disable(int vector_id);
