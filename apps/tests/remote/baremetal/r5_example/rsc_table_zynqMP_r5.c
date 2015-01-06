@@ -50,8 +50,8 @@
 #define ELF_LEN                     0x20000
 #define NUM_VRINGS                  0x02
 #define VRING_ALIGN                 0x1000
-#define RING_TX                     0xFFFC8000
-#define RING_RX                     0xFFFCA000
+#define RING_TX                     0x3FD00000
+#define RING_RX                     0x3FD04000
 #define VRING_SIZE                  256
 
 const struct remote_resource_table __resource resources =

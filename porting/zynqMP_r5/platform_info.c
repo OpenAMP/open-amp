@@ -47,10 +47,10 @@
 extern struct hil_platform_ops proc_ops;
 
 /* IPC Device parameters */
-#define SHM_ADDR                          (void *)0xFFFCD000
-#define SHM_SIZE                          0x8000
-#define VRING0_IPI_VECT                   6
-#define VRING1_IPI_VECT                   3
+#define SHM_ADDR                          (void *)0x3FD08000
+#define SHM_SIZE                          0x00200000
+#define VRING0_IPI_VECT                   15
+#define VRING1_IPI_VECT                   14
 #define MASTER_CPU_ID                     0
 #define REMOTE_CPU_ID                     1
 
