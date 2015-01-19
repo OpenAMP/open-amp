@@ -28,86 +28,75 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include "baremetal.h"
 #include "xparameters.h"
+#include "baremetal.h"
 #include "xil_io.h"
 #include "xil_exception.h"
-
-/** name CPU Interface Register Map
- *
- * Define the offsets from the base address for all CPU registers of the
- * interrupt controller, some registers may be reserved in the hardware device.
- */
-#define XSCUGIC_CONTROL_OFFSET		0x00000000U /**< CPU Interface Control
-							Register */
-#define XSCUGIC_CPU_PRIOR_OFFSET	0x00000004U /**< Priority Mask Reg */
-#define XSCUGIC_BIN_PT_OFFSET		0x00000008U /**< Binary Point Register */
-#define XSCUGIC_INT_ACK_OFFSET		0x0000000CU /**< Interrupt ACK Reg */
-#define XSCUGIC_EOI_OFFSET		0x00000010U /**< End of Interrupt Reg */
-#define XSCUGIC_RUN_PRIOR_OFFSET	0x00000014U /**< Running Priority Reg */
-#define XSCUGIC_HI_PEND_OFFSET		0x00000018U /**< Highest Pending Interrupt
-							Register */
-#define XSCUGIC_ALIAS_BIN_PT_OFFSET	0x0000001CU /**< Aliased non-Secure
-							Binary Point Register */
-
-/** name Distributor Interface Register Map
- *
- * Define the offsets from the base address for all Distributor registers of
- * the interrupt controller, some registers may be reserved in the hardware
- * device.
- */
-#define XSCUGIC_DIST_EN_OFFSET          0x00000000U /**< Distributor Enable
-                                                        Register */
-#define XSCUGIC_IC_TYPE_OFFSET          0x00000004U /**< Interrupt Controller
-                                                        Type Register */
-#define XSCUGIC_DIST_IDENT_OFFSET       0x00000008U /**< Implementor ID
-                                                        Register */
-#define XSCUGIC_SECURITY_OFFSET         0x00000080U /**< Interrupt Security
-                                                        Register */
-#define XSCUGIC_ENABLE_SET_OFFSET       0x00000100U /**< Enable Set
-                                                        Register */
-#define XSCUGIC_DISABLE_OFFSET          0x00000180U /**< Enable Clear Register */
-#define XSCUGIC_PENDING_SET_OFFSET      0x00000200U /**< Pending Set
-                                                        Register */
-#define XSCUGIC_PENDING_CLR_OFFSET      0x00000280U /**< Pending Clear
-                                                        Register */
-#define XSCUGIC_ACTIVE_OFFSET           0x00000300U /**< Active Status Register */
-#define XSCUGIC_PRIORITY_OFFSET         0x00000400U /**< Priority Level Register */
-#define XSCUGIC_SPI_TARGET_OFFSET       0x00000800U /**< SPI Target
-                                                        Register 0x800-0x8FB */
-#define XSCUGIC_INT_CFG_OFFSET          0x00000C00U /**< Interrupt Configuration
-                                                        Register 0xC00-0xCFC */
-#define XSCUGIC_PPI_STAT_OFFSET         0x00000D00U /**< PPI Status Register */
-#define XSCUGIC_SPI_STAT_OFFSET         0x00000D04U /**< SPI Status Register
-                                                        0xd04-0xd7C */
-#define XSCUGIC_AHB_CONFIG_OFFSET       0x00000D80U /**< AHB Configuration
-                                                        Register */
-#define XSCUGIC_SFI_TRIG_OFFSET         0x00000F00U /**< Software Triggered
-                                                        Interrupt Register */
-#define XSCUGIC_PERPHID_OFFSET          0x00000FD0U /**< Peripheral ID Reg */
-#define XSCUGIC_PCELLID_OFFSET          0x00000FF0U /**< Pcell ID Register */
-
-
-#define XScuGic_CPUWriteReg(RegOffset, Data) \
-	(Xil_Out32((XPAR_SCUGIC_0_CPU_BASEADDR + RegOffset), Data))
-
-#define XScuGic_CPUReadReg(RegOffset) \
-	(Xil_In32(XPAR_SCUGIC_0_CPU_BASEADDR + RegOffset))
-
-#define XScuGic_DistWriteReg(RegOffset, Data) \
-	(Xil_Out32((XPAR_SCUGIC_0_DIST_BASEADDR + RegOffset), Data))
-
-#define XScuGic_DistReadReg(RegOffset) \
-	(Xil_In32(XPAR_SCUGIC_0_DIST_BASEADDR + RegOffset))
 	
 void zynqMP_r5_irq_isr();
 
 int zynqMP_r5_gic_initialize() {
+	unsigned int int_id = 0;
+	unsigned int local_cpu_id = (unsigned int)XPAR_CPU_ID + (unsigned int)1;
 
 	Xil_ExceptionDisable();
 
-	/* Assuming master has initialized the GIC distributor,
-	 * do not initialize distributor from slave */
+	/* Initialize the GIC distributor */
+	XScuGic_DistWriteReg(XSCUGIC_DIST_EN_OFFSET, 0U);
+
+	/*
+	 * Set the security domains in the int_security registers for non-secure
+	 * interrupts. All are secure, so leave at the default. Set to 1 for
+	 * non-secure interrupts.
+	 */
+
+	/*
+	 * For the Shared Peripheral Interrupts INT_ID[MAX..32], set:
+	 */
+
+	/*
+	 * 1. The trigger mode in the int_config register
+	 * Only write to the SPI interrupts, so start at 32
+	 */
+	for (int_id = 32U; int_id<XSCUGIC_MAX_NUM_INTR_INPUTS;int_id=int_id+16U) {
+	/*
+	 * Each INT_ID uses two bits, or 16 INT_ID per register
+	 * Set them all to be level sensitive, active HIGH.
+	 */
+	 XScuGic_DistWriteReg(XSCUGIC_INT_CFG_OFFSET_CALC(int_id), 0U);
+	}
+
+
+#define DEFAULT_PRIORITY	0xa0a0a0a0U
+	for (int_id = 0U; int_id<XSCUGIC_MAX_NUM_INTR_INPUTS;int_id=int_id+4U) {
+	/*
+	 * 2. The priority using int the priority_level register
+	 * The priority_level and spi_target registers use one byte per
+	 * INT_ID.
+	 * Write a default value that can be changed elsewhere.
+	 */
+	 XScuGic_DistWriteReg(XSCUGIC_PRIORITY_OFFSET_CALC(int_id), DEFAULT_PRIORITY);
+	}
+
+	for (int_id = 32U; int_id<XSCUGIC_MAX_NUM_INTR_INPUTS;int_id=int_id+4U) {
+	/*
+	 * 3. The CPU interface in the spi_target register
+	 * Only write to the SPI interrupts, so start at 32
+	 */
+		local_cpu_id |= local_cpu_id << 8U;
+		local_cpu_id |= local_cpu_id << 16U;
+		XScuGic_DistWriteReg(XSCUGIC_SPI_TARGET_OFFSET_CALC(int_id), local_cpu_id);
+	}
+
+	for (int_id = 0U; int_id<XSCUGIC_MAX_NUM_INTR_INPUTS;int_id=int_id+32U) {
+	/*
+	 * 4. Enable the SPI using the enable_set register. Leave all disabled
+	 * for now.
+	 */
+		XScuGic_DistWriteReg(XSCUGIC_EN_DIS_OFFSET_CALC(XSCUGIC_DISABLE_OFFSET, int_id), 0xFFFFFFFFU);
+	}
+
+	XScuGic_DistWriteReg(XSCUGIC_DIST_EN_OFFSET, XSCUGIC_EN_INT_MASK);
 
 	/* Program the priority mask of the CPU using the Priority mask register */
 	XScuGic_CPUWriteReg(XSCUGIC_CPU_PRIOR_OFFSET, 0xF0U);
