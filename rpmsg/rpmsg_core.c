@@ -506,9 +506,24 @@ void rpmsg_rx_callback(struct virtqueue *vq) {
     struct llist *node;
     unsigned long len;
     unsigned short idx;
+    struct llist *chnl_hd;
 
     vdev = (struct virtio_device *) vq->vq_dev;
     rdev = (struct remote_device *) vdev;
+
+    chnl_hd = rdev->rp_channels;
+    if ((chnl_hd != RPMSG_NULL) && (rdev->role == RPMSG_MASTER)) {
+	rp_chnl = (struct rpmsg_channel *) chnl_hd->data;
+	if (rp_chnl->state == RPMSG_CHNL_STATE_IDLE) {
+		if (rdev->support_ns) {
+			rp_chnl->state = RPMSG_CHNL_STATE_NS;
+			rpmsg_send_ns_message(rdev, rp_chnl, RPMSG_NS_CREATE);
+		} else {
+			rp_chnl->state = RPMSG_CHNL_STATE_ACTIVE;
+		}
+		//return;
+	}
+    }
 
     env_lock_mutex(rdev->lock);
 
@@ -517,8 +532,9 @@ void rpmsg_rx_callback(struct virtqueue *vq) {
 
     env_unlock_mutex(rdev->lock);
 
-    if (!rp_hdr)
+    if (!rp_hdr) {
         return;
+    }
 
     /* Get the channel node from the remote device channels list. */
     node = rpmsg_rdev_get_endpoint_from_addr(rdev, rp_hdr->dst);
@@ -530,6 +546,7 @@ void rpmsg_rx_callback(struct virtqueue *vq) {
     rp_ept = (struct rpmsg_endpoint *) node->data;
 
     rp_chnl = rp_ept->rp_chnl;
+
     if ((rp_chnl) && (rp_chnl->state == RPMSG_CHNL_STATE_NS)) {
 
         /* First message from RPMSG Master, update channel
