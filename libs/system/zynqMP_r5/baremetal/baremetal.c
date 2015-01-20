@@ -235,7 +235,7 @@ void zynqMP_r5_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
  *       A constant value of 0.
  *
  **/
-__attribute__((weak)) int _fstat(int file, struct stat * st)
+int _fstat(int file, struct stat * st)
 {
     return(0);
 }
@@ -253,7 +253,7 @@ __attribute__((weak)) int _fstat(int file, struct stat * st)
  * @return s - A constant value of 1.
  *
  */
-__attribute__((weak)) int _isatty(int file)
+int _isatty(int file)
 {
     return(1);
 }
@@ -273,7 +273,7 @@ __attribute__((weak)) int _isatty(int file)
  * @return - A constant value of 0.
  *
  */
-__attribute__((weak)) int _lseek(int file, int ptr, int dir)
+int _lseek(int file, int ptr, int dir)
 {
     return(0);
 }
@@ -291,7 +291,7 @@ __attribute__((weak)) int _lseek(int file, int ptr, int dir)
  * return -  A constant value of 1.
  *
  */
-__attribute__((weak)) int _open(const char * filename, int flags, int mode)
+int _open(const char * filename, int flags, int mode)
 {
     /* Any number will work. */
     return(1);
@@ -309,7 +309,7 @@ __attribute__((weak)) int _open(const char * filename, int flags, int mode)
  * return A constant value of -1.
  *
  */
-__attribute__((weak)) int _close(int file)
+int _close(int file)
 {
     return(-1);
 }
@@ -326,7 +326,7 @@ __attribute__((weak)) int _close(int file)
  * return -  A constant value of 1.
  *
  */
-__attribute__((weak)) int _read(int fd, char * buffer, int buflen)
+ int _read(int fd, char * buffer, int buflen)
 {
     return -1;
 }
@@ -344,7 +344,7 @@ __attribute__((weak)) int _read(int fd, char * buffer, int buflen)
  * return len                            - The length of the string
  *
  */
-__attribute__((weak)) int _write (int file, const char * ptr, int len)
+ int _write (int file, const char * ptr, int len)
 {
     return 0;
 }
