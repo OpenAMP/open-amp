@@ -47,7 +47,7 @@
 extern struct hil_platform_ops proc_ops;
 
 /* IPC Device parameters */
-#define SHM_ADDR                          (void *)0x3FD08000
+#define SHM_ADDR                          (void *)0x3ED08000
 #define SHM_SIZE                          0x00200000
 #define VRING0_IPI_VECT                   15
 #define VRING1_IPI_VECT                   14
@@ -177,13 +177,13 @@ struct hil_proc proc_table []=
                      */
                     NULL, NULL, 0, 0,
                     {
-                        VRING0_IPI_VECT,0x1006,1
+                        VRING0_IPI_VECT,0x1006,1,(void *)(&vring0_ipi_info)
                     }
                 },
                 {
                     NULL, NULL, 0, 0,
                     {
-                        VRING1_IPI_VECT,0x1006,1
+                        VRING1_IPI_VECT,0x1006,1,(void *)(&vring1_ipi_info)
                     }
                 }
             }
