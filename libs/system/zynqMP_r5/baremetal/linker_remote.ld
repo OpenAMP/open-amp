@@ -32,15 +32,19 @@ MEMORY
 
 /* Specify the default entry point to the program */
 
-ENTRY(_boot)
+/* ENTRY(_boot) */
+
+ENTRY(_vector_table)
 
 /* Define the sections, and where they are mapped in memory */
 
 SECTIONS
 {
+/*
 .vectors 0x00000000 : {
    KEEP (*(.vectors))
 }
+*/
 
 _binary_firmware1_start = 0;
 _binary_firmware1_end = 0;
@@ -48,6 +52,7 @@ _binary_firmware2_start = 0;
 _binary_firmware2_end = 0;
 
 .text : {
+   *(.vectors)
    *(.boot)
    *(.text)
    *(.text.*)
