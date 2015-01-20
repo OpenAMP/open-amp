@@ -46,12 +46,20 @@
 #define VIRTIO_RPMSG_F_NS           0
 
 /* Resource table entries */
-#define ELF_START                   0xFFFC0000
-#define ELF_LEN                     0x20000
+#define OCM_0_START                 0xFFFC0000
+#define OCM_0_LEN                   0x20000
+#define OCM_1_START                 0xFFFF0000
+#define OCM_1_LEN                   0x10000
+#define TCM_0_START_DA              0x00000000
+#define TCM_0_LEN                   0x10000
+#define TCM_0_START_PA              0xFFE00000
+#define TCM_1_START_DA              0x00020000
+#define TCM_1_LEN                   0x10000
+#define TCM_1_START_PA              0xFFE40000
 #define NUM_VRINGS                  0x02
 #define VRING_ALIGN                 0x1000
-#define RING_TX                     0x3FD00000
-#define RING_RX                     0x3FD04000
+#define RING_TX                     0x3ED00000
+#define RING_RX                     0x3ED04000
 #define VRING_SIZE                  256
 
 const struct remote_resource_table __resource resources =
@@ -60,19 +68,31 @@ const struct remote_resource_table __resource resources =
     1,
 
     /* NUmber of table entries */
-    2,
+    5,
     /* reserved fields */
     { 0, 0,},
 
     /* Offsets of rsc entries */
     {
-        offsetof(struct remote_resource_table, elf_cout),
+        offsetof(struct remote_resource_table, ocm_0_cout),
+	offsetof(struct remote_resource_table, ocm_1_cout),
+	offsetof(struct remote_resource_table, tcm_0_cout),
+	offsetof(struct remote_resource_table, tcm_1_cout),
         offsetof(struct remote_resource_table, rpmsg_vdev),
     },
 
     /* End of ELF file */
     {
-        RSC_CARVEOUT, ELF_START, ELF_START, ELF_LEN, 0, 0, "ELF_COUT",
+        RSC_CARVEOUT, OCM_0_START, OCM_0_START, OCM_0_LEN, 0, 0, "ELF_COUT",
+    },
+    {
+	      RSC_CARVEOUT, OCM_1_START, OCM_1_START, OCM_1_LEN, 0, 0, "ELF_DATA_COUT",
+    },
+    {
+        RSC_CARVEOUT, TCM_0_START_DA, TCM_0_START_PA, TCM_0_LEN, 0, 0, "TCM_COUT",
+    },
+    {
+        RSC_CARVEOUT, TCM_1_START_DA, TCM_1_START_PA, TCM_1_LEN, 0, 0, "TCM_COUT",
     },
 
     /* Virtio device entry */
