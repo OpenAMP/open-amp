@@ -120,6 +120,14 @@
 #define XScuGic_DistReadReg(RegOffset) \
 	(Xil_In32(XPAR_SCUGIC_0_DIST_BASEADDR + RegOffset))
 
+/* IPI REGs OFFSET */
+#define IPI_TRIG_OFFSET          0x00000000 /* IPI trigger register offset */
+#define IPI_OBS_OFFSET           0x00000004 /* IPI observation register offset */
+#define IPI_ISR_OFFSET           0x00000010 /* IPI interrupt status register offset */
+#define IPI_IMR_OFFSET           0x00000014 /* IPI interrupt mask register offset */
+#define IPI_IER_OFFSET           0x00000018 /* IPI interrupt enable register offset */
+#define IPI_IDR_OFFSET           0x0000001C /* IPI interrupt disable register offset */
+
 #define         MEM_READ8(addr)         *(volatile unsigned char *)(addr)
 #define         MEM_READ16(addr)        *(volatile unsigned short *)(addr)
 #define         MEM_READ32(addr)        *(volatile unsigned long *)(addr)
