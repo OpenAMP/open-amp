@@ -41,7 +41,8 @@
 
 /* -- FIX ME: ipi info is to be defined -- */
 struct ipi_info {
-	uint32_t preserved;
+	uint32_t ipi_base_addr;
+	uint32_t ipi_chn_mask;
 };
 
 int _enable_interrupt(struct proc_vring *vring_hw);

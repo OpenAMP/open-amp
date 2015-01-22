@@ -40,6 +40,7 @@
  **************************************************************************/
 
 #include "platform.h"
+#include "baremetal.h"
 
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops proc_ops = {
@@ -51,21 +52,30 @@ struct hil_platform_ops proc_ops = {
 
 int _enable_interrupt(struct proc_vring *vring_hw) {
 
-    /* Register ISR*/
-    env_register_isr(vring_hw->intr_info.vect_id, vring_hw, platform_isr);
+	if (vring_hw->intr_info.vect_id < 0)
+		return 0;
 
-    /* Enable the interrupts */
-    env_enable_interrupt(vring_hw->intr_info.vect_id,
-                    vring_hw->intr_info.priority,
-                    vring_hw->intr_info.trigger_type);
-    return 0;
+	/* Register ISR*/
+	env_register_isr(vring_hw->intr_info.vect_id, vring_hw, platform_isr);
+
+	/* Enable IPI interrupt */
+	struct ipi_info *chn_ipi_info = (struct ipi_info *)(vring_hw->intr_info.data);
+	HIL_MEM_WRITE32((chn_ipi_info->ipi_base_addr + IPI_IER_OFFSET), chn_ipi_info->ipi_chn_mask);
+
+	/* Enable the interrupts */
+	env_enable_interrupt(vring_hw->intr_info.vect_id,
+		vring_hw->intr_info.priority,
+		vring_hw->intr_info.trigger_type);
+	return 0;
 }
 
 void _notify(int cpu_id, struct proc_intr *intr_info) {
 
-    unsigned long mask = 0;
-
-	/* FIX ME -- TO be implemented */
+	struct ipi_info *chn_ipi_info = (struct ipi_info *)(intr_info->data);
+	if (chn_ipi_info == NULL)
+		return;
+	/* Trigger IPI */
+	HIL_MEM_WRITE32((chn_ipi_info->ipi_base_addr + IPI_TRIG_OFFSET), chn_ipi_info->ipi_chn_mask);
 }
 
 int _boot_cpu(int cpu_id, unsigned int load_addr) {
@@ -77,5 +87,11 @@ void _shutdown_cpu(int cpu_id) {
 }
 
 void platform_isr(int vect_id, void *data) {
-	hil_isr(((struct proc_vring *) data));
+	struct proc_vring *vring_hw = (struct proc_vring *) data;
+	struct ipi_info *chn_ipi_info = (struct ipi_info *)(vring_hw->intr_info.data);
+	unsigned int ipi_intr_status = (unsigned int)HIL_MEM_READ32(chn_ipi_info->ipi_base_addr + IPI_ISR_OFFSET);
+	if ((ipi_intr_status & chn_ipi_info->ipi_chn_mask)) {
+		hil_isr(vring_hw);
+		HIL_MEM_WRITE32((chn_ipi_info->ipi_base_addr + IPI_ISR_OFFSET), chn_ipi_info->ipi_chn_mask);
+	}
 }

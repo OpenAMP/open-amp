@@ -49,13 +49,14 @@ extern struct hil_platform_ops proc_ops;
 /* IPC Device parameters */
 #define SHM_ADDR                          (void *)0x3ED08000
 #define SHM_SIZE                          0x00200000
-#define VRING0_IPI_VECT                   15
-#define VRING1_IPI_VECT                   14
+#define IPI_BASEADDR                      0xff310000
+#define IPI_CHN_BITMASK                   0x00000001 /* IPI channel bit mask APU<->RPU0 */
+#define VRING0_IPI_INTR_VECT              -1
+#define VRING1_IPI_INTR_VECT              79
 #define MASTER_CPU_ID                     0
 #define REMOTE_CPU_ID                     1
 
-static struct ipi_info vring0_ipi_info = {0};
-static struct ipi_info vring1_ipi_info = {1};
+static struct ipi_info chn_ipi_info = {IPI_BASEADDR, IPI_CHN_BITMASK};
 
 /**
  * This array provdes defnition of CPU nodes for master and remote
@@ -128,13 +129,13 @@ struct hil_proc proc_table []=
                       */
                      NULL, NULL, 0, 0,
                      {
-                         VRING0_IPI_VECT,0x1006,1,(void *)(&vring0_ipi_info),
+                         VRING0_IPI_INTR_VECT,0x1006,1,(void *)(&chn_ipi_info),
                      }
                 },
                 {
                     NULL, NULL, 0, 0,
                     {
-                        VRING1_IPI_VECT,0x1006,1,(void *)(&vring1_ipi_info),
+                        VRING1_IPI_INTR_VECT,0x1006,1,(void *)(&chn_ipi_info),
                     }
                 }
             }
@@ -177,13 +178,13 @@ struct hil_proc proc_table []=
                      */
                     NULL, NULL, 0, 0,
                     {
-                        VRING0_IPI_VECT,0x1006,1,(void *)(&vring0_ipi_info)
+                        VRING0_IPI_INTR_VECT,0x1006,1,(void *)(&chn_ipi_info)
                     }
                 },
                 {
                     NULL, NULL, 0, 0,
                     {
-                        VRING1_IPI_VECT,0x1006,1,(void *)(&vring1_ipi_info)
+                        VRING1_IPI_INTR_VECT,0x1006,1,(void *)(&chn_ipi_info)
                     }
                 }
             }
