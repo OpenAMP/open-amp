@@ -127,6 +127,13 @@ void Init_MPU(void)
 	attrib = DEVICE_NONSHARED | PRIV_RW_USER_RW   ;
 	Xil_SetAttribute(addr,reg_size,reg_num, attrib);
 
+
+	addr = 0x3ED00000;
+	reg_size=REGION_4M;
+	reg_num=8;
+	attrib = DEVICE_SHARED | PRIV_RW_USER_RW   ;
+	Xil_SetAttribute(addr,reg_size,reg_num, attrib);
+
 	Xil_EnableBackgroundRegion();
 	Xil_EnableMPU();
 
