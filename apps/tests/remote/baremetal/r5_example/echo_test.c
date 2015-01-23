@@ -41,12 +41,29 @@ int main() {
 
 	remoteproc_resource_init(&rsc_info, rpmsg_channel_created, rpmsg_channel_deleted, rpmsg_read_cb,
 		&proc);
+#if 0
+/* Test Interrupt Only */
+#define XSCUGIC_SPI_CPU0_MASK 1
+#define INTC_DEVICE_INT_ID 14
+#define XSCUGIC_SFI_TRIG_CPU_MASK  0x00FF0000U    /**< CPU Target list */
+#define XSCUGIC_SFI_TRIG_INTID_MASK        0x0000000FU /**< Set to the INTID signaled to the CPU */ 
+
+	unsigned int int_mask = ((XSCUGIC_SPI_CPU0_MASK << 16U) | INTC_DEVICE_INT_ID) &
+			(XSCUGIC_SFI_TRIG_CPU_MASK | XSCUGIC_SFI_TRIG_INTID_MASK);
+
+	XScuGic_DistWriteReg(XSCUGIC_SFI_TRIG_OFFSET, int_mask);
+#endif
+#if 0
+/* Test IPI */
+     HIL_MEM_WRITE32((0xff300000 + IPI_TRIG_OFFSET), 0x100);
+#endif
 
 	while (1);
 }
 
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl) {
 	app_rp_chnl = rp_chnl;
+ //sprintf(DBG_MSG, "i am in %s.\n", __func__);
 	rp_ept = rpmsg_create_ept(rp_chnl, rpmsg_read_cb, RPMSG_NULL,
 			RPMSG_ADDR_ANY);
 }
@@ -56,6 +73,7 @@ static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl) {
 
 static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 		void * priv, unsigned long src) {
+	sprintf(DBG_MSG, "i am in %s.\n", __func__);
 	if ((*(int *) data) == SHUTDOWN_MSG) {
 		remoteproc_resource_deinit(proc);
 	} else {
