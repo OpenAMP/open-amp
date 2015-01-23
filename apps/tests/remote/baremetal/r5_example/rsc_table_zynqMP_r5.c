@@ -68,7 +68,7 @@ const struct remote_resource_table __resource resources =
     1,
 
     /* NUmber of table entries */
-    5,
+    3,
     /* reserved fields */
     { 0, 0,},
 
@@ -76,8 +76,6 @@ const struct remote_resource_table __resource resources =
     {
         offsetof(struct remote_resource_table, ocm_0_cout),
 	offsetof(struct remote_resource_table, ocm_1_cout),
-	offsetof(struct remote_resource_table, tcm_0_cout),
-	offsetof(struct remote_resource_table, tcm_1_cout),
         offsetof(struct remote_resource_table, rpmsg_vdev),
     },
 
@@ -88,13 +86,6 @@ const struct remote_resource_table __resource resources =
     {
 	      RSC_CARVEOUT, OCM_1_START, OCM_1_START, OCM_1_LEN, 0, 0, "ELF_DATA_COUT",
     },
-    {
-        RSC_CARVEOUT, TCM_0_START_DA, TCM_0_START_PA, TCM_0_LEN, 0, 0, "TCM_COUT",
-    },
-    {
-        RSC_CARVEOUT, TCM_1_START_DA, TCM_1_START_PA, TCM_1_LEN, 0, 0, "TCM_COUT",
-    },
-
     /* Virtio device entry */
     {   RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0, NUM_VRINGS, {0, 0},
     },

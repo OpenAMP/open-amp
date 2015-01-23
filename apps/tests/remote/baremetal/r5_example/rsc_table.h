@@ -44,8 +44,6 @@ struct remote_resource_table {
     /* text carveout entry */
     struct fw_rsc_carveout ocm_0_cout;
     struct fw_rsc_carveout ocm_1_cout;
-    struct fw_rsc_carveout tcm_0_cout;
-    struct fw_rsc_carveout tcm_1_cout;
     /* rpmsg vdev entry */
     struct fw_rsc_vdev rpmsg_vdev;
     struct fw_rsc_vdev_vring rpmsg_vring0;
