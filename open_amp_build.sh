@@ -1,4 +1,3 @@
-
 if [ "$1" == "-c" ]; then
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo Cleanup OPENAMP library for baremetal and Linux
@@ -7,9 +6,10 @@ if [ "$1" == "-c" ]; then
 	make clean
 	
 	make -f libs/system/zc702evk/linux/make clean
+	make -C libs/system/zc702evk/baremetal clean
 		
 	cd apps
-	
+
 	make OS=baremetal PLAT=zc702evk ROLE=remote clean
 	
 	make OS=baremetal PLAT=zc702evk ROLE=master clean
@@ -23,6 +23,11 @@ if [ "$1" == "-c" ]; then
 	cd ../..
 	
 else
+
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	echo Rebuild baremetal library
+	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	make -C libs/system/zc702evk/baremetal clean all
 
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo Build OPENAMP library for remote baremetal and Master Linux
