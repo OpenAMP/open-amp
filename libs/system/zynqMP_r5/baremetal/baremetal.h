@@ -222,6 +222,10 @@ void disable_global_interrupts();
 		Xil_ICacheDisable(); \
 	}
 
+#define platform_dcache_all_flush() { Xil_DCacheFlush(); }
+
+#define platform_dcache_flush_range(addr, len) { Xil_DCacheFlushRange(addr, len); }
+
 #define platform_interrupt_enable(...) zynqMP_r5_gic_interrupt_enable(__VA_ARGS__)
 #define platform_interrupt_disable(...) zynqMP_r5_gic_interrupt_disable(__VA_ARGS__)
 #define platform_map_mem_region(...) 

@@ -74,6 +74,7 @@ void _notify(int cpu_id, struct proc_intr *intr_info) {
 	struct ipi_info *chn_ipi_info = (struct ipi_info *)(intr_info->data);
 	if (chn_ipi_info == NULL)
 		return;
+	platform_dcache_all_flush();
 	/* Trigger IPI */
 	HIL_MEM_WRITE32((chn_ipi_info->ipi_base_addr + IPI_TRIG_OFFSET), chn_ipi_info->ipi_chn_mask);
 }
@@ -91,6 +92,7 @@ void platform_isr(int vect_id, void *data) {
 	struct ipi_info *chn_ipi_info = (struct ipi_info *)(vring_hw->intr_info.data);
 	unsigned int ipi_intr_status = (unsigned int)HIL_MEM_READ32(chn_ipi_info->ipi_base_addr + IPI_ISR_OFFSET);
 	if ((ipi_intr_status & chn_ipi_info->ipi_chn_mask)) {
+		platform_dcache_all_flush();
 		hil_isr(vring_hw);
 		HIL_MEM_WRITE32((chn_ipi_info->ipi_base_addr + IPI_ISR_OFFSET), chn_ipi_info->ipi_chn_mask);
 	}
