@@ -205,7 +205,7 @@ void env_wmb()
  */
 unsigned long env_map_vatopa(void *address)
 {
-    return ((((unsigned long)address & (~( 0x0fff << 20))) | (0x08 << 24)));
+    return platform_vatopa(address);
 }
 
 /**
@@ -215,7 +215,7 @@ unsigned long env_map_vatopa(void *address)
  */
 void *env_map_patova(unsigned long address)
 {
-    return ((void *)address);
+    return platform_patova(address);
 }
 
 /**
@@ -486,6 +486,7 @@ unsigned long long env_get_timestamp(void) {
 /*========================================================= */
 /* Util data / functions for BM */
 
+extern char DBG_MSG[];
 void bm_env_isr(int vector) {
     int idx;
     struct isr_info *info;

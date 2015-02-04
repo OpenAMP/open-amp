@@ -672,4 +672,7 @@ void init_arm_stacks(void);
 #define platform_interrupt_disable(...) zc702evk_gic_interrupt_disable(__VA_ARGS__)
 #define platform_map_mem_region(...) arm_ar_map_mem_region(__VA_ARGS__)
 
+#define platform_vatopa(addr) (((unsigned long)address & (~( 0x0fff << 20))) | (0x08 << 24))
+#define platform_patova(addr) ((void *)addr)
+
 #endif /* _BAREMETAL_H */

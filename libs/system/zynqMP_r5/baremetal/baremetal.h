@@ -230,4 +230,7 @@ void disable_global_interrupts();
 #define platform_interrupt_disable(...) zynqMP_r5_gic_interrupt_disable(__VA_ARGS__)
 #define platform_map_mem_region(...) 
 
+#define platform_vatopa(addr) ((unsigned long)addr)
+#define platform_patova(addr) ((void *)addr)
+
 #endif /* _BAREMETAL_H */
