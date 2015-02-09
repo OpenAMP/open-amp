@@ -268,6 +268,7 @@ void _destroy_endpoint(struct remote_device *rdev,
     }
     env_free_memory(rp_ept);
 }
+
 /**
  * rpmsg_send_ns_message
  *
@@ -396,7 +397,7 @@ void *rpmsg_get_tx_buffer(struct remote_device *rdev, int *len,
         data = virtqueue_get_available_buffer(rdev->tvq, idx,
                         (unsigned long *) len);
     }
-    return ((void*) env_map_vatopa(data));
+    return ((void *) env_map_vatopa(data));
 }
 
 /**
@@ -513,16 +514,16 @@ void rpmsg_rx_callback(struct virtqueue *vq) {
 
     chnl_hd = rdev->rp_channels;
     if ((chnl_hd != RPMSG_NULL) && (rdev->role == RPMSG_MASTER)) {
-	rp_chnl = (struct rpmsg_channel *) chnl_hd->data;
-	if (rp_chnl->state == RPMSG_CHNL_STATE_IDLE) {
-		if (rdev->support_ns) {
-			rp_chnl->state = RPMSG_CHNL_STATE_NS;
-			rpmsg_send_ns_message(rdev, rp_chnl, RPMSG_NS_CREATE);
-		} else {
-			rp_chnl->state = RPMSG_CHNL_STATE_ACTIVE;
+		rp_chnl = (struct rpmsg_channel *) chnl_hd->data;
+		if (rp_chnl->state == RPMSG_CHNL_STATE_IDLE) {
+			if (rdev->support_ns) {
+				rp_chnl->state = RPMSG_CHNL_STATE_NS;
+				rpmsg_send_ns_message(rdev, rp_chnl, RPMSG_NS_CREATE);
+			} else {
+				rp_chnl->state = RPMSG_CHNL_STATE_ACTIVE;
+			}
+			return;
 		}
-		//return;
-	}
     }
 
     env_lock_mutex(rdev->lock);
