@@ -131,7 +131,7 @@ void Init_MPU(void)
 	addr = 0x3ED00000;
 	reg_size=REGION_4M;
 	reg_num=8;
-	attrib = DEVICE_SHARED | PRIV_RW_USER_RW   ;
+	attrib = NORM_SHARED_NCACHE | PRIV_RW_USER_RW;
 	Xil_SetAttribute(addr,reg_size,reg_num, attrib);
 
 	Xil_EnableBackgroundRegion();
