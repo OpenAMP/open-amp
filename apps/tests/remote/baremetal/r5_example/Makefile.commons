@@ -1,4 +1,4 @@
-OPENAMP:=/home/jliang/openamp/open-amp
+OPENAMP?=/home/jliang/openamp/open-amp
 PLAT := zynqMP_r5
 OS:=baremetal
 ROLE:=remote
