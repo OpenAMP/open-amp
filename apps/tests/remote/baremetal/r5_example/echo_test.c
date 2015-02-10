@@ -44,7 +44,11 @@ int main() {
 
 	remoteproc_resource_init(&rsc_info, rpmsg_channel_created, rpmsg_channel_deleted, rpmsg_read_cb,
 		&proc);
-	while (1);
+	while(1) {
+		 __asm__ ( "\
+			nop\n\t" \
+		);
+	};
 	return 0;
 }
 
