@@ -15,7 +15,6 @@ This application echoes back data that was sent to it by the master core. */
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
 static void rpmsg_read_cb(struct rpmsg_channel *, void *, int, void *, unsigned long);
-static void sleep();
 static void init_system();
 
 /* Globals */
@@ -46,7 +45,7 @@ int main() {
 		&proc);
 	while(1) {
 		 __asm__ ( "\
-			nop\n\t" \
+			wfi\n\t" \
 		);
 	};
 	return 0;
