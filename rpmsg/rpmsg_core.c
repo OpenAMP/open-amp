@@ -68,6 +68,8 @@ int rpmsg_start_ipc(struct remote_device *rdev) {
     const char *vq_names[2];
     unsigned long dev_features;
     int status;
+    struct virtqueue *vqs[2];
+    int i;
 
     virt_dev = &rdev->virt_dev;
 
@@ -103,6 +105,21 @@ int rpmsg_start_ipc(struct remote_device *rdev) {
                         RPMSG_NS_EPT_ADDR);
         if (!ns_ept) {
             return RPMSG_ERR_NO_MEM;
+        }
+    }
+
+    /* Initialize notifications for vring. */
+     if (rdev->role == RPMSG_MASTER) {
+        vqs[0] = rdev->tvq;
+        vqs[1] = rdev->rvq;
+    } else {
+        vqs[0] = rdev->rvq;
+        vqs[1] = rdev->tvq;
+    }
+    for(i = 0; i <= 1; i++) {
+        status = hil_enable_vring_notifications(i, vqs[i]);
+        if (status != RPMSG_SUCCESS) {
+            return status;
         }
     }
 

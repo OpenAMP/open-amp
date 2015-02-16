@@ -436,13 +436,6 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
         if (status != RPMSG_SUCCESS) {
             return status;
         }
-
-        /* Initialize notifications for vring. */
-        status = hil_enable_vring_notifications(idx, vqs[idx]);
-
-        if (status != RPMSG_SUCCESS) {
-            return status;
-        }
     }
 
     //FIXME - a better way to handle this , tx for master is rx for remote and vice versa.
