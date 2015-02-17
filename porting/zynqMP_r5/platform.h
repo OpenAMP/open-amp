@@ -46,9 +46,11 @@ struct ipi_info {
 };
 
 int _enable_interrupt(struct proc_vring *vring_hw);
+void _reg_ipi_after_deinit(struct proc_vring *vring_hw);
 void _notify(int cpu_id, struct proc_intr *intr_info);
 int _boot_cpu(int cpu_id, unsigned int load_addr);
 void _shutdown_cpu(int cpu_id);
 void platform_isr(int vect_id, void *data);
+void deinit_isr(int vect_id, void *data);
 
 #endif /* PLATFORM_H_ */

@@ -45,6 +45,7 @@
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops proc_ops = {
 	.enable_interrupt	= _enable_interrupt,
+	.reg_ipi_after_deinit	= _reg_ipi_after_deinit,
 	.notify			= _notify,
 	.boot_cpu		= _boot_cpu,
 	.shutdown_cpu		= _shutdown_cpu,
@@ -61,12 +62,21 @@ int _enable_interrupt(struct proc_vring *vring_hw) {
 	/* Enable IPI interrupt */
 	struct ipi_info *chn_ipi_info = (struct ipi_info *)(vring_hw->intr_info.data);
 	HIL_MEM_WRITE32((chn_ipi_info->ipi_base_addr + IPI_IER_OFFSET), chn_ipi_info->ipi_chn_mask);
-
 	/* Enable the interrupts */
 	env_enable_interrupt(vring_hw->intr_info.vect_id,
 		vring_hw->intr_info.priority,
 		vring_hw->intr_info.trigger_type);
 	return 0;
+}
+
+void _reg_ipi_after_deinit(struct proc_vring *vring_hw) {
+	struct ipi_info *chn_ipi_info = (struct ipi_info *)(vring_hw->intr_info.data);
+
+	if (vring_hw->intr_info.vect_id < 0) {
+		return;
+	}
+	env_update_isr(vring_hw->intr_info.vect_id, chn_ipi_info, deinit_isr);
+
 }
 
 void _notify(int cpu_id, struct proc_intr *intr_info) {
@@ -94,6 +104,14 @@ void platform_isr(int vect_id, void *data) {
 	if ((ipi_intr_status & chn_ipi_info->ipi_chn_mask)) {
 		platform_dcache_all_flush();
 		hil_isr(vring_hw);
+		HIL_MEM_WRITE32((chn_ipi_info->ipi_base_addr + IPI_ISR_OFFSET), chn_ipi_info->ipi_chn_mask);
+	}
+}
+
+void deinit_isr(int vect_id, void *data) {
+	struct ipi_info *chn_ipi_info = (struct ipi_info *)data;
+	unsigned int ipi_intr_status = (unsigned int)HIL_MEM_READ32(chn_ipi_info->ipi_base_addr + IPI_ISR_OFFSET);
+	if ((ipi_intr_status & chn_ipi_info->ipi_chn_mask)) {
 		HIL_MEM_WRITE32((chn_ipi_info->ipi_base_addr + IPI_ISR_OFFSET), chn_ipi_info->ipi_chn_mask);
 	}
 }

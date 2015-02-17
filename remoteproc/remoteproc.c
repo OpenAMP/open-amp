@@ -77,6 +77,7 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
             status = handle_rsc_table(rproc, rsc_info->rsc_tab, rsc_info->size);
             if (status == RPROC_SUCCESS) {
                 /* Initialize RPMSG "messaging" component */
+                *rproc_handle = rproc;
                 status = rpmsg_init(rproc->proc->cpu_id, &rproc->rdev,
                                 channel_created, channel_destroyed, default_cb,
                                 RPMSG_MASTER);
@@ -92,12 +93,10 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 
     /* Cleanup in case of error */
     if (status != RPROC_SUCCESS) {
+         *rproc_handle = 0;
         (void) remoteproc_resource_deinit(rproc);
         return status;
     }
-
-    *rproc_handle = rproc;
-
     return status;
 }
 
@@ -113,9 +112,17 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
  */
 
 int remoteproc_resource_deinit(struct remote_proc *rproc) {
-
+    int i = 0;
+    struct proc_vring *vring_hw = 0;
     if (rproc) {
         if (rproc->rdev) {
+            /* disable IPC interrupts */
+            if (rproc->proc->ops->reg_ipi_after_deinit) {
+                for(i = 0; i < 2; i++) {
+                    vring_hw = &rproc->proc->vdev.vring_info[i];
+                    rproc->proc->ops->reg_ipi_after_deinit(vring_hw);
+                }
+            }
             rpmsg_deinit(rproc->rdev);
         }
         if (rproc->proc) {
@@ -229,6 +236,7 @@ int remoteproc_init(char *fw_name, rpmsg_chnl_cb_t channel_created,
     rproc->default_cb = default_cb;
 
     *rproc_handle = rproc;
+
 
     return status;
 }

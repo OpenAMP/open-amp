@@ -379,6 +379,28 @@ void env_register_isr(int vector , void *data ,
     env_restore_interrupts();
 }
 
+void env_update_isr(int vector , void *data ,
+                void (*isr)(int vector , void *data))
+{
+    int idx;
+    struct isr_info *info;
+
+    env_disable_interrupts();
+
+    for(idx = 0; idx < ISR_COUNT; idx++)
+    {
+        info = &isr_table[idx];
+        if(info->vector == vector)
+        {
+            info->data = data;
+            info->isr = isr;
+            break;
+        }
+    }
+
+    env_restore_interrupts();
+}
+
 /**
  * env_enable_interrupt
  *
@@ -486,7 +508,6 @@ unsigned long long env_get_timestamp(void) {
 /*========================================================= */
 /* Util data / functions for BM */
 
-extern char DBG_MSG[];
 void bm_env_isr(int vector) {
     int idx;
     struct isr_info *info;

@@ -339,6 +339,9 @@ void env_restore_interrupts();
 void env_register_isr(int vector, void *data,
                 void (*isr)(int vector, void *data));
 
+void env_update_isr(int vector, void *data,
+                void (*isr)(int vector, void *data));
+
 /**
  * env_enable_interrupt
  *
