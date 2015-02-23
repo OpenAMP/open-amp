@@ -15,7 +15,6 @@ This application echoes back data that was sent to it by the master core. */
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
 static void rpmsg_read_cb(struct rpmsg_channel *, void *, int, void *, unsigned long);
-static void sleep();
 static void init_system();
 
 /* Globals */
@@ -41,9 +40,11 @@ int main() {
     remoteproc_resource_init(&rsc_info, rpmsg_channel_created, rpmsg_channel_deleted, rpmsg_read_cb,
                     &proc);
 
-    while (1) {
-        sleep();
-    }
+    while(1) {
+		 __asm__ ( "\
+			wfi\n\t" \
+		);
+	};
 
     return 0;
 }
@@ -68,14 +69,18 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
     }
 }
 
-void sleep() {
-    int i;
-    for (i = 0; i < 1000; i++);
-}
-
-
 static void init_system() {
 
+#ifdef ZYNQMP_R5
+	/* To Do -- Fix Me later */
+	/* Place the vector table -- Do we need it? */
+	/* Initialize stacks -- Do we need it? */
+	/* Initilaize GIC */
+	zynqMP_r5_gic_initialize();
+	
+	Xil_DCacheDisable();
+#else
+#ifdef ZYNQ_A9
     /* Place the vector table at the image entry point */
     arm_arch_install_isr_vector_table(RAM_VECTOR_TABLE_ADDR);
 
@@ -87,4 +92,6 @@ static void init_system() {
 
     /* Initialize GIC */
     zc702evk_gic_initialize();
+#endif
+#endif
 }

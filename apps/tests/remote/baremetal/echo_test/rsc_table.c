@@ -45,6 +45,32 @@
 /* Remote supports Name Service announcement */
 #define VIRTIO_RPMSG_F_NS           0
 
+#ifdef ZYNQMP_R5
+#define OCM_0_START                 0xFFFC0000
+#define OCM_0_LEN                   0x20000
+#define OCM_1_START                 0xFFFF0000
+#define OCM_1_LEN                   0x10000
+#define TCM_0_START_DA              0x00000000
+#define TCM_0_LEN                   0x10000
+#define TCM_0_START_PA              0xFFE00000
+#define TCM_1_START_DA              0x00020000
+#define TCM_1_LEN                   0x10000
+#define TCM_1_START_PA              0xFFE40000
+#define NUM_VRINGS                  0x02
+#define VRING_ALIGN                 0x1000
+#define RING_TX                     0x3ED00000
+#define RING_RX                     0x3ED04000
+#define VRING_SIZE                  256
+
+#define NUM_TABLE_ENTRIES           3
+#define CARVEOUT_SRC_OFFSETS        offsetof(struct remote_resource_table, ocm_0_cout), \
+							        offsetof(struct remote_resource_table, ocm_1_cout),
+
+#define CARVEOUT_SRC                {RSC_CARVEOUT, OCM_0_START, OCM_0_START, OCM_0_LEN, 0, 0, "OCM0_COUT",}, \
+					                {RSC_CARVEOUT, OCM_1_START, OCM_1_START, OCM_1_LEN, 0, 0, "ELF_DATA_COUT",},
+
+#else
+#ifdef ZYNQ_A9
 /* Resource table entries */
 #define ELF_START                   0x00000000
 #define ELF_END                     0x08000000
@@ -54,26 +80,32 @@
 #define RING_RX                     0x08004000
 #define VRING_SIZE                  256
 
+#define NUM_TABLE_ENTRIES           2
+#define CARVEOUT_SRC_OFFSETS        offsetof(struct remote_resource_table, elf_cout),
+#define CARVEOUT_SRC                { RSC_CARVEOUT, ELF_START, ELF_START, ELF_END, 0, 0, "ELF_COUT", },
+
+#endif
+#endif
+	
+
 const struct remote_resource_table __resource resources =
 {
     /* Version */
     1,
 
     /* NUmber of table entries */
-    2,
+    NUM_TABLE_ENTRIES,
     /* reserved fields */
     { 0, 0,},
 
     /* Offsets of rsc entries */
     {
-        offsetof(struct remote_resource_table, elf_cout),
+        CARVEOUT_SRC_OFFSETS
         offsetof(struct remote_resource_table, rpmsg_vdev),
     },
 
     /* End of ELF file */
-    {
-        RSC_CARVEOUT, ELF_START, ELF_START, ELF_END, 0, 0, "ELF_COUT",
-    },
+    CARVEOUT_SRC
 
     /* Virtio device entry */
     {   RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0, NUM_VRINGS, {0, 0},
