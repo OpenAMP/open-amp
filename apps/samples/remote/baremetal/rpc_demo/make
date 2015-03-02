@@ -21,7 +21,7 @@ endif
 
 $(SAMPLE_OUT): $(SAMPLEOBJFILES) 
 	@echo 'Building rpc sample for baremetal environment : $@'
-	$(LD) -Wl,-Map=rpc_demo.map -Wl,--gc-sections -T"linker_remote.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(PLAT)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(LIBS) -Wl,--end-group
+	$(LD) -Wl,-Map=rpc_demo.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(PLAT)/baremetal/linker_remote.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(PLAT)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(LIBS) -Wl,--end-group
 	@echo 'Finished building target: $@'
 
 	@echo 'Copying ELF image to firmware folder'

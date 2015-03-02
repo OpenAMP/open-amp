@@ -40,11 +40,11 @@ ENTRY(_vector_table)
 
 SECTIONS
 {
-/*
-.vectors 0x00000000 : {
+
+.vectors : {
    KEEP (*(.vectors))
-}
-*/
+} > ps8_ocm_ram_1_S_AXI_BASEADDR
+
 
 _binary_firmware1_start = 0;
 _binary_firmware1_end = 0;
@@ -52,7 +52,7 @@ _binary_firmware2_start = 0;
 _binary_firmware2_end = 0;
 
 .text : {
-   *(.vectors)
+   /* *(.vectors) */
    *(.boot)
    *(.text)
    *(.text.*)
@@ -65,23 +65,23 @@ _binary_firmware2_end = 0;
    *(.vfp11_veneer)
    *(.ARM.extab)
    *(.gnu.linkonce.armextab.*)
-} > ps8_ocm_ram_1_S_AXI_BASEADDR
+} > ps8_ocm_ram_0_S_AXI_BASEADDR
 
 .init : {
    KEEP (*(.init))
-} > ps8_ocm_ram_1_S_AXI_BASEADDR
+} > ps8_ocm_ram_0_S_AXI_BASEADDR
 
 .fini : {
    KEEP (*(.fini))
-} > ps8_ocm_ram_1_S_AXI_BASEADDR
+} > ps8_ocm_ram_0_S_AXI_BASEADDR
 
 .interp : {
    KEEP (*(.interp))
-} > ps8_ocm_ram_1_S_AXI_BASEADDR
+} > ps8_ocm_ram_0_S_AXI_BASEADDR
 
 .note-ABI-tag : {
    KEEP (*(.note-ABI-tag))
-} > ps8_ocm_ram_1_S_AXI_BASEADDR
+} > ps8_ocm_ram_0_S_AXI_BASEADDR
 
 .rodata : {
    __rodata_start = .;
@@ -275,7 +275,7 @@ _SDA2_BASE_ = __sdata2_start + ((__sbss2_end - __sdata2_start) / 2 );
    . += _HEAP_SIZE;
    _heap_end = .;
    HeapLimit = .;
-} > ps8_ocm_ram_0_S_AXI_BASEADDR
+} > ps8_ocm_ram_1_S_AXI_BASEADDR
 
 .stack (NOLOAD) : {
    . = ALIGN(16);
@@ -303,7 +303,7 @@ _SDA2_BASE_ = __sdata2_start + ((__sbss2_end - __sdata2_start) / 2 );
    . += _UNDEF_STACK_SIZE;
    . = ALIGN(16);
    __undef_stack = .;
-} > ps8_ocm_ram_0_S_AXI_BASEADDR
+} > ps8_ocm_ram_1_S_AXI_BASEADDR
 
 _end = .;
 }
