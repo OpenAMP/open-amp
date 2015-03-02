@@ -20,28 +20,28 @@ typedef void (*rpc_shutdown_cb)(struct rpmsg_channel *);
 
 struct _rpc_data
 {
-    struct rpmsg_channel* rpmsg_chnl;
-    struct rpmsg_endpoint* rp_ept;
-    void* rpc_lock;
-    void* sync_lock;
-    struct _sys_rpc* rpc;
-    struct _sys_rpc* rpc_response;
-    rpc_shutdown_cb shutdown_cb;
+	struct rpmsg_channel* rpmsg_chnl;
+	struct rpmsg_endpoint* rp_ept;
+	void* rpc_lock;
+	void* sync_lock;
+	struct _sys_rpc* rpc;
+	struct _sys_rpc* rpc_response;
+	rpc_shutdown_cb shutdown_cb;
 };
 
 struct _sys_call_args
 {
-    int int_field1;
-    int int_field2;
-    unsigned long   data_len;
-    char data[0];
+	int int_field1;
+	int int_field2;
+	unsigned int   data_len;
+	char data[0];
 };
 
 /* System call rpc data structure */
 struct _sys_rpc
 {
-    unsigned long   id;
-    struct _sys_call_args   sys_call_args;
+	unsigned int   id;
+	struct _sys_call_args   sys_call_args;
 };
 
 

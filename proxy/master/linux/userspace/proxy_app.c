@@ -107,6 +107,7 @@ int handle_write(struct _sys_rpc *rpc)
 	bytes_written = write(rpc->sys_call_args.int_field1,
 				rpc->sys_call_args.data,
 				rpc->sys_call_args.int_field2);
+	printf("master: fileid=%d, int_field2=%d\n",rpc->sys_call_args.int_field1, rpc->sys_call_args.int_field2);
 
 	/* Construct rpc response */
 	proxy->rpc_response->id = WRITE_SYSCALL_ID;
@@ -186,12 +187,14 @@ void kill_action_handler(int signum)
 	free(proxy);
 
 	/* Unload drivers */
+#if 0
 	system("modprobe -r rpmsg_proxy_dev_driver");
 	system("modprobe -r virtio_rpmsg_bus");
 	system("modprobe -r zynq_remoteproc_driver");
 	system("modprobe -r remoteproc");
 	system("modprobe -r virtio_ring");
 	system("modprobe -r virtio");
+#endif
 }
 
 void display_help_msg()
@@ -234,6 +237,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+#if 0
 	/* Bring up remote firmware */
 	printf("\r\nMaster>Loading remote firmware\r\n");
 	system(cp_cmd);
@@ -242,6 +246,7 @@ int main(int argc, char *argv[])
 	/* Create rpmsg proxy device */
 	printf("\r\nMaster>Create rpmsg proxy device\r\n");
 	system("modprobe rpmsg_proxy_dev_driver");
+#endif
 
 	/* Allocate memory for proxy data structure */
 	proxy = malloc(sizeof(struct _proxy_data));
@@ -249,7 +254,7 @@ int main(int argc, char *argv[])
 	/* Open proxy rpmsg device */
 	printf("\r\nMaster>Opening rpmsg proxy device\r\n");
 	do {
-		proxy->rpmsg_proxy_fd = open("/dev/rpmsg_proxy", O_RDWR);
+		proxy->rpmsg_proxy_fd = open("/dev/rpmsg0", O_RDWR);
 
 	} while (proxy->rpmsg_proxy_fd < 0);
 
@@ -262,8 +267,10 @@ int main(int argc, char *argv[])
 	printf("\r\nMaster>RPC service started !!\r\n");
 	while (proxy->active) {
 		/* Block on read for rpc requests from remote context */
-		bytes_rcvd = read(proxy->rpmsg_proxy_fd, proxy->rpc,
+		do {
+			bytes_rcvd = read(proxy->rpmsg_proxy_fd, proxy->rpc,
 					RPC_BUFF_SIZE);
+		} while(bytes_rcvd <= 0);
 
 		/* User event, break! */
 		if (!proxy->active)
@@ -300,12 +307,14 @@ int main(int argc, char *argv[])
 	free(proxy);
 
 	/* Unload drivers */
+#if 0
 	system("modprobe -r rpmsg_proxy_dev_driver");
 	system("modprobe -r virtio_rpmsg_bus");
 	system("modprobe -r zynq_remoteproc_driver");
 	system("modprobe -r remoteproc");
 	system("modprobe -r virtio_ring");
 	system("modprobe -r virtio");
+#endif
 
 	return 0;
 }
