@@ -4,13 +4,13 @@
 
 include ../Makefile.commons
 
-all:			
-ifeq ($(OS),baremetal) 
+all:
+ifeq ($(OS),baremetal)
 ifeq ($(ROLE),remote)
 	#make  -f samples/remote/baremetal/matrix_multiply/make
 	make  -C tests/remote/baremetal/echo_test -f make
 	#make  -f tests/remote/baremetal/func_test_suite/make
-	#make  -f samples/remote/baremetal/rpc_demo/make
+	make  -C samples/remote/baremetal/rpc_demo -f make
 endif
 endif
 
@@ -20,13 +20,13 @@ linux_remote:
 	make  -f tests/master/baremetal/func_test_suite/make
 
 
-clean:		
+clean:
 ifeq ($(OS),baremetal)
 ifeq ($(ROLE),remote)
 	#make  -f samples/remote/baremetal/matrix_multiply/make clean
 	make  -C tests/remote/baremetal/echo_test -f make clean
 	#make  -f tests/remote/baremetal/func_test_suite/make clean
-	#make  -f samples/remote/baremetal/rpc_demo/make clean
+	make  -C samples/remote/baremetal/rpc_demo -f make clean
 endif
 endif
 
