@@ -16,50 +16,13 @@ static struct _rpc_data* rpc_data;
 static unsigned int rpc_data_synclock = 0;
 int get_response = 0;
 
-static inline int rpc_aquire_spin_lock(void *plock)
-{
-	volatile unsigned int retVal = 0;
-	const unsigned int lockVal = 0;
-	__asm__ (
-			"1:                                \n\t"
-			"LDREX  %[retVal], [%[plock]]      \n\t"
-			"CMP    %[retVal], #0              \n\t"
-			"BEQ    1b                         \n\t"
-			"2:                                 \n\t"
-			"STREX  %[retVal], %[lockVal], [%[plock]] \n\t"
-			"CMP    %[retVal], #0                     \n\t"
-			"BNE    1b                         \n\t"
-			"DMB                               \n\t"
-			: [retVal] "=&r"(retVal)
-			: [lockVal] "r"(lockVal), [plock] "r"(plock)
-			: "cc", "memory"
-		);
-}
-
-static inline int rpc_release_spin_lock(void *plock)
-{
-	volatile unsigned int retVal = 0;
-	const unsigned int lockVal = 1;
-	__asm__ (
-			"1:                                \n\t"
-			"LDREX  %[retVal], [%[plock]]      \n\t"
-			"STREX  %[retVal], %[lockVal], [%[plock]] \n\t"
-			"CMP    %[retVal], #0                     \n\t"
-			"BNE    1b                         \n\t"
-			"DMB                               \n\t"
-			: [retVal] "=&r"(retVal)
-			: [lockVal] "r"(lockVal), [plock] "r"(plock)
-			: "cc", "memory"
-		);
-}
-
 int send_rpc(void *data, int len);
 static int rpc_count=0;
 
 void rpc_cb(struct rpmsg_channel *rtl_rp_chnl, void *data, int len, void * priv,
 			unsigned long src) {
 	memcpy(rpc_data->rpc_response, data, len);
-	rpc_release_spin_lock(rpc_data->sync_lock);
+	env_release_sync_lock(rpc_data->sync_lock);
 	get_response=1;
 
 
@@ -148,7 +111,7 @@ int _open(const char * filename, int flags, int mode) {
 	env_unlock_mutex(rpc_data->rpc_lock);
 
 	/* Wait for response from proxy on master */
-	rpc_aquire_spin_lock(rpc_data->sync_lock);
+	env_acquire_sync_lock(rpc_data->sync_lock);
 
 	/* Obtain return args and return to caller */
 	if (rpc_data->rpc_response->id == OPEN_SYSCALL_ID) {
@@ -189,7 +152,7 @@ int _read(int fd, char * buffer, int buflen) {
 	env_unlock_mutex(rpc_data->rpc_lock);
 
 	/* Wait for response from proxy on master */
-	rpc_aquire_spin_lock(rpc_data->sync_lock);
+	env_acquire_sync_lock(rpc_data->sync_lock);
 
 	/* Obtain return args and return to caller */
 	if (rpc_data->rpc_response->id == READ_SYSCALL_ID) {
@@ -237,7 +200,7 @@ int _write(int fd, const char * ptr, int len) {
 	send_rpc((void*) rpc_data->rpc, payload_size);
 	env_unlock_mutex(rpc_data->rpc_lock);
 
-	rpc_aquire_spin_lock(rpc_data->sync_lock);
+	env_acquire_sync_lock(rpc_data->sync_lock);
 
 	if (rpc_data->rpc_response->id == WRITE_SYSCALL_ID) {
 		retval = rpc_data->rpc_response->sys_call_args.int_field1;
@@ -272,7 +235,7 @@ int _close(int fd) {
 	env_unlock_mutex(rpc_data->rpc_lock);
 
 	/* Wait for response from proxy on master */
-	rpc_aquire_spin_lock(rpc_data->sync_lock);
+	env_acquire_sync_lock(rpc_data->sync_lock);
 
 	if (rpc_data->rpc_response->id == CLOSE_SYSCALL_ID) {
 		retval = rpc_data->rpc_response->sys_call_args.int_field1;
