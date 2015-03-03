@@ -72,7 +72,7 @@ int Intr_Enable_Flag = 1;
  *
  */
 int env_init() {
-    return 0;
+	return 0;
 }
 
 /**
@@ -84,7 +84,7 @@ int env_init() {
  */
 
 int env_deinit() {
-    return 0;
+	return 0;
 }
 /**
  * env_allocate_memory - implementation
@@ -93,7 +93,7 @@ int env_deinit() {
  */
 void *env_allocate_memory(unsigned int size)
 {
-    return (malloc(size));
+	return (malloc(size));
 }
 
 /**
@@ -103,10 +103,10 @@ void *env_allocate_memory(unsigned int size)
  */
 void env_free_memory(void *ptr)
 {
-    if (ptr != NULL)
-    {
-        free(ptr);
-    }
+	if (ptr != NULL)
+	{
+		free(ptr);
+	}
 }
 
 /**
@@ -119,7 +119,7 @@ void env_free_memory(void *ptr)
  */
 void env_memset(void *ptr, int value, unsigned long size)
 {
-    memset(ptr, value, size);
+	memset(ptr, value, size);
 }
 
 /**
@@ -131,7 +131,7 @@ void env_memset(void *ptr, int value, unsigned long size)
  * @param len
  */
 void env_memcpy(void *dst, void const * src, unsigned long len) {
-    memcpy(dst,src,len);
+	memcpy(dst,src,len);
 }
 
 /**
@@ -143,7 +143,7 @@ void env_memcpy(void *dst, void const * src, unsigned long len) {
  */
 
 int env_strcmp(const char *dst, const char *src){
-    return (strcmp(dst, src));
+	return (strcmp(dst, src));
 }
 
 /**
@@ -156,7 +156,7 @@ int env_strcmp(const char *dst, const char *src){
  */
 void env_strncpy(char * dest, const char *src, unsigned long len)
 {
-    strncpy(dest, src, len);
+	strncpy(dest, src, len);
 }
 
 /**
@@ -169,7 +169,7 @@ void env_strncpy(char * dest, const char *src, unsigned long len)
  */
 int env_strncmp(char * dest, const char *src, unsigned long len)
 {
-    return (strncmp(dest, src, len));
+	return (strncmp(dest, src, len));
 }
 
 /**
@@ -179,7 +179,7 @@ int env_strncmp(char * dest, const char *src, unsigned long len)
  */
 void env_mb()
 {
-    MEM_BARRIER();
+	MEM_BARRIER();
 }
 
 /**
@@ -187,7 +187,7 @@ void env_mb()
  */
 void env_rmb()
 {
-    MEM_BARRIER();
+	MEM_BARRIER();
 }
 
 /**
@@ -195,7 +195,7 @@ void env_rmb()
  */
 void env_wmb()
 {
-    MEM_BARRIER();
+	MEM_BARRIER();
 }
 
 /**
@@ -205,7 +205,7 @@ void env_wmb()
  */
 unsigned long env_map_vatopa(void *address)
 {
-    return platform_vatopa(address);
+	return platform_vatopa(address);
 }
 
 /**
@@ -215,7 +215,7 @@ unsigned long env_map_vatopa(void *address)
  */
 void *env_map_patova(unsigned long address)
 {
-    return platform_patova(address);
+	return platform_patova(address);
 }
 
 /**
@@ -226,7 +226,7 @@ void *env_map_patova(unsigned long address)
  */
 int env_create_mutex(void **lock, int count)
 {
-    return 0;
+	return 0;
 }
 
 /**
@@ -247,7 +247,7 @@ void env_delete_mutex(void *lock)
  */
 void env_lock_mutex(void *lock)
 {
-    env_disable_interrupts();
+	env_disable_interrupts();
 }
 
 /**
@@ -258,7 +258,7 @@ void env_lock_mutex(void *lock)
 
 void env_unlock_mutex(void *lock)
 {
-    env_restore_interrupts();
+	env_restore_interrupts();
 }
 
 
@@ -335,10 +335,10 @@ void env_sleep_msec(int num_msec)
  */
 void env_disable_interrupts()
 {
-    if(Intr_Enable_Flag == 1) {
-        disable_global_interrupts();
-        Intr_Enable_Flag = 0;
-    }
+	if(Intr_Enable_Flag == 1) {
+		disable_global_interrupts();
+		Intr_Enable_Flag = 0;
+	}
 }
 
 /**
@@ -349,10 +349,10 @@ void env_disable_interrupts()
  */
 void env_restore_interrupts()
 {
-    if(Intr_Enable_Flag == 0) {
-        restore_global_interrupts();
-        Intr_Enable_Flag = 1;
-    }
+	if(Intr_Enable_Flag == 0) {
+		restore_global_interrupts();
+		Intr_Enable_Flag = 1;
+	}
 }
 
 /**
@@ -364,39 +364,39 @@ void env_restore_interrupts()
  * @param isr    - interrupt handler
  */
 void env_register_isr(int vector , void *data ,
-                void (*isr)(int vector , void *data))
+			void (*isr)(int vector , void *data))
 {
-    env_disable_interrupts();
+	env_disable_interrupts();
 
-    if(Intr_Count < ISR_COUNT)
-    {
-        /* Save interrupt data */
-        isr_table[Intr_Count].vector = vector;
-        isr_table[Intr_Count].data = data;
-        isr_table[Intr_Count++].isr = isr;
-    }
+	if(Intr_Count < ISR_COUNT)
+	{
+		/* Save interrupt data */
+		isr_table[Intr_Count].vector = vector;
+		isr_table[Intr_Count].data = data;
+		isr_table[Intr_Count++].isr = isr;
+	}
 
-    env_restore_interrupts();
+	env_restore_interrupts();
 }
 
 void env_update_isr(int vector , void *data ,
-                void (*isr)(int vector , void *data))
+			void (*isr)(int vector , void *data))
 {
-    int idx;
-    struct isr_info *info;
+	int idx;
+	struct isr_info *info;
 
-    env_disable_interrupts();
+	env_disable_interrupts();
 
-    for(idx = 0; idx < ISR_COUNT; idx++)
-    {
-        info = &isr_table[idx];
-        if(info->vector == vector)
-        {
-            info->data = data;
-            info->isr = isr;
-            break;
-        }
-    }
+	for(idx = 0; idx < ISR_COUNT; idx++)
+	{
+		info = &isr_table[idx];
+		if(info->vector == vector)
+		{
+			info->data = data;
+			info->isr = isr;
+			break;
+		}
+	}
 
     env_restore_interrupts();
 }
@@ -412,24 +412,24 @@ void env_update_isr(int vector , void *data ,
  */
 
 void env_enable_interrupt(unsigned int vector , unsigned int priority ,
-                unsigned int polarity)
+			unsigned int polarity)
 {
-    int idx;
+	int idx;
 
-    env_disable_interrupts();
+	env_disable_interrupts();
 
-    for(idx = 0; idx < ISR_COUNT; idx++)
-    {
-        if(isr_table[idx].vector == vector)
-        {
-            isr_table[idx].priority = priority;
-            isr_table[idx].type = polarity;
-            platform_interrupt_enable(vector, polarity, priority);
-            break;
-        }
-    }
+	for(idx = 0; idx < ISR_COUNT; idx++)
+	{
+		if(isr_table[idx].vector == vector)
+		{
+			isr_table[idx].priority = priority;
+			isr_table[idx].type = polarity;
+			platform_interrupt_enable(vector, polarity, priority);
+			break;
+		}
+	}
 
-    env_restore_interrupts();
+	env_restore_interrupts();
 }
 
 /**
@@ -442,7 +442,7 @@ void env_enable_interrupt(unsigned int vector , unsigned int priority ,
 
 void env_disable_interrupt(unsigned int vector)
 {
-    platform_interrupt_disable(vector);
+	platform_interrupt_disable(vector);
 }
 
 /**
@@ -457,26 +457,26 @@ void env_disable_interrupt(unsigned int vector)
  */
 
 void env_map_memory(unsigned int pa, unsigned int va, unsigned int size,
-                unsigned int flags) {
-    int is_mem_mapped = 0;
-    int cache_type = 0;
+			unsigned int flags) {
+	int is_mem_mapped = 0;
+	int cache_type = 0;
 
-    if ((flags & (0x0f << 4 )) == MEM_MAPPED)
-    {
-        is_mem_mapped = 1;
-    }
+	if ((flags & (0x0f << 4 )) == MEM_MAPPED)
+	{
+		is_mem_mapped = 1;
+	}
 
-    if ((flags & 0x0f) == WB_CACHE) {
-        cache_type = WRITEBACK;
-    }
-    else if((flags & 0x0f) == WT_CACHE) {
-        cache_type = WRITETHROUGH;
-    }
-    else {
-        cache_type = NOCACHE;
-    }
+	if ((flags & 0x0f) == WB_CACHE) {
+		cache_type = WRITEBACK;
+	}
+	else if((flags & 0x0f) == WT_CACHE) {
+		cache_type = WRITETHROUGH;
+	}
+	else {
+		cache_type = NOCACHE;
+	}
 
-    platform_map_mem_region(va, pa, size, is_mem_mapped, cache_type);
+	platform_map_mem_region(va, pa, size, is_mem_mapped, cache_type);
 }
 
 /**
@@ -487,8 +487,8 @@ void env_map_memory(unsigned int pa, unsigned int va, unsigned int size,
  */
 
 void env_disable_cache() {
-    platform_cache_all_flush_invalidate();
-    platform_cache_disable();
+	platform_cache_all_flush_invalidate();
+	platform_cache_disable();
 }
 
 /**
@@ -501,52 +501,53 @@ void env_disable_cache() {
  */
 unsigned long long env_get_timestamp(void) {
 
-    /* TODO: Provide implementation for baremetal*/
-    return 0;
+	/* TODO: Provide implementation for baremetal*/
+	return 0;
 }
 
 /*========================================================= */
 /* Util data / functions for BM */
 
 void bm_env_isr(int vector) {
-    int idx;
-    struct isr_info *info;
+	int idx;
+	struct isr_info *info;
 
-    env_disable_interrupt(vector);
-    for(idx = 0; idx < ISR_COUNT; idx++)
-    {
-        info = &isr_table[idx];
-        if(info->vector == vector)
-        {
-            info->isr(info->vector , info->data);
-            env_enable_interrupt(info->vector , info->priority, info->type);
-            break;
-        }
-    }
+	env_disable_interrupt(vector);
+	for(idx = 0; idx < ISR_COUNT; idx++)
+	{
+		info = &isr_table[idx];
+		if(info->vector == vector)
+		{
+			 info->isr(info->vector , info->data);
+			 env_enable_interrupt(info->vector , info->priority, info->type);
+			 break;
+		}
+	}
 }
 
 static inline unsigned int xchg(void* plock, unsigned int lockVal)
 {
-    volatile unsigned int retVal = 0;
+	volatile unsigned int tmpVal = 0;
+	volatile unsigned int tmpVal1 = 0;
 
 #ifdef __GNUC__
 
 
-    asm (
-            "1:                                \n\t"
-            "LDREX  %[retVal], [%[plock]]      \n\t"
-            "STREX  r4, %[lockVal], [%[plock]] \n\t"
-            "CMP    r4, #0                     \n\t"
-            "BNE    1b                         \n\t"
-            "DMB                               \n\t"
-            : [retVal] "=&r"(retVal)
-            : [lockVal] "r"(lockVal), [plock] "r"(plock)
-            : "cc", "memory"
-        );
+	asm (
+			"1:                                \n\t"
+			"LDREX  %[tmpVal], [%[plock]]      \n\t"
+			"STREX  %[tmpVal1], %[lockVal], [%[plock]] \n\t"
+			"CMP    %[tmpVal1], #0                     \n\t"
+			"BNE    1b                         \n\t"
+			"DMB                               \n\t"
+			: [tmpVal] "=&r"(tmpVal)
+			: [tmpVal1] "r" (tmpVal1), [lockVal] "r"(lockVal), [plock] "r"(plock)
+			: "cc", "memory"
+		);
 
 #endif
 
-    return retVal;
+	return tmpVal;
 }
 
 /**
@@ -556,12 +557,12 @@ static inline unsigned int xchg(void* plock, unsigned int lockVal)
  */
 static void acquire_spin_lock(void *plock)
 {
-    const int lockVal = 0;
-    unsigned int retVal;
+	const int lockVal = 0;
+	volatile unsigned int retVal;
 
-    do {
-        retVal = xchg(plock, lockVal);
-    } while (retVal==lockVal);
+	do {
+		retVal = xchg(plock, lockVal);
+	} while (retVal==lockVal);
 }
 
 /**
@@ -571,5 +572,5 @@ static void release_spin_lock(void *plock)
 {
 	MEM_BARRIER();
 
-    *((int *)plock) = 1;
+	xchg(plock, 1);
 }
