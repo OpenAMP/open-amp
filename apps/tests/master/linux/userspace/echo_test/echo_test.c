@@ -39,24 +39,32 @@ struct _payload *r_payload;
 #define RPMSG_GET_AVAIL_DATA_SIZE 2
 #define RPMSG_GET_FREE_SPACE 3
 
-#define MAX_RPMSG_BUFF_SIZE 512
+#define RPMSG_HEADER_LEN 16
+#define MAX_RPMSG_BUFF_SIZE (512 - RPMSG_HEADER_LEN)
 #define PAYLOAD_MIN_SIZE	1
 #define PAYLOAD_MAX_SIZE	(MAX_RPMSG_BUFF_SIZE - 24)
 #define NUM_PAYLOADS		(PAYLOAD_MAX_SIZE/PAYLOAD_MIN_SIZE)
+
+
 
 int main(int argc, char *argv[])
 {
 	int flag = 1;
 	int shutdown_msg = SHUTDOWN_MSG;
-	int cmd, ret, i;
-	unsigned int size, bytes_rcvd, bytes_sent;
+	int cmd, ret, i,j, expect_rnum, rnum;
+	int size, bytes_rcvd, bytes_sent;
 	err_cnt = 0;
 
 	printf("\r\n Echo test start \r\n");
 
 	printf("\r\n Open rpmsg dev! \r\n");
 
-	fd = open("/dev/rpmsg", O_RDWR);
+	fd = open("/dev/rpmsg0", O_RDWR | O_NONBLOCK);
+
+	if (fd < 0) {
+		perror("Failed to open rpmsg file /dev/rpmsg0.");
+		return -1;
+	}
 
 	printf("\r\n Query internal info .. \r\n");
 
@@ -67,6 +75,14 @@ int main(int argc, char *argv[])
 	ioctl(fd, RPMSG_GET_FREE_SPACE, &size);
 
 	printf(" rpmsg kernel fifo free space = %u \r\n", size);
+
+	i_payload = (struct _payload *)malloc(2 * sizeof(unsigned long) + PAYLOAD_MAX_SIZE);
+	r_payload = (struct _payload *)malloc(2 * sizeof(unsigned long) + PAYLOAD_MAX_SIZE);
+
+	if (i_payload == 0 || r_payload == 0) {
+		printf("ERROR: Failed to allocate memory for payload.\n");
+		return -1;
+	}
 
 	while (flag == 1) {
 		printf("\r\n **************************************** \r\n");
@@ -88,10 +104,10 @@ int main(int argc, char *argv[])
 		}
 
 		if (cmd == 1) {
+			expect_rnum = 0;
+			rnum = 0;
 			for (i = 0, size = PAYLOAD_MIN_SIZE; i < NUM_PAYLOADS;
 			i++, size++) {
-				i_payload = malloc(
-				2 * sizeof(unsigned long) + size);
 				i_payload->num = i;
 				i_payload->size = size;
 
@@ -108,19 +124,22 @@ int main(int argc, char *argv[])
 				if (bytes_sent <= 0) {
 					printf("\r\n Error sending data");
 					printf(" .. \r\n");
-					free(i_payload);
 					break;
 				}
+				expect_rnum++;
+				printf("echo test: sent : %d\n", bytes_sent);
 
-				r_payload = malloc(
-				(2 * sizeof(unsigned long)) + i_payload->size);
-
+				r_payload->num = 0;
 				bytes_rcvd = read(fd, r_payload,
-				(2 * sizeof(unsigned long)) + i_payload->size);
-
+						(2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
+				while (bytes_rcvd <= 0) {
+					usleep(10000);
+					bytes_rcvd = read(fd, r_payload,
+						(2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
+				}
 				printf(" received payload number ");
-				printf("%d of size %d \r\n", r_payload->num,
-				bytes_rcvd);
+				printf("%d of size %d \r\n", r_payload->num, bytes_rcvd);
+				rnum = r_payload->num + 1;
 
 				/* Validate data buffer integrity. */
 				for (i = 0; i < r_payload->size; i++) {
@@ -132,9 +151,9 @@ int main(int argc, char *argv[])
 						break;
 					}
 				}
+				bytes_rcvd = read(fd, r_payload,
+				(2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
 
-				free(i_payload);
-				free(r_payload);
 			}
 
 			printf("\r\n **********************************");
@@ -154,6 +173,9 @@ int main(int argc, char *argv[])
 			printf("\r\n invalid command! \r\n");
 		}
 	}
+
+	free(i_payload);
+	free(r_payload);
 
 	close(fd);
 

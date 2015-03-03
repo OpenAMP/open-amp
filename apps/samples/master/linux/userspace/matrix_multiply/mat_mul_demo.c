@@ -22,8 +22,8 @@
 #define SHUTDOWN_MSG	0xEF56A55A
 
 struct _matrix {
-	unsigned long size;
-	unsigned long elements[MATRIX_SIZE][MATRIX_SIZE];
+	unsigned int size;
+	unsigned int elements[MATRIX_SIZE][MATRIX_SIZE];
 };
 
 static void matrix_print(struct _matrix *m)
@@ -75,8 +75,8 @@ static pthread_t ui_thread, compute_thread;
 static pthread_mutex_t sync_lock;
 
 static int fd, compute_flag;
-static struct _matrix *i_matrix;
-static struct _matrix *r_matrix;
+static struct _matrix i_matrix[2];
+static struct _matrix r_matrix;
 
 #define RPMSG_GET_KFIFO_SIZE 1
 #define RPMSG_GET_FREE_SPACE 3
@@ -113,17 +113,13 @@ void *ui_thread_entry(void *ptr)
 			printf("a read() from rpmsg device \r\n");
 			printf("\r\n Generating random matrices now ... \r\n");
 
-			i_matrix = malloc(sizeof(*i_matrix)*2);
-
 			generate_matrices(2, 6, i_matrix);
 
 			printf("\r\n Writing generated matrices to rpmsg ");
 			printf("rpmsg device, %d bytes written .. \r\n",
-					sizeof(*i_matrix)*2);
+					sizeof(i_matrix));
 
-			write(fd, i_matrix, sizeof(*i_matrix)*2);
-
-			free(i_matrix);
+			write(fd, i_matrix, sizeof(i_matrix));
 
 			/* adding this so the threads
 			dont overlay the strings they print */
@@ -149,16 +145,15 @@ void *compute_thread_entry(void *ptr)
 	pthread_mutex_lock(&sync_lock);
 
 	while (compute_flag == 1) {
-		r_matrix = malloc(sizeof(*r_matrix));
 
-		bytes_rcvd = read(fd, r_matrix, sizeof(*r_matrix));
+		do {
+			bytes_rcvd = read(fd, &r_matrix, sizeof(r_matrix));
+		} while (bytes_rcvd < sizeof(r_matrix));
 
 		printf("\r\n Received results! - %d bytes from ", bytes_rcvd);
 		printf("rpmsg device (transmitted from remote context) \r\n");
 
-		matrix_print(r_matrix);
-
-		free(r_matrix);
+		matrix_print(&r_matrix);
 
 		pthread_mutex_lock(&sync_lock);
 	}
@@ -175,7 +170,7 @@ int main(int argc, char *argv[])
 
 	printf("\r\n Open rpmsg dev! \r\n");
 
-	fd = open("/dev/rpmsg", O_RDWR);
+	fd = open("/dev/rpmsg0", O_RDWR);
 
 	printf("\r\n Query internal info .. \r\n");
 

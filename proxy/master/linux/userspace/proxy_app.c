@@ -19,7 +19,7 @@ struct _proxy_data {
 };
 
 static struct _proxy_data *proxy;
-char fw_dst_path[] = "/lib/firmware/firmware";
+char fw_dst_path[] = "/lib/firmware/r5_image_rpc_demo";
 char cp_cmd[512];
 
 int handle_open(struct _sys_rpc *rpc)
@@ -107,7 +107,6 @@ int handle_write(struct _sys_rpc *rpc)
 	bytes_written = write(rpc->sys_call_args.int_field1,
 				rpc->sys_call_args.data,
 				rpc->sys_call_args.int_field2);
-	printf("master: fileid=%d, int_field2=%d\n",rpc->sys_call_args.int_field1, rpc->sys_call_args.int_field2);
 
 	/* Construct rpc response */
 	proxy->rpc_response->id = WRITE_SYSCALL_ID;
@@ -127,7 +126,7 @@ int handle_rpc(struct _sys_rpc *rpc)
 	int retval;
 
 	/* Handle RPC */
-	switch (rpc->id) {
+	switch ((int)(rpc->id)) {
 	case OPEN_SYSCALL_ID:
 	{
 		retval = handle_open(rpc);
@@ -150,7 +149,7 @@ int handle_rpc(struct _sys_rpc *rpc)
 	}
 	default:
 	{
-		printf("\r\nMaster>Err:Invalid RPC sys call ID! \r\n");
+		printf("\r\nMaster>Err:Invalid RPC sys call ID: %d:%d! \r\n", rpc->id,WRITE_SYSCALL_ID);
 		retval = -1;
 		break;
 	}
@@ -163,6 +162,7 @@ int terminate_rpc_app()
 {
 	int bytes_written;
 	int msg = TERM_SYSCALL_ID;
+	printf ("Master> sending shutdown signal.\n");
 	bytes_written = write(proxy->rpmsg_proxy_fd, &msg, sizeof(int));
 	return bytes_written;
 }
@@ -170,6 +170,7 @@ int terminate_rpc_app()
 void exit_action_handler(int signum)
 {
 	proxy->active = 0;
+	printf("%s\n", __func__);
 }
 
 void kill_action_handler(int signum)
@@ -178,6 +179,9 @@ void kill_action_handler(int signum)
 
 	/* Send shutdown signal to remote application */
 	terminate_rpc_app();
+
+	/* wait for a while to let the remote finish cleanup */
+	sleep(1);
 	/* Close proxy rpmsg device */
 	close(proxy->rpmsg_proxy_fd);
 
@@ -187,14 +191,12 @@ void kill_action_handler(int signum)
 	free(proxy);
 
 	/* Unload drivers */
-#if 0
 	system("modprobe -r rpmsg_proxy_dev_driver");
 	system("modprobe -r virtio_rpmsg_bus");
-	system("modprobe -r zynq_remoteproc_driver");
+	system("modprobe -r zynqmp_r5_remoteproc");
 	system("modprobe -r remoteproc");
 	system("modprobe -r virtio_ring");
 	system("modprobe -r virtio");
-#endif
 }
 
 void display_help_msg()
@@ -237,16 +239,14 @@ int main(int argc, char *argv[])
 		}
 	}
 
-#if 0
 	/* Bring up remote firmware */
 	printf("\r\nMaster>Loading remote firmware\r\n");
 	system(cp_cmd);
-	system("modprobe zynq_remoteproc_driver");
+	system("modprobe zynqmp_r5_remoteproc firmware=r5_image_rpc_demo");
 
 	/* Create rpmsg proxy device */
 	printf("\r\nMaster>Create rpmsg proxy device\r\n");
 	system("modprobe rpmsg_proxy_dev_driver");
-#endif
 
 	/* Allocate memory for proxy data structure */
 	proxy = malloc(sizeof(struct _proxy_data));
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 	/* Open proxy rpmsg device */
 	printf("\r\nMaster>Opening rpmsg proxy device\r\n");
 	do {
-		proxy->rpmsg_proxy_fd = open("/dev/rpmsg0", O_RDWR);
+		proxy->rpmsg_proxy_fd = open("/dev/rpmsg_proxy0", O_RDWR);
 
 	} while (proxy->rpmsg_proxy_fd < 0);
 
@@ -270,6 +270,8 @@ int main(int argc, char *argv[])
 		do {
 			bytes_rcvd = read(proxy->rpmsg_proxy_fd, proxy->rpc,
 					RPC_BUFF_SIZE);
+			if (!proxy->active)
+				break;
 		} while(bytes_rcvd <= 0);
 
 		/* User event, break! */
@@ -307,14 +309,12 @@ int main(int argc, char *argv[])
 	free(proxy);
 
 	/* Unload drivers */
-#if 0
 	system("modprobe -r rpmsg_proxy_dev_driver");
 	system("modprobe -r virtio_rpmsg_bus");
-	system("modprobe -r zynq_remoteproc_driver");
+	system("modprobe -r zynqmp_r5_remoteproc");
 	system("modprobe -r remoteproc");
 	system("modprobe -r virtio_ring");
 	system("modprobe -r virtio");
-#endif
 
 	return 0;
 }

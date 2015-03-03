@@ -27,24 +27,9 @@
 #include <linux/kthread.h>
 #include <linux/ioctl.h>
 #include <linux/errno.h>
-
-static struct class *rpmsg_class;
-static dev_t rpmsg_dev;
-
-struct _rpmsg_dev_params {
-	int rpmsg_major;
-	int rpmsg_minor;
-	struct device *rpmsg_dev;
-	struct cdev cdev;
-	struct rpmsg_channel *rpmsg_chnl;
-};
-
-struct _rpmsg_dev_instance {
-	struct rpmsg_endpoint *ept;
-	struct _rpmsg_dev_params *dev_params;
-	wait_queue_head_t usr_wait_q;
-	struct mutex sync_lock;
-};
+#include <linux/platform_device.h>
+#include <linux/of_platform.h>
+#include <linux/sysfs.h>
 
 #define MAX_RPMSG_BUFF_SIZE		512
 #define RPMSG_KFIFO_SIZE		(MAX_RPMSG_BUFF_SIZE * 4)
@@ -56,101 +41,38 @@ struct _rpmsg_dev_instance {
 /* Shutdown message ID */
 #define SHUTDOWN_MSG			0xEF56A55A
 
-static struct kfifo rpmsg_kfifo;
-static int block_flag ;
-static const char init_msg[] = "init_msg";
+#define RPMSG_USER_DEV_MAX_MINORS 10
+
+#define RPMG_INIT_MSG "init_msg"
+
+struct _rpmsg_dev_params {
+	int rpmsg_major;
+	int rpmsg_minor;
+	struct device *rpmsg_dev;
+	struct cdev cdev;
+	wait_queue_head_t usr_wait_q;
+	struct mutex sync_lock;
+	struct kfifo rpmsg_kfifo;
+	int block_flag;
+	struct rpmsg_channel *rpmsg_chnl;
+	char tx_buff[MAX_RPMSG_BUFF_SIZE]; /* buffer to keep the message to send */
+	u32 rpmsg_dst;
+};
 
 static const char *const shutdown_argv[]
 		= { "/sbin/shutdown", "-h", "-P", "now", NULL };
 
-/* This callback gets invoked when we received data from the remote node */
-static void rpmsg_user_dev_drv_rx_cb(struct rpmsg_channel *rpdev,
-			void *data, int len, void *priv, u32 src)
-{
-	struct _rpmsg_dev_instance *rpmsg_dev_instance = priv;
-
-	/* Shutdown Linux if such a message is received. Only applicable
-	when Linux is a remoteproc remote. */
-	if ((*(int *) data) == SHUTDOWN_MSG) {
-		call_usermodehelper(shutdown_argv[0], shutdown_argv,
-					NULL, UMH_NO_WAIT);
-	} else {
-		/* Push data received into rpmsg kfifo */
-		mutex_lock_interruptible(&rpmsg_dev_instance->sync_lock);
-		kfifo_in(&rpmsg_kfifo, data, (unsigned int)len);
-		mutex_unlock(&rpmsg_dev_instance->sync_lock);
-
-		/* Wake up any blocking contexts waiting for data */
-		block_flag = 1;
-		wake_up_interruptible(&rpmsg_dev_instance->usr_wait_q);
-	}
-}
-
+static struct class *rpmsg_class;
+static int rpmsg_dev_major;
+static int rpmsg_dev_next_minor = 0;
 
 static int rpmsg_dev_open(struct inode *inode, struct file *p_file)
 {
-	struct _rpmsg_dev_instance *rpmsg_dev_instance;
-	struct _rpmsg_dev_params *rpmsg_dev_params;
-	int retval;
-
-	/* Create and initialize rpmsg device instance */
-	rpmsg_dev_instance = kzalloc(sizeof(struct _rpmsg_dev_instance),
-					GFP_KERNEL);
-
-	if (!rpmsg_dev_instance) {
-		pr_err("\r\n cannot allocate memory for rpmsg device instance \r\n");
-		return -ENOMEM;
-	}
-
 	/* Initialize rpmsg instance with device params from inode */
-	rpmsg_dev_instance->dev_params = container_of(inode->i_cdev,
+	struct _rpmsg_dev_params *local = container_of(inode->i_cdev,
 					struct _rpmsg_dev_params, cdev);
-
-	rpmsg_dev_params = rpmsg_dev_instance->dev_params;
-
-	/* Allocate kfifo for rpmsg */
-	retval = kfifo_alloc(&rpmsg_kfifo, RPMSG_KFIFO_SIZE, GFP_KERNEL);
-	kfifo_reset(&rpmsg_kfifo);
-
-	if (retval) {
-		pr_err("\r\n error in kfifo_alloc for rpmsg \r\n");
-
-		return retval;
-	}
-
-	/* Initialize mutex */
-	mutex_init(&rpmsg_dev_instance->sync_lock);
-
-	/* Initialize wait queue head that provides blocking rx for userspace */
-	init_waitqueue_head(&rpmsg_dev_instance->usr_wait_q);
-
-	p_file->private_data = rpmsg_dev_instance;
-
-	/* Create endpoint for remote channel and register rx callabck */
-	rpmsg_dev_instance->ept = rpmsg_create_ept(rpmsg_dev_params->rpmsg_chnl,
-						rpmsg_user_dev_drv_rx_cb,
-						rpmsg_dev_instance,
-						RPMSG_ADDR_ANY);
-
-
-	if (!rpmsg_dev_instance->ept) {
-		pr_err(" Endpoint creation for failed!\r\n");
-		return -ENOMEM;
-	}
-
-	/* Send init message to remote to complete the connection stage.
-	The message carries the address of new endpoint so that the
-	further messages from remote are received in its call back */
-	retval = rpmsg_send_offchannel(rpmsg_dev_params->rpmsg_chnl,
-					rpmsg_dev_instance->ept->addr,
-					rpmsg_dev_params->rpmsg_chnl->dst,
-					init_msg, sizeof(init_msg));
-
-	if (retval) {
-		pr_err(" Init message send failed!\r\n");
-		return retval;
-	}
-
+	p_file->private_data = local;
+	pr_info("%s\n", __func__);
 	return 0;
 }
 
@@ -158,33 +80,29 @@ static ssize_t rpmsg_dev_write(struct file *p_file,
 				const char __user *ubuff, size_t len,
 				loff_t *p_off)
 {
-	struct _rpmsg_dev_instance *rpmsg_dev_instance = p_file->private_data;
-	struct _rpmsg_dev_params *rpmsg_dev_params
-					= rpmsg_dev_instance->dev_params;
+	struct _rpmsg_dev_params *local = p_file->private_data;
+
 	int err;
 	unsigned int size;
-	char *tmp_buff;
 
 	if (len < MAX_RPMSG_BUFF_SIZE)
 		size = len;
 	else
 		size = MAX_RPMSG_BUFF_SIZE;
 
-	tmp_buff = kzalloc(size, GFP_KERNEL);
-
-	if (copy_from_user(tmp_buff, ubuff, size)) {
-		pr_err("\r\n user to kernel buff copy error \r\n");
+	if (copy_from_user(local->tx_buff, ubuff, size)) {
+		pr_err("%s: user to kernel buff copy error.\n", __func__);
 		return -1;
 	}
 
-	err = rpmsg_send_offchannel(rpmsg_dev_params->rpmsg_chnl,
-					rpmsg_dev_instance->ept->addr,
-					rpmsg_dev_params->rpmsg_chnl->dst,
-					tmp_buff, size);
+	err = rpmsg_sendto(local->rpmsg_chnl,
+					local->tx_buff,
+					size,
+					local->rpmsg_chnl->dst);
 
 	if (err) {
+		pr_err("rpmsg_sendto (size = %d) error: %d\n", size, err);
 		size = 0;
-		pr_err("\r\n rpmsg_send_off_channel error \r\n");
 	}
 
 	return size;
@@ -193,39 +111,45 @@ static ssize_t rpmsg_dev_write(struct file *p_file,
 static ssize_t rpmsg_dev_read(struct file *p_file, char __user *ubuff,
 				size_t len, loff_t *p_off)
 {
-	struct _rpmsg_dev_instance *rpmsg_dev_instance = p_file->private_data;
+	struct _rpmsg_dev_params *local = p_file->private_data;
 	int retval;
 	unsigned int data_available, data_used, bytes_copied;
 
 	/* Acquire lock to access rpmsg kfifo */
-	if (mutex_lock_interruptible(&rpmsg_dev_instance->sync_lock))
-		return -ERESTARTSYS;
+	static int count = 0;
+	while (mutex_lock_interruptible(&local->sync_lock)) {
+		if (!count) {
+			pr_info("%s: error = %d.\n", __func__,mutex_lock_interruptible(&local->sync_lock));
+			count++;
+		}
+	}
 
-	data_available = kfifo_len(&rpmsg_kfifo);
+	data_available = kfifo_len(&local->rpmsg_kfifo);
 
 	if (data_available ==  0) {
 		/* Release lock */
-		mutex_unlock(&rpmsg_dev_instance->sync_lock);
+		mutex_unlock(&local->sync_lock);
 
 		/* if non-blocking read is requested return error */
 		if (p_file->f_flags & O_NONBLOCK)
 			return -EAGAIN;
 
 		/* Block the calling context till data becomes available */
-		wait_event_interruptible(rpmsg_dev_instance->usr_wait_q,
-					block_flag != 0);
+		wait_event_interruptible(local->usr_wait_q,
+					local->block_flag != 0);
+		while (mutex_lock_interruptible(&local->sync_lock));
 	}
 
 	/* reset block flag */
-	block_flag = 0;
+	local->block_flag = 0;
 
 	/* Provide requested data size to user space */
-	data_available = kfifo_len(&rpmsg_kfifo);
+	data_available = kfifo_len(&local->rpmsg_kfifo);
 	data_used = (data_available > len) ? len : data_available;
-	retval = kfifo_to_user(&rpmsg_kfifo, ubuff, data_used, &bytes_copied);
+	retval = kfifo_to_user(&local->rpmsg_kfifo, ubuff, data_used, &bytes_copied);
 
 	/* Release lock on rpmsg kfifo */
-	mutex_unlock(&rpmsg_dev_instance->sync_lock);
+	mutex_unlock(&local->sync_lock);
 
 	return retval ? retval : bytes_copied;
 }
@@ -234,22 +158,23 @@ static long rpmsg_dev_ioctl(struct file *p_file, unsigned int cmd,
 				unsigned long arg)
 {
 	unsigned int tmp;
+	struct _rpmsg_dev_params *local = p_file->private_data;
 
 	switch (cmd) {
 	case IOCTL_CMD_GET_KFIFO_SIZE:
-		tmp = kfifo_size(&rpmsg_kfifo);
+		tmp = kfifo_size(&local->rpmsg_kfifo);
 		if (copy_to_user((unsigned int *)arg, &tmp, sizeof(int)))
 			return -EACCES;
 		break;
 
 	case IOCTL_CMD_GET_AVAIL_DATA_SIZE:
-		tmp = kfifo_len(&rpmsg_kfifo);
-		pr_err("kfifo len ioctl = %d ", kfifo_len(&rpmsg_kfifo));
+		tmp = kfifo_len(&local->rpmsg_kfifo);
+		pr_info("kfifo len ioctl = %d ", kfifo_len(&local->rpmsg_kfifo));
 		if (copy_to_user((unsigned int *)arg, &tmp, sizeof(int)))
 			return -EACCES;
 		break;
 	case IOCTL_CMD_GET_FREE_BUFF_SIZE:
-		tmp = kfifo_avail(&rpmsg_kfifo);
+		tmp = kfifo_avail(&local->rpmsg_kfifo);
 		if (copy_to_user((unsigned int *)arg, &tmp, sizeof(int)))
 			return -EACCES;
 		break;
@@ -263,12 +188,41 @@ static long rpmsg_dev_ioctl(struct file *p_file, unsigned int cmd,
 
 static int rpmsg_dev_release(struct inode *inode, struct file *p_file)
 {
-	struct _rpmsg_dev_instance *rpmsg_dev_instance = p_file->private_data;
-
-	rpmsg_destroy_ept(rpmsg_dev_instance->ept);
-	kfree(rpmsg_dev_instance);
-
 	return 0;
+}
+
+static void rpmsg_user_dev_rpmsg_drv_cb(struct rpmsg_channel *rpdev, void *data,
+					int len, void *priv, u32 src)
+{
+
+	struct _rpmsg_dev_params *local = dev_get_drvdata(&rpdev->dev);
+	int len_in = len;
+
+	/* Shutdown Linux if such a message is received. Only applicable
+	when Linux is a remoteproc remote. */
+	if ((*(int *) data) == SHUTDOWN_MSG) {
+		dev_info(&rpdev->dev,"shutdown message is received. Shutting down...\n");
+		call_usermodehelper(shutdown_argv[0], shutdown_argv,
+					NULL, UMH_NO_WAIT);
+	} else {
+		/* Push data received into rpmsg kfifo */
+		if ((len % 8) != 0) {
+			len_in = ((len/8) + 1) * 8;
+		}
+		while(mutex_lock_interruptible(&local->sync_lock));
+		if (kfifo_avail(&local->rpmsg_kfifo) < len_in) {
+			mutex_unlock(&local->sync_lock);
+			return;
+		}
+
+		kfifo_in(&local->rpmsg_kfifo, data, (unsigned int)len_in);
+
+		mutex_unlock(&local->sync_lock);
+
+		/* Wake up any blocking contexts waiting for data */
+		local->block_flag = 1;
+		wake_up_interruptible(&local->usr_wait_q);
+	}
 }
 
 static const struct file_operations rpmsg_dev_fops = {
@@ -280,110 +234,170 @@ static const struct file_operations rpmsg_dev_fops = {
 	.release = rpmsg_dev_release,
 };
 
-static int rpmsg_user_dev_drv_probe(struct rpmsg_channel *rpdev)
+static int rpmsg_user_dev_rpmsg_drv_probe(struct rpmsg_channel *rpdev);
+
+static void rpmsg_user_dev_rpmsg_drv_remove(struct rpmsg_channel *rpdev);
+
+static struct rpmsg_device_id rpmsg_user_dev_drv_id_table[] = {
+	{ .name = "rpmsg-openamp-demo-channel" },
+	{},
+};
+
+static struct rpmsg_driver rpmsg_user_dev_drv = {
+	.drv.name = "rpmsg_proxy_dev_rpmsg",
+	.drv.owner = THIS_MODULE,
+	.id_table = rpmsg_user_dev_drv_id_table,
+	.probe = rpmsg_user_dev_rpmsg_drv_probe,
+	.remove = rpmsg_user_dev_rpmsg_drv_remove,
+	.callback = rpmsg_user_dev_rpmsg_drv_cb,
+};
+
+static ssize_t rpmsg_user_dev_id_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
 {
-	struct _rpmsg_dev_params *rpmsg_dev_params;
+	ssize_t status;
 
-	/* Allocate memory for the rpmsg device parameters data structure */
-	rpmsg_dev_params = kzalloc(sizeof(struct _rpmsg_dev_params),
-					GFP_KERNEL);
+	status = sprintf(buf, "%s\n",
+		rpmsg_user_dev_drv_id_table[0].name);
+	return status;
+}
 
-	if (!rpmsg_dev_params) {
-		pr_err("\r\n cannot allocate memory for rpmsg device params \r\n");
+static DEVICE_ATTR(rpmsg_id, 0444, rpmsg_user_dev_id_show, NULL);
+
+static const struct attribute *rpmsg_dev_attrs[] = {
+	&dev_attr_rpmsg_id.attr,
+	NULL,
+};
+
+static const struct attribute_group rpmsg_dev_attr_group = {
+	.attrs = (struct attribute **) rpmsg_dev_attrs,
+};
+
+static int rpmsg_user_dev_rpmsg_drv_probe(struct rpmsg_channel *rpdev)
+{
+	struct _rpmsg_dev_params *local;
+	int status;
+	dev_info(&rpdev->dev, "%s", __func__);
+
+	local = devm_kzalloc(&rpdev->dev, sizeof(struct _rpmsg_dev_params),
+			GFP_KERNEL);
+	if (!local) {
+		dev_err(&rpdev->dev, "Failed to allocate memory for rpmsg user dev.\n");
 		return -ENOMEM;
 	}
+	memset(local, 0x0, sizeof(struct _rpmsg_dev_params));
 
-	/* Initialize rpmsg device parameters data structure */
-	rpmsg_dev_params->rpmsg_major = MAJOR(rpmsg_dev);
-	rpmsg_dev_params->rpmsg_minor = 0;
-	/* Create device */
-	rpmsg_dev_params->rpmsg_dev = device_create(rpmsg_class, &rpdev->dev,
-						rpmsg_dev, NULL, "rpmsg");
-	if (rpmsg_dev_params->rpmsg_dev == NULL) {
-		class_destroy(rpmsg_class);
-		unregister_chrdev_region(rpmsg_dev, 1);
-		return -1;
+	/* Initialize mutex */
+	mutex_init(&local->sync_lock);
+
+	/* Initialize wait queue head that provides blocking rx for userspace */
+	init_waitqueue_head(&local->usr_wait_q);
+
+	/* Allocate kfifo for rpmsg */
+	status = kfifo_alloc(&local->rpmsg_kfifo, RPMSG_KFIFO_SIZE, GFP_KERNEL);
+	kfifo_reset(&local->rpmsg_kfifo);
+
+	if (status) {
+		dev_err(&rpdev->dev, "Failed to run kfifo_alloc.");
+		goto error0;
 	}
+
+	local->rpmsg_chnl = rpdev;
+	local->block_flag = 0;
+
+	sprintf(local->tx_buff, RPMG_INIT_MSG);
+	if (rpmsg_sendto(local->rpmsg_chnl,
+					local->tx_buff,
+					sizeof(RPMG_INIT_MSG),
+					rpdev->dst)) {
+		dev_err(&rpdev->dev, "Failed to send init_msg to target 0x%x.", local->rpmsg_dst);
+		goto error0;
+	}
+	dev_info(&rpdev->dev, "Sent init_msg to target 0x%x.", local->rpmsg_dst);
+
+	dev_set_drvdata(&rpdev->dev, local);
+
+	/* Create device file for the rpmsg user dev device */
+	if (rpmsg_dev_next_minor < RPMSG_USER_DEV_MAX_MINORS) {
+		local->rpmsg_minor = rpmsg_dev_next_minor++;
+	} else {
+		dev_err(&rpdev->dev, "Minor file number %d exceed the max minors %d.\n",
+			rpmsg_dev_next_minor, RPMSG_USER_DEV_MAX_MINORS);
+		goto error1;
+	}
+
 	/* Initialize character device */
-	cdev_init(&rpmsg_dev_params->cdev, &rpmsg_dev_fops);
-	rpmsg_dev_params->cdev.owner = THIS_MODULE;
-	if (cdev_add(&rpmsg_dev_params->cdev, rpmsg_dev, 1) == -1) {
-		device_destroy(rpmsg_class, rpmsg_dev);
-		class_destroy(rpmsg_class);
-		unregister_chrdev_region(rpmsg_dev, 1);
-		return -1;
+	cdev_init(&local->cdev, &rpmsg_dev_fops);
+	local->cdev.owner = THIS_MODULE;
+	if (cdev_add(&local->cdev, MKDEV(rpmsg_dev_major, local->rpmsg_minor), 1)) {
+		dev_err(&rpdev->dev, "chardev registration failed.\n");
+		goto error1;
 	}
-	rpmsg_dev_params->rpmsg_chnl = rpdev;
-
-	dev_set_drvdata(&rpdev->dev, rpmsg_dev_params);
+	/* Create device */
+	local->rpmsg_dev = device_create(rpmsg_class, &rpdev->dev,
+		MKDEV(rpmsg_dev_major, local->rpmsg_minor), NULL,
+		"rpmsg%u", local->rpmsg_minor);
+	if (local->rpmsg_dev == NULL) {
+		dev_err(&rpdev->dev, "Cannot create device file.\n");
+		goto error1;
+	}
+	/* Create sysfs group */
+	status = sysfs_create_group(&(rpdev->dev.kobj), &rpmsg_dev_attr_group);
 
 	dev_info(&rpdev->dev, "new channel: 0x%x -> 0x%x!\n",
 			rpdev->src, rpdev->dst);
 
+	goto out;
+error1:
+	kfifo_free(&local->rpmsg_kfifo);
+error0:
+	return -ENODEV;
+out:
 	return 0;
 }
 
-static void rpmsg_user_dev_drv_remove(struct rpmsg_channel *rpdev)
+static void rpmsg_user_dev_rpmsg_drv_remove(struct rpmsg_channel *rpdev)
 {
-	struct _rpmsg_dev_params *rpmsg_dev_params
-					= dev_get_drvdata(&rpdev->dev);
-
-	device_destroy(rpmsg_class, rpmsg_dev);
-	cdev_del(&rpmsg_dev_params->cdev);
-	kfree(rpmsg_dev_params);
+	struct _rpmsg_dev_params *local = dev_get_drvdata(&rpdev->dev);
+	dev_info(&rpdev->dev, "%s", __func__);
+	device_destroy(rpmsg_class, MKDEV(rpmsg_dev_major, local->rpmsg_minor));
+	cdev_del(&local->cdev);
+	kfifo_free(&local->rpmsg_kfifo);
 }
-
-static void rpmsg_cb(struct rpmsg_channel *rpdev, void *data,
-					int len, void *priv, u32 src)
-{
-
-}
-
-static struct rpmsg_device_id rpmsg_user_dev_drv_id_table[] = {
-	{ .name	= "rpmsg-openamp-demo-channel" },
-	{ },
-};
-MODULE_DEVICE_TABLE(rpmsg, rpmsg_user_dev_drv_id_table);
-
-static struct rpmsg_driver rpmsg_user_dev_drv = {
-	.drv.name	= KBUILD_MODNAME,
-	.drv.owner	= THIS_MODULE,
-	.id_table	= rpmsg_user_dev_drv_id_table,
-	.probe		= rpmsg_user_dev_drv_probe,
-	.callback	= rpmsg_cb,
-	.remove	= rpmsg_user_dev_drv_remove,
-};
 
 static int __init init(void)
 {
-	/* Allocate char device for this rpmsg driver */
-	if (alloc_chrdev_region(&rpmsg_dev, 0, 1, KBUILD_MODNAME) < 0) {
-		pr_err("\r\n Error allocating char device \r\n");
-		return -1;
-	}
+	dev_t dev;
 
 	/* Create device class for this device */
-	rpmsg_class = class_create(THIS_MODULE, KBUILD_MODNAME);
+	rpmsg_class = class_create(THIS_MODULE, "rpmsg_user_dev");
 
 	if (rpmsg_class == NULL) {
-		unregister_chrdev_region(rpmsg_dev, 1);
-		pr_err("\r\n Error allocating char device \r\n");
+		printk(KERN_ERR "Failed to register rpmsg_user_dev class");
 		return -1;
 	}
 
-	/* Register this rpmsg driver with the rpmsg bus layer */
+	/* Allocate char device for this rpmsg driver */
+	if (alloc_chrdev_region(&dev, 0, RPMSG_USER_DEV_MAX_MINORS, "rpmsg_user_dev") < 0) {
+		pr_err("\r\n Error allocating char device \r\n");
+		class_destroy(rpmsg_class);
+		return -1;
+	}
+
+	rpmsg_dev_major = MAJOR(dev);
 	return register_rpmsg_driver(&rpmsg_user_dev_drv);
 }
 
 static void __exit fini(void)
 {
 	unregister_rpmsg_driver(&rpmsg_user_dev_drv);
+	unregister_chrdev_region(MKDEV(rpmsg_dev_major, 0), RPMSG_USER_DEV_MAX_MINORS);
 	class_destroy(rpmsg_class);
-	unregister_chrdev_region(rpmsg_dev, 1);
 }
 
 module_init(init);
 module_exit(fini);
+
 
 MODULE_DESCRIPTION("Sample driver to exposes rpmsg svcs to userspace via a char device");
 MODULE_LICENSE("GPL v2");
