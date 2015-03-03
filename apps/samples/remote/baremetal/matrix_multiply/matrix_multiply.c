@@ -14,9 +14,12 @@ multiplies them and returns the result to the master core. */
 #define NUM_MATRIX              2
 #define SHUTDOWN_MSG            0xEF56A55A
 
+char DBG_MSG[512];
+char RES_DBG_MSG[512] = {2, 2, 2,};
+
 typedef struct _matrix {
-    unsigned long size;
-    unsigned long elements[MAX_SIZE][MAX_SIZE];
+	unsigned int size;
+	unsigned int elements[MAX_SIZE][MAX_SIZE];
 } matrix;
 
 /* Internal functions */
@@ -24,12 +27,12 @@ static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
 static void rpmsg_read_cb(struct rpmsg_channel *, void *, int, void *, unsigned long);
 static void Matrix_Multiply(const matrix *m, const matrix *n, matrix *r);
-static void sleep();
 static void init_system();
 
 /* Globals */
 static struct rpmsg_channel *app_rp_chnl;
-volatile int int_flag = 0;
+void* mat_mul_lock;
+int need_to_cal = 0;
 static struct rpmsg_endpoint *rp_ept;
 static matrix matrix_array[NUM_MATRIX];
 static matrix matrix_result;
@@ -40,92 +43,90 @@ extern const struct remote_resource_table resources;
 /* Application entry point */
 int main() {
 
-    /* Switch to System Mode */
-    SWITCH_TO_SYS_MODE();
+	int status = 0;
 
-    /* Initialize HW system components */
-    init_system();
+	/* Switch to System Mode */
+	SWITCH_TO_SYS_MODE();
 
-    rsc_info.rsc_tab = (struct resource_table *)&resources;
-    rsc_info.size = sizeof(resources);
+	/* Initialize HW system components */
+	init_system();
 
-    /* Initialize RPMSG framework */
-    remoteproc_resource_init(&rsc_info, rpmsg_channel_created, rpmsg_channel_deleted,
-    		rpmsg_read_cb ,&proc);
+	rsc_info.rsc_tab = (struct resource_table *)&resources;
+	rsc_info.size = sizeof(resources);
 
-    while (1) {
-        if (int_flag) {
+	/* Initialize RPMSG framework */
+	remoteproc_resource_init(&rsc_info, rpmsg_channel_created, rpmsg_channel_deleted,
+			rpmsg_read_cb ,&proc);
 
-            /* Process received data and multiple matrices. */
-            Matrix_Multiply(&matrix_array[0], &matrix_array[1], &matrix_result);
+	while (1) {
+		__asm__ ( "wfi\n\t" );
+	}
 
-            /* Send the result of matrix multiplication back to master. */
-            rpmsg_send(app_rp_chnl, &matrix_result, sizeof(matrix));
-
-            int_flag = 0;
-        }
-        sleep();
-    }
-
-    return 0;
+	return 0;
 }
 
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl) {
-    app_rp_chnl = rp_chnl;
-    rp_ept = rpmsg_create_ept(rp_chnl, rpmsg_read_cb, RPMSG_NULL,
-                    RPMSG_ADDR_ANY);
+	app_rp_chnl = rp_chnl;
+	rp_ept = rpmsg_create_ept(rp_chnl, rpmsg_read_cb, RPMSG_NULL,
+				RPMSG_ADDR_ANY);
 }
 
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl) {
-    rpmsg_destroy_ept(rp_ept);
+	rpmsg_destroy_ept(rp_ept);
 }
 
 static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
-                void * priv, unsigned long src) {
+					void * priv, unsigned long src) {
 	if ((*(int *) data) == SHUTDOWN_MSG) {
 		remoteproc_resource_deinit(proc);
 	}else{
 		env_memcpy(matrix_array, data, len);
-    	int_flag = 1;
+		/* Process received data and multiple matrices. */
+		Matrix_Multiply(&matrix_array[0], &matrix_array[1], &matrix_result);
+
+		/* Send the result of matrix multiplication back to master. */
+		rpmsg_send(app_rp_chnl, &matrix_result, sizeof(matrix));
 	}
 }
 
-void sleep() {
-    int i;
-    for (i = 0; i < 1000; i++);
-}
-
 static void Matrix_Multiply(const matrix *m, const matrix *n, matrix *r) {
-    int i, j, k;
+	int i, j, k;
 
-    r->size = m->size;
+	env_memset(r, 0x0, sizeof(matrix));
+	r->size = m->size;
 
-    for (i = 0; i < m->size; ++i) {
-        for (j = 0; j < n->size; ++j) {
-            r->elements[i][j] = 0;
-        }
-    }
-
-    for (i = 0; i < m->size; ++i) {
-        for (j = 0; j < n->size; ++j) {
-            for (k = 0; k < r->size; ++k) {
-                r->elements[i][j] += m->elements[i][k] * n->elements[k][j];
-            }
-        }
-    }
+	for (i = 0; i < m->size; ++i) {
+		for (j = 0; j < n->size; ++j) {
+			for (k = 0; k < r->size; ++k) {
+				r->elements[i][j] += m->elements[i][k] * n->elements[k][j];
+			}
+		}
+	}
 }
 
 static void init_system() {
 
-    /* Place the vector table at the image entry point */
-    arm_arch_install_isr_vector_table(RAM_VECTOR_TABLE_ADDR);
+#ifdef ZYNQMP_R5
+	/* To Do -- Fix Me later */
+	/* Place the vector table -- Do we need it? */
+	/* Initialize stacks -- Do we need it? */
+	/* Initilaize GIC */
+	zynqMP_r5_gic_initialize();
 
-    /* Enable MMU */
-    arm_ar_mem_enable_mmu();
+	Xil_DCacheDisable();
+#else
+#ifdef ZYNQ_A9
+	/* Place the vector table at the image entry point */
+	arm_arch_install_isr_vector_table(RAM_VECTOR_TABLE_ADDR);
 
-    /* Initialize ARM stacks */
-    init_arm_stacks();
+	/* Enable MMU */
+	arm_ar_mem_enable_mmu();
 
-    /* Initialize GIC */
-    zc702evk_gic_initialize();
+	/* Initialize ARM stacks */
+	init_arm_stacks();
+
+	/* Initialize GIC */
+	zc702evk_gic_initialize();
+#endif
+#endif
 }

@@ -37,15 +37,22 @@
 
 /* Resource table for the given remote */
 struct remote_resource_table {
-    unsigned int version;
-    unsigned int num;
-    unsigned int reserved[2];
-    unsigned int offset[NO_RESOURCE_ENTRIES];
-    /* text carveout entry */
-    struct fw_rsc_carveout elf_cout;
-    /* rpmsg vdev entry */
-    struct fw_rsc_vdev rpmsg_vdev;
-    struct fw_rsc_vdev_vring rpmsg_vring0;
-    struct fw_rsc_vdev_vring rpmsg_vring1;
+	unsigned int version;
+	unsigned int num;
+	unsigned int reserved[2];
+	unsigned int offset[NO_RESOURCE_ENTRIES];
+	/* text carveout entry */
+#ifdef ZYNQMP_R5
+	struct fw_rsc_carveout ocm_0_cout;
+	struct fw_rsc_carveout ocm_1_cout;
+#else
+#ifdef ZYNQ_A9
+	struct fw_rsc_carveout elf_cout;
+#endif
+#endif
+	/* rpmsg vdev entry */
+	struct fw_rsc_vdev rpmsg_vdev;
+	struct fw_rsc_vdev_vring rpmsg_vring0;
+	struct fw_rsc_vdev_vring rpmsg_vring1;
 };
 
