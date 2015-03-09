@@ -1,9 +1,0 @@
-OPENAMP?=/home/jliang/openamp/open-amp
-PLAT := zynqMP_r5
-OS:=baremetal
-ROLE:=remote
-
-export OPENAMP PLAT OS ROLE
-
-include $(OPENAMP)/Makefile.commons
-
