@@ -77,6 +77,10 @@ int rpmsg_retarget_deinit(struct rpmsg_channel *rp_chnl) {
 	return 0;
 }
 
+int rpmsg_retarget_send(void *data, int len) {
+	return send_rpc(data, len);
+}
+
 /*************************************************************************
  *
  *   FUNCTION

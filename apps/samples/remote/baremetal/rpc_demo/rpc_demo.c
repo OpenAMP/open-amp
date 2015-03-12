@@ -34,6 +34,8 @@ extern const struct remote_resource_table resources;
 #define REDEF_O_APPEND 2000
 #define REDEF_O_ACCMODE 3
 
+#define RPC_CHANNEL_READY_TO_CLOSE "rpc_channel_ready_to_close"
+
 /* Application entry point */
 int main() {
 	int fd, bytes_written, bytes_read;
@@ -127,6 +129,8 @@ int main() {
 				printf("\r\nRemote>Invalid option. Starting again....\r\n");
 			} else if((!strcmp(ubuff,"no"))) {
 				printf("\r\nRemote>RPC retargetting quitting ...\r\n");
+				sprintf(wbuff, RPC_CHANNEL_READY_TO_CLOSE);
+				rpmsg_retarget_send(wbuff, sizeof(RPC_CHANNEL_READY_TO_CLOSE) + 1);
 				break;
 			}
 		}
