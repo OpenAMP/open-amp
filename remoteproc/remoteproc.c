@@ -156,7 +156,7 @@ int remoteproc_resource_deinit(struct remote_proc *rproc) {
  * @param channel_destroyed - callback function for channel deletion
  * @param default_cb        - default callback for channel I/O
  * @param rproc_handle      - pointer to new remoteproc instance
- * 
+ *
  * @param returns - status of function execution
  *
  */
@@ -213,7 +213,7 @@ int remoteproc_init(char *fw_name, rpmsg_chnl_cb_t channel_created,
 
     if (!status) {
         rproc->role = RPROC_MASTER;
-        
+
         /* Get resource table from firmware */
         rsc_table = remoteproc_loader_retrieve_resource_section(rproc->loader,
                         &rsc_size);
@@ -236,7 +236,6 @@ int remoteproc_init(char *fw_name, rpmsg_chnl_cb_t channel_created,
     rproc->default_cb = default_cb;
 
     *rproc_handle = rproc;
-
 
     return status;
 }
