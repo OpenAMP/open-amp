@@ -68,6 +68,7 @@
 #include "xil_types.h"
 #include "xil_mpu.h"
 
+
 /***************** Macros (Inline Functions) Definitions *********************/
 
 /**************************** Type Definitions *******************************/
@@ -76,7 +77,9 @@
 
 /************************** Variable Definitions *****************************/
 
-
+u32 MpuAddr[8];	/* addresses configured in MPU*/
+u8 RegNum[8];	/* region number configures corresponding to address in MpuAddr */
+u8 CurrIndex;
 
 /************************** Function Prototypes ******************************/
 
@@ -94,44 +97,74 @@
 *
 *
 ******************************************************************************/
-void Xil_SetAttribute(u32 addr, u32 reg_size,int reg_num, u32 attrib)
+void Xil_SetTlbAttributes(INTPTR addr, u32 attrib)
 {
-	u32 CtrlReg, Alignment_Check=0x1;
-	int Index;
-	int DCacheStatus=0, ICacheStatus=0;
+	u32 CtrlReg,reg_size,status = 0;
+	u32 Index;
+	INTPTR Local_addr = addr;
+	u8 reg_num;
+	s32 DCacheStatus=0, ICacheStatus=0;
+
 	/* disbale caches only if they are enabled */
 	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
-	if (CtrlReg & XREG_CP15_CONTROL_C_BIT)
+	if ((CtrlReg & XREG_CP15_CONTROL_C_BIT) != 0x00000000U) {
 		DCacheStatus=1;
-	if (CtrlReg & XREG_CP15_CONTROL_I_BIT)
+	}
+	if ((CtrlReg & XREG_CP15_CONTROL_I_BIT) != 0x00000000U) {
 		ICacheStatus=1;
-
-	if(DCacheStatus)
+	}
+	if(DCacheStatus != 0) {
 		Xil_DCacheDisable();
-	if(ICacheStatus){
+	}
+	if(ICacheStatus != 0){
 		Xil_ICacheDisable();
 	}
-	for (Index=0; Index<=reg_size;Index++)
-		Alignment_Check*=2;
 
-	/*If address is aligned with region size then it is configured*/
+	/* adjust the address for 4K alignment */
+	Local_addr = (Local_addr & (~(0xFFFFF)));
 
-	if(!(addr%Alignment_Check)){
-		reg_size = reg_size<<1;
-		reg_size|=REGION_EN;
-		mtcp(XREG_CP15_MPU_MEMORY_REG_NUMBER,reg_num);
-		mtcp(XREG_CP15_MPU_REG_BASEADDR,addr); 			/* Set base address of a region */
-		mtcp(XREG_CP15_MPU_REG_ACCESS_CTRL,attrib); 	/* Set the control attribute */
-		mtcp(XREG_CP15_MPU_REG_SIZE_EN,reg_size); 		/* set the region size and enable it*/
-		dsb(); 											/* ensure completion of the BP invalidation */
-		isb();											/* synchronize context on this processor */
+	if(MpuAddr[0] == 0){
+		/* define the region to be 8 for first use of
+		Xil_SetTlbAttributes API as first 7 regions are defined
+		for given address map */
+		RegNum[CurrIndex] = mfcp(XREG_CP15_MPU_MEMORY_REG_NUMBER);
+		MpuAddr[CurrIndex] = Local_addr;
+	} else {
+		/* Check if the address is already configured with different attributes before */
+		for(Index=0; Index < RegNum[CurrIndex] - 8; Index++){
+			if(addr == MpuAddr[CurrIndex-Index]){
+				/*if the address already exist in memory region of mpu
+					use the same region number with given attribute*/
+				reg_num = RegNum[CurrIndex-Index];
+				status = 1;
+				break;
+			}
+		}
+	}
+	/* add the new entry of array of address and region number
+	for first time configuration */
+	if(status == 0){
+		CurrIndex++;
+		RegNum[CurrIndex] = RegNum[CurrIndex-1] + 1;
+		MpuAddr[CurrIndex] = Local_addr;
+		reg_num = RegNum[CurrIndex];
 	}
 
+	reg_size = REGION_1M<<1;						/* region size is hardcoded to 4KB */
+	reg_size|=REGION_EN;
+	mtcp(XREG_CP15_MPU_MEMORY_REG_NUMBER,reg_num);
+	mtcp(XREG_CP15_MPU_REG_BASEADDR,Local_addr); 			/* Set base address of a region */
+	mtcp(XREG_CP15_MPU_REG_ACCESS_CTRL,attrib); 	/* Set the control attribute */
+	mtcp(XREG_CP15_MPU_REG_SIZE_EN,reg_size); 		/* set the region size and enable it*/
+	dsb(); 											/* ensure completion of the BP invalidation */
+	isb();											/* synchronize context on this processor */
 	/* enable caches only if they are disabled in routine*/
-	if(DCacheStatus)
+	if(DCacheStatus != 0) {
 		Xil_DCacheEnable();
-	if(ICacheStatus)
+	}
+	if(ICacheStatus != 0) {
 		Xil_ICacheEnable();
+	}
 }
 
 /*****************************************************************************
@@ -147,29 +180,34 @@ void Xil_SetAttribute(u32 addr, u32 reg_size,int reg_num, u32 attrib)
 void Xil_EnableMPU(void)
 {
 	u32 CtrlReg, Reg;
-	int DCacheStatus=0, ICacheStatus=0;
+	s32 DCacheStatus=0, ICacheStatus=0;
 	/* enable caches only if they are disabled */
 	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
-	if (CtrlReg & XREG_CP15_CONTROL_C_BIT)
+	if ((CtrlReg & XREG_CP15_CONTROL_C_BIT) != 0x00000000U) {
 		DCacheStatus=1;
-	if (CtrlReg & XREG_CP15_CONTROL_I_BIT)
+	}
+	if ((CtrlReg & XREG_CP15_CONTROL_I_BIT) != 0x00000000U) {
 		ICacheStatus=1;
+	}
 
-	if(DCacheStatus)
+	if(DCacheStatus != 0) {
 		Xil_DCacheDisable();
-	if(ICacheStatus){
+	}
+	if(ICacheStatus != 0){
 		Xil_ICacheDisable();
 	}
 	Reg = mfcp(XREG_CP15_SYS_CONTROL);
-	Reg |= 0x01;
+	Reg |= 0x00000001U;
 	dsb();
 	mtcp(XREG_CP15_SYS_CONTROL, Reg);
 	isb();
 	/* enable caches only if they are disabled in routine*/
-	if(DCacheStatus)
+	if(DCacheStatus != 0) {
 		Xil_DCacheEnable();
-	if(ICacheStatus)
+	}
+	if(ICacheStatus != 0) {
 		Xil_ICacheEnable();
+	}
 }
 
 /*****************************************************************************
@@ -185,249 +223,34 @@ void Xil_EnableMPU(void)
 void Xil_DisableMPU(void)
 {
 	u32 CtrlReg, Reg;
-	int DCacheStatus=0, ICacheStatus=0;
+	s32 DCacheStatus=0, ICacheStatus=0;
 	/* enable caches only if they are disabled */
 	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
-	if (CtrlReg & XREG_CP15_CONTROL_C_BIT)
+	if ((CtrlReg & XREG_CP15_CONTROL_C_BIT) != 0x00000000U) {
 		DCacheStatus=1;
-	if (CtrlReg & XREG_CP15_CONTROL_I_BIT)
+	}
+	if ((CtrlReg & XREG_CP15_CONTROL_I_BIT) != 0x00000000U) {
 		ICacheStatus=1;
+	}
 
-	if(DCacheStatus)
+	if(DCacheStatus != 0) {
 		Xil_DCacheDisable();
-	if(ICacheStatus){
+	}
+	if(ICacheStatus != 0){
 		Xil_ICacheDisable();
 	}
 
 	mtcp(XREG_CP15_INVAL_BRANCH_ARRAY, 0);
 	Reg = mfcp(XREG_CP15_SYS_CONTROL);
-	Reg &= ~0x01;
+	Reg &= ~(0x00000001U);
 	dsb();
 	mtcp(XREG_CP15_SYS_CONTROL, Reg);
 	isb();
 	/* enable caches only if they are disabled in routine*/
-	if(DCacheStatus)
+	if(DCacheStatus != 0) {
 		Xil_DCacheEnable();
-	if(ICacheStatus)
-		Xil_ICacheEnable();
-}
-
-/*****************************************************************************
-*
-* Disable a Region in MPU for Cortex R5 processors. This function invalidates
-* I cache and flush the D Caches before disabling the MPU region.
-*
-* @param	reg_num defines region number which is to be disabled.
-*
-* @return	None.
-*
-******************************************************************************/
-
-void Xil_DisableRegion(int reg_num)
-{
-	u32 CtrlReg, Reg;
-	int DCacheStatus=0, ICacheStatus=0;
-	/* enable caches only if they are disabled */
-	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
-	if (CtrlReg & XREG_CP15_CONTROL_C_BIT)
-		DCacheStatus=1;
-	if (CtrlReg & XREG_CP15_CONTROL_I_BIT)
-		ICacheStatus=1;
-
-	if(DCacheStatus)
-		Xil_DCacheDisable();
-	if(ICacheStatus){
-		Xil_ICacheDisable();
 	}
-
-	mtcp(XREG_CP15_INVAL_BRANCH_ARRAY, 0);
-	mtcp(XREG_CP15_MPU_MEMORY_REG_NUMBER,reg_num);
-
-	Reg = mfcp(XREG_CP15_MPU_REG_SIZE_EN);
-
-	Reg &= ~REGION_EN;
-	dsb();
-	mtcp(XREG_CP15_MPU_REG_SIZE_EN, Reg);
-	isb();
-	/* enable caches only if they are disabled in routine*/
-	if(DCacheStatus)
-		Xil_DCacheEnable();
-	if(ICacheStatus)
+	if(ICacheStatus != 0) {
 		Xil_ICacheEnable();
-}
-/*****************************************************************************
-*
-* Disable a SubRegion in MPU for Cortex R5 processors. This function invalidates
-* I cache and flush the D Caches before disabling
-* the MPU subregion.
-*
-* @param	reg_num defines region number in which particular subregion
-*			is to be disabled.
-* @param	subreg_num defines the subregion number which is to be disabled.
-* @return	None.
-*
-******************************************************************************/
-
-void Xil_DisableSubRegion(int reg_num, int subreg_num)
-{
-	u32 CtrlReg, Reg;
-	int DCacheStatus=0, ICacheStatus=0;
-	/* enable caches only if they are disabled */
-	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
-	if (CtrlReg & XREG_CP15_CONTROL_C_BIT)
-		DCacheStatus=1;
-	if (CtrlReg & XREG_CP15_CONTROL_I_BIT)
-		ICacheStatus=1;
-
-	if(DCacheStatus)
-		Xil_DCacheDisable();
-	if(ICacheStatus){
-		Xil_ICacheDisable();
 	}
-
-	mtcp(XREG_CP15_INVAL_BRANCH_ARRAY, 0);
-	mtcp(XREG_CP15_MPU_MEMORY_REG_NUMBER,reg_num);
-
-	Reg = mfcp(XREG_CP15_MPU_REG_SIZE_EN);
-	Reg |= ((0x1<<subreg_num)<<8);
-	dsb();
-	mtcp(XREG_CP15_MPU_REG_SIZE_EN, Reg);
-	isb();
-	/* enable caches only if they are disabled in routine*/
-	if(DCacheStatus)
-		Xil_DCacheEnable();
-	if(ICacheStatus)
-		Xil_ICacheEnable();
-}
-
-/*****************************************************************************
-*
-* Enable a SubRegion in MPU for Cortex R5 processors. This function invalidates
-* I cache and flush the D Caches before enabling the MPU subregion.
-*
-* @param	reg_num defines region number in which particular subregion
-*			is to be enabled.
-* @param	subreg_num defines the subregion number which is to be enabled.
-* @return	None.
-*
-******************************************************************************/
-
-void Xil_EnableSubRegion(int reg_num, int subreg_num)
-{
-	u32 CtrlReg, Reg;
-	int DCacheStatus=0, ICacheStatus=0;
-	/* enable caches only if they are disabled */
-	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
-	if (CtrlReg & XREG_CP15_CONTROL_C_BIT)
-		DCacheStatus=1;
-	if (CtrlReg & XREG_CP15_CONTROL_I_BIT)
-		ICacheStatus=1;
-
-	if(DCacheStatus)
-		Xil_DCacheDisable();
-	if(ICacheStatus){
-		Xil_ICacheDisable();
-	}
-
-	mtcp(XREG_CP15_INVAL_BRANCH_ARRAY, 0);
-	mtcp(XREG_CP15_MPU_MEMORY_REG_NUMBER,reg_num);
-	Reg = mfcp(XREG_CP15_MPU_REG_SIZE_EN);
-	Reg &=~((0x1<<subreg_num)<<8);
-	dsb();
-	mtcp(XREG_CP15_MPU_REG_SIZE_EN, Reg);
-	isb();
-	/* enable caches only if they are disabled in routine*/
-	if(DCacheStatus)
-		Xil_DCacheEnable();
-	if(ICacheStatus)
-		Xil_ICacheEnable();
-}
-/*****************************************************************************
-*
-* Enable a background Region in MPU with default memory attributes for Cortex R5
-* processor. This function invalidates I cache and flush the D Caches before
-* enabling a background Region.
-*
-* @param	None.
-*
-* @return	None.
-*
-*
-******************************************************************************/
-
-void Xil_EnableBackgroundRegion(void)
-{
-
-	u32 CtrlReg, Reg;
-	int DCacheStatus=0, ICacheStatus=0;
-	/* enable caches only if they are disabled */
-	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
-	if (CtrlReg & XREG_CP15_CONTROL_C_BIT)
-		DCacheStatus=1;
-	if (CtrlReg & XREG_CP15_CONTROL_I_BIT)
-		ICacheStatus=1;
-
-	if(DCacheStatus)
-		Xil_DCacheDisable();
-	if(ICacheStatus){
-		Xil_ICacheDisable();
-	}
-	mtcp(XREG_CP15_INVAL_BRANCH_ARRAY, 0);
-	Reg=mfcp(XREG_CP15_SYS_CONTROL);
-	Reg |= 0x1<<17;
-
-	dsb();
-	mtcp(XREG_CP15_SYS_CONTROL,Reg);
-
-	isb();
-	/* enable caches only if they are disabled in routine*/
-	if(DCacheStatus)
-		Xil_DCacheEnable();
-	if(ICacheStatus)
-		Xil_ICacheEnable();
-}
-/*****************************************************************************
-*
-* Disable a background Region in MPU for Cortex R5 processor. This function
-* invalidates I cache and flush the D Caches before
-* disabling a background Region.
-*
-* @param	None.
-*
-* @return	None.
-*
-*
-******************************************************************************/
-
-void Xil_DisableBackgroundRegion(void)
-{
-
-	u32 CtrlReg, Reg;
-	int DCacheStatus=0, ICacheStatus=0;
-	/* enable caches only if they are disabled */
-	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
-	if (CtrlReg & XREG_CP15_CONTROL_C_BIT)
-		DCacheStatus=1;
-	if (CtrlReg & XREG_CP15_CONTROL_I_BIT)
-		ICacheStatus=1;
-
-	if(DCacheStatus)
-		Xil_DCacheDisable();
-	if(ICacheStatus){
-		Xil_ICacheDisable();
-	}
-	mtcp(XREG_CP15_INVAL_BRANCH_ARRAY, 0);
-	Xil_DCacheFlush();
-	Reg=mfcp(XREG_CP15_SYS_CONTROL);
-	Reg &= ~(0x1<<17);
-
-	dsb();
-	mtcp(XREG_CP15_SYS_CONTROL,Reg);
-
-	isb();
-	/* enable caches only if they are disabled in routine*/
-	if(DCacheStatus)
-		Xil_DCacheEnable();
-	if(ICacheStatus)
-		Xil_ICacheEnable();
 }

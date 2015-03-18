@@ -73,7 +73,7 @@
 
 
 extern int  _stack_end;
-extern int  _stack;
+extern int  __undef_stack;
 
 /****************************************************************************
 /************************** Function Prototypes ******************************/
@@ -129,8 +129,9 @@ void Xil_DCacheDisable(void)
 	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
 
 	CtrlReg &= ~(XREG_CP15_CONTROL_C_BIT);
-
+dsb();
 	mtcp(XREG_CP15_SYS_CONTROL, CtrlReg);
+		isb();
 }
 
 /****************************************************************************
@@ -154,17 +155,17 @@ void Xil_DCacheInvalidate(void)
 
 
 	stack_end = (unsigned int )&_stack_end;
-	stack_start = (unsigned int )&_stack;
+	stack_start = (unsigned int )&__undef_stack;
 	stack_size=stack_start-stack_end;
 
 	/*Flush stack memory to save return address*/
 	Xil_DCacheFlushRange(stack_end, stack_size);
 
 	mtcp(XREG_CP15_CACHE_SIZE_SEL, 0);
-
+dsb();
 	/*invalidate all D cache*/
 	mtcp(XREG_CP15_INVAL_DC_ALL, 0);
-
+	isb();
 	mtcpsr(currmask);
 }
 
@@ -320,7 +321,6 @@ void Xil_DCacheFlush(void)
 	dsb();
 	mtcpsr(currmask);
 
-	mtcpsr(currmask);
 }
 
 /****************************************************************************
@@ -483,8 +483,9 @@ void Xil_ICacheDisable(void)
 	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
 
 	CtrlReg &= ~(XREG_CP15_CONTROL_I_BIT);
-
+	dsb();
 	mtcp(XREG_CP15_SYS_CONTROL, CtrlReg);
+	isb();
 }
 
 /****************************************************************************

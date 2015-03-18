@@ -5,7 +5,7 @@ AR=arm-none-eabi-ar
 CP=cp
 ARCHIVER=arm-none-eabi-ar
 COMPILER_FLAGS= -O2 -c
-EXTRA_COMPILER_FLAGS= -mcpu=cortex-r5
+EXTRA_COMPILER_FLAGS= -mcpu=cortex-r5 -DUSEAMP=1
 LIB=libxil.a
 
 LIB=libxil.a
@@ -20,6 +20,7 @@ endif
 #The following flags are required for PEEP. We can remove them later
 ECC_FLAGS	+= -mcpu=cortex-r5 \
 		  -mfloat-abi=soft \
+		  -DUSEAMP=1
 
 #RELEASEDIR=../../../lib
 RELEASEDIR=./.

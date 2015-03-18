@@ -32,7 +32,7 @@
 #include "baremetal.h"
 #include "xil_io.h"
 #include "xil_exception.h"
-	
+
 void zynqMP_r5_irq_isr();
 
 int zynqMP_r5_gic_initialize() {
@@ -286,10 +286,16 @@ void ipi_isr(int vect_id, void *data) {
  *       None
  *
  ***********************************************************************/
-void zynqMP_r5_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
-                unsigned int size, int is_mem_mapped,
-                CACHE_TYPE cache_type) {
-	return;
+void zynqMP_r5_map_mem_region(u32 addr, u32 size, u32 attrib) {
+	u32 Index, NumSize;
+	/* Calculating the number of MBs required for the shared region*/
+	NumSize = size / 0x100000;
+
+	/* Xil_SetTlbAttributes is designed to configure memory for 1MB
+	 * region. The API is called multiple times to configure the number
+	 * of MBs required by shared memory size (calculated as NumSize)*/
+	for (Index = 0; Index < NumSize; Index ++)
+		Xil_SetTlbAttributes(addr + 0x100000 * Index, attrib);
 }
 
 /*==================================================================*/

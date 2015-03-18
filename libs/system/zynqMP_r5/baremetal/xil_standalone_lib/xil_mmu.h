@@ -43,6 +43,9 @@
 /*****************************************************************************/
 /**
 * @file xil_mmu.h
+* This file only includes xil_mpu.h which contains Xil_SetTlbAttributes API
+* defined for MPU in R5. R5 does not have mmu and for usage of similiar API
+* the file has been created.
 *
 *
 *
@@ -51,7 +54,7 @@
 *
 * Ver   Who  Date     Changes
 * ----- ---- -------- ---------------------------------------------------
-* 5.00  pkp  02/10/14 Initial version
+* 5.0	pkp  2/12/15 Initial version
 * </pre>
 *
 * @note
@@ -60,14 +63,16 @@
 *
 ******************************************************************************/
 
-#ifndef XIL_MPU_H
-#define XIL_MPU_H
+#ifndef XIL_MMU_H
+#define XIL_MMU_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-#include "xil_types.h"
+
 /***************************** Include Files *********************************/
+
+#include "xil_mpu.h"
 
 /***************** Macros (Inline Functions) Definitions *********************/
 
@@ -79,12 +84,8 @@ extern "C" {
 
 /************************** Function Prototypes ******************************/
 
-void Xil_SetTlbAttributes(INTPTR Addr, u32 attrib);
-void Xil_EnableMPU(void);
-void Xil_DisableMPU(void);
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* XIL_MPU_H */
+#endif /* XIL_MMU_H */

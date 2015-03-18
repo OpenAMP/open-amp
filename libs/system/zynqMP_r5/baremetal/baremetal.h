@@ -197,8 +197,7 @@ typedef enum {
 		mtcpsr((mfcpsr() | XREG_CPSR_SYSTEM_MODE) & ~((unsigned int)CORTEXR5_CPSR_INTERRUPTS_BITS));\
 	}
 
-void zynqMP_r5_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
-		unsigned int size, int is_mem_mapped, CACHE_TYPE cache_type);
+void zynqMP_r5_map_mem_region(u32 addr, u32 size, u32 attrib);
 
 int zynqMP_r5_gic_initialize();
 
@@ -214,7 +213,7 @@ void disable_global_interrupts();
 		Xil_DCacheFlush(); \
 		Xil_DCacheInvalidate(); \
 		Xil_ICacheInvalidate(); \
-	}	
+	}
 
 #define platform_cache_disable() \
 	{ \
