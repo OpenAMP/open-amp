@@ -10,12 +10,12 @@ multiplies them and returns the result to the master core. */
 #include "rsc_table.h"
 #include "baremetal.h"
 
+#define SHARED_MEMORY	0x3ED00000	/* Shared memory location as defined in linux device tree for remoteproc */
+#define SHARED_SIZE		0x400000	/* size of the shared memory*/
+
 #define	MAX_SIZE                6
 #define NUM_MATRIX              2
 #define SHUTDOWN_MSG            0xEF56A55A
-
-char DBG_MSG[512];
-char RES_DBG_MSG[512] = {2, 2, 2,};
 
 typedef struct _matrix {
 	unsigned int size;
@@ -45,9 +45,6 @@ int main() {
 
 	int status = 0;
 
-	/* Switch to System Mode */
-	SWITCH_TO_SYS_MODE();
-
 	/* Initialize HW system components */
 	init_system();
 
@@ -55,8 +52,11 @@ int main() {
 	rsc_info.size = sizeof(resources);
 
 	/* Initialize RPMSG framework */
-	remoteproc_resource_init(&rsc_info, rpmsg_channel_created, rpmsg_channel_deleted,
+	status = remoteproc_resource_init(&rsc_info, rpmsg_channel_created, rpmsg_channel_deleted,
 			rpmsg_read_cb ,&proc);
+	if (status < 0) {
+		return -1;
+	}
 
 	while (1) {
 		__asm__ ( "wfi\n\t" );
@@ -107,13 +107,10 @@ static void Matrix_Multiply(const matrix *m, const matrix *n, matrix *r) {
 static void init_system() {
 
 #ifdef ZYNQMP_R5
-	/* To Do -- Fix Me later */
-	/* Place the vector table -- Do we need it? */
-	/* Initialize stacks -- Do we need it? */
+	/* configure MPU for shared memory region */
+	zynqMP_r5_map_mem_region(SHARED_MEMORY, SHARED_SIZE, NORM_SHARED_NCACHE | PRIV_RW_USER_RW);
 	/* Initilaize GIC */
 	zynqMP_r5_gic_initialize();
-
-	Xil_DCacheDisable();
 #else
 #ifdef ZYNQ_A9
 	/* Place the vector table at the image entry point */

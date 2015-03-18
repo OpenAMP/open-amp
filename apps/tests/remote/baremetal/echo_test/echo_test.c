@@ -9,6 +9,9 @@ This application echoes back data that was sent to it by the master core. */
 #include "rsc_table.h"
 #include "baremetal.h"
 
+#define SHARED_MEMORY	0x3ED00000	/* Shared memory location as defined in linux device tree for remoteproc */
+#define SHARED_SIZE		0x400000	/* size of the shared memory*/
+
 #define SHUTDOWN_MSG	0xEF56A55A
 
 /* Internal functions */
@@ -26,9 +29,7 @@ extern const struct remote_resource_table resources;
 
 /* Application entry point */
 int main() {
-
-    /* Switch to System Mode */
-    SWITCH_TO_SYS_MODE();
+    int status = 0;
 
     /* Initialize HW system components */
     init_system();
@@ -37,8 +38,12 @@ int main() {
     rsc_info.size = sizeof(resources);
 
     /* Initialize RPMSG framework */
-    remoteproc_resource_init(&rsc_info, rpmsg_channel_created, rpmsg_channel_deleted, rpmsg_read_cb,
+    status = remoteproc_resource_init(&rsc_info, rpmsg_channel_created, rpmsg_channel_deleted, rpmsg_read_cb,
                     &proc);
+
+    if (status < 0) {
+        return -1;
+    }
 
     while(1) {
 		 __asm__ ( "\
@@ -72,13 +77,10 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 static void init_system() {
 
 #ifdef ZYNQMP_R5
-	/* To Do -- Fix Me later */
-	/* Place the vector table -- Do we need it? */
-	/* Initialize stacks -- Do we need it? */
+	/* configure MPU for shared memory region */
+	zynqMP_r5_map_mem_region(SHARED_MEMORY, SHARED_SIZE, NORM_SHARED_NCACHE | PRIV_RW_USER_RW);
 	/* Initilaize GIC */
 	zynqMP_r5_gic_initialize();
-	
-	Xil_DCacheDisable();
 #else
 #ifdef ZYNQ_A9
     /* Place the vector table at the image entry point */
