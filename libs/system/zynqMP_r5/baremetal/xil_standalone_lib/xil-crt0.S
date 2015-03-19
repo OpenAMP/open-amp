@@ -111,7 +111,9 @@ _startup:
 
 	/* set stack pointer */
 	ldr	r13,.Lstack		/* stack address */
-
+#if USEAMP!=1
+	bl 	Init_Uart		/* Initialize UART */
+#endif
 	bl	main			/* Jump to main C code */
 
 	bl	_exit

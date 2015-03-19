@@ -96,6 +96,21 @@ _boot:
 
 OKToRun:
 
+/* Initialize processor registers to 0 */
+	mov	r0,#0
+	mov	r1,#0
+	mov	r2,#0
+	mov	r3,#0
+	mov	r4,#0
+	mov	r5,#0
+	mov	r6,#0
+	mov	r7,#0
+	mov	r8,#0
+	mov	r9,#0
+	mov	r10,#0
+	mov	r11,#0
+	mov	r12,#0
+
 /* Disable MPU and caches */
         mrc     p15, 0, r0, c1, c0, 0       	/* Read CP15 Control Register*/
         bic     r0, r0, #0x05               	/* Disable MPU (M bit) and data cache (C bit) */
@@ -172,25 +187,21 @@ OKToRun:
 	ldr	r13,=SYS_stack			/* SYS stack pointer */
 
 	bl 	Init_MPU		/* Initialize MPU */
-
+#if USEAMP!=1
 /*set exception vector to LOVEC */
-/*
 	mrc	p15, 0, r0, c1, c0, 0
 	mvn	r1, #0x2000
 	and	r0, r0, r1
 	mcr	p15, 0, r0, c1, c0, 0
-*/
-
+#endif
 
 /* Enable icahce and dcache */
-	mrc 	p15,0,r1,c1,c0,0 /* Read system Control Register configuration data */
-	orr 	r1,r1,#(0x1 << 12) /* instruction cache enable */
-	orr 	r1,r1,#(0x1 << 2) /* data cache enable */
+	mrc 	p15,0,r1,c1,c0,0
+	ldr	r0, =0x1004
+	orr 	r1,r1,r0
+	mcr	p15,0,r1,c1,c0,0		/* Enable cache  */
 	dsb
-	mcr p15, 0, r0, c15, c5, 0  /* Invalidate entire data cache */
-	mcr p15, 0, r0, c7, c5, 0   /* Invalidate entire instruction cache */
-	mcr	p15,0,r1,c1,c0,0		/* Enable cache RAMs*/
-	isb					/* flush prefetch buffer */
+	isb					/* isb	flush prefetch buffer */
 
 /* Enable Branch prediction */
 	mrc     p15, 0, r0, c1, c0, 1       /* Read ACTLR*/
