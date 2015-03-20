@@ -27,9 +27,6 @@
 #include <linux/kthread.h>
 #include <linux/ioctl.h>
 #include <linux/errno.h>
-#include <linux/platform_device.h>
-#include <linux/of_platform.h>
-#include <linux/sysfs.h>
 
 #define MAX_RPMSG_BUFF_SIZE		512
 #define RPMSG_KFIFO_SIZE		(MAX_RPMSG_BUFF_SIZE * 4)
@@ -72,7 +69,7 @@ static int rpmsg_dev_open(struct inode *inode, struct file *p_file)
 	struct _rpmsg_dev_params *local = container_of(inode->i_cdev,
 					struct _rpmsg_dev_params, cdev);
 	p_file->private_data = local;
-	pr_info("%s\n", __func__);
+
 	return 0;
 }
 
@@ -252,27 +249,6 @@ static struct rpmsg_driver rpmsg_user_dev_drv = {
 	.callback = rpmsg_user_dev_rpmsg_drv_cb,
 };
 
-static ssize_t rpmsg_user_dev_id_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	ssize_t status;
-
-	status = sprintf(buf, "%s\n",
-		rpmsg_user_dev_drv_id_table[0].name);
-	return status;
-}
-
-static DEVICE_ATTR(rpmsg_id, 0444, rpmsg_user_dev_id_show, NULL);
-
-static const struct attribute *rpmsg_dev_attrs[] = {
-	&dev_attr_rpmsg_id.attr,
-	NULL,
-};
-
-static const struct attribute_group rpmsg_dev_attr_group = {
-	.attrs = (struct attribute **) rpmsg_dev_attrs,
-};
-
 static int rpmsg_user_dev_rpmsg_drv_probe(struct rpmsg_channel *rpdev)
 {
 	struct _rpmsg_dev_params *local;
@@ -305,17 +281,17 @@ static int rpmsg_user_dev_rpmsg_drv_probe(struct rpmsg_channel *rpdev)
 	local->rpmsg_chnl = rpdev;
 	local->block_flag = 0;
 
+	dev_set_drvdata(&rpdev->dev, local);
+
 	sprintf(local->tx_buff, RPMG_INIT_MSG);
 	if (rpmsg_sendto(local->rpmsg_chnl,
 					local->tx_buff,
 					sizeof(RPMG_INIT_MSG),
 					rpdev->dst)) {
 		dev_err(&rpdev->dev, "Failed to send init_msg to target 0x%x.", local->rpmsg_dst);
-		goto error0;
+		goto error1;
 	}
 	dev_info(&rpdev->dev, "Sent init_msg to target 0x%x.", local->rpmsg_dst);
-
-	dev_set_drvdata(&rpdev->dev, local);
 
 	/* Create device file for the rpmsg user dev device */
 	if (rpmsg_dev_next_minor < RPMSG_USER_DEV_MAX_MINORS) {
@@ -341,8 +317,6 @@ static int rpmsg_user_dev_rpmsg_drv_probe(struct rpmsg_channel *rpdev)
 		dev_err(&rpdev->dev, "Cannot create device file.\n");
 		goto error1;
 	}
-	/* Create sysfs group */
-	status = sysfs_create_group(&(rpdev->dev.kobj), &rpmsg_dev_attr_group);
 
 	dev_info(&rpdev->dev, "new channel: 0x%x -> 0x%x!\n",
 			rpdev->src, rpdev->dst);

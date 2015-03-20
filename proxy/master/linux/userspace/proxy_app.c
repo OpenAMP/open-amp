@@ -6,9 +6,11 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <signal.h>
+#include <unistd.h>
 #include "proxy_app.h"
 
 #define RPC_BUFF_SIZE 512
+#define RPC_CHANNEL_READY_TO_CLOSE "rpc_channel_ready_to_close"
 
 struct _proxy_data {
 	int active;
@@ -124,6 +126,11 @@ int handle_write(struct _sys_rpc *rpc)
 int handle_rpc(struct _sys_rpc *rpc)
 {
 	int retval;
+	char *data = (char *)rpc;
+	if (!strcmp(data, RPC_CHANNEL_READY_TO_CLOSE)) {
+		proxy->active = 0;
+		return 0;
+	}
 
 	/* Handle RPC */
 	switch ((int)(rpc->id)) {
@@ -170,7 +177,6 @@ int terminate_rpc_app()
 void exit_action_handler(int signum)
 {
 	proxy->active = 0;
-	printf("%s\n", __func__);
 }
 
 void kill_action_handler(int signum)
@@ -212,6 +218,7 @@ int main(int argc, char *argv[])
 	struct sigaction kill_action;
 	unsigned int bytes_rcvd;
 	int i = 0;
+	int ret = 0;
 
 	/* Initialize signalling infrastructure */
 	memset(&exit_action, 0, sizeof(struct sigaction));
@@ -250,16 +257,27 @@ int main(int argc, char *argv[])
 
 	/* Allocate memory for proxy data structure */
 	proxy = malloc(sizeof(struct _proxy_data));
+	if (proxy == 0) {
+		printf("\r\nMaster>Failed to allocate memory.\r\n");
+		return -1;
+	}
+	proxy->active = 1;
 
 	/* Open proxy rpmsg device */
 	printf("\r\nMaster>Opening rpmsg proxy device\r\n");
+	i = 0;
 	do {
 		proxy->rpmsg_proxy_fd = open("/dev/rpmsg_proxy0", O_RDWR);
+		sleep(1);
+	} while (proxy->rpmsg_proxy_fd < 0 && (i++ < 2));
 
-	} while (proxy->rpmsg_proxy_fd < 0);
+	if (proxy->rpmsg_proxy_fd < 0) {
+		printf("\r\nMaster>Failed to open rpmsg proxy driver device file.\r\n");
+		ret = -1;
+		goto error0;
+	}
 
 	/* Allocate memory for rpc payloads */
-	proxy->active = 1;
 	proxy->rpc = malloc(RPC_BUFF_SIZE);
 	proxy->rpc_response = malloc(RPC_BUFF_SIZE);
 
@@ -306,6 +324,8 @@ int main(int argc, char *argv[])
 	/* Free up resources */
 	free(proxy->rpc);
 	free(proxy->rpc_response);
+
+error0:
 	free(proxy);
 
 	/* Unload drivers */
@@ -316,6 +336,6 @@ int main(int argc, char *argv[])
 	system("modprobe -r virtio_ring");
 	system("modprobe -r virtio");
 
-	return 0;
+	return ret;
 }
 

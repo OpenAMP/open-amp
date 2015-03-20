@@ -148,7 +148,7 @@ void *compute_thread_entry(void *ptr)
 
 		do {
 			bytes_rcvd = read(fd, &r_matrix, sizeof(r_matrix));
-		} while (bytes_rcvd < sizeof(r_matrix));
+		} while ((bytes_rcvd < sizeof(r_matrix)) || (bytes_rcvd < 0));
 
 		printf("\r\n Received results! - %d bytes from ", bytes_rcvd);
 		printf("rpmsg device (transmitted from remote context) \r\n");

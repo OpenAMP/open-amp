@@ -27,9 +27,6 @@
 #include <linux/kthread.h>
 #include <linux/ioctl.h>
 #include <linux/errno.h>
-#include <linux/platform_device.h>
-#include <linux/of_platform.h>
-#include <linux/sysfs.h>
 
 #define MAX_RPMSG_BUFF_SIZE		512
 #define RPMSG_KFIFO_SIZE		(MAX_RPMSG_BUFF_SIZE * 4)
@@ -259,27 +256,6 @@ static struct rpmsg_driver rpmsg_proxy_dev_drv = {
 	.callback = rpmsg_proxy_dev_rpmsg_drv_cb,
 };
 
-static ssize_t rpmsg_proxy_dev_id_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	ssize_t status;
-
-	status = sprintf(buf, "%s\n",
-		rpmsg_proxy_dev_drv_id_table[0].name);
-	return status;
-}
-
-static DEVICE_ATTR(rpmsg_id, 0444, rpmsg_proxy_dev_id_show, NULL);
-
-static const struct attribute *rpmsg_dev_attrs[] = {
-	&dev_attr_rpmsg_id.attr,
-	NULL,
-};
-
-static const struct attribute_group rpmsg_dev_attr_group = {
-	.attrs = (struct attribute **) rpmsg_dev_attrs,
-};
-
 static int rpmsg_proxy_dev_rpmsg_drv_probe(struct rpmsg_channel *rpdev)
 {
 	struct _rpmsg_dev_params *local;
@@ -357,8 +333,6 @@ static int rpmsg_proxy_dev_rpmsg_drv_probe(struct rpmsg_channel *rpdev)
 		dev_err(&rpdev->dev, "Cannot create device file.\n");
 		goto error2;
 	}
-	/* Create sysfs group */
-	status = sysfs_create_group(&(rpdev->dev.kobj), &rpmsg_dev_attr_group);
 
 	dev_info(&rpdev->dev, "new channel: 0x%x -> 0x%x!\n",
 			rpdev->src, rpdev->dst);
