@@ -30,7 +30,7 @@
 #define PLATFORM_H_
 
 #include <stdio.h>
-#include "../common/hil/hil.h"
+#include "../../common/hil/hil.h"
 
 /* ------------------------- Macros --------------------------*/
 
@@ -43,6 +43,16 @@ struct ipi_info {
 	uint32_t ipi_base_addr;
 	uint32_t ipi_chn_mask;
 };
+
+/* IPC Device parameters */
+#define SHM_ADDR                          (void *)0x3ED08000
+#define SHM_SIZE                          0x00200000
+#define IPI_BASEADDR                      0xff310000
+#define IPI_CHN_BITMASK                   0x00000001 /* IPI channel bit mask APU<->RPU0 */
+#define VRING0_IPI_INTR_VECT              -1
+#define VRING1_IPI_INTR_VECT              65
+#define MASTER_CPU_ID                     0
+#define REMOTE_CPU_ID                     1
 
 int _enable_interrupt(struct proc_vring *vring_hw);
 void _reg_ipi_after_deinit(struct proc_vring *vring_hw);
