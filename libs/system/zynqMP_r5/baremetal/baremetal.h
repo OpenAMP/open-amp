@@ -29,95 +29,14 @@
 #ifndef _BAREMETAL_H
 #define _BAREMETAL_H
 
+#include "xil_types.h"
+#include "xparameters.h"
 #include "xil_cache.h"
 #include "xreg_cortexr5.h"
-#include "xpseudo_asm_gcc.h"
-#include "xparameters.h"
 
-/*
- * The maximum number of interrupts supported by the hardware.
- */
-#define XSCUGIC_MAX_NUM_INTR_INPUTS	190U
+#define INTC_DEVICE_ID		XPAR_SCUGIC_0_DEVICE_ID
 
-/** name CPU Interface Register Map
- *
- * Define the offsets from the base address for all CPU registers of the
- * interrupt controller, some registers may be reserved in the hardware device.
- */
-#define XSCUGIC_CONTROL_OFFSET		0x00000000U /**< CPU Interface Control
-							Register */
-#define XSCUGIC_CPU_PRIOR_OFFSET	0x00000004U /**< Priority Mask Reg */
-#define XSCUGIC_BIN_PT_OFFSET		0x00000008U /**< Binary Point Register */
-#define XSCUGIC_INT_ACK_OFFSET		0x0000000CU /**< Interrupt ACK Reg */
-#define XSCUGIC_EOI_OFFSET		0x00000010U /**< End of Interrupt Reg */
-#define XSCUGIC_RUN_PRIOR_OFFSET	0x00000014U /**< Running Priority Reg */
-#define XSCUGIC_HI_PEND_OFFSET		0x00000018U /**< Highest Pending Interrupt
-							Register */
-#define XSCUGIC_ALIAS_BIN_PT_OFFSET	0x0000001CU /**< Aliased non-Secure
-							Binary Point Register */
-
-/** name Distributor Interface Register Map
- *
- * Define the offsets from the base address for all Distributor registers of
- * the interrupt controller, some registers may be reserved in the hardware
- * device.
- */
-#define XSCUGIC_DIST_EN_OFFSET          0x00000000U /**< Distributor Enable
-                                                        Register */
-#define XSCUGIC_IC_TYPE_OFFSET          0x00000004U /**< Interrupt Controller
-                                                        Type Register */
-#define XSCUGIC_DIST_IDENT_OFFSET       0x00000008U /**< Implementor ID
-                                                        Register */
-#define XSCUGIC_SECURITY_OFFSET         0x00000080U /**< Interrupt Security
-                                                        Register */
-#define XSCUGIC_ENABLE_SET_OFFSET       0x00000100U /**< Enable Set
-                                                        Register */
-#define XSCUGIC_DISABLE_OFFSET          0x00000180U /**< Enable Clear Register */
-#define XSCUGIC_PENDING_SET_OFFSET      0x00000200U /**< Pending Set
-                                                        Register */
-#define XSCUGIC_PENDING_CLR_OFFSET      0x00000280U /**< Pending Clear
-                                                        Register */
-#define XSCUGIC_ACTIVE_OFFSET           0x00000300U /**< Active Status Register */
-#define XSCUGIC_PRIORITY_OFFSET         0x00000400U /**< Priority Level Register */
-#define XSCUGIC_SPI_TARGET_OFFSET       0x00000800U /**< SPI Target
-                                                        Register 0x800-0x8FB */
-#define XSCUGIC_INT_CFG_OFFSET          0x00000C00U /**< Interrupt Configuration
-                                                        Register 0xC00-0xCFC */
-#define XSCUGIC_PPI_STAT_OFFSET         0x00000D00U /**< PPI Status Register */
-#define XSCUGIC_SPI_STAT_OFFSET         0x00000D04U /**< SPI Status Register
-                                                        0xd04-0xd7C */
-#define XSCUGIC_AHB_CONFIG_OFFSET       0x00000D80U /**< AHB Configuration
-                                                        Register */
-#define XSCUGIC_SFI_TRIG_OFFSET         0x00000F00U /**< Software Triggered
-                                                        Interrupt Register */
-#define XSCUGIC_PERPHID_OFFSET          0x00000FD0U /**< Peripheral ID Reg */
-#define XSCUGIC_PCELLID_OFFSET          0x00000FF0U /**< Pcell ID Register */
-
-#define XSCUGIC_EN_INT_MASK             0x00000001U /**< Interrupt In Enable */
-
-#define XSCUGIC_SPI_TARGET_OFFSET_CALC(InterruptID) \
-	((u32)XSCUGIC_SPI_TARGET_OFFSET + (((InterruptID)/4U) * 4U))
-
-#define XSCUGIC_INT_CFG_OFFSET_CALC(InterruptID) \
-	((u32)XSCUGIC_INT_CFG_OFFSET + (((InterruptID)/16U) * 4U))
-
-#define XSCUGIC_EN_DIS_OFFSET_CALC(Register, InterruptID) \
-		((Register) + (((InterruptID)/32U) * 4U))
-
-#define XSCUGIC_PRIORITY_OFFSET_CALC(InterruptID) \
-	((u32)XSCUGIC_PRIORITY_OFFSET + (((InterruptID)/4U) * 4U))
-
-#define XScuGic_CPUWriteReg(RegOffset, Data) \
-	(Xil_Out32((XPAR_SCUGIC_0_CPU_BASEADDR + RegOffset), Data))
-
-#define XScuGic_CPUReadReg(RegOffset) \
-	(Xil_In32(XPAR_SCUGIC_0_CPU_BASEADDR + RegOffset))
-
-#define XScuGic_DistWriteReg(RegOffset, Data) \
-	(Xil_Out32((XPAR_SCUGIC_0_DIST_BASEADDR + RegOffset), Data))
-
-#define XScuGic_DistReadReg(RegOffset) \
-	(Xil_In32(XPAR_SCUGIC_0_DIST_BASEADDR + RegOffset))
+#define VRING1_IPI_INTR_VECT              65
 
 /* IPI REGs OFFSET */
 #define IPI_TRIG_OFFSET          0x00000000 /* IPI trigger register offset */
@@ -127,38 +46,9 @@
 #define IPI_IER_OFFSET           0x00000018 /* IPI interrupt enable register offset */
 #define IPI_IDR_OFFSET           0x0000001C /* IPI interrupt disable register offset */
 
-#define         MEM_READ8(addr)         *(volatile unsigned char *)(addr)
-#define         MEM_READ16(addr)        *(volatile unsigned short *)(addr)
-#define         MEM_READ32(addr)        *(volatile unsigned long *)(addr)
-#define         MEM_WRITE8(addr,data)   *(volatile unsigned char *)(addr) = (unsigned char)(data)
-#define         MEM_WRITE16(addr,data)  *(volatile unsigned short *)(addr) = (unsigned short)(data)
-#define         MEM_WRITE32(addr,data)  *(volatile unsigned long *)(addr) = (unsigned long)(data)
+#define platform_dcache_all_flush() { Xil_DCacheFlush(); }
 
-#ifndef BAREMETAL_MASTER
-#define BAREMETAL_MASTER 0
-#endif
-
-/* Define Interrupt Ack Mask */
-#define         INT_ACK_MASK                    0x000003FF
-
-/* The vector table address is the same as image entry point */
-#define RAM_VECTOR_TABLE_ADDR           ELF_START
-
-typedef enum {
-	TRIG_NOT_SUPPORTED,
-	TRIG_RISING_EDGE,
-	TRIG_FALLING_EDGE,
-	TRIG_LEVEL_LOW,
-	TRIG_LEVEL_HIGH,
-	TRIG_RISING_FALLING_EDGES,
-	TRIG_HIGH_LOW_RISING_FALLING_EDGES
-} INT_TRIG_TYPE;
-
-typedef enum {
-    NOCACHE,
-    WRITEBACK,
-    WRITETHROUGH
-} CACHE_TYPE;
+#define platform_dcache_flush_range(addr, len) { Xil_DCacheFlushRange(addr, len); }
 
 #define CORTEXR5_CPSR_INTERRUPTS_BITS (XREG_CPSR_IRQ_ENABLE | XREG_CPSR_FIQ_ENABLE)
 
@@ -190,45 +80,19 @@ typedef enum {
 		tmp_val &= CORTEXR5_CPSR_INTERRUPTS_BITS; \
 		*get_bits_ptr = tmp_val; \
 	}
-
-#define SWITCH_TO_SYS_MODE() \
-	{ \
-		mtcpsr((mfcpsr() | XREG_CPSR_SYSTEM_MODE) & ~((unsigned int)CORTEXR5_CPSR_INTERRUPTS_BITS));\
-	}
-
 void zynqMP_r5_map_mem_region(u32 addr, u32 size, u32 attrib);
 
 int zynqMP_r5_gic_initialize();
+void zynqMP_r5_irq_isr();
 
-int zynqMP_r5_gic_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
-		int priority);
-int zynqMP_r5_gic_interrupt_disable(int vector_id);
 void restore_global_interrupts();
 void disable_global_interrupts();
-
-/* define function macros for OpenAMP API */
-#define platform_cache_all_flush_invalidate() \
-	{ \
-		Xil_DCacheFlush(); \
-		Xil_DCacheInvalidate(); \
-		Xil_ICacheInvalidate(); \
-	}
-
-#define platform_cache_disable() \
-	{ \
-		Xil_DCacheDisable(); \
-		Xil_ICacheDisable(); \
-	}
-
-#define platform_dcache_all_flush() { Xil_DCacheFlush(); }
-
-#define platform_dcache_flush_range(addr, len) { Xil_DCacheFlushRange(addr, len); }
-
-#define platform_interrupt_enable(...) zynqMP_r5_gic_interrupt_enable(__VA_ARGS__)
-#define platform_interrupt_disable(...) zynqMP_r5_gic_interrupt_disable(__VA_ARGS__)
-#define platform_map_mem_region(...) 
-
-#define platform_vatopa(addr) ((unsigned long)addr)
-#define platform_patova(addr) ((void *)addr)
+int platform_interrupt_enable(unsigned int vector,unsigned int polarity, unsigned int priority);
+int platform_interrupt_disable(unsigned int vector);
+void platform_cache_all_flush_invalidate();
+void platform_cache_disable();
+void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size, unsigned int flags);
+unsigned long platform_vatopa(void *addr);
+void *platform_patova(unsigned long addr);
 
 #endif /* _BAREMETAL_H */

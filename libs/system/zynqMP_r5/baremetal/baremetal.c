@@ -28,80 +28,42 @@
 #include <stdio.h>
 #include <string.h>
 #include "xparameters.h"
-#include "baremetal.h"
-#include "xil_io.h"
 #include "xil_exception.h"
+#include "xscugic.h"
+#include "xil_cache.h"
+#include "xil_mmu.h"
+#include "baremetal.h"
 
-void zynqMP_r5_irq_isr();
+XScuGic InterruptController;
 
 int zynqMP_r5_gic_initialize() {
-	unsigned int int_id = 0;
-	unsigned int local_cpu_id = (unsigned int)XPAR_CPU_ID + (unsigned int)1;
+	u32 Status;
 
 	Xil_ExceptionDisable();
 
-	/* Initialize the GIC distributor */
-	XScuGic_DistWriteReg(XSCUGIC_DIST_EN_OFFSET, 0U);
+	XScuGic_Config *IntcConfig; /* The configuration parameters of the interrupt controller */
 
 	/*
-	 * Set the security domains in the int_security registers for non-secure
-	 * interrupts. All are secure, so leave at the default. Set to 1 for
-	 * non-secure interrupts.
+	 * Initialize the interrupt controller driver
 	 */
-
-	/*
-	 * For the Shared Peripheral Interrupts INT_ID[MAX..32], set:
-	 */
-
-	/*
-	 * 1. The trigger mode in the int_config register
-	 * Only write to the SPI interrupts, so start at 32
-	 */
-	for (int_id = 32U; int_id<XSCUGIC_MAX_NUM_INTR_INPUTS;int_id=int_id+16U) {
-	/*
-	 * Each INT_ID uses two bits, or 16 INT_ID per register
-	 * Set them all to be level sensitive, active HIGH.
-	 */
-	 XScuGic_DistWriteReg(XSCUGIC_INT_CFG_OFFSET_CALC(int_id), 0U);
+	IntcConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
+	if (NULL == IntcConfig) {
+		return XST_FAILURE;
 	}
 
-
-#define DEFAULT_PRIORITY	0xa0a0a0a0U
-	for (int_id = 0U; int_id<XSCUGIC_MAX_NUM_INTR_INPUTS;int_id=int_id+4U) {
-	/*
-	 * 2. The priority using int the priority_level register
-	 * The priority_level and spi_target registers use one byte per
-	 * INT_ID.
-	 * Write a default value that can be changed elsewhere.
-	 */
-	 XScuGic_DistWriteReg(XSCUGIC_PRIORITY_OFFSET_CALC(int_id), DEFAULT_PRIORITY);
+	Status = XScuGic_CfgInitialize(&InterruptController, IntcConfig,
+					IntcConfig->CpuBaseAddress);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
 	}
 
-	for (int_id = 32U; int_id<XSCUGIC_MAX_NUM_INTR_INPUTS;int_id=int_id+4U) {
 	/*
-	 * 3. The CPU interface in the spi_target register
-	 * Only write to the SPI interrupts, so start at 32
+	 * Register the interrupt handler to the hardware interrupt handling
+	 * logic in the ARM processor.
 	 */
-		local_cpu_id |= local_cpu_id << 8U;
-		local_cpu_id |= local_cpu_id << 16U;
-		XScuGic_DistWriteReg(XSCUGIC_SPI_TARGET_OFFSET_CALC(int_id), local_cpu_id);
-	}
-
-	for (int_id = 0U; int_id<XSCUGIC_MAX_NUM_INTR_INPUTS;int_id=int_id+32U) {
-	/*
-	 * 4. Enable the SPI using the enable_set register. Leave all disabled
-	 * for now.
-	 */
-		XScuGic_DistWriteReg(XSCUGIC_EN_DIS_OFFSET_CALC(XSCUGIC_DISABLE_OFFSET, int_id), 0xFFFFFFFFU);
-	}
-
-	XScuGic_DistWriteReg(XSCUGIC_DIST_EN_OFFSET, XSCUGIC_EN_INT_MASK);
-
-	/* Program the priority mask of the CPU using the Priority mask register */
-	XScuGic_CPUWriteReg(XSCUGIC_CPU_PRIOR_OFFSET, 0xF0U);
-	XScuGic_CPUWriteReg(XSCUGIC_CONTROL_OFFSET, 0x07U);	
-
-	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT, (Xil_ExceptionHandler)zynqMP_r5_irq_isr, NULL);
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
+				(Xil_ExceptionHandler) zynqMP_r5_irq_isr,
+				&InterruptController);
 
 	Xil_ExceptionEnable();
 
@@ -114,63 +76,44 @@ void zynqMP_r5_irq_isr() {
 
 	unsigned int raw_irq;
 	int irq_vector;
-	raw_irq = (unsigned int)XScuGic_CPUReadReg(XSCUGIC_INT_ACK_OFFSET);
-	
-	irq_vector = (int) (raw_irq & INT_ACK_MASK);
+	raw_irq = (unsigned int)XScuGic_CPUReadReg(&InterruptController,XSCUGIC_INT_ACK_OFFSET);
+	irq_vector = (int) (raw_irq & XSCUGIC_ACK_INTID_MASK);
 
 	bm_env_isr(irq_vector);
 
-	XScuGic_CPUWriteReg(XSCUGIC_EOI_OFFSET, raw_irq);
+	XScuGic_CPUWriteReg(&InterruptController,XSCUGIC_EOI_OFFSET, raw_irq);
 }
 
-int zynqMP_r5_gic_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
-	int priority) {
-	/* Not implement setting priority of interrupt */
-	unsigned int mask;
-	
-	mask = 0x00000001U << ((unsigned int)(vector_id) % 32U);
-	/*
-	 * Enable the selected interrupt source by setting the
-	 * corresponding bit in the Enable Set register.
-	 */
-	XScuGic_DistWriteReg((u32)XSCUGIC_ENABLE_SET_OFFSET + (((unsigned int)(vector_id) / 32U) * 4U), mask);
-	return vector_id;
-}
+/***********************************************************************
+ *
+ *
+ * zynqMP_r5_map_mem_region
+ *
+ *
+ * This function sets-up the region of memory based on the given
+ * attributes
+ * There is no MMU for R5, no need to map phy address to vrt_addr
+ *
+ * @param addr		     - Starting address of memory region
+ * @parma size           - size of region
+ * @param attrib  		 - Attributes for memory region
+ *
+ *
+ * OUTPUTS
+ *
+ *       None
+ *
+ ***********************************************************************/
+void zynqMP_r5_map_mem_region(u32 addr, u32 size, u32 attrib) {
+	u32 Index, NumSize;
+	/* Calculating the number of MBs required for the shared region*/
+	NumSize = size / 0x100000;
 
-int zynqMP_r5_gic_interrupt_disable(int vector_id) {
-
-	unsigned int mask;
-	/*
-	 * The Int_Id is used to create the appropriate mask for the
-   * desired bit position. Int_Id currently limited to 0 - 31
-	 */
-	mask = 0x00000001U << ((unsigned int)(vector_id) % 32U);
-
-	/*
-	 * Disable the selected interrupt source by setting the
-	 * corresponding bit in the IDR.
-	 */
-	XScuGic_DistWriteReg((u32)XSCUGIC_DISABLE_OFFSET + (((unsigned int)(vector_id) / 32U) * 4U), mask);
-
-	return vector_id;
-}
-
-extern void bm_env_isr(int vector);
-
-
-unsigned int old_value = 0;
-
-void restore_global_interrupts() {
-	ARM_AR_INT_BITS_SET(old_value);
-}
-
-void disable_global_interrupts() {
-	unsigned int value = 0;
-	ARM_AR_INT_BITS_GET(&value);
-	if (value != old_value) {
-		ARM_AR_INT_BITS_SET(CORTEXR5_CPSR_INTERRUPTS_BITS);
-		old_value = value;
-	}
+	/* Xil_SetTlbAttributes is designed to configure memory for 1MB
+	 * region. The API is called multiple times to configure the number
+	 * of MBs required by shared memory size (calculated as NumSize)*/
+	for (Index = 0; Index < NumSize; Index ++)
+		Xil_SetTlbAttributes(addr + 0x100000 * Index, attrib);
 }
 
 /*
@@ -262,39 +205,61 @@ void ipi_isr(int vect_id, void *data) {
 	}while (ipi_intr_status);
 }
 
-/***********************************************************************
- *
- *
- * zynqMP_r5_map_mem_region
- *
- *
- * This function sets-up the region of memory based on the given
- * attributes
- * There is no MMU for R5, no need to map phy address to vrt_addr
- *
- * @param vrt_addr       - virtual address of region
- * @param phy_addr       - physical address of region
- * @parma size           - size of region
- * @param is_mem_mapped  - memory mapped or not
+int platform_interrupt_enable(unsigned int vector,unsigned int polarity,unsigned int priority) {
+	XScuGic_EnableIntr(XPAR_SCUGIC_0_DIST_BASEADDR,vector);
+	return (vector);
+}
 
- * @param cache_type     - cache type of region
- *
- *
- *   OUTPUTS
- *
- *       None
- *
- ***********************************************************************/
-void zynqMP_r5_map_mem_region(u32 addr, u32 size, u32 attrib) {
-	u32 Index, NumSize;
-	/* Calculating the number of MBs required for the shared region*/
-	NumSize = size / 0x100000;
+int platform_interrupt_disable(unsigned int vector) {
+	XScuGic_DisableIntr(XPAR_SCUGIC_0_DIST_BASEADDR,vector);
+	return (vector);
+}
 
-	/* Xil_SetTlbAttributes is designed to configure memory for 1MB
-	 * region. The API is called multiple times to configure the number
-	 * of MBs required by shared memory size (calculated as NumSize)*/
-	for (Index = 0; Index < NumSize; Index ++)
-		Xil_SetTlbAttributes(addr + 0x100000 * Index, attrib);
+void platform_cache_all_flush_invalidate() {
+		Xil_DCacheFlush();
+		Xil_DCacheInvalidate();
+		Xil_ICacheInvalidate();
+}
+
+void platform_cache_disable() {
+		Xil_DCacheDisable();
+		Xil_ICacheDisable();
+}
+
+void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size,unsigned int flags) {
+	return;
+}
+
+unsigned long platform_vatopa(void *addr) {
+	 return ((unsigned long)addr);
+ }
+
+void *platform_patova(unsigned long addr) {
+	return ((void *)addr);
+}
+
+unsigned int old_value = 0;
+
+void restore_global_interrupts() {
+
+	ARM_AR_INT_BITS_SET(old_value);
+
+}
+
+void disable_global_interrupts() {
+
+	unsigned int value = 0;
+
+	ARM_AR_INT_BITS_GET(&value);
+
+	if (value != old_value) {
+
+		ARM_AR_INT_BITS_SET(CORTEXR5_CPSR_INTERRUPTS_BITS);
+
+		old_value = value;
+
+	}
+
 }
 
 /*==================================================================*/
