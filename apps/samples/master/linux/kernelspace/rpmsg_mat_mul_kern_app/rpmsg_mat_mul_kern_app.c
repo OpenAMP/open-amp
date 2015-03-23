@@ -2,6 +2,7 @@
  * RPMSG User Device Kernel Driver
  *
  * Copyright (C) 2014 Mentor Graphics Corporation
+ * Copyright (C) 2014 Xilinx, Inc.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,202 +22,162 @@
 #include <linux/mutex.h>
 #include <linux/uaccess.h>
 #include <linux/errno.h>
-#include <linux/workqueue.h>
+#include <linux/random.h>
 
 #define MAX_RPMSG_BUFF_SIZE		512
 
-#define PAYLOAD_MIN_SIZE	1
-#define PAYLOAD_MAX_SIZE	(MAX_RPMSG_BUFF_SIZE - sizeof(struct rpmsg_hdr) - 24)
-#define NUM_PAYLOADS		(PAYLOAD_MAX_SIZE/PAYLOAD_MIN_SIZE)
+#define	MATRIX_SIZE			6
+#define NUM_MATRIX			2
 
 /* Shutdown message ID */
 #define SHUTDOWN_MSG			0xEF56A55A
 
-#define RPMG_INIT_MSG "init_msg"
-
-struct _rpmsg_dev_params {
-	struct device *rpmsg_dev;
-	struct mutex sync_lock;
-	struct rpmsg_channel *rpmsg_chnl;
-	char tx_buff[MAX_RPMSG_BUFF_SIZE]; /* buffer to keep the message to send */
-	u32 rpmsg_dst;
-	int err_cnt;
-	struct work_struct rpmsg_work;
-};
-
-struct _payload {
-	unsigned int	num;
-	unsigned int	size;
-	unsigned char	data[];
-};
+static const char init_msg[] = "init_msg";
 
 static const char *const shutdown_argv[]
 		= { "/sbin/shutdown", "-h", "-P", "now", NULL };
 
-static int rpmsg_echo_test_kern_app_echo_test(struct _rpmsg_dev_params *rpmsg_dev)
-{
-	static int payload_num = 0;
-	static int next_payload_size = PAYLOAD_MIN_SIZE;
-	int payload_size = 0;
-	int i = 0;
-	struct _payload *payload;
-	int err = 0;
-	if (!rpmsg_dev) {
-		return -1;
-	}
-	//pr_info("%s\n", __func__);
-	if (next_payload_size > PAYLOAD_MAX_SIZE) {
-		*((unsigned int *)rpmsg_dev->tx_buff) = SHUTDOWN_MSG;
-		//pr_info("Sending shutdown message to remote.\n");
-		err = rpmsg_send(rpmsg_dev->rpmsg_chnl, rpmsg_dev->tx_buff, sizeof(unsigned int));
-		if (err) {
-			pr_err ("Shutdown message send failed.\n");
-			return -1;
-		}
-	} else {
-		payload_size = next_payload_size++;
-		payload = (struct _payload *)(rpmsg_dev->tx_buff);
-		payload->num = payload_num++;
-		payload->size = payload_size;
-		memset(payload->data, 0xA5, payload_size);
-		err = rpmsg_send(rpmsg_dev->rpmsg_chnl, rpmsg_dev->tx_buff, (payload_size + sizeof(struct _payload)));
-		if (err) {
-			pr_err("Failed to send echo test message to remote.\n");
-			return -1;
-		}
-	}
-	return payload_size;
-}
 
-static void rpmsg_echo_test_kern_app_work_func(struct work_struct *work)
+
+struct _matrix {
+	unsigned int size;
+	unsigned int elements[MATRIX_SIZE][MATRIX_SIZE];
+};
+
+static struct	_matrix p_matrix[NUM_MATRIX];
+
+static void matrix_print(struct _matrix *m)
 {
-	struct _rpmsg_dev_params *local = container_of(work, struct _rpmsg_dev_params, rpmsg_work);
-	//pr_info ("%s:%p.\n", __func__, local);
-	int local_err_cnt = 0;
-	if (rpmsg_echo_test_kern_app_echo_test(local) <= 0) {
-		mutex_lock(&local->sync_lock);
-		local_err_cnt = local->err_cnt;
-		mutex_unlock(&local->sync_lock);
-		pr_info("\r\n *******************************************\r\n");
-		pr_info("\r\n Echo Test Results: Error count = %d\r\n", local_err_cnt);
-		pr_info("\r\n *******************************************\r\n");
+	int i, j;
+
+	/* Generate two random matrices */
+	pr_err(" \r\n Master : Linux : Printing results \r\n");
+
+	for (i = 0; i < m->size; ++i) {
+		for (j = 0; j < m->size; ++j)
+			pr_cont(" %d ", (unsigned int)m->elements[i][j]);
+		pr_info("\r\n");
 	}
 }
 
-static void rpmsg_echo_test_kern_app_cb(struct rpmsg_channel *rpdev, void *data,
+static void generate_matrices(int num_matrices, unsigned int matrix_size,
+				void *p_data)
+{
+	int	i, j, k, val;
+	struct _matrix *p_matrix = p_data;
+
+	/* Generate two random matrices */
+	pr_err(" \r\n Master : Linux : Generating random matrices \r\n");
+
+	for (i = 0; i < num_matrices; i++) {
+
+		/* Initialize workload */
+		p_matrix[i].size = matrix_size;
+
+		pr_err(" \r\n Master : Linux : Input matrix %d \r\n", i);
+		for (j = 0; j < matrix_size; j++) {
+
+			pr_info("\r\n");
+			for (k = 0; k < matrix_size; k++) {
+				get_random_bytes(&val, sizeof(val));
+				p_matrix[i].elements[j][k] =
+						((val & 0x7F) % 10);
+				pr_cont(" %d ",
+				(unsigned int)p_matrix[i].elements[j][k]);
+			}
+		}
+		pr_err("\r\n");
+	}
+
+}
+
+static void rpmsg_mat_mul_kern_app_cb(struct rpmsg_channel *rpdev, void *data,
 					int len, void *priv, u32 src)
 {
+	int err = 0;
+	int shutdown_msg = SHUTDOWN_MSG;
 
-	struct _rpmsg_dev_params *local = dev_get_drvdata(&rpdev->dev);
-	struct _payload *payload = data;
-	int i = 0;
-
-	/* Shutdown Linux if such a message is received. Only applicable
-	when Linux is a remoteproc remote. */
-
-	//pr_info ("%s\n", __func__);
 	if (!data) {
 		return;
 	}
 
 	if ((*(int *) data) == SHUTDOWN_MSG) {
+		/* Shutdown Linux if such a message is received. Only applicable
+			when Linux is a remoteproc remote. */
 		dev_info(&rpdev->dev,"shutdown message is received. Shutting down...\n");
 		call_usermodehelper(shutdown_argv[0], shutdown_argv,
 					NULL, UMH_NO_WAIT);
 	} else {
-		pr_info("\r\n Master : Linux Kernal Space : Received payload ");
-		pr_info("num %d of size %d, total len %d. \r\n", payload->num, payload->size,len);
-		for (i = 0; i < payload->size; i++) {
-			if (payload->data[i] != 0xA5) {
-				pr_err("\r\n Data corruption at index %d. \r\n", i);
-				mutex_lock(&local->sync_lock);
-				local->err_cnt++;
-				mutex_unlock(&local->sync_lock);
-				break;
-			}
-		}
-		schedule_work(&local->rpmsg_work);
+		/* print results */
+		matrix_print((struct _matrix *)data);
+
+		/* Send payload to remote. */
+		err = rpmsg_sendto(rpdev, &shutdown_msg, sizeof(int), rpdev->dst);
+
+		if (err)
+			pr_err(" Shutdown send failed!\r\n");
 	}
 }
 
-static int rpmsg_echo_test_kern_app_probe(struct rpmsg_channel *rpdev)
+static int rpmsg_mat_mul_kern_app_probe(struct rpmsg_channel *rpdev)
 {
-	struct _rpmsg_dev_params *local;
+	int err = 0;
 	dev_info(&rpdev->dev, "%s", __func__);
 
-	local = devm_kzalloc(&rpdev->dev, sizeof(struct _rpmsg_dev_params),
-			GFP_KERNEL);
-	if (!local) {
-		dev_err(&rpdev->dev, "Failed to allocate memory for rpmsg user dev.\n");
-		return -ENOMEM;
+	err = rpmsg_sendto(rpdev, init_msg, sizeof(init_msg), rpdev->dst);
+
+	if (err) {
+		pr_err(" Init messages send failed!\r\n");
+		return err;
 	}
-	memset(local, 0x0, sizeof(struct _rpmsg_dev_params));
-
-	/* Initialize mutex */
-	mutex_init(&local->sync_lock);
-
-	local->rpmsg_chnl = rpdev;
-
-	dev_set_drvdata(&rpdev->dev, local);
-
-	sprintf(local->tx_buff, RPMG_INIT_MSG);
-	if (rpmsg_sendto(local->rpmsg_chnl,
-					local->tx_buff,
-					sizeof(RPMG_INIT_MSG),
-					rpdev->dst)) {
-		dev_err(&rpdev->dev, "Failed to send init_msg to target 0x%x.", local->rpmsg_dst);
-		goto error0;
-	}
-	dev_info(&rpdev->dev, "Sent init_msg to target 0x%x.", local->rpmsg_dst);
+	dev_info(&rpdev->dev, "Sent init_msg to target 0x%x.", rpdev->dst);
 
 	dev_info(&rpdev->dev, "new channel: 0x%x -> 0x%x!\n",
 			rpdev->src, rpdev->dst);
 
-	INIT_WORK(&local->rpmsg_work, rpmsg_echo_test_kern_app_work_func);
-#if 0
-	if (rpmsg_echo_test_kern_app_echo_test(local) <= 0) {
-		pr_err("Failed to send echo test message to remote.\n");
-		return -1;
-	}
-#else
-	schedule_work(&local->rpmsg_work);
-#endif
+	/* Generate random matrices */
+	generate_matrices(NUM_MATRIX, MATRIX_SIZE, p_matrix);
 
-	goto out;
-error0:
-	return -ENODEV;
-out:
+	/* Send matrices to remote for computation */
+	err = rpmsg_sendto(rpdev, p_matrix, sizeof(struct _matrix) * 2, rpdev->dst);
+
+	pr_info("\r\n Master : Linux : Sent %d bytes of data over rpmsg channel to remote \r\n",
+		sizeof(struct _matrix) * 2);
+
+	if (err) {
+		pr_err(" send failed!\r\n");
+		return err;
+	}
 	return 0;
 }
 
-static void rpmsg_echo_test_kern_app_remove(struct rpmsg_channel *rpdev)
+static void rpmsg_mat_mul_kern_app_remove(struct rpmsg_channel *rpdev)
 {
-	struct _rpmsg_dev_params *local = dev_get_drvdata(&rpdev->dev);
-	flush_work(&local->rpmsg_work);
+	return;
 }
 
-static struct rpmsg_device_id rpmsg_echo_test_kern_app_id_table[] = {
+static struct rpmsg_device_id rpmsg_mat_mul_kern_app_id_table[] = {
 	{ .name = "rpmsg-openamp-demo-channel" },
 	{},
 };
 
-static struct rpmsg_driver rpmsg_echo_test_kern_app_drv = {
-	.drv.name = "rpmsg_echo_test_kern_app",
+static struct rpmsg_driver rpmsg_mat_mul_kern_app_drv = {
+	.drv.name = "rpmsg_mat_mul_kern_app",
 	.drv.owner = THIS_MODULE,
-	.id_table = rpmsg_echo_test_kern_app_id_table,
-	.probe = rpmsg_echo_test_kern_app_probe,
-	.remove = rpmsg_echo_test_kern_app_remove,
-	.callback = rpmsg_echo_test_kern_app_cb,
+	.id_table = rpmsg_mat_mul_kern_app_id_table,
+	.probe = rpmsg_mat_mul_kern_app_probe,
+	.remove = rpmsg_mat_mul_kern_app_remove,
+	.callback = rpmsg_mat_mul_kern_app_cb,
 };
 
 static int __init init(void)
 {
-	return register_rpmsg_driver(&rpmsg_echo_test_kern_app_drv);
+	return register_rpmsg_driver(&rpmsg_mat_mul_kern_app_drv);
 }
 
 static void __exit fini(void)
 {
-	unregister_rpmsg_driver(&rpmsg_echo_test_kern_app_drv);
+	unregister_rpmsg_driver(&rpmsg_mat_mul_kern_app_drv);
 }
 
 module_init(init);
