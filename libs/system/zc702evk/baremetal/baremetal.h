@@ -2,6 +2,8 @@
  * Copyright (c) 2014, Mentor Graphics Corporation
  * All rights reserved.
  *
+ * Copyright (c) 2015 Xilinx, Inc. All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -664,15 +666,13 @@ void arm_arch_install_isr_vector_table(unsigned long addr);
 void restore_global_interrupts();
 void disable_global_interrupts();
 void init_arm_stacks(void);
-
-/* define function macros for OpenAMP */
-#define platform_cache_all_flush_invalidate() ARM_AR_MEM_DCACHE_ALL_INVALIDATE()
-#define platform_cache_disable() ARM_AR_MEM_CACHE_DISABLE()
-#define platform_interrupt_enable(...) zc702evk_gic_interrupt_enable(__VA_ARGS__)
-#define platform_interrupt_disable(...) zc702evk_gic_interrupt_disable(__VA_ARGS__)
-#define platform_map_mem_region(...) arm_ar_map_mem_region(__VA_ARGS__)
-
-#define platform_vatopa(addr) (((unsigned long)address & (~( 0x0fff << 20))) | (0x08 << 24))
-#define platform_patova(addr) ((void *)addr)
+int platform_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
+                int priority);
+int platform_interrupt_disable(int vector_id);
+void platform_cache_all_flush_invalidate();
+void platform_cache_disable();
+void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size, unsigned int flags);
+unsigned long platform_vatopa(void *addr);
+void *platform_patova(unsigned long addr);
 
 #endif /* _BAREMETAL_H */

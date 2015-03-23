@@ -2,6 +2,8 @@
  * Copyright (c) 2014, Mentor Graphics Corporation
  * All rights reserved.
  *
+ * Copyright (c) 2015 Xilinx, Inc. All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -29,7 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "baremetal.h"
-
+#include "../../../../porting/env/env.h"
 unsigned char              ARM_AR_ISR_IRQ_Data[ARM_AR_ISR_STACK_SIZE];
 unsigned char              ARM_AR_ISR_FIQ_Data[ARM_AR_ISR_STACK_SIZE];
 unsigned char              ARM_AR_ISR_SUP_Stack[ARM_AR_ISR_STACK_SIZE];
@@ -88,7 +90,7 @@ void zc702evk_gic_pr_int_initialize(void) {
     MEM_WRITE32(INT_GIC_CPU_BASE + INT_GIC_CPU_CTRL, INT_CPU_ENABLE);
 }
 
-int zc702evk_gic_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
+int platform_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
                 int priority) {
     unsigned long reg_offset;
     unsigned long bit_shift;
@@ -139,7 +141,7 @@ int zc702evk_gic_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
     return (vector_id);
 }
 
-int zc702evk_gic_interrupt_disable(int vector_id) {
+int platform_interrupt_disable(int vector_id) {
     unsigned long reg_offset;
     unsigned long bit_shift;
     unsigned long temp32 = 0;
@@ -398,13 +400,29 @@ int arm_ar_mem_enable_mmu() {
  *       None
  *
  ***********************************************************************/
-void arm_ar_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
-                unsigned int size, int is_mem_mapped,
-                CACHE_TYPE cache_type) {
+void platform_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
+                unsigned int size, unsigned int flags) {
     unsigned int section_offset;
     unsigned int ttb_offset;
     unsigned int ttb_value;
     unsigned int ttb_base;
+    int is_mem_mapped = 0;
+    CACHE_TYPE cache_type;
+
+    if ((flags & (0x0f << 4 )) == MEM_MAPPED)
+    {
+	is_mem_mapped = 1;
+    }
+
+    if ((flags & 0x0f) == WB_CACHE) {
+	cache_type = WRITEBACK;
+    }
+    else if((flags & 0x0f) == WT_CACHE) {
+	cache_type = WRITETHROUGH;
+    }
+    else {
+	cache_type = NOCACHE;
+    }
 
     /* Read ttb base address */
     ARM_AR_CP_READ(ARM_AR_CP15, 0, &ttb_base, ARM_AR_C2,
@@ -450,6 +468,23 @@ void arm_ar_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
         MEM_WRITE32(ttb_base + ttb_offset, ttb_value);
 
     } /* for loop */
+}
+
+void platform_cache_all_flush_invalidate() {
+	ARM_AR_MEM_DCACHE_ALL_OP(0);
+}
+
+void platform_cache_disable() {
+	ARM_AR_MEM_CACHE_DISABLE();
+}
+
+unsigned long platform_vatopa(void *addr) {
+	return (((unsigned long)addr & (~( 0x0fff << 20))) | (0x08 << 24));
+}
+
+void *platform_patova(unsigned long addr){
+	return ((void *)addr);
+
 }
 
 /*==================================================================*/
