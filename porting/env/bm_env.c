@@ -41,6 +41,7 @@
  *
  **************************************************************************/
 
+#ifdef OPENAMP_BAREMETAL
 #include "env.h"
 #include "../config/config.h"
 
@@ -458,26 +459,8 @@ void env_disable_interrupt(unsigned int vector)
  */
 
 void env_map_memory(unsigned int pa, unsigned int va, unsigned int size,
-			unsigned int flags) {
-	int is_mem_mapped = 0;
-	int cache_type = 0;
-
-	if ((flags & (0x0f << 4 )) == MEM_MAPPED)
-	{
-		is_mem_mapped = 1;
-	}
-
-	if ((flags & 0x0f) == WB_CACHE) {
-		cache_type = WRITEBACK;
-	}
-	else if((flags & 0x0f) == WT_CACHE) {
-		cache_type = WRITETHROUGH;
-	}
-	else {
-		cache_type = NOCACHE;
-	}
-
-	platform_map_mem_region(va, pa, size, is_mem_mapped, cache_type);
+                unsigned int flags) {
+    platform_map_mem_region(va, pa, size, flags);
 }
 
 /**
@@ -575,3 +558,4 @@ static void release_spin_lock(void *plock)
 
 	xchg(plock, 1);
 }
+#endif
