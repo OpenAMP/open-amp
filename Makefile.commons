@@ -15,6 +15,7 @@ GENERAL_INCLUDES := -I"$(OHOME)/include"
 ifeq ($(OS),baremetal)
 CFLAGS += $(BAREMETAL_INCLUDES)
 CFLAGS +=-D"ENV=1"
+CFLAGS +=-D"OPENAMP_BAREMETAL=1"
 
 ifeq ($(ROLE),master)
 CFLAGS+=-D"MASTER=1"
