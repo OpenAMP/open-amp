@@ -51,9 +51,6 @@ int main() {
 	int ret;
 	int status;
 
-	/* Switch to System Mode */
-	SWITCH_TO_SYS_MODE();
-
 	/* Initialize HW system components */
 	init_system();
 
