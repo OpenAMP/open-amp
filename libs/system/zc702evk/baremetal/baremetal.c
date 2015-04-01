@@ -400,29 +400,13 @@ int arm_ar_mem_enable_mmu() {
  *       None
  *
  ***********************************************************************/
-void platform_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
-                unsigned int size, unsigned int flags) {
+void arm_ar_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
+                unsigned int size, int is_mem_mapped,
+                CACHE_TYPE cache_type) {
     unsigned int section_offset;
     unsigned int ttb_offset;
     unsigned int ttb_value;
     unsigned int ttb_base;
-    int is_mem_mapped = 0;
-    CACHE_TYPE cache_type;
-
-    if ((flags & (0x0f << 4 )) == MEM_MAPPED)
-    {
-	is_mem_mapped = 1;
-    }
-
-    if ((flags & 0x0f) == WB_CACHE) {
-	cache_type = WRITEBACK;
-    }
-    else if((flags & 0x0f) == WT_CACHE) {
-	cache_type = WRITETHROUGH;
-    }
-    else {
-	cache_type = NOCACHE;
-    }
 
     /* Read ttb base address */
     ARM_AR_CP_READ(ARM_AR_CP15, 0, &ttb_base, ARM_AR_C2,
@@ -468,6 +452,29 @@ void platform_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
         MEM_WRITE32(ttb_base + ttb_offset, ttb_value);
 
     } /* for loop */
+}
+
+void platform_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
+                unsigned int size, unsigned int flags) {
+    int is_mem_mapped = 0;
+    int cache_type = 0;
+
+    if ((flags & (0x0f << 4 )) == MEM_MAPPED)
+    {
+        is_mem_mapped = 1;
+    }
+
+    if ((flags & 0x0f) == WB_CACHE) {
+        cache_type = WRITEBACK;
+    }
+    else if((flags & 0x0f) == WT_CACHE) {
+        cache_type = WRITETHROUGH;
+    }
+    else {
+        cache_type = NOCACHE;
+    }
+
+    arm_ar_map_mem_region(vrt_addr, phy_addr, size, is_mem_mapped, cache_type);
 }
 
 void platform_cache_all_flush_invalidate() {
