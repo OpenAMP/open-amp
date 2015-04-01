@@ -14,7 +14,7 @@ CFLAGS += -DZYNQMP_R5
 LIBS += -lxil
 else
 ifeq ($(PLAT),zc702evk)
-CFLAGS += ZYNQ_A9
+CFLAGS += -DZYNQ_A9
 LIBS += -lcs3 -lcs3arm -lcs3unhosted
 endif
 endif

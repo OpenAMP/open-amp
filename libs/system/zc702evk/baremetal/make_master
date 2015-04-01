@@ -19,11 +19,11 @@ all: $(LIB_MASTER)
 $(LIB_MASTER): $(OBJFILES)
 
 	@echo AR $@
-	@$(AR) -r $@ $(OBJFILES)
+	$(AR) -r $@ $(OBJFILES)
 	
 $(OBJDIR)/%.o:%.c $(HEADERS) $(OBJDIR)
 	@echo CC $(<:.c=.o)
-	@$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
+	$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
 
 $(OBJDIR):
 	mkdir -p $@

@@ -1,9 +1,8 @@
 
 include ../Makefile.commons
 
-SAMPLE_OUT := samples/master/baremetal/matrix_multiply/matrix_multiply.out
-SAMPLE_C_SRC := samples/master/baremetal/matrix_multiply/matrix_multiply.c
-
+SAMPLE_OUT := matrix_multiply.out
+SAMPLE_SRC := matrix_multiply.c
 
 REMOTE_OUT   := matrix_multiply.out
 DST_DIR := samples/master/baremetal/matrix_multiply
@@ -19,7 +18,7 @@ $(SAMPLE_OUT): $(REMOTE_OUT) $(SAMPLEOBJFILES)
 
 	@echo 'Building master core matrix multiply sample for baremetal : $@'
 
-	$(LD)  -Wl,-Map=samples/master/baremetal/matrix_multiply/matrix_multiply.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(PLAT)/baremetal/linker_master.ld" -L"$(OHOME)/libs/system/$(PLAT)/baremetal" -L"$(OHOME)/libs/open_amp" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(DST_DIR)/firmware1.o $(DST_DIR)/firmware2.o -lbaremetal_master -lopen_amp -lc -lm -lstdc++ -lcs3 -lcs3arm -lcs3unhosted -Wl,--end-group 	
+	$(LD)  -Wl,-Map=matrix_multiply.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(PLAT)/baremetal/linker_master.ld" -L"$(OHOME)/libs/system/$(PLAT)/baremetal" -L"$(OHOME)/libs/open_amp" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(DST_DIR)/firmware1.o $(DST_DIR)/firmware2.o -lbaremetal_master -lopen_amp -lc -lm -lstdc++ -lcs3 -lcs3arm -lcs3unhosted -Wl,--end-group
 	
 	$(OBJCPY) -O binary $(SAMPLE_OUT) $(SAMPLE_BIN)
 	
