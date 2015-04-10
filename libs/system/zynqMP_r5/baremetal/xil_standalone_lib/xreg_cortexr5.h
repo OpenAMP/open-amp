@@ -2,42 +2,31 @@
 *
 * Copyright (C) 2014 Xilinx, Inc. All rights reserved.
 *
-* This file contains confidential and proprietary information  of Xilinx, Inc.
-* and is protected under U.S. and  international copyright and other
-* intellectual property  laws.
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
 *
-* DISCLAIMER
-* This disclaimer is not a license and does not grant any  rights to the
-* materials distributed herewith. Except as  otherwise provided in a valid
-* license issued to you by  Xilinx, and to the maximum extent permitted by
-* applicable law:
-* (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND  WITH ALL FAULTS, AND
-* XILINX HEREBY DISCLAIMS ALL WARRANTIES  AND CONDITIONS, EXPRESS, IMPLIED,
-* OR STATUTORY, INCLUDING  BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
-* NON-INFRINGEMENT, OR FITNESS FOR ANY PARTICULAR PURPOSE;
-* and
-* (2) Xilinx shall not be liable (whether in contract or tort,  including
-* negligence, or under any other theory of liability) for any loss or damage of
-* any kind or nature  related to, arising under or in connection with these
-* materials, including for any direct, or any indirect,  special, incidental,
-* or consequential loss or damage  (including loss of data, profits, goodwill,
-* or any type of  loss or damage suffered as a result of any action brought
-* by a third party) even if such damage or loss was  reasonably foreseeable
-* or Xilinx had been advised of the  possibility of the same.
+* The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
 *
-* CRITICAL APPLICATIONS
-* Xilinx products are not designed or intended to be fail-safe, or for use in
-* any application requiring fail-safe  performance, such as life-support or
-* safety devices or  systems, Class III medical devices, nuclear facilities,
-* applications related to the deployment of airbags, or any  other applications
-* that could lead to death, personal  injury, or severe property or environmental
-* damage  (individually and collectively, "Critical  Applications").
-* Customer assumes the sole risk and liability of any use of Xilinx products in
-* Critical  Applications, subject only to applicable laws and  regulations
-* governing limitations on product liability.
+* Use of the Software is limited solely to applications:
+* (a) running on a Xilinx device, or
+* (b) that interact with a Xilinx device through a bus or interconnect.
 *
-* THIS COPYRIGHT NOTICE AND DISCLAIMER MUST BE RETAINED AS PART OF THIS FILE
-* AT ALL TIMES.
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* XILINX CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+* WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+* OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*
+* Except as contained in this notice, the name of the Xilinx shall not be used
+* in advertising or otherwise to promote the sale, use or other dealings in
+* this Software without prior written authorization from Xilinx.
 *
 ******************************************************************************/
 /*****************************************************************************/
@@ -60,8 +49,8 @@
 * </pre>
 *
 ******************************************************************************/
-#ifndef XREG_CORTEXR5_H
-#define XREG_CORTEXR5_H
+#ifndef XREG_CORTEXR5_H	/* prevent circular inclusions */
+#define XREG_CORTEXR5_H	/* by using protection macros */
 
 #ifdef __cplusplus
 extern "C" {
@@ -123,100 +112,100 @@ extern "C" {
 #define XREG_CR15				cr15
 
 /* Current Processor Status Register (CPSR) Bits */
-#define XREG_CPSR_THUMB_MODE			0x20
-#define XREG_CPSR_MODE_BITS			0x1F
-#define XREG_CPSR_SYSTEM_MODE			0x1F
-#define XREG_CPSR_UNDEFINED_MODE		0x1B
-#define XREG_CPSR_DATA_ABORT_MODE		0x17
-#define XREG_CPSR_SVC_MODE			0x13
-#define XREG_CPSR_IRQ_MODE			0x12
-#define XREG_CPSR_FIQ_MODE			0x11
-#define XREG_CPSR_USER_MODE			0x10
+#define XREG_CPSR_THUMB_MODE			0x20U
+#define XREG_CPSR_MODE_BITS			0x1FU
+#define XREG_CPSR_SYSTEM_MODE			0x1FU
+#define XREG_CPSR_UNDEFINED_MODE		0x1BU
+#define XREG_CPSR_DATA_ABORT_MODE		0x17U
+#define XREG_CPSR_SVC_MODE			0x13U
+#define XREG_CPSR_IRQ_MODE			0x12U
+#define XREG_CPSR_FIQ_MODE			0x11U
+#define XREG_CPSR_USER_MODE			0x10U
 
-#define XREG_CPSR_IRQ_ENABLE			0x80
-#define XREG_CPSR_FIQ_ENABLE			0x40
+#define XREG_CPSR_IRQ_ENABLE			0x80U
+#define XREG_CPSR_FIQ_ENABLE			0x40U
 
-#define XREG_CPSR_N_BIT				0x80000000
-#define XREG_CPSR_Z_BIT				0x40000000
-#define XREG_CPSR_C_BIT				0x20000000
-#define XREG_CPSR_V_BIT				0x10000000
+#define XREG_CPSR_N_BIT				0x80000000U
+#define XREG_CPSR_Z_BIT				0x40000000U
+#define XREG_CPSR_C_BIT				0x20000000U
+#define XREG_CPSR_V_BIT				0x10000000U
 
 /*MPU region definitions*/
-#define REGION_32B     0x4
-#define REGION_64B     0x5
-#define REGION_128B    0x6
-#define REGION_256B    0x7
-#define REGION_512B    0x8
-#define REGION_1K      0x9
-#define REGION_2K      0xA
-#define REGION_4K      0xB
-#define REGION_8K      0xC
-#define REGION_16K     0xD
-#define REGION_32K     0xE
-#define REGION_64K     0xF
-#define REGION_128K    0x10
-#define REGION_256K    0x11
-#define REGION_512K    0x12
-#define REGION_1M      0x13
-#define REGION_2M      0x14
-#define REGION_4M      0x15
-#define REGION_8M      0x16
-#define REGION_16M     0x17
-#define REGION_32M     0x18
-#define REGION_64M     0x19
-#define REGION_128M    0x1A
-#define REGION_256M    0x1B
-#define REGION_512M    0x1C
-#define REGION_1G      0x1D
-#define REGION_2G      0x1E
-#define REGION_4G      0x1F
+#define REGION_32B     0x00000004U
+#define REGION_64B     0x00000005U
+#define REGION_128B    0x00000006U
+#define REGION_256B    0x00000007U
+#define REGION_512B    0x00000008U
+#define REGION_1K      0x00000009U
+#define REGION_2K      0x0000000AU
+#define REGION_4K      0x0000000BU
+#define REGION_8K      0x0000000CU
+#define REGION_16K     0x0000000DU
+#define REGION_32K     0x0000000EU
+#define REGION_64K     0x0000000FU
+#define REGION_128K    0x00000010U
+#define REGION_256K    0x00000011U
+#define REGION_512K    0x00000012U
+#define REGION_1M      0x00000013U
+#define REGION_2M      0x00000014U
+#define REGION_4M      0x00000015U
+#define REGION_8M      0x00000016U
+#define REGION_16M     0x00000017U
+#define REGION_32M     0x00000018U
+#define REGION_64M     0x00000019U
+#define REGION_128M    0x0000001AU
+#define REGION_256M    0x0000001BU
+#define REGION_512M    0x0000001CU
+#define REGION_1G      0x0000001DU
+#define REGION_2G      0x0000001EU
+#define REGION_4G      0x0000001FU
 
-#define REGION_EN  0x1
+#define REGION_EN  0x00000001U
 
 
 
-#define SHAREABLE				0x04 	/*shareable */
-#define STRONG_ORDERD_SHARED	0x00	/*strongly ordered, always shareable*/
+#define SHAREABLE				0x00000004U 	/*shareable */
+#define STRONG_ORDERD_SHARED	0x00000000U	/*strongly ordered, always shareable*/
 
-#define DEVICE_SHARED			0x01	/*device, shareable*/
-#define DEVICE_NONSHARED		0x10	/*device, non shareable*/
+#define DEVICE_SHARED			0x00000001U	/*device, shareable*/
+#define DEVICE_NONSHARED		0x00000010U	/*device, non shareable*/
 
-#define NORM_NSHARED_WT_NWA		0x02 	/*Outer and Inner write-through, no write-allocate non-shareable*/
-#define NORM_SHARED_WT_NWA		0x06 	/*Outer and Inner write-through, no write-allocate shareable*/
+#define NORM_NSHARED_WT_NWA		0x00000002U 	/*Outer and Inner write-through, no write-allocate non-shareable*/
+#define NORM_SHARED_WT_NWA		0x00000006U 	/*Outer and Inner write-through, no write-allocate shareable*/
 
-#define NORM_NSHARED_WB_NWA 	0x03 	/*Outer and Inner write-back, no write-allocate non shareable*/
-#define NORM_SHARED_WB_NWA 		0x07 	/*Outer and Inner write-back, no write-allocate shareable*/
+#define NORM_NSHARED_WB_NWA 	0x00000003U 	/*Outer and Inner write-back, no write-allocate non shareable*/
+#define NORM_SHARED_WB_NWA 		0x00000007U 	/*Outer and Inner write-back, no write-allocate shareable*/
 
-#define NORM_NSHARED_NCACHE 	0x08 	/*Outer and Inner Non cacheable  non shareable*/
-#define NORM_SHARED_NCACHE 		0x0C 	/*Outer and Inner Non cacheable shareable*/
+#define NORM_NSHARED_NCACHE 	0x00000008U 	/*Outer and Inner Non cacheable  non shareable*/
+#define NORM_SHARED_NCACHE 		0x0000000CU 	/*Outer and Inner Non cacheable shareable*/
 
-#define NORM_NSHARED_WB_WA 		0xB 	/*Outer and Inner write-back non shared*/
-#define NORM_SHARED_WB_WA 		0xF 	/*Outer and Inner write-back shared*/
+#define NORM_NSHARED_WB_WA 		0x0000000BU 	/*Outer and Inner write-back non shared*/
+#define NORM_SHARED_WB_WA 		0x0000000FU 	/*Outer and Inner write-back shared*/
 
 /* inner and outer cache policies can be combined for different combinations */
 
-#define NORM_IN_POLICY_NCACHE	0x20	/*inner non cacheable*/
-#define NORM_IN_POLICY_WB_WA	0x21	/*inner write back write allocate*/
-#define NORM_IN_POLICY_WT_NWA	0x22	/*inner write through no write allocate*/
-#define NORM_IN_POLICY_WB_NWA	0x23	/*inner write back no write allocate*/
+#define NORM_IN_POLICY_NCACHE	0x00000020U	/*inner non cacheable*/
+#define NORM_IN_POLICY_WB_WA	0x00000021U	/*inner write back write allocate*/
+#define NORM_IN_POLICY_WT_NWA	0x00000022U	/*inner write through no write allocate*/
+#define NORM_IN_POLICY_WB_NWA	0x00000023U	/*inner write back no write allocate*/
 
-#define NORM_OUT_POLICY_NCACHE	0x20	/*outer non cacheable*/
-#define NORM_OUT_POLICY_WB_WA	0x28	/*outer write back write allocate*/
-#define NORM_OUT_POLICY_WT_NWA	0x30	/*outer write through no write allocate*/
-#define NORM_OUT_POLICY_WB_NWA	0x38	/*outer write back no write allocate*/
+#define NORM_OUT_POLICY_NCACHE	0x00000020U	/*outer non cacheable*/
+#define NORM_OUT_POLICY_WB_WA	0x00000028U	/*outer write back write allocate*/
+#define NORM_OUT_POLICY_WT_NWA	0x00000030U	/*outer write through no write allocate*/
+#define NORM_OUT_POLICY_WB_NWA	0x00000038U	/*outer write back no write allocate*/
 
-#define NO_ACCESS				0x00<<8	/*No access*/
-#define PRIV_RW_USER_NA			0x01<<8 /*Privileged access only*/
-#define PRIV_RW_USER_RO			0x02<<8 /*Writes in User mode generate permission faults*/
-#define	PRIV_RW_USER_RW			0x03<<8	/*Full Access*/
-#define PRIV_RO_USER_NA			0x05<<8 /*Privileged eead only*/
-#define PRIV_RO_USER_RO			0x06<<8 /*Privileged/User read-only*/
+#define NO_ACCESS				(0x00000000U<<8U)	/*No access*/
+#define PRIV_RW_USER_NA			(0x00000001U<<8U) /*Privileged access only*/
+#define PRIV_RW_USER_RO			(0x00000002U<<8U) /*Writes in User mode generate permission faults*/
+#define	PRIV_RW_USER_RW			(0x00000003U<<8U)	/*Full Access*/
+#define PRIV_RO_USER_NA			(0x00000005U<<8U) /*Privileged eead only*/
+#define PRIV_RO_USER_RO			(0x00000006U<<8U) /*Privileged/User read-only*/
 
-#define EXECUTE_NEVER  			0x01<<12  /* Bit 12*/
+#define EXECUTE_NEVER  			(0x00000001U<<12U)  /* Bit 12*/
 
 
 /* CP15 defines */
-#if defined (__GNUC__) || defined (__ICCARM__)
+
 /* C0 Register defines */
 #define XREG_CP15_MAIN_ID			"p15, 0, %0,  c0,  c0, 0"
 #define XREG_CP15_CACHE_TYPE			"p15, 0, %0,  c0,  c0, 1"
@@ -252,62 +241,22 @@ extern "C" {
 #define XREG_CP15_CP_ACCESS_CONTROL		"p15, 0, %0,  c1,  c0, 2"
 
 
-
-#else /* RVCT */
-/* C0 Register defines */
-#define XREG_CP15_MAIN_ID			"cp15:0:c0:c0:0"
-#define XREG_CP15_CACHE_TYPE			"cp15:0:c0:c0:1"
-#define XREG_CP15_TCM_TYPE			"cp15:0:c0:c0:2"
-#define XREG_CP15_TLB_TYPE			"cp15:0:c0:c0:3"
-#define XREG_CP15_MPU_TYPE			"cp15:0:c0:c0:4"
-#define XREG_CP15_MULTI_PROC_AFFINITY		"cp15:0:c0:c0:5"
-
-#define XREG_CP15_PROC_FEATURE_0		"cp15:0:c0:c1:0"
-#define XREG_CP15_PROC_FEATURE_1		"cp15:0:c0:c1:1"
-#define XREG_CP15_DEBUG_FEATURE_0		"cp15:0:c0:c1:2"
-#define XREG_CP15_MEMORY_FEATURE_0		"cp15:0:c0:c1:4"
-#define XREG_CP15_MEMORY_FEATURE_1		"cp15:0:c0:c1:5"
-#define XREG_CP15_MEMORY_FEATURE_2		"cp15:0:c0:c1:6"
-#define XREG_CP15_MEMORY_FEATURE_3		"cp15:0:c0:c1:7"
-
-#define XREG_CP15_INST_FEATURE_0		"cp15:0:c0:c2:0"
-#define XREG_CP15_INST_FEATURE_1		"cp15:0:c0:c2:1"
-#define XREG_CP15_INST_FEATURE_2		"cp15:0:c0:c2:2"
-#define XREG_CP15_INST_FEATURE_3		"cp15:0:c0:c2:3"
-#define XREG_CP15_INST_FEATURE_4		"cp15:0:c0:c2:4"
-#define XREG_CP15_INST_FEATURE_5		"cp15:0:c0:c2:5"
-
-#define XREG_CP15_CACHE_SIZE_ID			"cp15:1:c0:c0:0"
-#define XREG_CP15_CACHE_LEVEL_ID		"cp15:1:c0:c0:1"
-#define XREG_CP15_AUXILARY_ID			"cp15:1:c0:c0:7"
-
-#define XREG_CP15_CACHE_SIZE_SEL		"cp15:2:c0:c0:0"
-
-/* C1 Register Defines */
-#define XREG_CP15_SYS_CONTROL			"cp15:0:c1:c0:0"
-#define XREG_CP15_AUX_CONTROL			"cp15:0:c1:c0:1"
-#define XREG_CP15_CP_ACCESS_CONTROL		"cp15:0:c1:c0:2"
-
-#endif
-
 /* XREG_CP15_CONTROL bit defines */
-#define XREG_CP15_CONTROL_TE_BIT		0x40000000
-#define XREG_CP15_CONTROL_AFE_BIT		0x20000000
-#define XREG_CP15_CONTROL_TRE_BIT		0x10000000
-#define XREG_CP15_CONTROL_NMFI_BIT		0x08000000
-#define XREG_CP15_CONTROL_EE_BIT		0x02000000
-#define XREG_CP15_CONTROL_HA_BIT		0x00020000
-#define XREG_CP15_CONTROL_RR_BIT		0x00004000
-#define XREG_CP15_CONTROL_V_BIT			0x00002000
-#define XREG_CP15_CONTROL_I_BIT			0x00001000
-#define XREG_CP15_CONTROL_Z_BIT			0x00000800
-#define XREG_CP15_CONTROL_SW_BIT		0x00000400
-#define XREG_CP15_CONTROL_B_BIT			0x00000080
-#define XREG_CP15_CONTROL_C_BIT			0x00000004
-#define XREG_CP15_CONTROL_A_BIT			0x00000002
-#define XREG_CP15_CONTROL_M_BIT			0x00000001
-
-#if defined (__GNUC__) || defined (__ICCARM__)
+#define XREG_CP15_CONTROL_TE_BIT		0x40000000U
+#define XREG_CP15_CONTROL_AFE_BIT		0x20000000U
+#define XREG_CP15_CONTROL_TRE_BIT		0x10000000U
+#define XREG_CP15_CONTROL_NMFI_BIT		0x08000000U
+#define XREG_CP15_CONTROL_EE_BIT		0x02000000U
+#define XREG_CP15_CONTROL_HA_BIT		0x00020000U
+#define XREG_CP15_CONTROL_RR_BIT		0x00004000U
+#define XREG_CP15_CONTROL_V_BIT			0x00002000U
+#define XREG_CP15_CONTROL_I_BIT			0x00001000U
+#define XREG_CP15_CONTROL_Z_BIT			0x00000800U
+#define XREG_CP15_CONTROL_SW_BIT		0x00000400U
+#define XREG_CP15_CONTROL_B_BIT			0x00000080U
+#define XREG_CP15_CONTROL_C_BIT			0x00000004U
+#define XREG_CP15_CONTROL_A_BIT			0x00000002U
+#define XREG_CP15_CONTROL_M_BIT			0x00000001U
 /* C2 Register Defines */
 /* Not Used */
 
@@ -415,114 +364,6 @@ extern "C" {
 #define XREG_CP15_SEC_AUX_CTRL			"p15, 0, %0, c15,  c0, 0"
 
 
-#else
-/* C2 Register Defines */
-/* Not Used */
-
-/* C3 Register Defines */
-/* Not Used */
-
-/* C4 Register Defines */
-/* Not Used */
-
-/* C5 Register Defines */
-#define XREG_CP15_DATA_FAULT_STATUS		"cp15:0:c5:c0:0"
-#define XREG_CP15_INST_FAULT_STATUS		"cp15:0:c5:c0:1"
-
-#define XREG_CP15_AUX_DATA_FAULT_STATUS		"cp15:0:c5:c1:0"
-#define XREG_CP15_AUX_INST_FAULT_STATUS		"cp15:0:c5:c1:1"
-
-/* C6 Register Defines */
-#define XREG_CP15_DATA_FAULT_ADDRESS		"cp15:0:c6:c0:0"
-#define XREG_CP15_INST_FAULT_ADDRESS		"cp15:0:c6:c0:2"
-
-#define XREG_CP15_MPU_REG_BASEADDR			"cp15:0:c6:c1:0"
-#define XREG_CP15_MPU_REG_SIZE_EN			"cp15:0:c6:c1:2"
-#define XREG_CP15_MPU_REG_ACCESS_CTRL		"cp15:0:c6:c1:4"
-
-#define XREG_CP15_MPU_MEMORY_REG_NUMBER			"cp15:0:c6:c2:0"
-
-/* C7 Register Defines */
-#define XREG_CP15_NOP				"cp15:0:c7:c0:4"
-
-#define XREG_CP15_INVAL_IC_POU			"cp15:0:c7:c5:0"
-#define XREG_CP15_INVAL_IC_LINE_MVA_POU		"cp15:0:c7:c5:1"
-
-/* The CP15 register access below has been deprecated in favor of the new
- * isb instruction in Cortex R5.
- */
-#define XREG_CP15_INST_SYNC_BARRIER		"cp15:0:c7:c5:4"
-#define XREG_CP15_INVAL_BRANCH_ARRAY		"cp15:0:c7:c5:6"
-#define XREG_CP15_INVAL_BRANCH_ARRAY_LINE		"cp15:0:c7:c5:7"
-
-#define XREG_CP15_INVAL_DC_LINE_MVA_POC		"cp15:0:c7:c6:1"
-#define XREG_CP15_INVAL_DC_LINE_SW		"cp15:0:c7:c6:2"
-
-#define XREG_CP15_CLEAN_DC_LINE_MVA_POC		"cp15:0:c7:c10:1"
-#define XREG_CP15_CLEAN_DC_LINE_SW		"cp15:0:c7:c10:2"
-
-#define XREG_CP15_INVAL_DC_ALL		"cp15:0:c15:c5:0"
-
-/* The next two CP15 register accesses below have been deprecated in favor
- * of the new dsb and dmb instructions in Cortex R5.
- */
-#define XREG_CP15_DATA_SYNC_BARRIER		"cp15:0:c7:c10:4"
-#define XREG_CP15_DATA_MEMORY_BARRIER		"cp15:0:c7:c10:5"
-
-#define XREG_CP15_CLEAN_DC_LINE_MVA_POU		"cp15:0:c7:c11:1"
-
-#define XREG_CP15_NOP2				"cp15:0:c7:c13:1"
-
-#define XREG_CP15_CLEAN_INVAL_DC_LINE_MVA_POC	"cp15:0:c7:c14:1"
-#define XREG_CP15_CLEAN_INVAL_DC_LINE_SW	"cp15:0:c7:c14:2"
-
-/* C8 Register Defines */
-/* Not Used */
-
-
-/* C9 Register Defines */
-#define XREG_CP15_ATCM_REG_SIZE_ADDR		"cp15:0:c9:c1:1"
-#define XREG_CP15_BTCM_REG_SIZE_ADDR		"cp15:0:c9:c1:0"
-#define XREG_CP15_TCM_SELECTION				"cp15:0:c9:c2:0"
-
-
-#define XREG_CP15_PERF_MONITOR_CTRL		"cp15:0:c9:c12:0"
-#define XREG_CP15_COUNT_ENABLE_SET		"cp15:0:c9:c12:1"
-#define XREG_CP15_COUNT_ENABLE_CLR		"cp15:0:c9:c12:2"
-#define XREG_CP15_V_FLAG_STATUS			"cp15:0:c9:c12:3"
-#define XREG_CP15_SW_INC			"cp15:0:c9:c12:4"
-#define XREG_CP15_EVENT_CNTR_SEL		"cp15:0:c9:c12:5"
-
-#define XREG_CP15_PERF_CYCLE_COUNTER		"cp15:0:c9:c13:0"
-#define XREG_CP15_EVENT_TYPE_SEL		"cp15:0:c9:c13:1"
-#define XREG_CP15_PERF_MONITOR_COUNT		"cp15:0:c9:c13:2"
-
-#define XREG_CP15_USER_ENABLE			"cp15:0:c9:c14:0"
-#define XREG_CP15_INTR_ENABLE_SET		"cp15:0:c9:c14:1"
-#define XREG_CP15_INTR_ENABLE_CLR		"cp15:0:c9:c14:2"
-
-/* C10 Register Defines */
-/* Not Used */
-
-/* C11 Register Defines */
-/* Not used */
-
-/* C12 Register Defines */
-/* Not Used */
-
-/* C13 Register Defines */
-#define XREG_CP15_CONTEXT_ID			"cp15:0:c13:c0:1"
-#define USER_RW_THREAD_PID			"cp15:0:c13:c0:2"
-#define USER_RO_THREAD_PID			"cp15:0:c13:c0:3"
-#define USER_PRIV_THREAD_PID			"cp15:0:c13:c0:4"
-
-/* C14 Register Defines */
-/* not used */
-
-/* C15 Register Defines */
-#define XREG_CP15_SEC_AUX_CTRL			"cp15:0:c15:c0:0"
-
-#endif
 
 
 /* MPE register definitions */
@@ -535,66 +376,66 @@ extern "C" {
 #define XREG_FPINST2			c10
 
 /* FPSID bits */
-#define XREG_FPSID_IMPLEMENTER_BIT	(24)
-#define XREG_FPSID_IMPLEMENTER_MASK	(0xFF << FPSID_IMPLEMENTER_BIT)
-#define XREG_FPSID_SOFTWARE		(1<<23)
-#define XREG_FPSID_ARCH_BIT		(16)
-#define XREG_FPSID_ARCH_MASK		(0xF  << FPSID_ARCH_BIT)
-#define XREG_FPSID_PART_BIT		(8)
-#define XREG_FPSID_PART_MASK		(0xFF << FPSID_PART_BIT)
-#define XREG_FPSID_VARIANT_BIT		(4)
-#define XREG_FPSID_VARIANT_MASK		(0xF  << FPSID_VARIANT_BIT)
-#define XREG_FPSID_REV_BIT		(0)
-#define XREG_FPSID_REV_MASK		(0xF  << FPSID_REV_BIT)
+#define XREG_FPSID_IMPLEMENTER_BIT	(24U)
+#define XREG_FPSID_IMPLEMENTER_MASK	(0x000000FFU << FPSID_IMPLEMENTER_BIT)
+#define XREG_FPSID_SOFTWARE		(0X00000001U << 23U)
+#define XREG_FPSID_ARCH_BIT		(16U)
+#define XREG_FPSID_ARCH_MASK		(0x0000000FU  << FPSID_ARCH_BIT)
+#define XREG_FPSID_PART_BIT		(8U)
+#define XREG_FPSID_PART_MASK		(0x000000FFU << FPSID_PART_BIT)
+#define XREG_FPSID_VARIANT_BIT		(4U)
+#define XREG_FPSID_VARIANT_MASK		(0x0000000FU  << FPSID_VARIANT_BIT)
+#define XREG_FPSID_REV_BIT		(0U)
+#define XREG_FPSID_REV_MASK		(0x0000000FU  << FPSID_REV_BIT)
 
 /* FPSCR bits */
-#define XREG_FPSCR_N_BIT		(1 << 31)
-#define XREG_FPSCR_Z_BIT		(1 << 30)
-#define XREG_FPSCR_C_BIT		(1 << 29)
-#define XREG_FPSCR_V_BIT		(1 << 28)
-#define XREG_FPSCR_QC			(1 << 27)
-#define XREG_FPSCR_AHP			(1 << 26)
-#define XREG_FPSCR_DEFAULT_NAN		(1 << 25)
-#define XREG_FPSCR_FLUSHTOZERO		(1 << 24)
-#define XREG_FPSCR_ROUND_NEAREST	(0 << 22)
-#define XREG_FPSCR_ROUND_PLUSINF	(1 << 22)
-#define XREG_FPSCR_ROUND_MINUSINF	(2 << 22)
-#define XREG_FPSCR_ROUND_TOZERO		(3 << 22)
-#define XREG_FPSCR_RMODE_BIT		(22)
-#define XREG_FPSCR_RMODE_MASK		(3 << FPSCR_RMODE_BIT)
-#define XREG_FPSCR_STRIDE_BIT		(20)
-#define XREG_FPSCR_STRIDE_MASK		(3 << FPSCR_STRIDE_BIT)
-#define XREG_FPSCR_LENGTH_BIT		(16)
-#define XREG_FPSCR_LENGTH_MASK		(7 << FPSCR_LENGTH_BIT)
-#define XREG_FPSCR_IDC			(1 << 7)
-#define XREG_FPSCR_IXC			(1 << 4)
-#define XREG_FPSCR_UFC			(1 << 3)
-#define XREG_FPSCR_OFC			(1 << 2)
-#define XREG_FPSCR_DZC			(1 << 1)
-#define XREG_FPSCR_IOC			(1 << 0)
+#define XREG_FPSCR_N_BIT		(0X00000001U << 31U)
+#define XREG_FPSCR_Z_BIT		(0X00000001U << 30U)
+#define XREG_FPSCR_C_BIT		(0X00000001U << 29U)
+#define XREG_FPSCR_V_BIT		(0X00000001U << 28U)
+#define XREG_FPSCR_QC			(0X00000001U << 27U)
+#define XREG_FPSCR_AHP			(0X00000001U << 26U)
+#define XREG_FPSCR_DEFAULT_NAN		(0X00000001U << 25U)
+#define XREG_FPSCR_FLUSHTOZERO		(0X00000001U << 24U)
+#define XREG_FPSCR_ROUND_NEAREST	(0X00000000U << 22U)
+#define XREG_FPSCR_ROUND_PLUSINF	(0X00000001U << 22U)
+#define XREG_FPSCR_ROUND_MINUSINF	(0X00000002U << 22U)
+#define XREG_FPSCR_ROUND_TOZERO		(0X00000003U << 22U)
+#define XREG_FPSCR_RMODE_BIT		(22U)
+#define XREG_FPSCR_RMODE_MASK		(0X00000003U << FPSCR_RMODE_BIT)
+#define XREG_FPSCR_STRIDE_BIT		(20U)
+#define XREG_FPSCR_STRIDE_MASK		(0X00000003U << FPSCR_STRIDE_BIT)
+#define XREG_FPSCR_LENGTH_BIT		(16U)
+#define XREG_FPSCR_LENGTH_MASK		(0X00000007U << FPSCR_LENGTH_BIT)
+#define XREG_FPSCR_IDC			(0X00000001U << 7U)
+#define XREG_FPSCR_IXC			(0X00000001U << 4U)
+#define XREG_FPSCR_UFC			(0X00000001U << 3U)
+#define XREG_FPSCR_OFC			(0X00000001U << 2U)
+#define XREG_FPSCR_DZC			(0X00000001U << 1U)
+#define XREG_FPSCR_IOC			(0X00000001U << 0U)
 
 /* MVFR0 bits */
-#define XREG_MVFR0_RMODE_BIT		(28)
-#define XREG_MVFR0_RMODE_MASK		(0xF << XREG_MVFR0_RMODE_BIT)
-#define XREG_MVFR0_SHORT_VEC_BIT	(24)
-#define XREG_MVFR0_SHORT_VEC_MASK	(0xF << XREG_MVFR0_SHORT_VEC_BIT)
-#define XREG_MVFR0_SQRT_BIT		(20)
-#define XREG_MVFR0_SQRT_MASK		(0xF << XREG_MVFR0_SQRT_BIT)
-#define XREG_MVFR0_DIVIDE_BIT		(16)
-#define XREG_MVFR0_DIVIDE_MASK		(0xF << XREG_MVFR0_DIVIDE_BIT)
-#define XREG_MVFR0_EXEC_TRAP_BIT	(12)
-#define XREG_MVFR0_EXEC_TRAP_MASK	(0xF << XREG_MVFR0_EXEC_TRAP_BIT)
-#define XREG_MVFR0_DP_BIT		(8)
-#define XREG_MVFR0_DP_MASK		(0xF << XREG_MVFR0_DP_BIT)
-#define XREG_MVFR0_SP_BIT		(4)
-#define XREG_MVFR0_SP_MASK		(0xF << XREG_MVFR0_SP_BIT)
-#define XREG_MVFR0_A_SIMD_BIT		(0)
-#define XREG_MVFR0_A_SIMD_MASK		(0xF << MVFR0_A_SIMD_BIT)
+#define XREG_MVFR0_RMODE_BIT		(28U)
+#define XREG_MVFR0_RMODE_MASK		(0x0000000FU << XREG_MVFR0_RMODE_BIT)
+#define XREG_MVFR0_SHORT_VEC_BIT	(24U)
+#define XREG_MVFR0_SHORT_VEC_MASK	(0x0000000FU << XREG_MVFR0_SHORT_VEC_BIT)
+#define XREG_MVFR0_SQRT_BIT		(20U)
+#define XREG_MVFR0_SQRT_MASK		(0x0000000FU << XREG_MVFR0_SQRT_BIT)
+#define XREG_MVFR0_DIVIDE_BIT		(16U)
+#define XREG_MVFR0_DIVIDE_MASK		(0x0000000FU << XREG_MVFR0_DIVIDE_BIT)
+#define XREG_MVFR0_EXEC_TRAP_BIT	(12U)
+#define XREG_MVFR0_EXEC_TRAP_MASK	(0x0000000FU << XREG_MVFR0_EXEC_TRAP_BIT)
+#define XREG_MVFR0_DP_BIT		(8U)
+#define XREG_MVFR0_DP_MASK		(0x0000000FU << XREG_MVFR0_DP_BIT)
+#define XREG_MVFR0_SP_BIT		(4U)
+#define XREG_MVFR0_SP_MASK		(0x0000000FU << XREG_MVFR0_SP_BIT)
+#define XREG_MVFR0_A_SIMD_BIT		(0U)
+#define XREG_MVFR0_A_SIMD_MASK		(0x0000000FU << MVFR0_A_SIMD_BIT)
 
 /* FPEXC bits */
-#define XREG_FPEXC_EX			(1 << 31)
-#define XREG_FPEXC_EN			(1 << 30)
-#define XREG_FPEXC_DEX			(1 << 29)
+#define XREG_FPEXC_EX			(0X00000001U << 31U)
+#define XREG_FPEXC_EN			(0X00000001U << 30U)
+#define XREG_FPEXC_DEX			(0X00000001U << 29U)
 
 
 #ifdef __cplusplus

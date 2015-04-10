@@ -2,42 +2,31 @@
 *
 * Copyright (C) 2014 Xilinx, Inc. All rights reserved.
 *
-* This file contains confidential and proprietary information  of Xilinx, Inc.
-* and is protected under U.S. and  international copyright and other
-* intellectual property  laws.
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
 *
-* DISCLAIMER
-* This disclaimer is not a license and does not grant any  rights to the
-* materials distributed herewith. Except as  otherwise provided in a valid
-* license issued to you by  Xilinx, and to the maximum extent permitted by
-* applicable law:
-* (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND  WITH ALL FAULTS, AND
-* XILINX HEREBY DISCLAIMS ALL WARRANTIES  AND CONDITIONS, EXPRESS, IMPLIED,
-* OR STATUTORY, INCLUDING  BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
-* NON-INFRINGEMENT, OR FITNESS FOR ANY PARTICULAR PURPOSE;
-* and
-* (2) Xilinx shall not be liable (whether in contract or tort,  including
-* negligence, or under any other theory of liability) for any loss or damage of
-* any kind or nature  related to, arising under or in connection with these
-* materials, including for any direct, or any indirect,  special, incidental,
-* or consequential loss or damage  (including loss of data, profits, goodwill,
-* or any type of  loss or damage suffered as a result of any action brought
-* by a third party) even if such damage or loss was  reasonably foreseeable
-* or Xilinx had been advised of the  possibility of the same.
+* The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
 *
-* CRITICAL APPLICATIONS
-* Xilinx products are not designed or intended to be fail-safe, or for use in
-* any application requiring fail-safe  performance, such as life-support or
-* safety devices or  systems, Class III medical devices, nuclear facilities,
-* applications related to the deployment of airbags, or any  other applications
-* that could lead to death, personal  injury, or severe property or environmental
-* damage  (individually and collectively, "Critical  Applications").
-* Customer assumes the sole risk and liability of any use of Xilinx products in
-* Critical  Applications, subject only to applicable laws and  regulations
-* governing limitations on product liability.
+* Use of the Software is limited solely to applications:
+* (a) running on a Xilinx device, or
+* (b) that interact with a Xilinx device through a bus or interconnect.
 *
-* THIS COPYRIGHT NOTICE AND DISCLAIMER MUST BE RETAINED AS PART OF THIS FILE
-* AT ALL TIMES.
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* XILINX CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+* WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+* OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*
+* Except as contained in this notice, the name of the Xilinx shall not be used
+* in advertising or otherwise to promote the sale, use or other dealings in
+* this Software without prior written authorization from Xilinx.
 *
 ******************************************************************************/
 /*****************************************************************************/
@@ -72,10 +61,10 @@
 #define IRQ_FIQ_MASK 0xC0	/* Mask IRQ and FIQ interrupts in cpsr */
 
 
-extern int  _stack_end;
-extern int  __undef_stack;
+extern s32  _stack_end;
+extern s32  __undef_stack;
 
-/****************************************************************************
+/****************************************************************************/
 /************************** Function Prototypes ******************************/
 
 /****************************************************************************
@@ -91,12 +80,12 @@ extern int  __undef_stack;
 ****************************************************************************/
 void Xil_DCacheEnable(void)
 {
-	register unsigned int CtrlReg;
+	register u32 CtrlReg;
 
 	/* enable caches only if they are disabled */
 	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
 
-	if ((CtrlReg & XREG_CP15_CONTROL_C_BIT)==0) {
+	if ((CtrlReg & XREG_CP15_CONTROL_C_BIT)==0x00000000U) {
 		/* invalidate the Data cache */
 		Xil_DCacheInvalidate();
 
@@ -120,7 +109,7 @@ void Xil_DCacheEnable(void)
 ****************************************************************************/
 void Xil_DCacheDisable(void)
 {
-	register unsigned int CtrlReg;
+	register u32 CtrlReg;
 
 	/* clean and invalidate the Data cache */
 	Xil_DCacheFlush();
@@ -129,9 +118,8 @@ void Xil_DCacheDisable(void)
 	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
 
 	CtrlReg &= ~(XREG_CP15_CONTROL_C_BIT);
-dsb();
+
 	mtcp(XREG_CP15_SYS_CONTROL, CtrlReg);
-		isb();
 }
 
 /****************************************************************************
@@ -147,25 +135,25 @@ dsb();
 ****************************************************************************/
 void Xil_DCacheInvalidate(void)
 {
-	unsigned int currmask;
-	unsigned int stack_start,stack_end,stack_size;
+	u32 currmask;
+	u32 stack_start,stack_end,stack_size;
 
 	currmask = mfcpsr();
 	mtcpsr(currmask | IRQ_FIQ_MASK);
 
 
-	stack_end = (unsigned int )&_stack_end;
-	stack_start = (unsigned int )&__undef_stack;
-	stack_size=stack_start-stack_end;
+	stack_end = (u32 )&_stack_end;
+	stack_start = (u32 )&__undef_stack;
+	stack_size = stack_start-stack_end;
 
-	/*Flush stack memory to save return address*/
+	/* Flush stack memory to save return address */
 	Xil_DCacheFlushRange(stack_end, stack_size);
 
 	mtcp(XREG_CP15_CACHE_SIZE_SEL, 0);
-dsb();
+
 	/*invalidate all D cache*/
 	mtcp(XREG_CP15_INVAL_DC_ALL, 0);
-	isb();
+
 	mtcpsr(currmask);
 }
 
@@ -186,7 +174,7 @@ dsb();
 ****************************************************************************/
 void Xil_DCacheInvalidateLine(INTPTR adr)
 {
-	unsigned int currmask;
+	u32 currmask;
 
 	currmask = mfcpsr();
 	mtcpsr(currmask | IRQ_FIQ_MASK);
@@ -216,30 +204,30 @@ void Xil_DCacheInvalidateLine(INTPTR adr)
 * @note		None.
 *
 ****************************************************************************/
-void Xil_DCacheInvalidateRange(INTPTR adr, unsigned len)
+void Xil_DCacheInvalidateRange(INTPTR adr, u32 len)
 {
-	const unsigned cacheline = 32;
-	unsigned int end;
-	unsigned int tempadr = adr;
-	unsigned int tempend;
-	unsigned int currmask;
+	const u32 cacheline = 32U;
+	u32 end;
+	u32 tempadr = adr;
+	u32 tempend;
+	u32 currmask;
 
 	currmask = mfcpsr();
 	mtcpsr(currmask | IRQ_FIQ_MASK);
 
-	if (len != 0) {
+	if (len != 0U) {
 		end = tempadr + len;
 		tempend = end;
 		/* Select L1 Data cache in CSSR */
-		mtcp(XREG_CP15_CACHE_SIZE_SEL, 0);
+		mtcp(XREG_CP15_CACHE_SIZE_SEL, 0U);
 
-		if (tempadr & (cacheline-1)) {
-			tempadr &= ~(cacheline - 1);
+		if ((tempadr & (cacheline-1U)) != 0U) {
+			tempadr &= (~(cacheline - 1U));
 
 			Xil_DCacheFlushLine(tempadr);
 		}
-		if (tempend & (cacheline-1)) {
-			tempend &= ~(cacheline - 1);
+		if ((tempend & (cacheline-1U)) != 0U) {
+			tempend &= (~(cacheline - 1U));
 
 			Xil_DCacheFlushLine(tempend);
 		}
@@ -271,10 +259,10 @@ void Xil_DCacheInvalidateRange(INTPTR adr, unsigned len)
 ****************************************************************************/
 void Xil_DCacheFlush(void)
 {
-	register unsigned int CsidReg, C7Reg;
-	unsigned int CacheSize, LineSize, NumWays;
-	unsigned int Way, WayIndex, Set, SetIndex, NumSet;
-	unsigned int currmask;
+	register u32 CsidReg, C7Reg;
+	u32 CacheSize, LineSize, NumWays;
+	u32 Way, WayIndex, Set, SetIndex, NumSet;
+	u32 currmask;
 
 	currmask = mfcpsr();
 	mtcpsr(currmask | IRQ_FIQ_MASK);
@@ -286,41 +274,42 @@ void Xil_DCacheFlush(void)
 
 	/* Determine Cache Size */
 
-	CacheSize = (CsidReg >> 13) & 0x1FF;
-	CacheSize +=1;
-	CacheSize *=128;    /* to get number of bytes */
+	CacheSize = (CsidReg >> 13U) & 0x000001FFU;
+	CacheSize += 0x00000001U;
+	CacheSize *= (u32)128;    /* to get number of bytes */
 
 	/* Number of Ways */
-	NumWays = (CsidReg & 0x3ff) >> 3;
-	NumWays += 1;
+	NumWays = (CsidReg & 0x000003ffU) >> 3U;
+	NumWays += 0x00000001U;
 
 	/* Get the cacheline size, way size, index size from csidr */
-	LineSize = (CsidReg & 0x07) + 4;
+	LineSize = (CsidReg & 0x00000007U) + 0x00000004U;
 
 	NumSet = CacheSize/NumWays;
-	NumSet /= (1 << LineSize);
+	NumSet /= (0x00000001U << LineSize);
 
-	Way = 0UL;
-	Set = 0UL;
+	Way = 0U;
+	Set = 0U;
 
 	/* Invalidate all the cachelines */
-	for (WayIndex =0; WayIndex < NumWays; WayIndex++) {
-		for (SetIndex =0; SetIndex < NumSet; SetIndex++) {
+	for (WayIndex = 0U; WayIndex < NumWays; WayIndex++) {
+		for (SetIndex = 0U; SetIndex < NumSet; SetIndex++) {
 			C7Reg = Way | Set;
 			/* Flush by Set/Way */
 			__asm__ __volatile__("mcr " \
 				XREG_CP15_CLEAN_INVAL_DC_LINE_SW :: "r" (C7Reg));
 
-			Set += (1 << LineSize);
+			Set += (0x00000001U << LineSize);
 		}
-		Set = 0UL;
-		Way += 0x40000000;
+		Set = 0U;
+		Way += 0x40000000U;
 	}
 
 	/* Wait for flush to complete */
 	dsb();
 	mtcpsr(currmask);
 
+	mtcpsr(currmask);
 }
 
 /****************************************************************************
@@ -340,7 +329,7 @@ void Xil_DCacheFlush(void)
 ****************************************************************************/
 void Xil_DCacheFlushLine(INTPTR adr)
 {
-	unsigned int currmask;
+	u32 currmask;
 
 	currmask = mfcpsr();
 	mtcpsr(currmask | IRQ_FIQ_MASK);
@@ -369,28 +358,29 @@ void Xil_DCacheFlushLine(INTPTR adr)
 * @note		None.
 *
 ****************************************************************************/
-void Xil_DCacheFlushRange(INTPTR adr, unsigned len)
+void Xil_DCacheFlushRange(INTPTR adr, u32 len)
 {
-	const unsigned cacheline = 32;
-	unsigned int end;
-	unsigned int currmask;
+	u32 LocalAddr = adr;
+	const u32 cacheline = 32U;
+	u32 end;
+	u32 currmask;
 
 	currmask = mfcpsr();
 	mtcpsr(currmask | IRQ_FIQ_MASK);
 
-	if (len != 0) {
+	if (len != 0x00000000U) {
 		/* Back the starting address up to the start of a cache line
 		 * perform cache operations until adr+len
 		 */
-		end = adr + len;
-		adr &= ~(cacheline - 1);
+		end = LocalAddr + len;
+		LocalAddr &= ~(cacheline - 1U);
 
-		while (adr < end) {
+		while (LocalAddr < end) {
 			/* Flush Data cache line */
 			__asm__ __volatile__("mcr " \
-			XREG_CP15_CLEAN_INVAL_DC_LINE_MVA_POC :: "r" (adr));
+			XREG_CP15_CLEAN_INVAL_DC_LINE_MVA_POC :: "r" (LocalAddr));
 
-			adr += cacheline;
+			LocalAddr += cacheline;
 		}
 	}
 	dsb();
@@ -413,7 +403,7 @@ void Xil_DCacheFlushRange(INTPTR adr, unsigned len)
 ****************************************************************************/
 void Xil_DCacheStoreLine(INTPTR adr)
 {
-	unsigned int currmask;
+	u32 currmask;
 
 	currmask = mfcpsr();
 	mtcpsr(currmask | IRQ_FIQ_MASK);
@@ -441,13 +431,13 @@ void Xil_DCacheStoreLine(INTPTR adr)
 ****************************************************************************/
 void Xil_ICacheEnable(void)
 {
-	register unsigned int CtrlReg;
+	register u32 CtrlReg;
 
 	/* enable caches only if they are disabled */
 
 	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
 
-	if ((CtrlReg & XREG_CP15_CONTROL_I_BIT)==0) {
+	if ((CtrlReg & XREG_CP15_CONTROL_I_BIT)==0x00000000U) {
 		/* invalidate the instruction cache */
 		mtcp(XREG_CP15_INVAL_IC_POU, 0);
 
@@ -471,7 +461,7 @@ void Xil_ICacheEnable(void)
 ****************************************************************************/
 void Xil_ICacheDisable(void)
 {
-	register unsigned int CtrlReg;
+	register u32 CtrlReg;
 
 	dsb();
 
@@ -483,9 +473,8 @@ void Xil_ICacheDisable(void)
 	CtrlReg = mfcp(XREG_CP15_SYS_CONTROL);
 
 	CtrlReg &= ~(XREG_CP15_CONTROL_I_BIT);
-	dsb();
+
 	mtcp(XREG_CP15_SYS_CONTROL, CtrlReg);
-	isb();
 }
 
 /****************************************************************************
@@ -501,7 +490,7 @@ void Xil_ICacheDisable(void)
 ****************************************************************************/
 void Xil_ICacheInvalidate(void)
 {
-	unsigned int currmask;
+	u32 currmask;
 
 	currmask = mfcpsr();
 	mtcpsr(currmask | IRQ_FIQ_MASK);
@@ -531,7 +520,7 @@ void Xil_ICacheInvalidate(void)
 ****************************************************************************/
 void Xil_ICacheInvalidateLine(INTPTR adr)
 {
-	unsigned int currmask;
+	u32 currmask;
 
 	currmask = mfcpsr();
 	mtcpsr(currmask | IRQ_FIQ_MASK);
@@ -560,31 +549,32 @@ void Xil_ICacheInvalidateLine(INTPTR adr)
 * @note		None.
 *
 ****************************************************************************/
-void Xil_ICacheInvalidateRange(INTPTR adr, unsigned len)
+void Xil_ICacheInvalidateRange(INTPTR adr, u32 len)
 {
-	const unsigned cacheline = 32;
-	unsigned int end;
-	unsigned int currmask;
+	u32 LocalAddr = adr;
+	const u32 cacheline = 32U;
+	u32 end;
+	u32 currmask;
 
 	currmask = mfcpsr();
 	mtcpsr(currmask | IRQ_FIQ_MASK);
-	if (len != 0) {
+	if (len != 0x00000000U) {
 		/* Back the starting address up to the start of a cache line
 		 * perform cache operations until adr+len
 		 */
-		end = adr + len;
-		adr = adr & ~(cacheline - 1);
+		end = LocalAddr + len;
+		LocalAddr = LocalAddr & ~(cacheline - 1U);
 
 		/* Select cache L0 I-cache in CSSR */
-		mtcp(XREG_CP15_CACHE_SIZE_SEL, 1);
+		mtcp(XREG_CP15_CACHE_SIZE_SEL, 1U);
 
-		while (adr < end) {
+		while (LocalAddr < end) {
 
 			/* Invalidate L1 I-cache line */
 			__asm__ __volatile__("mcr " \
-			XREG_CP15_INVAL_IC_LINE_MVA_POU :: "r" (adr));
+			XREG_CP15_INVAL_IC_LINE_MVA_POU :: "r" (LocalAddr));
 
-			adr += cacheline;
+			LocalAddr += cacheline;
 		}
 	}
 
