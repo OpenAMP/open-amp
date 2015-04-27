@@ -33,6 +33,7 @@
 #include "xil_cache.h"
 #include "xil_mmu.h"
 #include "baremetal.h"
+#include "../../../../porting/env/env.h"
 
 XScuGic InterruptController;
 
@@ -227,6 +228,27 @@ void platform_cache_disable() {
 }
 
 void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size,unsigned int flags) {
+	unsigned int r5_flags;
+
+	/* Assume DEVICE_SHARED if nothing indicates this is memory.  */
+	r5_flags = DEVICE_SHARED;
+	if (flags & SHARED_MEM) {
+		r5_flags = NORM_SHARED_NCACHE;
+		if (flags & WB_CACHE) {
+			r5_flags = NORM_SHARED_WB_WA;
+		} else if (flags & WT_CACHE) {
+			r5_flags = NORM_SHARED_WT_NWA;
+		}
+	} else if (flags & MEM_MAPPED) {
+		r5_flags = NORM_NSHARED_NCACHE;
+		if (flags & WB_CACHE) {
+			r5_flags = NORM_NSHARED_WB_WA;
+		} else if (flags & WT_CACHE) {
+			r5_flags = NORM_NSHARED_WT_NWA;
+		}
+	}
+
+	Xil_SetTlbAttributes_size(pa, size, r5_flags | PRIV_RW_USER_RW);
 	return;
 }
 
