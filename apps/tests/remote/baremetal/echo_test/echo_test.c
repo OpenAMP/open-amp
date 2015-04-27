@@ -9,9 +9,6 @@ This application echoes back data that was sent to it by the master core. */
 #include "rsc_table.h"
 #include "baremetal.h"
 
-#define SHARED_MEMORY	0x3ED00000	/* Shared memory location as defined in linux device tree for remoteproc */
-#define SHARED_SIZE		0x400000	/* size of the shared memory*/
-
 #define SHUTDOWN_MSG	0xEF56A55A
 
 /* Internal functions */
@@ -81,8 +78,6 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 static void init_system() {
 
 #ifdef ZYNQMP_R5
-	/* configure MPU for shared memory region */
-	zynqMP_r5_map_mem_region(SHARED_MEMORY, SHARED_SIZE, NORM_SHARED_NCACHE | PRIV_RW_USER_RW);
 	/* Initilaize GIC */
 	zynqMP_r5_gic_initialize();
 #else

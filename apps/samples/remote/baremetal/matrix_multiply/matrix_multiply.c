@@ -10,9 +10,6 @@ multiplies them and returns the result to the master core. */
 #include "rsc_table.h"
 #include "baremetal.h"
 
-#define SHARED_MEMORY	0x3ED00000	/* Shared memory location as defined in linux device tree for remoteproc */
-#define SHARED_SIZE		0x400000	/* size of the shared memory*/
-
 #define	MAX_SIZE                6
 #define NUM_MATRIX              2
 #define SHUTDOWN_MSG            0xEF56A55A
@@ -111,8 +108,6 @@ static void Matrix_Multiply(const matrix *m, const matrix *n, matrix *r) {
 static void init_system() {
 
 #ifdef ZYNQMP_R5
-	/* configure MPU for shared memory region */
-	zynqMP_r5_map_mem_region(SHARED_MEMORY, SHARED_SIZE, NORM_SHARED_NCACHE | PRIV_RW_USER_RW);
 	/* Initilaize GIC */
 	zynqMP_r5_gic_initialize();
 #else
