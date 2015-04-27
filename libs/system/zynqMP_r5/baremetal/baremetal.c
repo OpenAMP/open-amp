@@ -105,16 +105,10 @@ void zynqMP_r5_irq_isr() {
  *       None
  *
  ***********************************************************************/
-void zynqMP_r5_map_mem_region(u32 addr, u32 size, u32 attrib) {
-	u32 Index, NumSize;
-	/* Calculating the number of MBs required for the shared region*/
-	NumSize = size / 0x100000;
 
-	/* Xil_SetTlbAttributes is designed to configure memory for 1MB
-	 * region. The API is called multiple times to configure the number
-	 * of MBs required by shared memory size (calculated as NumSize)*/
-	for (Index = 0; Index < NumSize; Index ++)
-		Xil_SetTlbAttributes(addr + 0x100000 * Index, attrib);
+/* FIXME: This function should be removed.  */
+void zynqMP_r5_map_mem_region(u32 addr, u32 size, u32 attrib) {
+	Xil_SetTlbAttributes_size(addr, size, attrib);
 }
 
 /*
