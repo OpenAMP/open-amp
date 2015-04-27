@@ -478,7 +478,7 @@ void platform_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
 }
 
 void platform_cache_all_flush_invalidate() {
-	ARM_AR_MEM_DCACHE_ALL_OP(0);
+	ARM_AR_MEM_DCACHE_ALL_OP(1);
 }
 
 void platform_cache_disable() {
