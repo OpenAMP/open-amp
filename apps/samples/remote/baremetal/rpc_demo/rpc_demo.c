@@ -51,6 +51,10 @@ int main() {
 	int ret;
 	int status;
 
+#ifdef ZYNQ_A9
+	SWITCH_TO_SYS_MODE();
+#endif
+
 	/* Initialize HW system components */
 	init_system();
 
