@@ -22,7 +22,8 @@ struct _proxy_data {
 
 static struct _proxy_data *proxy;
 char fw_dst_path[] = "/lib/firmware/r5_image_rpc_demo";
-char cp_cmd[512];
+
+char *rproc_name = 0;
 
 int handle_open(struct _sys_rpc *rpc)
 {
@@ -179,6 +180,21 @@ void exit_action_handler(int signum)
 	proxy->active = 0;
 }
 
+void unload_drivers()
+{
+	char sys_cmd[256];
+
+	system("modprobe -r rpmsg_proxy_dev_driver");
+	system("modprobe -r virtio_rpmsg_bus");
+	if (rproc_name) {
+		sprintf(sys_cmd, "modprobe -r %s", rproc_name);
+		system(sys_cmd);
+	}
+	system("modprobe -r remoteproc");
+	system("modprobe -r virtio_ring");
+	system("modprobe -r virtio");
+}
+
 void kill_action_handler(int signum)
 {
 	printf("\r\nMaster>RPC service killed !!\r\n");
@@ -197,12 +213,7 @@ void kill_action_handler(int signum)
 	free(proxy);
 
 	/* Unload drivers */
-	system("modprobe -r rpmsg_proxy_dev_driver");
-	system("modprobe -r virtio_rpmsg_bus");
-	system("modprobe -r zynqmp_r5_remoteproc");
-	system("modprobe -r remoteproc");
-	system("modprobe -r virtio_ring");
-	system("modprobe -r virtio");
+	unload_drivers();
 }
 
 void display_help_msg()
@@ -219,6 +230,8 @@ int main(int argc, char *argv[])
 	unsigned int bytes_rcvd;
 	int i = 0;
 	int ret = 0;
+	char *firmware_path = 0;
+	char sys_cmd[512];
 
 	/* Initialize signalling infrastructure */
 	memset(&exit_action, 0, sizeof(struct sigaction));
@@ -240,16 +253,25 @@ int main(int argc, char *argv[])
 			return 0;
 		} else if (strcmp(argv[i], "-f") == 0) {
 			if (i+1 < argc)
-				/* Construct file copy command string */
-				sprintf(cp_cmd , "cp %s %s", argv[i+1],
-						fw_dst_path);
+				firmware_path = argv[i+1];
+		} else if (strcmp(argv[i], "--remoteproc") == 0) {
+			if (i+1 < argc)
+				rproc_name = argv[i+1];
 		}
 	}
+	if (!rproc_name)
+		rproc_name = "zynqmp_r5_remoteproc";
 
 	/* Bring up remote firmware */
 	printf("\r\nMaster>Loading remote firmware\r\n");
-	system(cp_cmd);
-	system("modprobe zynqmp_r5_remoteproc firmware=r5_image_rpc_demo");
+
+	if (firmware_path) {
+		/* Copy the firmware to the preferred firmware location */
+		sprintf(sys_cmd, "cp %s %s", firmware_path, fw_dst_path);
+		system(sys_cmd);
+	}
+	sprintf(sys_cmd, "modprobe %s firmware=r5_image_rpc_demo", rproc_name);
+	system(sys_cmd);
 
 	/* Create rpmsg proxy device */
 	printf("\r\nMaster>Create rpmsg proxy device\r\n");
@@ -329,12 +351,7 @@ error0:
 	free(proxy);
 
 	/* Unload drivers */
-	system("modprobe -r rpmsg_proxy_dev_driver");
-	system("modprobe -r virtio_rpmsg_bus");
-	system("modprobe -r zynqmp_r5_remoteproc");
-	system("modprobe -r remoteproc");
-	system("modprobe -r virtio_ring");
-	system("modprobe -r virtio");
+	unload_drivers();
 
 	return ret;
 }
