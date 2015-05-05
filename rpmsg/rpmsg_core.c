@@ -216,6 +216,7 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
     if (!rp_ept) {
         return RPMSG_NULL ;
     }
+    env_memset(rp_ept, 0x00, sizeof(struct rpmsg_endpoint));
 
     node = env_allocate_memory(sizeof(struct llist));
     if (!node) {
