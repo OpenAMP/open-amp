@@ -1,13 +1,14 @@
 open-amp
 ========
-This repository is a place holder for Open Asymmetric Multi Processing (OpenAMP) framework project. The OpenAMP framework provides software components that enable development of software applications for Asymmetric Multiprocessing (AMP) systems. OpenAMP provides following features:
+This repository is the home for the Open Asymmetric Multi Processing (OpenAMP) framework project. The OpenAMP framework provides software components that enable development of software applications for Asymmetric Multiprocessing (AMP) systems. The framework provides the following key capabilities. 
 
-1. Fully functional remoteproc and rpmsg components usable in following configurations;
-	a. Linux master/Bare Metal remote configuration
-	b. Bare Metal master/Linux remote configuration
-2. Proxy infrastructure and supplied demos showcase ability of proxy on master to handle printf, scanf, open, close, read, write calls from Bare metal based remote contexts.
-3. Documentation - OpenAMP User Manual, OpenAMP Getting Started Guide and Performance Test Measurements.
-4. Performance tests have been conducted and OpenAMP latency measurements have been quantified and documented.
+1. Provides Life Cycle Management, and Inter Processor Communication capabilities for management of remote compute resources and their associated software contexts   
+2. Provides a stand alone library usable with RTOS and Baremetal software environments 
+3. Compatibility with upstream Linux remoteproc and rpmsg components
+4. Following AMP configurations supported
+	a. Linux master/Baremetal remote
+	b. Baremetal master/Linux remote
+5. Proxy infrastructure and supplied demos showcase ability of proxy on master to handle printf, scanf, open, close, read, write calls from Bare metal based remote contexts.
 
 Following are the known limitations:
 
