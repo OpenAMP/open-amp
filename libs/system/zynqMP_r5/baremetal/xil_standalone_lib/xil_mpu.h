@@ -68,10 +68,10 @@ extern "C" {
 
 /************************** Function Prototypes ******************************/
 
-void Xil_SetTlbAttributes_size(INTPTR addr, u64 size, u32 attrib);
 void Xil_SetTlbAttributes(INTPTR Addr, u32 attrib);
 void Xil_EnableMPU(void);
 void Xil_DisableMPU(void);
+void Xil_SetMPURegion(INTPTR addr, u64 size, u32 attrib);
 
 #ifdef __cplusplus
 }

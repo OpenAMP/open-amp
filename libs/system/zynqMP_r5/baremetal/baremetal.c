@@ -85,32 +85,6 @@ void zynqMP_r5_irq_isr() {
 	XScuGic_CPUWriteReg(&InterruptController,XSCUGIC_EOI_OFFSET, raw_irq);
 }
 
-/***********************************************************************
- *
- *
- * zynqMP_r5_map_mem_region
- *
- *
- * This function sets-up the region of memory based on the given
- * attributes
- * There is no MMU for R5, no need to map phy address to vrt_addr
- *
- * @param addr		     - Starting address of memory region
- * @parma size           - size of region
- * @param attrib  		 - Attributes for memory region
- *
- *
- * OUTPUTS
- *
- *       None
- *
- ***********************************************************************/
-
-/* FIXME: This function should be removed.  */
-void zynqMP_r5_map_mem_region(u32 addr, u32 size, u32 attrib) {
-	Xil_SetTlbAttributes_size(addr, size, attrib);
-}
-
 /*
  ***********************************************************************
  * IPI handling
@@ -242,7 +216,7 @@ void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size,
 		}
 	}
 
-	Xil_SetTlbAttributes_size(pa, size, r5_flags | PRIV_RW_USER_RW);
+	Xil_SetMPURegion(pa, size, r5_flags | PRIV_RW_USER_RW);
 	return;
 }
 

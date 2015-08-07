@@ -56,6 +56,8 @@
 #include "xpseudo_asm.h"
 #include "xil_types.h"
 #include "xil_mpu.h"
+#include "xdebug.h"
+
 /***************** Macros (Inline Functions) Definitions *********************/
 
 /**************************** Type Definitions *******************************/
@@ -64,48 +66,10 @@
 
 /************************** Variable Definitions *****************************/
 
-/************************** Function Prototypes ******************************/
-
-/*****************************************************************************
-*
-* Set the memory attributes for a section of memory with starting address addr
-* of the region size 1MB having attributes attrib
-*
-* @param	addr is the address for which attributes are to be set.
-* @param	attrib specifies the attributes for that memory region.
-* @return	None.
-*
-*
-******************************************************************************/
-void Xil_SetTlbAttributes(INTPTR addr, u32 attrib)
-{
-	u32 Regionsize;
-	INTPTR Localaddr = addr;
-	u32 NextAvailableMemRegion;
-
-	Localaddr &= (~(0xFFFFFU));
-	Xil_DCacheFlush();
-	Xil_ICacheInvalidate();
-	NextAvailableMemRegion = mfcp(XREG_CP15_MPU_MEMORY_REG_NUMBER);
-	NextAvailableMemRegion++;
-	mtcp(XREG_CP15_MPU_MEMORY_REG_NUMBER,NextAvailableMemRegion);
-	isb();
-	Regionsize = REGION_1M<<1;			/* region size is hardcoded to 1MB */
-	Regionsize |= REGION_EN;
-	dsb();
-	mtcp(XREG_CP15_MPU_REG_BASEADDR,Localaddr); 			/* Set base address of a region */
-	mtcp(XREG_CP15_MPU_REG_ACCESS_CTRL,attrib); 	/* Set the control attribute */
-	mtcp(XREG_CP15_MPU_REG_SIZE_EN,Regionsize); 		/* set the region size and enable it*/
-	dsb();
-	isb();
-
-
-}
-
 static const struct {
 	u64 size;
 	unsigned int encoding;
-} region_size[] = {
+}region_size[] = {
 	{ 0x20, REGION_32B },
 	{ 0x40, REGION_64B },
 	{ 0x80, REGION_128B },
@@ -136,6 +100,27 @@ static const struct {
 	{ 0x100000000, REGION_4G },
 };
 
+/************************** Function Prototypes ******************************/
+
+/*****************************************************************************
+*
+* Set the memory attributes for a section of memory with starting address addr
+* of the region size 1MB having attributes attrib
+*
+* @param	addr is the address for which attributes are to be set.
+* @param	attrib specifies the attributes for that memory region.
+* @return	None.
+*
+*
+******************************************************************************/
+void Xil_SetTlbAttributes(INTPTR addr, u32 attrib)
+{
+	INTPTR Localaddr = addr;
+	Localaddr &= (~(0xFFFFFU));
+	/* Setting the MPU region with given attribute with 1MB size */
+	Xil_SetMPURegion(Localaddr, 0x100000, attrib);
+}
+
 /*****************************************************************************
 *
 * Set the memory attributes for a section of memory with starting address addr
@@ -148,7 +133,7 @@ static const struct {
 *
 *
 ******************************************************************************/
-void Xil_SetTlbAttributes_size(INTPTR addr, u64 size, u32 attrib)
+void Xil_SetMPURegion(INTPTR addr, u64 size, u32 attrib)
 {
 	u32 Regionsize = 0;
 	INTPTR Localaddr = addr;
@@ -158,8 +143,11 @@ void Xil_SetTlbAttributes_size(INTPTR addr, u64 size, u32 attrib)
 	Xil_DCacheFlush();
 	Xil_ICacheInvalidate();
 	NextAvailableMemRegion = mfcp(XREG_CP15_MPU_MEMORY_REG_NUMBER);
-	/* FIXME: Error out we run out of free regions.  */
 	NextAvailableMemRegion++;
+	if (NextAvailableMemRegion > 16) {
+		xdbg_printf(DEBUG, "No regions available\r\n");
+		return;
+	}
 	mtcp(XREG_CP15_MPU_MEMORY_REG_NUMBER,NextAvailableMemRegion);
 	isb();
 
@@ -170,7 +158,7 @@ void Xil_SetTlbAttributes_size(INTPTR addr, u64 size, u32 attrib)
 			break;
 		}
 	}
-	/* FIXME: Error out if no size found.  */
+
 	Localaddr &= ~(region_size[i].size - 1);
 
 	Regionsize <<= 1;
