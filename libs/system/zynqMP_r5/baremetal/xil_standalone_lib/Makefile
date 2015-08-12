@@ -1,9 +1,9 @@
 include config.make
-AS=arm-none-eabi-as
-CC=arm-none-eabi-gcc
-AR=arm-none-eabi-ar
+AS=armr5-none-eabi-as
+CC=armr5-none-eabi-gcc
+AR=armr5-none-eabi-ar
 CP=cp
-ARCHIVER=arm-none-eabi-ar
+ARCHIVER=armr5-none-eabi-ar
 COMPILER_FLAGS= -O2 -c
 EXTRA_COMPILER_FLAGS= -mcpu=cortex-r5 -DUSEAMP=1
 LIB=libxil.a

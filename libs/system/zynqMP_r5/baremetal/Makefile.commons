@@ -1,4 +1,4 @@
-CROSS            := arm-none-eabi-
+CROSS            := armr5-none-eabi-
 CFLAGS           := -Wall -O2 -g -MMD 
 CXXFLAGS         := -Wall -MMD
 ASFLAGS          := -MMD
