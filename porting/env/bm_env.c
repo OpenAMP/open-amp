@@ -50,13 +50,6 @@
 
 #include "baremetal.h"
 
-#if (defined(__CC_ARM))
-#define MEM_BARRIER()      __schedule_barrier()
-#elif (defined(__GNUC__))
-#define MEM_BARRIER()      asm volatile("" ::: "memory")
-#else
-#define MEM_BARRIER()
-#endif
 static void acquire_spin_lock(void *plock);
 static void release_spin_lock(void *plock);
 
