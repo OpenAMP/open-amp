@@ -484,16 +484,16 @@ void rpmsg_rdev_set_status(struct virtio_device *dev, unsigned char status) {
 
 }
 
-unsigned long rpmsg_rdev_get_feature(struct virtio_device *dev) {
+uint32_t rpmsg_rdev_get_feature(struct virtio_device *dev) {
     return dev->features;
 }
 
-void rpmsg_rdev_set_feature(struct virtio_device *dev, unsigned long feature) {
+void rpmsg_rdev_set_feature(struct virtio_device *dev, uint32_t feature) {
     dev->features |= feature;
 }
 
-unsigned long rpmsg_rdev_negotiate_feature(struct virtio_device *dev,
-                unsigned long features) {
+uint32_t rpmsg_rdev_negotiate_feature(struct virtio_device *dev,
+                uint32_t features) {
     return 0;
 }
 /*
@@ -501,11 +501,11 @@ unsigned long rpmsg_rdev_negotiate_feature(struct virtio_device *dev,
  * configuration region. This region is encoded in the same endian as
  * the guest.
  */
-void rpmsg_rdev_read_config(struct virtio_device *dev, unsigned long offset,
+void rpmsg_rdev_read_config(struct virtio_device *dev, uint32_t offset,
                 void *dst, int length) {
     return;
 }
-void rpmsg_rdev_write_config(struct virtio_device *dev, unsigned long offset,
+void rpmsg_rdev_write_config(struct virtio_device *dev, uint32_t offset,
                 void *src, int length) {
     return;
 }

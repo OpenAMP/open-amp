@@ -195,7 +195,7 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct llist *buffer,
  * @return                      - Function status
  */
 int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
-        void *buffer_addr, uint_t len, int writable, boolean has_next) {
+        void *buffer_addr, uint32_t len, int writable, boolean has_next) {
 
     struct vq_desc_extra *dxp;
     struct vring_desc *dp;
@@ -353,7 +353,7 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
  * @return                       - Function status
  */
 int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
-        uint_t len) {
+        uint32_t len) {
 
     struct vring_used_elem *used_desc = VQ_NULL;
     uint16_t used_idx;

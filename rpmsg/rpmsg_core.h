@@ -136,7 +136,7 @@ int rpmsg_enqueue_buffer(struct remote_device *rdev, void *buffer,
                 unsigned long len, unsigned short idx);
 void rpmsg_return_buffer(struct remote_device *rdev, void *buffer,
                 unsigned long len, unsigned short idx);
-void *rpmsg_get_tx_buffer(struct remote_device *rdev, int *len,
+void *rpmsg_get_tx_buffer(struct remote_device *rdev, unsigned long *len,
                 unsigned short *idx);
 void rpmsg_free_buffer(struct remote_device *rdev, void *buffer);
 void rpmsg_free_channel(struct rpmsg_channel* rp_chnl);
@@ -170,20 +170,20 @@ unsigned char rpmsg_rdev_get_status(struct virtio_device *dev);
 
 void rpmsg_rdev_set_status(struct virtio_device *dev, unsigned char status);
 
-unsigned long rpmsg_rdev_get_feature(struct virtio_device *dev);
+uint32_t rpmsg_rdev_get_feature(struct virtio_device *dev);
 
-void rpmsg_rdev_set_feature(struct virtio_device *dev, unsigned long feature);
+void rpmsg_rdev_set_feature(struct virtio_device *dev, uint32_t feature);
 
-unsigned long rpmsg_rdev_negotiate_feature(struct virtio_device *dev,
-                unsigned long features);
+uint32_t rpmsg_rdev_negotiate_feature(struct virtio_device *dev,
+                uint32_t features);
 /*
  * Read/write a variable amount from the device specific (ie, network)
  * configuration region. This region is encoded in the same endian as
  * the guest.
  */
-void rpmsg_rdev_read_config(struct virtio_device *dev, unsigned long offset,
+void rpmsg_rdev_read_config(struct virtio_device *dev, uint32_t offset,
                 void *dst, int length);
-void rpmsg_rdev_write_config(struct virtio_device *dev, unsigned long offset,
+void rpmsg_rdev_write_config(struct virtio_device *dev, uint32_t offset,
                 void *src, int length);
 void rpmsg_rdev_reset(struct virtio_device *dev);
 

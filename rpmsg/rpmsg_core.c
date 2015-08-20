@@ -304,7 +304,7 @@ void rpmsg_send_ns_message(struct remote_device *rdev,
     struct rpmsg_hdr *rp_hdr;
     struct rpmsg_ns_msg *ns_msg;
     unsigned short idx;
-    int len;
+    unsigned long len;
 
     env_lock_mutex(rdev->lock);
 
@@ -402,19 +402,18 @@ void rpmsg_return_buffer(struct remote_device *rdev, void *buffer,
  *
  * return - pointer to buffer.
  */
-void *rpmsg_get_tx_buffer(struct remote_device *rdev, int *len,
+void *rpmsg_get_tx_buffer(struct remote_device *rdev, unsigned long *len,
                 unsigned short *idx) {
     void *data;
 
     if (rdev->role == RPMSG_REMOTE) {
-        data = virtqueue_get_buffer(rdev->tvq, (unsigned long *) len);
+        data = virtqueue_get_buffer(rdev->tvq, (uint32_t *)len);
         if (data == RPMSG_NULL) {
             data = sh_mem_get_buffer(rdev->mem_pool);
             *len = RPMSG_BUFFER_SIZE;
         }
     } else {
-        data = virtqueue_get_available_buffer(rdev->tvq, idx,
-                        (unsigned long *) len);
+        data = virtqueue_get_available_buffer(rdev->tvq, idx, (uint32_t *)len);
     }
     return ((void *) env_map_vatopa(data));
 }
@@ -436,9 +435,9 @@ void *rpmsg_get_rx_buffer(struct remote_device *rdev, unsigned long *len,
 
     void *data;
     if (rdev->role == RPMSG_REMOTE) {
-        data = virtqueue_get_buffer(rdev->rvq, len);
+        data = virtqueue_get_buffer(rdev->rvq, (uint32_t *)len);
     } else {
-        data = virtqueue_get_available_buffer(rdev->rvq, idx, len);
+        data = virtqueue_get_available_buffer(rdev->rvq, idx, (uint32_t *)len);
     }
     return ((void *) env_map_vatopa(data));
 }

@@ -139,7 +139,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, unsigned long src,
     int status = RPMSG_SUCCESS;
     unsigned short idx;
     int tick_count = 0;
-    int buff_len;
+    unsigned long buff_len;
 
     if (!rp_chnl) {
         return RPMSG_ERR_PARAM;
