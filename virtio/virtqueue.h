@@ -29,15 +29,8 @@
  * $FreeBSD$
  */
 
-typedef         unsigned int                        uint_t;
-typedef         signed char                         int8_t;
-typedef         unsigned char                       uint8_t;
+#include <stdint.h>
 typedef         uint8_t                             boolean;
-typedef         signed short                        int16_t;
-typedef         unsigned short                      uint16_t;
-typedef         unsigned long                       uint32_t;
-typedef         unsigned long long                  uint64_t;
-typedef         signed long long                    int64_t;
 
 #include "virtio_ring.h"
 #include "../porting/env/env.h"
@@ -206,7 +199,7 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct llist *buffer,
         int readable, int writable, void *cookie);
 
 int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
-        void* buffer_addr, uint_t len, int writable, boolean has_next);
+        void* buffer_addr, uint32_t len, int writable, boolean has_next);
 
 void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len);
 
@@ -214,7 +207,7 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
         uint32_t *len);
 
 int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
-        uint_t len);
+        uint32_t len);
 
 void virtqueue_disable_cb(struct virtqueue *vq);
 
