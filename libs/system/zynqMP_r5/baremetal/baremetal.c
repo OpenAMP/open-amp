@@ -32,6 +32,7 @@
 #include "xscugic.h"
 #include "xil_cache.h"
 #include "xil_mmu.h"
+#include "xil_mpu.h"
 #include "baremetal.h"
 #include "../../../../porting/env/env.h"
 
