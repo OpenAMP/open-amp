@@ -36,8 +36,6 @@
 
 #define INTC_DEVICE_ID		XPAR_SCUGIC_0_DEVICE_ID
 
-#define VRING1_IPI_INTR_VECT              65
-
 /* IPI REGs OFFSET */
 #define IPI_TRIG_OFFSET          0x00000000 /* IPI trigger register offset */
 #define IPI_OBS_OFFSET           0x00000004 /* IPI observation register offset */
