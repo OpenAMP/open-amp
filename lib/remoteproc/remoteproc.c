@@ -49,6 +49,7 @@
  * @param channel_destroyed - callback function for channel deletion
  * @param default_cb        - default callback for channel I/O
  * @param rproc_handle      - pointer to new remoteproc instance
+ * @param rpmsg_role        - 1 for rpmsg master, or 0 for rpmsg slave
  *
  * @param returns - status of function execution
  *
@@ -58,11 +59,13 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 			     rpmsg_chnl_cb_t channel_created,
 			     rpmsg_chnl_cb_t channel_destroyed,
 			     rpmsg_rx_cb_t default_cb,
-			     struct remote_proc **rproc_handle)
+			     struct remote_proc **rproc_handle,
+			     int rpmsg_role)
 {
 
 	struct remote_proc *rproc;
 	int status;
+	int remote_rpmsg_role;
 
 	if (!rsc_info) {
 		return RPROC_ERR_PARAM;
@@ -82,11 +85,13 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 			if (status == RPROC_SUCCESS) {
 				/* Initialize RPMSG "messaging" component */
 				*rproc_handle = rproc;
+				remote_rpmsg_role = (rpmsg_role == RPMSG_MASTER?
+						RPMSG_REMOTE : RPMSG_MASTER);
 				status =
 				    rpmsg_init(NULL, rproc->proc->cpu_id,
 					       &rproc->rdev, channel_created,
 					       channel_destroyed, default_cb,
-					       RPMSG_MASTER);
+					       remote_rpmsg_role);
 			} else {
 				status = RPROC_ERR_NO_RSC_TABLE;
 			}

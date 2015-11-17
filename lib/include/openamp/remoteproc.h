@@ -391,6 +391,8 @@ struct rsc_table_info {
  * @param channel_destroyed - callback function for channel deletion
  * @param default_cb        - default callback for channel I/O
  * @param rproc_handle      - pointer to new remoteproc instance
+ * @param init_env          - 1 to initialize environment, 0 not to
+ * @param rpmsg_role        - 1 for rpmsg master,  or 0 for rpmsg slave
  *
  * @param returns - status of execution
  *
@@ -400,7 +402,8 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 			     rpmsg_chnl_cb_t channel_created,
 			     rpmsg_chnl_cb_t channel_destroyed,
 			     rpmsg_rx_cb_t default_cb,
-			     struct remote_proc **rproc_handle);
+			     struct remote_proc **rproc_handle,
+			     int rpmsg_role);
 
 /**
  * remoteproc_resource_deinit
