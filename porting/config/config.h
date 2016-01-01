@@ -32,21 +32,8 @@
 
 #include "../env/env.h"
 
-/* Max supprted ISR counts */
-#define ISR_COUNT                       4
-
 /* Max supported firmwares */
-#define FW_COUNT                        4
-/**
- * Structure to keep track of registered ISR's.
- */
-struct isr_info {
-	int vector;
-	int priority;
-	int type;
-	void *data;
-	void (*isr) (int vector, void *data);
-};
+#define FW_COUNT 4
 
 struct firmware_info {
 	char name[32];
