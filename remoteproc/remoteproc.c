@@ -28,11 +28,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "remoteproc.h"
-#include "remoteproc_loader.h"
-#include "rsc_table_parser.h"
-#include "../porting/env/env.h"
-#include "../common/hil/hil.h"
+#include "openamp/remoteproc.h"
+#include "openamp/remoteproc_loader.h"
+#include "openamp/rsc_table_parser.h"
+#include "openamp/env.h"
+#include "openamp/hil.h"
 
 /**
  * remoteproc_resource_init

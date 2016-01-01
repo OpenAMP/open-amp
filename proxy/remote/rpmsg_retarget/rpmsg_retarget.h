@@ -1,4 +1,4 @@
-#include "open_amp.h"
+#include "openamp/open_amp.h"
 /* RPC response buffer size */
 #define RPC_BUFF_SIZE 512
 

@@ -1,4 +1,4 @@
-#include "open_amp.h"
+#include "openamp/open_amp.h"
 #include "rpmsg_retarget.h"
 #include <stdio.h>
 #include <string.h>

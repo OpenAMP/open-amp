@@ -45,7 +45,7 @@
  *
  **************************************************************************/
 
-#include "rpmsg.h"
+#include "openamp/rpmsg.h"
 
 /* Macro to initialize vring HW info */
 #define INIT_VRING_ALLOC_INFO(ring_info,vring_hw)                             \

@@ -53,7 +53,7 @@
  * irrespective of the fact whether it is RPMSG Remote or Master.
  *
  **************************************************************************/
-#include "rpmsg.h"
+#include "openamp/rpmsg.h"
 
 /**
  * rpmsg_init

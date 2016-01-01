@@ -30,12 +30,12 @@
 #ifndef _RPMSG_CORE_H_
 #define _RPMSG_CORE_H_
 
-#include "../porting/env/env.h"
-#include "../virtio/virtio.h"
-#include "../common/hil/hil.h"
-#include "../common/shm/sh_mem.h"
-#include "../common/llist/llist.h"
-#include "rpmsg.h"
+#include "openamp/env.h"
+#include "openamp/virtio.h"
+#include "openamp/hil.h"
+#include "openamp/sh_mem.h"
+#include "openamp/llist.h"
+#include "openamp/rpmsg.h"
 
 /* Configurable parameters */
 #define RPMSG_BUFFER_SIZE                       512

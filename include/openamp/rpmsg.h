@@ -35,7 +35,7 @@
 #ifndef _RPMSG_H_
 #define _RPMSG_H_
 
-#include "../rpmsg/rpmsg_core.h"
+#include "openamp/rpmsg_core.h"
 
 /* The feature bitmap for virtio rpmsg */
 #define VIRTIO_RPMSG_F_NS	0	/* RP supports name service notifications */

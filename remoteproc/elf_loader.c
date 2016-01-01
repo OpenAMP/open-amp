@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "elf_loader.h"
+#include "openamp/elf_loader.h"
 
 /* Local functions. */
 

@@ -41,7 +41,7 @@
  *
  **************************************************************************/
 
-#include "firmware.h"
+#include "openamp/firmware.h"
 
 /* Start and end addresses of firmware image for remotes. These are defined in the
  * object files that are obtained by converting the remote ELF Image into object

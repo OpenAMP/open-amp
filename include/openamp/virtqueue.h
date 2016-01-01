@@ -32,9 +32,9 @@
 #include <stdint.h>
 typedef uint8_t boolean;
 
-#include "virtio_ring.h"
-#include "../porting/env/env.h"
-#include "../common/llist/llist.h"
+#include "openamp/virtio_ring.h"
+#include "openamp/env.h"
+#include "openamp/llist.h"
 
 /*Error Codes*/
 #define VQ_ERROR_BASE                                 -3000

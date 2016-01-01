@@ -24,7 +24,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "virtqueue.h"
+#include "openamp/virtqueue.h"
 
 /* Prototype for internal functions. */
 static void vq_ring_init(struct virtqueue *);
