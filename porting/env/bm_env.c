@@ -43,11 +43,21 @@
 
 #ifdef OPENAMP_BAREMETAL
 #include "openamp/env.h"
+#include "platform.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "baremetal.h"
+/* External defined functions */
+extern void restore_global_interrupts();
+extern void disable_global_interrupts();
+extern int platform_interrupt_enable(unsigned int vector,unsigned int polarity, unsigned int priority);
+extern int platform_interrupt_disable(int vector_id);
+extern void platform_cache_all_flush_invalidate();
+extern void platform_cache_disable();
+extern void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size, unsigned int flags);
+extern unsigned long platform_vatopa(void *addr);
+extern void *platform_patova(unsigned long addr);
 
 static void acquire_spin_lock(void *plock);
 static void release_spin_lock(void *plock);
@@ -515,24 +525,6 @@ void bm_env_isr(int vector)
 			break;
 		}
 	}
-}
-
-static inline unsigned int xchg(void *plock, unsigned int lockVal)
-{
-	volatile unsigned int tmpVal = 0;
-	volatile unsigned int tmpVal1 = 0;
-
-#ifdef __GNUC__
-
- asm("1:                                \n\t" "LDREX  %[tmpVal], [%[plock]]      \n\t" "STREX  %[tmpVal1], %[lockVal], [%[plock]] \n\t" "CMP    %[tmpVal1], #0                     \n\t" "BNE    1b                         \n\t" "DMB                               \n\t":[tmpVal]
-	    "=&r"
-	    (tmpVal)
- :	    [tmpVal1] "r"(tmpVal1),[lockVal] "r"(lockVal),[plock] "r"(plock)
- :	    "cc", "memory");
-
-#endif
-
-	return tmpVal;
 }
 
 /**
