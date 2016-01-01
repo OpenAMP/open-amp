@@ -35,8 +35,8 @@
 #ifndef REMOTEPROC_H
 #define REMOTEPROC_H
 
-#include "../rpmsg/rpmsg.h"
-#include "../common/firmware/firmware.h"
+#include "openamp/rpmsg.h"
+#include "openamp/firmware.h"
 /**
  * struct resource_table - firmware resource table header
  * @ver: version number

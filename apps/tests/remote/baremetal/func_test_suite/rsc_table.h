@@ -31,7 +31,7 @@
  * for use by the Linux Master */
 
 #include <stddef.h>
-#include "open_amp.h"
+#include "openamp/open_amp.h"
 
 #define NO_RESOURCE_ENTRIES         8
 

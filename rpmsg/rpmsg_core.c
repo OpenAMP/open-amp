@@ -45,7 +45,7 @@
  *
  *
  **************************************************************************/
-#include "rpmsg.h"
+#include "openamp/rpmsg.h"
 
 /* Internal functions */
 static void rpmsg_rx_callback(struct virtqueue *vq);

@@ -32,7 +32,7 @@
 #define PLATFORM_H_
 
 #include <stdio.h>
-#include "../../common/hil/hil.h"
+#include "openamp/hil.h"
 
 /* ------------------------- Macros --------------------------*/
 

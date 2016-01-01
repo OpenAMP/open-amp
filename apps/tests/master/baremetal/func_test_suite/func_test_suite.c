@@ -9,7 +9,7 @@ the rpmsg APIs and shutsdown the core once the test has been completed.*/
 #include  <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "open_amp.h"
+#include "openamp/open_amp.h"
 #include "test_suite.h"
 
 #define BAREMETAL_MASTER 1

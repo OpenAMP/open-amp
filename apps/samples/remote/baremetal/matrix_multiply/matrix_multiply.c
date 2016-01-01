@@ -6,7 +6,7 @@ multiplies them and returns the result to the master core. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "open_amp.h"
+#include "openamp/open_amp.h"
 #include "rsc_table.h"
 #include "baremetal.h"
 

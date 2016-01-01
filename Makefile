@@ -5,8 +5,9 @@ include Makefile.commons
 
 LIB := libs/open_amp/libopen_amp.a
 
-HEADERS += \
-$(wildcard include/*.h)
+INCLUDES := -I"include" -I"include/openamp/porting/os/$(OS)/platforms/$(PLAT)"
+INCLUDES += -I"libs/system/$(PLAT)/$(OS)"
+CFLAGS += $(INCLUDES)
 
 C_SRCFILES += \
 $(wildcard remoteproc/*.c) \

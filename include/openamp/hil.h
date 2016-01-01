@@ -42,8 +42,8 @@
  *
  ***************************************************************************/
 
-#include "../../virtio/virtio.h"
-#include "../../common/firmware/firmware.h"
+#include "openamp/virtio.h"
+#include "openamp/firmware.h"
 
 /* Configurable parameters */
 #define HIL_MAX_CORES                   2

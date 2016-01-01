@@ -31,7 +31,7 @@
 #ifndef _VIRTIO_H_
 #define _VIRTIO_H_
 
-#include "virtqueue.h"
+#include "openamp/virtqueue.h"
 
 /* VirtIO device IDs. */
 #define VIRTIO_ID_NETWORK    0x01

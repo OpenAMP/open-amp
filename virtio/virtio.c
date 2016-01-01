@@ -23,7 +23,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "virtio.h"
+#include "openamp/virtio.h"
 
 static const char *virtio_feature_name(unsigned long feature,
 				       struct virtio_feature_desc *);

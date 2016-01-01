@@ -45,7 +45,7 @@
 #ifndef REMOTEPROC_LOADER_H_
 #define REMOTEPROC_LOADER_H_
 
-#include "remoteproc.h"
+#include "openamp/remoteproc.h"
 
 /**
  * enum loader_type - dynamic name service announcement flags

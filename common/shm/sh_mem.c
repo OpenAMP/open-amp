@@ -41,7 +41,7 @@
  *       it is only being used to manage shared memory.
  *
  **************************************************************************/
-#include "sh_mem.h"
+#include "openamp/sh_mem.h"
 
 /**
  * sh_mem_create_pool

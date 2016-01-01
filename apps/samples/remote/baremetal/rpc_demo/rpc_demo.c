@@ -7,10 +7,10 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "open_amp.h"
+#include "openamp/open_amp.h"
 #include "rsc_table.h"
 #include "baremetal.h"
-#include "rpmsg_retarget.h"
+#include "openamp/rpmsg_retarget.h"
 
 /* Internal functions */
 static void init_system();

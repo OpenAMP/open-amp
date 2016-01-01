@@ -45,7 +45,7 @@
 #ifndef SH_MEM_H_
 #define SH_MEM_H_
 
-#include "../../porting/env/env.h"
+#include "openamp/env.h"
 
 /* Macros */
 #define BITMAP_WORD_SIZE         32
