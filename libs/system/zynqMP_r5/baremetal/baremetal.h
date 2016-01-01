@@ -79,15 +79,6 @@
 		*get_bits_ptr = tmp_val; \
 	}
 
-/* Memory barrier */
-#if (defined(__CC_ARM))
-#define MEM_BARRIER()      __schedule_barrier()
-#elif (defined(__GNUC__))
-#define MEM_BARRIER()      asm volatile("dsb" : : : "memory")
-#else
-#define MEM_BARRIER()
-#endif
-
 void zynqMP_r5_map_mem_region(u32 addr, u32 size, u32 attrib);
 
 int zynqMP_r5_gic_initialize();
