@@ -30,7 +30,38 @@
 #ifndef PLATFORM_H_
 #define PLATFORM_H_
 
-#include <stdio.h>
 #include "openamp/hil.h"
 
-#endif				/* PLATFORM_H_ */
+/* Memory barrier */
+#if (defined(__CC_ARM))
+#define MEM_BARRIER() __schedule_barrier()
+#elif (defined(__GNUC__))
+#define MEM_BARRIER() asm volatile("dsb" : : : "memory")
+#else
+#define MEM_BARRIER()
+#endif
+
+static inline unsigned int xchg(void* plock, unsigned int lockVal)
+{
+	volatile unsigned int tmpVal = 0;
+	volatile unsigned int tmpVal1 = 0;
+
+#ifdef __GNUC__
+
+	asm (
+		"1:                                \n\t"
+		"LDREX  %[tmpVal], [%[plock]]      \n\t"
+		"STREX  %[tmpVal1], %[lockVal], [%[plock]] \n\t"
+		"CMP    %[tmpVal1], #0                     \n\t"
+		"BNE    1b                         \n\t"
+		"DMB                               \n\t"
+		: [tmpVal] "=&r"(tmpVal)
+		: [tmpVal1] "r" (tmpVal1), [lockVal] "r"(lockVal), [plock] "r"(plock)
+		: "cc", "memory"
+	);
+
+#endif
+
+	return tmpVal;
+}
+#endif /* PLATFORM_H_ */
