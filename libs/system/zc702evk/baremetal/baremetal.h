@@ -154,18 +154,9 @@
                     asm volatile("    DSB");                                        \
                 }
 
-/* Memory barrier */
-#if (defined(__CC_ARM))
-#define MEM_BARRIER()      __schedule_barrier()
-#elif (defined(__GNUC__))
-#define MEM_BARRIER()      asm volatile("dsb" : : : "memory")
-#else
-#define MEM_BARRIER()
-#endif
-
 #define 		MIDR_ARCH_MASK              		   0x000F0000	/* Main ID register's architecture mask */
 #define 		MIDR_ARCH_ARMV7             		   0xF	/* ARMv7 */
-#define 		MIDR_PART_NO_CORTEX_A      			   0xC00	/* Primary part number of Cortex-A series. */
+#define 		MIDR_PART_NO_CORTEX_A      		   0xC00	/* Primary part number of Cortex-A series. */
 #define 		MIDR_PART_NO_MASK           		   0x0000FF00	/* Primary part number mask  */
 #define         ARM_AR_INTERRUPTS_DISABLE_BITS         0x000000C0
 #define         ARM_AR_INTERRUPTS_ENABLE_BITS          0x00000000
