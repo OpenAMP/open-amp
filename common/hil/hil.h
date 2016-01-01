@@ -43,7 +43,7 @@
  ***************************************************************************/
 
 #include "../../virtio/virtio.h"
-#include "../../porting/config/config.h"
+#include "../../common/firmware/firmware.h"
 
 /* Configurable parameters */
 #define HIL_MAX_CORES                   2

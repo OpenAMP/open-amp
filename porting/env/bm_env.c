@@ -43,7 +43,7 @@
 
 #ifdef OPENAMP_BAREMETAL
 #include "env.h"
-#include "../config/config.h"
+#include "../../common/firmware/firmware.h"
 
 #include <stdlib.h>
 #include <string.h>
