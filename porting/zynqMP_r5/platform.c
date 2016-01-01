@@ -40,8 +40,21 @@
  *
  **************************************************************************/
 
-#include "platform.h"
-#include "baremetal.h"
+#include "openamp/hil.h"
+
+/* -- FIX ME: ipi info is to be defined -- */
+struct ipi_info {
+	uint32_t ipi_base_addr;
+	uint32_t ipi_chn_mask;
+};
+
+/*--------------------------- Declare Functions ------------------------ */
+static int _enable_interrupt(struct proc_vring *vring_hw);
+static void _notify(int cpu_id, struct proc_intr *intr_info);
+static int _boot_cpu(int cpu_id, unsigned int load_addr);
+static void _shutdown_cpu(int cpu_id);
+static void platform_isr(int vect_id, void *data);
+static void _reg_ipi_after_deinit(struct proc_vring *vring_hw);
 
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops proc_ops = {
@@ -52,8 +65,10 @@ struct hil_platform_ops proc_ops = {
 	.shutdown_cpu = _shutdown_cpu,
 };
 
+/* Extern functions defined out from OpenAMP lib */
 extern void ipi_enable_interrupt(unsigned int vector);
 extern void ipi_isr(int vect_id, void *data);
+extern void platform_dcache_all_flush();
 
 extern void ipi_register_interrupt(unsigned long ipi_base_addr,
 				   unsigned int intr_mask, void *data,
