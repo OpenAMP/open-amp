@@ -70,6 +70,10 @@ extern void ipi_enable_interrupt(unsigned int vector);
 extern void ipi_isr(int vect_id, void *data);
 extern void platform_dcache_all_flush();
 
+/*------------------- Extern variable -----------------------------------*/
+extern struct hil_proc proc_table[];
+extern const int proc_table_size;
+
 extern void ipi_register_interrupt(unsigned long ipi_base_addr,
 				   unsigned int intr_mask, void *data,
 				   void *ipi_handler);
@@ -141,4 +145,34 @@ int _boot_cpu(int cpu_id, unsigned int load_addr)
 void _shutdown_cpu(int cpu_id)
 {
 	return;
+}
+
+/**
+ * platform_get_processor_info
+ *
+ * Copies the target info from the user defined data structures to
+ * HIL proc  data structure.In case of remote contexts this function
+ * is called with the reserved CPU ID HIL_RSVD_CPU_ID, because for
+ * remotes there is only one master.
+ *
+ * @param proc   - HIL proc to populate
+ * @param cpu_id - CPU ID
+ *
+ * return  - status of execution
+ */
+int platform_get_processor_info(struct hil_proc *proc , int cpu_id)
+{
+	int idx;
+	for(idx = 0; idx < proc_table_size; idx++) {
+		if((cpu_id == HIL_RSVD_CPU_ID) || (proc_table[idx].cpu_id == cpu_id) ) {
+			env_memcpy(proc,&proc_table[idx], sizeof(struct hil_proc));
+			return 0;
+		}
+	}
+	return -1;
+}
+
+int platform_get_processor_for_fw(char *fw_name)
+{
+	return 1;
 }

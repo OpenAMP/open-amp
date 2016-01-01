@@ -209,35 +209,5 @@ struct hil_proc proc_table[] = {
 	 NULL}
 };
 
-/**
- * platform_get_processor_info
- *
- * Copies the target info from the user defined data structures to
- * HIL proc  data structure.In case of remote contexts this function
- * is called with the reserved CPU ID HIL_RSVD_CPU_ID, because for
- * remotes there is only one master.
- *
- * @param proc   - HIL proc to populate
- * @param cpu_id - CPU ID
- *
- * return  - status of execution
- */
-int platform_get_processor_info(struct hil_proc *proc, int cpu_id)
-{
-	int idx;
-	for (idx = 0; idx < sizeof(proc_table) / sizeof(struct hil_proc); idx++) {
-		if ((cpu_id == HIL_RSVD_CPU_ID)
-		    || (proc_table[idx].cpu_id == cpu_id)) {
-			env_memcpy(proc, &proc_table[idx],
-				   sizeof(struct hil_proc));
-			return 0;
-		}
-	}
-	return -1;
-}
+const int proc_table_size = sizeof (proc_table)/sizeof(struct hil_proc);
 
-int platform_get_processor_for_fw(char *fw_name)
-{
-
-	return 1;
-}
