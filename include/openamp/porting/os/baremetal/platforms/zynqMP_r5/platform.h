@@ -34,34 +34,4 @@
 #include <stdio.h>
 #include "openamp/hil.h"
 
-/* ------------------------- Macros --------------------------*/
-
-/********************/
-/* Register offsets */
-/********************/
-
-/* -- FIX ME: ipi info is to be defined -- */
-struct ipi_info {
-	uint32_t ipi_base_addr;
-	uint32_t ipi_chn_mask;
-};
-
-/* IPC Device parameters */
-#define SHM_ADDR                          (void *)0x3ED08000
-#define SHM_SIZE                          0x00200000
-#define IPI_BASEADDR                      0xff310000
-#define IPI_CHN_BITMASK                   0x01000000	/* IPI channel bit mask APU<->RPU0 */
-#define VRING0_IPI_INTR_VECT              -1
-#define VRING1_IPI_INTR_VECT              65
-#define MASTER_CPU_ID                     0
-#define REMOTE_CPU_ID                     1
-
-int _enable_interrupt(struct proc_vring *vring_hw);
-void _reg_ipi_after_deinit(struct proc_vring *vring_hw);
-void _notify(int cpu_id, struct proc_intr *intr_info);
-int _boot_cpu(int cpu_id, unsigned int load_addr);
-void _shutdown_cpu(int cpu_id);
-void platform_isr(int vect_id, void *data);
-void deinit_isr(int vect_id, void *data);
-
 #endif				/* PLATFORM_H_ */
