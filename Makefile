@@ -15,7 +15,7 @@ $(wildcard rpmsg/*.c) \
 $(wildcard common/hil/*.c) \
 $(wildcard common/llist/*.c) \
 $(wildcard common/shm/*.c) \
-$(wildcard porting/config/*.c) \
+$(wildcard common/firmware/*.c) \
 $(wildcard porting/env/*.c) \
 $(wildcard porting/$(PLAT)/*.c)
 

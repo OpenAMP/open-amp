@@ -27,10 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef FIRMWARE_H
+#define FIRMWARE_H
 
-#include "../env/env.h"
+#include "../../porting/env/env.h"
 
 /* Max supported firmwares */
 #define FW_COUNT 4
