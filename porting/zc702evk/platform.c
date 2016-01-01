@@ -39,7 +39,48 @@
  *
  **************************************************************************/
 
-#include "platform.h"
+#include "openamp/hil.h"
+
+/* ------------------------- Macros --------------------------*/
+#define ESAL_DP_SLCR_BASE                  0xF8000000
+#define PERIPH_BASE                        0xF8F00000
+#define GIC_DIST_BASE                      (PERIPH_BASE + 0x00001000)
+#define GIC_DIST_SOFTINT                   0xF00
+#define GIC_SFI_TRIG_CPU_MASK              0x00FF0000
+#define GIC_SFI_TRIG_SATT_MASK             0x00008000
+#define GIC_SFI_TRIG_INTID_MASK            0x0000000F
+#define GIC_CPU_ID_BASE                    (1 << 4)
+#define A9_CPU_SLCR_RESET_CTRL             0x244
+#define A9_CPU_SLCR_CLK_STOP               (1 << 4)
+#define A9_CPU_SLCR_RST                    (1 << 0)
+
+#define unlock_slcr()                       HIL_MEM_WRITE32(ESAL_DP_SLCR_BASE + 0x08, 0xDF0DDF0D)
+#define lock_slcr()                         HIL_MEM_WRITE32(ESAL_DP_SLCR_BASE + 0x04, 0x767B767B)
+
+
+/* L2Cpl310 L2 cache controller base address. */
+#define         HIL_PL130_BASE              0xF8F02000
+
+/********************/
+/* Register offsets */
+/********************/
+
+#define         HIL_PL130_INVALLINE         0x770
+#define         HIL_PL130_CLEANINVLINE      0x7F0
+
+
+#define         HIL_PA_SBZ_MASK             ~(HIL_CACHE_LINE_SIZE - 1UL)
+#define         HIL_CACHE_LINE_SIZE         32
+#define         HIL_CACHE_INV_ALL_WAYS      0xFF
+#define         HIL_CACHE_UNLOCK_ALL_WAYS   0xFFFF0000
+#define         HIL_CACHE_CLEAR_INT         0x1FF
+
+/*--------------------------- Declare Functions ------------------------ */
+static int _enable_interrupt(struct proc_vring *vring_hw);
+static void _notify(int cpu_id, struct proc_intr *intr_info);
+static int _boot_cpu(int cpu_id, unsigned int load_addr);
+static void _shutdown_cpu(int cpu_id);
+static void platform_isr(int vect_id, void *data);
 
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops proc_ops = {
@@ -49,7 +90,7 @@ struct hil_platform_ops proc_ops = {
 	.shutdown_cpu = _shutdown_cpu,
 };
 
-int _enable_interrupt(struct proc_vring *vring_hw)
+static int _enable_interrupt(struct proc_vring *vring_hw)
 {
 
 	/* Register ISR */
@@ -62,7 +103,7 @@ int _enable_interrupt(struct proc_vring *vring_hw)
 	return 0;
 }
 
-void _notify(int cpu_id, struct proc_intr *intr_info)
+static void _notify(int cpu_id, struct proc_intr *intr_info)
 {
 
 	unsigned long mask = 0;
@@ -77,7 +118,7 @@ extern char zynq_trampoline;
 extern char zynq_trampoline_jump;
 extern char zynq_trampoline_end;
 
-int _boot_cpu(int cpu_id, unsigned int load_addr)
+static int _boot_cpu(int cpu_id, unsigned int load_addr)
 {
 	unsigned int reg;
 	unsigned int tramp_size;
@@ -117,7 +158,7 @@ int _boot_cpu(int cpu_id, unsigned int load_addr)
 	return 0;
 }
 
-void _shutdown_cpu(int cpu_id)
+static void _shutdown_cpu(int cpu_id)
 {
 	unsigned int reg;
 
@@ -131,7 +172,7 @@ void _shutdown_cpu(int cpu_id)
 	lock_slcr();
 }
 
-void platform_isr(int vect_id, void *data)
+static void platform_isr(int vect_id, void *data)
 {
 	hil_isr(((struct proc_vring *)data));
 }
