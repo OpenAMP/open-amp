@@ -289,6 +289,8 @@ static int rpmsg_proxy_dev_rpmsg_drv_probe(struct rpmsg_channel *rpdev)
 	local->rpmsg_chnl = rpdev;
 	local->block_flag = 0;
 
+	dev_set_drvdata(&rpdev->dev, local);
+
 	sprintf(local->tx_buff, RPMG_INIT_MSG);
 	local->ept = rpmsg_create_ept(local->rpmsg_chnl,
 					rpmsg_proxy_dev_ept_cb,
@@ -307,8 +309,6 @@ static int rpmsg_proxy_dev_rpmsg_drv_probe(struct rpmsg_channel *rpdev)
 		goto error2;
 	}
 	dev_info(&rpdev->dev, "Sent init_msg to target 0x%x.", rpdev->dst);
-
-	dev_set_drvdata(&rpdev->dev, local);
 
 	/* Create device file for the rpmsg user dev device */
 	if (rpmsg_dev_next_minor < RPMSG_USER_DEV_MAX_MINORS) {
