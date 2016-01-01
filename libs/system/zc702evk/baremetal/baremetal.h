@@ -656,17 +656,14 @@ void arm_ar_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
 			   CACHE_TYPE cache_type);
 
 int zc702evk_gic_initialize();
-int zc702evk_gic_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
-				  int priority);
-int zc702evk_gic_interrupt_disable(int vector_id);
 void zc702evk_gic_pr_int_initialize(void);
 void arm_arch_install_isr_vector_table(unsigned long addr);
 void restore_global_interrupts();
 void disable_global_interrupts();
 void init_arm_stacks(void);
-int platform_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
-			      int priority);
-int platform_interrupt_disable(int vector_id);
+int platform_interrupt_enable(unsigned int vector, unsigned int polarity,
+			      unsigned int priority);
+int platform_interrupt_disable(unsigned int vector);
 void platform_cache_all_flush_invalidate();
 void platform_cache_disable();
 void platform_map_mem_region(unsigned int va, unsigned int pa,

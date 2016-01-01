@@ -92,8 +92,8 @@ void zc702evk_gic_pr_int_initialize(void)
 	MEM_WRITE32(INT_GIC_CPU_BASE + INT_GIC_CPU_CTRL, INT_CPU_ENABLE);
 }
 
-int platform_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
-			      int priority)
+int platform_interrupt_enable(unsigned int vector_id, unsigned int polarity,
+			      unsigned int priority)
 {
 	unsigned long reg_offset;
 	unsigned long bit_shift;
@@ -146,7 +146,7 @@ int platform_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
 	return (vector_id);
 }
 
-int platform_interrupt_disable(int vector_id)
+int platform_interrupt_disable(unsigned int vector_id)
 {
 	unsigned long reg_offset;
 	unsigned long bit_shift;
