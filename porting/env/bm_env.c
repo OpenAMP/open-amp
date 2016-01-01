@@ -53,6 +53,18 @@
 static void acquire_spin_lock(void *plock);
 static void release_spin_lock(void *plock);
 
+/* Max supprted ISR counts */
+#define ISR_COUNT                       4
+/**
+ * Structure to keep track of registered ISR's.
+ */
+struct isr_info {
+	int vector;
+	int priority;
+	int type;
+	void *data;
+	void (*isr)(int vector, void *data);
+};
 struct isr_info isr_table[ISR_COUNT];
 int Intr_Count = 0;
 /* Flag to show status of global interrupts. 0 for disabled and 1 for enabled. This
