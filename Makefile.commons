@@ -7,13 +7,16 @@ ifeq ($(PLAT),)
 export PLAT := zc702evk
 endif
 
-include $(OHOME)/Makefile.commons.$(PLAT)
+ifeq ($(OS),)
+export OS := baremetal
+endif
 
-BAREMETAL_INCLUDES := -I"$(OHOME)/libs/system/$(PLAT)/baremetal"
+include porting/os/$(OS)/platforms/$(PLAT)/Makefile.platform
+
+
 GENERAL_INCLUDES := -I"$(OHOME)/include"
 
 ifeq ($(OS),baremetal)
-CFLAGS += $(BAREMETAL_INCLUDES)
 CFLAGS +=-D"ENV=1"
 CFLAGS +=-D"OPENAMP_BAREMETAL=1"
 
