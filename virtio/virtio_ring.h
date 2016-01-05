@@ -52,34 +52,34 @@
 /* VirtIO ring descriptors: 16 bytes.
  * These can chain together via "next". */
 struct vring_desc {
-        /* Address (guest-physical). */
-        uint64_t addr;
-        /* Length. */
-        uint32_t len;
-        /* The flags as indicated above. */
-        uint16_t flags;
-        /* We chain unused descriptors via this, too. */
-        uint16_t next;
+	/* Address (guest-physical). */
+	uint64_t addr;
+	/* Length. */
+	uint32_t len;
+	/* The flags as indicated above. */
+	uint16_t flags;
+	/* We chain unused descriptors via this, too. */
+	uint16_t next;
 };
 
 struct vring_avail {
-        uint16_t flags;
-        uint16_t idx;
-        uint16_t ring[0];
+	uint16_t flags;
+	uint16_t idx;
+	uint16_t ring[0];
 };
 
 /* uint32_t is used here for ids for padding reasons. */
 struct vring_used_elem {
-        /* Index of start of used descriptor chain. */
-        uint32_t id;
-        /* Total length of the descriptor chain which was written to. */
-        uint32_t len;
+	/* Index of start of used descriptor chain. */
+	uint32_t id;
+	/* Total length of the descriptor chain which was written to. */
+	uint32_t len;
 };
 
 struct vring_used {
-        uint16_t flags;
-        uint16_t idx;
-        struct vring_used_elem ring[0];
+	uint16_t flags;
+	uint16_t idx;
+	struct vring_used_elem ring[0];
 };
 
 struct vring {
@@ -123,8 +123,7 @@ struct vring {
 #define vring_used_event(vr)	((vr)->avail->ring[(vr)->num])
 #define vring_avail_event(vr)	(*(uint16_t *)&(vr)->used->ring[(vr)->num])
 
-static inline int
-vring_size(unsigned int num, unsigned long align)
+static inline int vring_size(unsigned int num, unsigned long align)
 {
 	int size;
 
@@ -138,15 +137,13 @@ vring_size(unsigned int num, unsigned long align)
 }
 
 static inline void
-vring_init(struct vring *vr, unsigned int num, uint8_t *p,
-    unsigned long align)
+vring_init(struct vring *vr, unsigned int num, uint8_t * p, unsigned long align)
 {
-        vr->num = num;
-        vr->desc = (struct vring_desc *) p;
-        vr->avail = (struct vring_avail *) (p +
-	    num * sizeof(struct vring_desc));
-        vr->used = (void *)
-	    (((unsigned long) &vr->avail->ring[num] + align-1) & ~(align-1));
+	vr->num = num;
+	vr->desc = (struct vring_desc *)p;
+	vr->avail = (struct vring_avail *)(p + num * sizeof(struct vring_desc));
+	vr->used = (void *)
+	    (((unsigned long)&vr->avail->ring[num] + align - 1) & ~(align - 1));
 }
 
 /*
@@ -160,6 +157,7 @@ static inline int
 vring_need_event(uint16_t event_idx, uint16_t new_idx, uint16_t old)
 {
 
-	return (uint16_t)(new_idx - event_idx - 1) < (uint16_t)(new_idx - old);
+	return (uint16_t) (new_idx - event_idx - 1) <
+	    (uint16_t) (new_idx - old);
 }
-#endif /* VIRTIO_RING_H */
+#endif				/* VIRTIO_RING_H */

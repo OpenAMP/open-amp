@@ -41,19 +41,20 @@
  * Structure to keep track of registered ISR's.
  */
 struct isr_info {
-    int vector;
-    int priority;
-    int type;
-    void *data;
-    void (*isr)(int vector, void *data);
+	int vector;
+	int priority;
+	int type;
+	void *data;
+	void (*isr) (int vector, void *data);
 };
 
 struct firmware_info {
-    char name[32];
-    unsigned int start_addr;
-    unsigned int end_addr;
+	char name[32];
+	unsigned int start_addr;
+	unsigned int end_addr;
 };
 
-int config_get_firmware(char *fw_name, unsigned int *start_addr, unsigned int *size);
+int config_get_firmware(char *fw_name, unsigned int *start_addr,
+			unsigned int *size);
 
 #endif

@@ -125,7 +125,7 @@
 const void *fdt_offset_ptr(const void *fdt, int offset, unsigned int checklen);
 static inline void *fdt_offset_ptr_w(void *fdt, int offset, int checklen)
 {
-	return (void *)(uintptr_t)fdt_offset_ptr(fdt, offset, checklen);
+	return (void *)(uintptr_t) fdt_offset_ptr(fdt, offset, checklen);
 }
 
 uint32_t fdt_next_tag(const void *fdt, int offset, int *nextoffset);
@@ -276,7 +276,8 @@ int fdt_num_mem_rsv(const void *fdt);
  *     -FDT_ERR_BADVERSION,
  *     -FDT_ERR_BADSTATE, standard meanings
  */
-int fdt_get_mem_rsv(const void *fdt, int n, uint64_t *address, uint64_t *size);
+int fdt_get_mem_rsv(const void *fdt, int n, uint64_t * address,
+		    uint64_t * size);
 
 /**
  * fdt_subnode_offset_namelen - find a subnode based on substring
@@ -430,8 +431,7 @@ int fdt_next_property_offset(const void *fdt, int offset);
  *		-FDT_ERR_TRUNCATED, standard meanings
  */
 const struct fdt_property *fdt_get_property_by_offset(const void *fdt,
-						      int offset,
-						      int *lenp);
+						      int offset, int *lenp);
 
 /**
  * fdt_get_property_namelen - find a property based on substring
@@ -483,7 +483,7 @@ static inline struct fdt_property *fdt_get_property_w(void *fdt, int nodeoffset,
 						      int *lenp)
 {
 	return (struct fdt_property *)(uintptr_t)
-		fdt_get_property(fdt, nodeoffset, name, lenp);
+	    fdt_get_property(fdt, nodeoffset, name, lenp);
 }
 
 /**
@@ -566,7 +566,7 @@ const void *fdt_getprop(const void *fdt, int nodeoffset,
 static inline void *fdt_getprop_w(void *fdt, int nodeoffset,
 				  const char *name, int *lenp)
 {
-	return (void *)(uintptr_t)fdt_getprop(fdt, nodeoffset, name, lenp);
+	return (void *)(uintptr_t) fdt_getprop(fdt, nodeoffset, name, lenp);
 }
 
 /**
@@ -1032,15 +1032,18 @@ static inline int fdt_property_u32(void *fdt, const char *name, uint32_t val)
 	fdt32_t tmp = cpu_to_fdt32(val);
 	return fdt_property(fdt, name, &tmp, sizeof(tmp));
 }
+
 static inline int fdt_property_u64(void *fdt, const char *name, uint64_t val)
 {
 	fdt64_t tmp = cpu_to_fdt64(val);
 	return fdt_property(fdt, name, &tmp, sizeof(tmp));
 }
+
 static inline int fdt_property_cell(void *fdt, const char *name, uint32_t val)
 {
 	return fdt_property_u32(fdt, name, val);
 }
+
 #define fdt_property_string(fdt, name, str) \
 	fdt_property(fdt, name, str, strlen(str)+1)
 int fdt_end_node(void *fdt);
@@ -1570,9 +1573,9 @@ struct fdt_region {
  * region array was exhausted. You should increase max_regions and try
  * the call again.
  */
-int fdt_find_regions(const void *fdt, char * const inc[], int inc_count,
-		     char * const exc_prop[], int exc_prop_count,
+int fdt_find_regions(const void *fdt, char *const inc[], int inc_count,
+		     char *const exc_prop[], int exc_prop_count,
 		     struct fdt_region region[], int max_regions,
 		     char *path, int path_len, int add_string_tab);
 
-#endif /* _LIBFDT_H */
+#endif				/* _LIBFDT_H */

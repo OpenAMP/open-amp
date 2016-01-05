@@ -60,14 +60,13 @@
  * for use by the vring to exchange messages between the cores.
  *
  */
-struct proc_shm
-{
-    /* Start address of shared memory used for buffers. */
-    void *start_addr;
-    /* Size of shared memory. */
-    unsigned long size;
-    /* Attributes for shared memory - cached or uncached. */
-    unsigned long flags;
+struct proc_shm {
+	/* Start address of shared memory used for buffers. */
+	void *start_addr;
+	/* Size of shared memory. */
+	unsigned long size;
+	/* Attributes for shared memory - cached or uncached. */
+	unsigned long flags;
 };
 
 /**
@@ -79,16 +78,15 @@ struct proc_shm
 * on SoC architecture.
 *
 */
-struct proc_intr
-{
-   /* Interrupt number for vring - use for IPI */
-   unsigned int vect_id;
-   /* Interrupt priority */
-   unsigned int priority;
-   /* Interrupt trigger type */
-   unsigned int trigger_type;
-   /* Private data */
-   void *data;
+struct proc_intr {
+	/* Interrupt number for vring - use for IPI */
+	unsigned int vect_id;
+	/* Interrupt priority */
+	unsigned int priority;
+	/* Interrupt trigger type */
+	unsigned int trigger_type;
+	/* Private data */
+	void *data;
 };
 
 /**
@@ -98,18 +96,17 @@ struct proc_intr
 * vring physical memory and notification info.
 *
 */
-struct proc_vring
-{
-   /* Pointer to virtqueue encapsulating the vring */
-   struct virtqueue *vq;
-   /* Vring physical address */
-   void *phy_addr;
-   /* Number of vring descriptors */
-   unsigned short num_descs;
-   /* Vring alignment*/
-   unsigned long align;
-   /* Vring interrupt control block */
-   struct proc_intr intr_info;
+struct proc_vring {
+	/* Pointer to virtqueue encapsulating the vring */
+	struct virtqueue *vq;
+	/* Vring physical address */
+	void *phy_addr;
+	/* Number of vring descriptors */
+	unsigned short num_descs;
+	/* Vring alignment */
+	unsigned long align;
+	/* Vring interrupt control block */
+	struct proc_intr intr_info;
 };
 
 /**
@@ -119,16 +116,15 @@ struct proc_vring
  * Currently only one virtio device per processor is supported.
  *
  */
-struct proc_vdev
-{
-    /* Number of vrings*/
-    unsigned int num_vrings;
-    /* Virtio device features */
-    unsigned int dfeatures;
-    /* Virtio gen features */
-    unsigned int gfeatures;
-    /* Vring info control blocks */
-    struct proc_vring vring_info[HIL_MAX_NUM_VRINGS];
+struct proc_vdev {
+	/* Number of vrings */
+	unsigned int num_vrings;
+	/* Virtio device features */
+	unsigned int dfeatures;
+	/* Virtio gen features */
+	unsigned int gfeatures;
+	/* Vring info control blocks */
+	struct proc_vring vring_info[HIL_MAX_NUM_VRINGS];
 };
 
 /**
@@ -139,10 +135,9 @@ struct proc_vdev
  * further to support static channel creation.
  *
  */
-struct proc_chnl
-{
-    /* Channel ID */
-    char name[32];
+struct proc_chnl {
+	/* Channel ID */
+	char name[32];
 };
 
 /**
@@ -152,30 +147,29 @@ struct proc_chnl
 * memory and notification info required for IPC.
 *
 */
-struct hil_proc
-{
-    /* CPU ID as defined by the platform */
-    unsigned long cpu_id;
-    /* Shared memory info */
-    struct proc_shm sh_buff;
-    /* Virtio device hardware info */
-    struct proc_vdev vdev;
-    /* Number of RPMSG channels */
-    unsigned long num_chnls;
-    /* RPMsg channels array */
-    struct proc_chnl chnls[HIL_MAX_NUM_CHANNELS];
-    /* HIL platform ops table */
-    struct hil_platform_ops *ops;
-    /* Attrbites to represent processor role, master or remote . This field is for
-     * future use. */
-    unsigned long attr;
-    /*
-     * CPU bitmask - shared variable updated by each core
-     * after it has been initialized. This field is for future use.
-     */
-    unsigned long cpu_bitmask;
-    /* Spin lock - This field is for future use. */
-    volatile unsigned int *slock;
+struct hil_proc {
+	/* CPU ID as defined by the platform */
+	unsigned long cpu_id;
+	/* Shared memory info */
+	struct proc_shm sh_buff;
+	/* Virtio device hardware info */
+	struct proc_vdev vdev;
+	/* Number of RPMSG channels */
+	unsigned long num_chnls;
+	/* RPMsg channels array */
+	struct proc_chnl chnls[HIL_MAX_NUM_CHANNELS];
+	/* HIL platform ops table */
+	struct hil_platform_ops *ops;
+	/* Attrbites to represent processor role, master or remote . This field is for
+	 * future use. */
+	unsigned long attr;
+	/*
+	 * CPU bitmask - shared variable updated by each core
+	 * after it has been initialized. This field is for future use.
+	 */
+	unsigned long cpu_bitmask;
+	/* Spin lock - This field is for future use. */
+	volatile unsigned int *slock;
 };
 
 /**
@@ -186,7 +180,7 @@ struct hil_proc
  *
  */
 struct hil_proc_list {
-    struct llist *proc_list;
+	struct llist *proc_list;
 };
 
 /**
@@ -274,7 +268,7 @@ struct proc_vdev *hil_get_vdev_info(struct hil_proc *proc);
  * @return - pointer to channel info control block
  *
  */
-struct proc_chnl *hil_get_chnl_info(struct hil_proc *proc , int *num_chnls);
+struct proc_chnl *hil_get_chnl_info(struct hil_proc *proc, int *num_chnls);
 
 /**
  * hil_get_vring_info
@@ -367,7 +361,7 @@ int hil_set_status(struct hil_proc *proc);
  *
  * @return - execution status
  */
-int hil_boot_cpu(struct hil_proc *proc , unsigned int load_addr);
+int hil_boot_cpu(struct hil_proc *proc, unsigned int load_addr);
 
 /**
  * hil_shutdown_cpu
@@ -392,7 +386,8 @@ void hil_shutdown_cpu(struct hil_proc *proc);
  * returns -  status of function execution
  *
  */
-int hil_get_firmware(char *fw_name, unsigned int *start_addr, unsigned int *size);
+int hil_get_firmware(char *fw_name, unsigned int *start_addr,
+		     unsigned int *size);
 
 /**
  *
@@ -401,8 +396,7 @@ int hil_get_firmware(char *fw_name, unsigned int *start_addr, unsigned int *size
  * these functions when framework is ported to new hardware platform.
  *
  */
-struct hil_platform_ops
-{
+struct hil_platform_ops {
     /**
      * enable_interrupt()
      *
@@ -412,7 +406,7 @@ struct hil_platform_ops
      *
      * @return  - execution status
      */
-    int (*enable_interrupt)(struct proc_vring *vring_hw);
+	int (*enable_interrupt) (struct proc_vring * vring_hw);
 
     /**
      * reg_ipi_after_deinit()
@@ -420,7 +414,7 @@ struct hil_platform_ops
      *
      * @param vring_hw - pointer to vring control block
      */
-    void (*reg_ipi_after_deinit)(struct proc_vring *vring_hw);
+	void (*reg_ipi_after_deinit) (struct proc_vring * vring_hw);
 
     /**
      * notify()
@@ -431,7 +425,7 @@ struct hil_platform_ops
      * @param cpu_id - ID of CPU which is to be notified
      * @param intr_info - pointer to interrupt info control block
      */
-    void (*notify)(int cpu_id , struct proc_intr *intr_info);
+	void (*notify) (int cpu_id, struct proc_intr * intr_info);
 
     /**
      * get_status
@@ -444,7 +438,7 @@ struct hil_platform_ops
      *
      * @return - execution status
      */
-    int (*get_status)(int cpu_id);
+	int (*get_status) (int cpu_id);
 
     /**
      * set_status
@@ -457,7 +451,7 @@ struct hil_platform_ops
      * @return - execution status
      */
 
-    int (*set_status)(int cpu_id);
+	int (*set_status) (int cpu_id);
 
     /**
      * boot_cpu
@@ -469,7 +463,7 @@ struct hil_platform_ops
      *
      * @return - execution status
      */
-    int (*boot_cpu)(int cpu_id , unsigned int start_addr);
+	int (*boot_cpu) (int cpu_id, unsigned int start_addr);
 
     /**
      * shutdown_cpu
@@ -479,7 +473,7 @@ struct hil_platform_ops
      * @param cpu_id    - ID of CPU to shutdown
      *
      */
-    void (*shutdown_cpu)(int cpu_id);
+	void (*shutdown_cpu) (int cpu_id);
 
 };
 
@@ -491,4 +485,4 @@ struct hil_platform_ops
 #define         HIL_MEM_WRITE16(addr,data)  *(volatile unsigned short *)(addr) = (unsigned short)(data)
 #define         HIL_MEM_WRITE32(addr,data)  *(volatile unsigned long *)(addr) = (unsigned long)(data)
 
-#endif /* _HIL_H_ */
+#endif				/* _HIL_H_ */

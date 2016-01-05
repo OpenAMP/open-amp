@@ -27,7 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #ifndef _RPMSG_CORE_H_
 #define _RPMSG_CORE_H_
 
@@ -80,8 +79,9 @@
 #define RPMSG_ERR_DEV_ADDR                      (RPMSG_ERRORS_BASE - 8)
 
 struct rpmsg_channel;
-typedef void (*rpmsg_rx_cb_t)(struct rpmsg_channel *, void *, int, void *, unsigned long);
-typedef void (*rpmsg_chnl_cb_t)(struct rpmsg_channel *rp_chl);
+typedef void (*rpmsg_rx_cb_t) (struct rpmsg_channel *, void *, int, void *,
+			       unsigned long);
+typedef void (*rpmsg_chnl_cb_t) (struct rpmsg_channel * rp_chl);
 /**
  * remote_device
  *
@@ -105,68 +105,69 @@ typedef void (*rpmsg_chnl_cb_t)(struct rpmsg_channel *rp_chl);
  *
  */
 struct remote_device {
-    struct virtio_device virt_dev;
-    struct virtqueue *rvq;
-    struct virtqueue *tvq;
-    struct hil_proc *proc;
-    struct llist *rp_channels;
-    struct llist *rp_endpoints;
-    struct sh_mem_pool *mem_pool;
-    unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
-    rpmsg_chnl_cb_t channel_created;
-    rpmsg_chnl_cb_t channel_destroyed;
-    rpmsg_rx_cb_t default_cb;
-    LOCK *lock;
-    unsigned int role;
-    unsigned int state;
-    int support_ns;
+	struct virtio_device virt_dev;
+	struct virtqueue *rvq;
+	struct virtqueue *tvq;
+	struct hil_proc *proc;
+	struct llist *rp_channels;
+	struct llist *rp_endpoints;
+	struct sh_mem_pool *mem_pool;
+	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
+	rpmsg_chnl_cb_t channel_created;
+	rpmsg_chnl_cb_t channel_destroyed;
+	rpmsg_rx_cb_t default_cb;
+	LOCK *lock;
+	unsigned int role;
+	unsigned int state;
+	int support_ns;
 };
 
 /* Core functions */
 int rpmsg_start_ipc(struct remote_device *rdev);
 struct rpmsg_channel *_rpmsg_create_channel(struct remote_device *rdev,
-                char *name, unsigned long src, unsigned long dst);
-void _rpmsg_delete_channel(struct rpmsg_channel * rp_chnl);
+					    char *name, unsigned long src,
+					    unsigned long dst);
+void _rpmsg_delete_channel(struct rpmsg_channel *rp_chnl);
 struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
-		rpmsg_rx_cb_t cb, void *priv, unsigned long addr);
+					rpmsg_rx_cb_t cb, void *priv,
+					unsigned long addr);
 void _destroy_endpoint(struct remote_device *rdev,
-		struct rpmsg_endpoint *rp_ept);
+		       struct rpmsg_endpoint *rp_ept);
 void rpmsg_send_ns_message(struct remote_device *rdev,
-                struct rpmsg_channel *rp_chnl, unsigned long flags);
+			   struct rpmsg_channel *rp_chnl, unsigned long flags);
 int rpmsg_enqueue_buffer(struct remote_device *rdev, void *buffer,
-                unsigned long len, unsigned short idx);
+			 unsigned long len, unsigned short idx);
 void rpmsg_return_buffer(struct remote_device *rdev, void *buffer,
-                unsigned long len, unsigned short idx);
+			 unsigned long len, unsigned short idx);
 void *rpmsg_get_tx_buffer(struct remote_device *rdev, unsigned long *len,
-                unsigned short *idx);
+			  unsigned short *idx);
 void rpmsg_free_buffer(struct remote_device *rdev, void *buffer);
-void rpmsg_free_channel(struct rpmsg_channel* rp_chnl);
-void * rpmsg_get_rx_buffer(struct remote_device *rdev, unsigned long *len,
-                unsigned short *idx);
+void rpmsg_free_channel(struct rpmsg_channel *rp_chnl);
+void *rpmsg_get_rx_buffer(struct remote_device *rdev, unsigned long *len,
+			  unsigned short *idx);
 int rpmsg_get_address(unsigned long *bitmap, int size);
 int rpmsg_release_address(unsigned long *bitmap, int size, int addr);
-int rpmsg_is_address_set(unsigned long *bitmap, int size,
-                int addr);
+int rpmsg_is_address_set(unsigned long *bitmap, int size, int addr);
 int rpmsg_set_address(unsigned long *bitmap, int size, int addr);
 void rpmsg_ns_callback(struct rpmsg_channel *server_chnl,
-                void *data, int len, void *priv, unsigned long src);
+		       void *data, int len, void *priv, unsigned long src);
 
 /* Remote device functions */
 int rpmsg_rdev_init(struct remote_device **rdev, int dev_id, int role,
-                rpmsg_chnl_cb_t channel_created,
-                rpmsg_chnl_cb_t channel_destroyed,
-                rpmsg_rx_cb_t default_cb);
+		    rpmsg_chnl_cb_t channel_created,
+		    rpmsg_chnl_cb_t channel_destroyed,
+		    rpmsg_rx_cb_t default_cb);
 void rpmsg_rdev_deinit(struct remote_device *rdev);
 struct llist *rpmsg_rdev_get_chnl_node_from_id(struct remote_device *rdev,
-                char *rp_chnl_id);
+					       char *rp_chnl_id);
 struct llist *rpmsg_rdev_get_chnl_from_addr(struct remote_device *rdev,
-                unsigned long addr);
+					    unsigned long addr);
 struct llist *rpmsg_rdev_get_endpoint_from_addr(struct remote_device *rdev,
-		unsigned long addr);
+						unsigned long addr);
 int rpmsg_rdev_notify(struct remote_device *rdev);
 int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
-                const char *names[], vq_callback *callbacks[],
-                struct virtqueue *vqs[]);
+				 const char *names[], vq_callback * callbacks[],
+				 struct virtqueue *vqs[]);
 unsigned char rpmsg_rdev_get_status(struct virtio_device *dev);
 
 void rpmsg_rdev_set_status(struct virtio_device *dev, unsigned char status);
@@ -176,16 +177,16 @@ uint32_t rpmsg_rdev_get_feature(struct virtio_device *dev);
 void rpmsg_rdev_set_feature(struct virtio_device *dev, uint32_t feature);
 
 uint32_t rpmsg_rdev_negotiate_feature(struct virtio_device *dev,
-                uint32_t features);
+				      uint32_t features);
 /*
  * Read/write a variable amount from the device specific (ie, network)
  * configuration region. This region is encoded in the same endian as
  * the guest.
  */
 void rpmsg_rdev_read_config(struct virtio_device *dev, uint32_t offset,
-                void *dst, int length);
+			    void *dst, int length);
 void rpmsg_rdev_write_config(struct virtio_device *dev, uint32_t offset,
-                void *src, int length);
+			     void *src, int length);
 void rpmsg_rdev_reset(struct virtio_device *dev);
 
-#endif /* _RPMSG_CORE_H_ */
+#endif				/* _RPMSG_CORE_H_ */

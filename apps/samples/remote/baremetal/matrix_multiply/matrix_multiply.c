@@ -22,13 +22,14 @@ typedef struct _matrix {
 /* Internal functions */
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
-static void rpmsg_read_cb(struct rpmsg_channel *, void *, int, void *, unsigned long);
-static void Matrix_Multiply(const matrix *m, const matrix *n, matrix *r);
+static void rpmsg_read_cb(struct rpmsg_channel *, void *, int, void *,
+			  unsigned long);
+static void Matrix_Multiply(const matrix * m, const matrix * n, matrix * r);
 static void init_system();
 
 /* Globals */
 static struct rpmsg_channel *app_rp_chnl;
-void* mat_mul_lock;
+void *mat_mul_lock;
 int need_to_cal = 0;
 static struct rpmsg_endpoint *rp_ept;
 static matrix matrix_array[NUM_MATRIX];
@@ -38,7 +39,8 @@ static struct rsc_table_info rsc_info;
 extern const struct remote_resource_table resources;
 
 /* Application entry point */
-int main() {
+int main()
+{
 
 	int status = 0;
 
@@ -53,44 +55,51 @@ int main() {
 	rsc_info.size = sizeof(resources);
 
 	/* Initialize RPMSG framework */
-	status = remoteproc_resource_init(&rsc_info, rpmsg_channel_created, rpmsg_channel_deleted,
-			rpmsg_read_cb ,&proc);
+	status =
+	    remoteproc_resource_init(&rsc_info, rpmsg_channel_created,
+				     rpmsg_channel_deleted, rpmsg_read_cb,
+				     &proc);
 	if (status < 0) {
 		return -1;
 	}
 
 	while (1) {
-		__asm__ ( "wfi\n\t" );
+		__asm__("wfi\n\t");
 	}
 
 	return 0;
 }
 
-static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl) {
+static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
+{
 	app_rp_chnl = rp_chnl;
 	rp_ept = rpmsg_create_ept(rp_chnl, rpmsg_read_cb, RPMSG_NULL,
-				RPMSG_ADDR_ANY);
+				  RPMSG_ADDR_ANY);
 }
 
-static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl) {
+static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
+{
 	rpmsg_destroy_ept(rp_ept);
 }
 
 static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
-					void * priv, unsigned long src) {
-	if ((*(int *) data) == SHUTDOWN_MSG) {
+			  void *priv, unsigned long src)
+{
+	if ((*(int *)data) == SHUTDOWN_MSG) {
 		remoteproc_resource_deinit(proc);
-	}else{
+	} else {
 		env_memcpy(matrix_array, data, len);
 		/* Process received data and multiple matrices. */
-		Matrix_Multiply(&matrix_array[0], &matrix_array[1], &matrix_result);
+		Matrix_Multiply(&matrix_array[0], &matrix_array[1],
+				&matrix_result);
 
 		/* Send the result of matrix multiplication back to master. */
 		rpmsg_send(app_rp_chnl, &matrix_result, sizeof(matrix));
 	}
 }
 
-static void Matrix_Multiply(const matrix *m, const matrix *n, matrix *r) {
+static void Matrix_Multiply(const matrix * m, const matrix * n, matrix * r)
+{
 	int i, j, k;
 
 	env_memset(r, 0x0, sizeof(matrix));
@@ -99,13 +108,15 @@ static void Matrix_Multiply(const matrix *m, const matrix *n, matrix *r) {
 	for (i = 0; i < m->size; ++i) {
 		for (j = 0; j < n->size; ++j) {
 			for (k = 0; k < r->size; ++k) {
-				r->elements[i][j] += m->elements[i][k] * n->elements[k][j];
+				r->elements[i][j] +=
+				    m->elements[i][k] * n->elements[k][j];
 			}
 		}
 	}
 }
 
-static void init_system() {
+static void init_system()
+{
 
 #ifdef ZYNQMP_R5
 	/* Initilaize GIC */

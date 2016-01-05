@@ -49,7 +49,6 @@
 #define unlock_slcr()                       HIL_MEM_WRITE32(ESAL_DP_SLCR_BASE + 0x08, 0xDF0DDF0D)
 #define lock_slcr()                         HIL_MEM_WRITE32(ESAL_DP_SLCR_BASE + 0x04, 0x767B767B)
 
-
 /* L2Cpl310 L2 cache controller base address. */
 #define         HIL_PL130_BASE              0xF8F02000
 
@@ -60,13 +59,11 @@
 #define         HIL_PL130_INVALLINE         0x770
 #define         HIL_PL130_CLEANINVLINE      0x7F0
 
-
 #define         HIL_PA_SBZ_MASK             ~(HIL_CACHE_LINE_SIZE - 1UL)
 #define         HIL_CACHE_LINE_SIZE         32
 #define         HIL_CACHE_INV_ALL_WAYS      0xFF
 #define         HIL_CACHE_UNLOCK_ALL_WAYS   0xFFFF0000
 #define         HIL_CACHE_CLEAR_INT         0x1FF
-
 
 /* This macro invalidates all Data cache for the specified address
    range at the processor level. */
@@ -89,7 +86,6 @@
                                                                                                                   \
                     } while (l_size < align_size);                                                                \
                 }
-
 
 /* This macro flushes all data cache to physical memory (writeback cache)
    for the given address range, then invalidates all data cache entries
@@ -114,11 +110,10 @@
                     } while (addr_v < addr_end);                                                                  \
                 }
 
-
 int _enable_interrupt(struct proc_vring *vring_hw);
 void _notify(int cpu_id, struct proc_intr *intr_info);
 int _boot_cpu(int cpu_id, unsigned int load_addr);
 void _shutdown_cpu(int cpu_id);
 void platform_isr(int vect_id, void *data);
 
-#endif /* PLATFORM_H_ */
+#endif				/* PLATFORM_H_ */

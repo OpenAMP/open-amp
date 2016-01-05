@@ -31,17 +31,17 @@ int handle_open(struct _sys_rpc *rpc)
 
 	/* Open remote fd */
 	fd = open(rpc->sys_call_args.data, rpc->sys_call_args.int_field1,
-			rpc->sys_call_args.int_field2);
+		  rpc->sys_call_args.int_field2);
 
 	/* Construct rpc response */
 	proxy->rpc_response->id = OPEN_SYSCALL_ID;
 	proxy->rpc_response->sys_call_args.int_field1 = fd;
-	proxy->rpc_response->sys_call_args.int_field2 = 0; /*not used*/
-	proxy->rpc_response->sys_call_args.data_len = 0; /*not used*/
+	proxy->rpc_response->sys_call_args.int_field2 = 0;	/*not used */
+	proxy->rpc_response->sys_call_args.data_len = 0;	/*not used */
 
 	/* Transmit rpc response */
 	bytes_written = write(proxy->rpmsg_proxy_fd, proxy->rpc_response,
-				sizeof(struct _sys_rpc));
+			      sizeof(struct _sys_rpc));
 
 	return (bytes_written != sizeof(struct _sys_rpc)) ? -1 : 0;
 }
@@ -56,12 +56,12 @@ int handle_close(struct _sys_rpc *rpc)
 	/* Construct rpc response */
 	proxy->rpc_response->id = CLOSE_SYSCALL_ID;
 	proxy->rpc_response->sys_call_args.int_field1 = retval;
-	proxy->rpc_response->sys_call_args.int_field2 = 0; /*not used*/
-	proxy->rpc_response->sys_call_args.data_len = 0; /*not used*/
+	proxy->rpc_response->sys_call_args.int_field2 = 0;	/*not used */
+	proxy->rpc_response->sys_call_args.data_len = 0;	/*not used */
 
 	/* Transmit rpc response */
 	bytes_written = write(proxy->rpmsg_proxy_fd, proxy->rpc_response,
-				sizeof(struct _sys_rpc));
+			      sizeof(struct _sys_rpc));
 
 	return (bytes_written != sizeof(struct _sys_rpc)) ? -1 : 0;
 }
@@ -76,28 +76,28 @@ int handle_read(struct _sys_rpc *rpc)
 
 	if (rpc->sys_call_args.int_field1 == 0)
 		/* Perform read from fd for large size since this is a
-		STD/I request */
+		   STD/I request */
 		bytes_read = read(rpc->sys_call_args.int_field1, buff, 512);
 	else
 		/* Perform read from fd */
 		bytes_read = read(rpc->sys_call_args.int_field1, buff,
-					rpc->sys_call_args.int_field2);
+				  rpc->sys_call_args.int_field2);
 
 	/* Construct rpc response */
 	proxy->rpc_response->id = READ_SYSCALL_ID;
 	proxy->rpc_response->sys_call_args.int_field1 = bytes_read;
-	proxy->rpc_response->sys_call_args.int_field2 = 0; /* not used */
+	proxy->rpc_response->sys_call_args.int_field2 = 0;	/* not used */
 	proxy->rpc_response->sys_call_args.data_len = bytes_read;
 	if (bytes_read > 0)
 		memcpy(proxy->rpc_response->sys_call_args.data, buff,
-			bytes_read);
+		       bytes_read);
 
 	payload_size = sizeof(struct _sys_rpc) +
-			((bytes_read > 0) ? bytes_read : 0);
+	    ((bytes_read > 0) ? bytes_read : 0);
 
 	/* Transmit rpc response */
 	bytes_written = write(proxy->rpmsg_proxy_fd, proxy->rpc_response,
-					payload_size);
+			      payload_size);
 
 	return (bytes_written != payload_size) ? -1 : 0;
 }
@@ -108,18 +108,18 @@ int handle_write(struct _sys_rpc *rpc)
 
 	/* Write to remote fd */
 	bytes_written = write(rpc->sys_call_args.int_field1,
-				rpc->sys_call_args.data,
-				rpc->sys_call_args.int_field2);
+			      rpc->sys_call_args.data,
+			      rpc->sys_call_args.int_field2);
 
 	/* Construct rpc response */
 	proxy->rpc_response->id = WRITE_SYSCALL_ID;
 	proxy->rpc_response->sys_call_args.int_field1 = bytes_written;
-	proxy->rpc_response->sys_call_args.int_field2 = 0; /*not used*/
-	proxy->rpc_response->sys_call_args.data_len = 0; /*not used*/
+	proxy->rpc_response->sys_call_args.int_field2 = 0;	/*not used */
+	proxy->rpc_response->sys_call_args.data_len = 0;	/*not used */
 
 	/* Transmit rpc response */
 	bytes_written = write(proxy->rpmsg_proxy_fd, proxy->rpc_response,
-				sizeof(struct _sys_rpc));
+			      sizeof(struct _sys_rpc));
 
 	return (bytes_written != sizeof(struct _sys_rpc)) ? -1 : 0;
 }
@@ -136,31 +136,33 @@ int handle_rpc(struct _sys_rpc *rpc)
 	/* Handle RPC */
 	switch ((int)(rpc->id)) {
 	case OPEN_SYSCALL_ID:
-	{
-		retval = handle_open(rpc);
-		break;
-	}
+		{
+			retval = handle_open(rpc);
+			break;
+		}
 	case CLOSE_SYSCALL_ID:
-	{
-		retval = handle_close(rpc);
-		break;
-	}
+		{
+			retval = handle_close(rpc);
+			break;
+		}
 	case READ_SYSCALL_ID:
-	{
-		retval = handle_read(rpc);
-		break;
-	}
+		{
+			retval = handle_read(rpc);
+			break;
+		}
 	case WRITE_SYSCALL_ID:
-	{
-		retval = handle_write(rpc);
-		break;
-	}
+		{
+			retval = handle_write(rpc);
+			break;
+		}
 	default:
-	{
-		printf("\r\nMaster>Err:Invalid RPC sys call ID: %d:%d! \r\n", rpc->id,WRITE_SYSCALL_ID);
-		retval = -1;
-		break;
-	}
+		{
+			printf
+			    ("\r\nMaster>Err:Invalid RPC sys call ID: %d:%d! \r\n",
+			     rpc->id, WRITE_SYSCALL_ID);
+			retval = -1;
+			break;
+		}
 	}
 
 	return retval;
@@ -170,7 +172,7 @@ int terminate_rpc_app()
 {
 	int bytes_written;
 	int msg = TERM_SYSCALL_ID;
-	printf ("Master> sending shutdown signal.\n");
+	printf("Master> sending shutdown signal.\n");
 	bytes_written = write(proxy->rpmsg_proxy_fd, &msg, sizeof(int));
 	return bytes_written;
 }
@@ -223,6 +225,7 @@ void display_help_msg()
 	printf("-f	 Accepts path of firmware to load on remote core.\n");
 	printf("-h	 Displays this help message.\n");
 }
+
 int main(int argc, char *argv[])
 {
 	struct sigaction exit_action;
@@ -252,11 +255,11 @@ int main(int argc, char *argv[])
 			display_help_msg();
 			return 0;
 		} else if (strcmp(argv[i], "-f") == 0) {
-			if (i+1 < argc)
-				firmware_path = argv[i+1];
+			if (i + 1 < argc)
+				firmware_path = argv[i + 1];
 		} else if (strcmp(argv[i], "--remoteproc") == 0) {
-			if (i+1 < argc)
-				rproc_name = argv[i+1];
+			if (i + 1 < argc)
+				rproc_name = argv[i + 1];
 		}
 	}
 	if (!rproc_name)
@@ -294,7 +297,8 @@ int main(int argc, char *argv[])
 	} while (proxy->rpmsg_proxy_fd < 0 && (i++ < 2));
 
 	if (proxy->rpmsg_proxy_fd < 0) {
-		printf("\r\nMaster>Failed to open rpmsg proxy driver device file.\r\n");
+		printf
+		    ("\r\nMaster>Failed to open rpmsg proxy driver device file.\r\n");
 		ret = -1;
 		goto error0;
 	}
@@ -309,10 +313,10 @@ int main(int argc, char *argv[])
 		/* Block on read for rpc requests from remote context */
 		do {
 			bytes_rcvd = read(proxy->rpmsg_proxy_fd, proxy->rpc,
-					RPC_BUFF_SIZE);
+					  RPC_BUFF_SIZE);
 			if (!proxy->active)
 				break;
-		} while(bytes_rcvd <= 0);
+		} while (bytes_rcvd <= 0);
 
 		/* User event, break! */
 		if (!proxy->active)
@@ -324,9 +328,9 @@ int main(int argc, char *argv[])
 			printf(" call!\r\n");
 			printf("\r\nrpc id %d\r\n", proxy->rpc->id);
 			printf("\r\nrpc int field1 %d\r\n",
-				proxy->rpc->sys_call_args.int_field1);
+			       proxy->rpc->sys_call_args.int_field1);
 			printf("\r\nrpc int field2 %d\r\n",
-				proxy->rpc->sys_call_args.int_field2);
+			       proxy->rpc->sys_call_args.int_field2);
 			break;
 		}
 	}
@@ -337,7 +341,7 @@ int main(int argc, char *argv[])
 	terminate_rpc_app();
 
 	/* Need to wait here for sometime to allow remote application to
- 	complete its unintialization */
+	   complete its unintialization */
 	sleep(1);
 
 	/* Close proxy rpmsg device */
@@ -347,7 +351,7 @@ int main(int argc, char *argv[])
 	free(proxy->rpc);
 	free(proxy->rpc_response);
 
-error0:
+ error0:
 	free(proxy);
 
 	/* Unload drivers */
@@ -355,4 +359,3 @@ error0:
 
 	return ret;
 }
-

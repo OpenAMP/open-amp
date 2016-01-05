@@ -3,22 +3,19 @@
 #define M_EPT_FUNC_TEST_H_
 
 OPENAMP_PACKED_BEGIN
-struct command
-{
-    unsigned int comm_start;
-    unsigned int comm_code;
-    char data[0];
+struct command {
+	unsigned int comm_start;
+	unsigned int comm_code;
+	char data[0];
 } OPENAMP_PACKED_END;
 
-struct ept_cmd_data
-{
-    unsigned int src;
-    unsigned int dst;
+struct ept_cmd_data {
+	unsigned int src;
+	unsigned int dst;
 };
 
-struct chnl_cmd_data
-{
-    char name[32];
+struct chnl_cmd_data {
+	char name[32];
 };
 
 /* Command Codes */
@@ -53,10 +50,9 @@ struct chnl_cmd_data
 
 OPENAMP_PACKED_BEGIN
 struct _payload {
-    unsigned long    num;
-    unsigned long    size;
-    char             data[0];
+	unsigned long num;
+	unsigned long size;
+	char data[0];
 } OPENAMP_PACKED_END;
 
-
-#endif /* M_EPT_FUNC_TEST_H_ */
+#endif				/* M_EPT_FUNC_TEST_H_ */

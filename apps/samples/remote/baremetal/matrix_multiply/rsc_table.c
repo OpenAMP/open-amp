@@ -88,35 +88,31 @@
 #endif
 #endif
 
-const struct remote_resource_table __resource resources =
-{
+const struct remote_resource_table __resource resources = {
 	/* Version */
 	1,
 
 	/* NUmber of table entries */
 	NUM_TABLE_ENTRIES,
 	/* reserved fields */
-	{ 0, 0,},
+	{0, 0,},
 
 	/* Offsets of rsc entries */
 	{
-		CARVEOUT_SRC_OFFSETS
-		offsetof(struct remote_resource_table, rpmsg_vdev),
-	},
+	 CARVEOUT_SRC_OFFSETS
+	 offsetof(struct remote_resource_table, rpmsg_vdev),
+	 },
 
 	/* End of ELF file */
 	CARVEOUT_SRC
-
-	/* Virtio device entry */
-	{ RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0, NUM_VRINGS, {0, 0},
-	},
+	    /* Virtio device entry */
+	{RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,
+	 NUM_VRINGS, {0, 0},
+	 },
 
 	/* Vring rsc entry - part of vdev rsc entry */
 	{
-	RING_TX, VRING_ALIGN, VRING_SIZE, 1, 0
-	},
+	 RING_TX, VRING_ALIGN, VRING_SIZE, 1, 0},
 	{
-		RING_RX, VRING_ALIGN, VRING_SIZE, 2, 0
-	},
+	 RING_RX, VRING_ALIGN, VRING_SIZE, 2, 0},
 };
-

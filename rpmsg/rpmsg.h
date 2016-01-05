@@ -38,7 +38,7 @@
 #include "../rpmsg/rpmsg_core.h"
 
 /* The feature bitmap for virtio rpmsg */
-#define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
+#define VIRTIO_RPMSG_F_NS	0	/* RP supports name service notifications */
 #define RPMSG_NAME_SIZE     32
 
 /**
@@ -88,12 +88,11 @@ struct rpmsg_ns_msg {
  * @RPMSG_NS_DESTROY: a known remote service was just destroyed
  */
 enum rpmsg_ns_flags {
-	RPMSG_NS_CREATE		= 0,
-	RPMSG_NS_DESTROY	= 1,
+	RPMSG_NS_CREATE = 0,
+	RPMSG_NS_DESTROY = 1,
 };
 
 #define RPMSG_ADDR_ANY		0xFFFFFFFF
-
 
 /**
  * rpmsg_channel - devices that belong to the rpmsg bus are called channels
@@ -105,12 +104,12 @@ enum rpmsg_ns_flags {
  * @state: channel state
  */
 struct rpmsg_channel {
-    char name[RPMSG_NAME_SIZE];
-    unsigned long src;
-    unsigned long dst;
-    struct remote_device *rdev;
-    struct rpmsg_endpoint *rp_ept;
-    unsigned int state;
+	char name[RPMSG_NAME_SIZE];
+	unsigned long src;
+	unsigned long dst;
+	struct remote_device *rdev;
+	struct rpmsg_endpoint *rp_ept;
+	unsigned int state;
 };
 
 /**
@@ -121,9 +120,9 @@ struct rpmsg_channel {
  */
 
 struct channel_info {
-    char name[RPMSG_NAME_SIZE];
-    unsigned long src;
-    unsigned long dest;
+	char name[RPMSG_NAME_SIZE];
+	unsigned long src;
+	unsigned long dest;
 };
 
 /**
@@ -148,19 +147,21 @@ struct channel_info {
  * create additional endpoints by themselves (see rpmsg_create_ept()).
  */
 struct rpmsg_endpoint {
-    struct rpmsg_channel *rp_chnl;
-    rpmsg_rx_cb_t cb;
-    unsigned long addr;
-    void *priv;
+	struct rpmsg_channel *rp_chnl;
+	rpmsg_rx_cb_t cb;
+	unsigned long addr;
+	void *priv;
 };
 
 struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_channel *rp_chnl,
-                rpmsg_rx_cb_t cb, void *priv, unsigned long addr);
+					rpmsg_rx_cb_t cb, void *priv,
+					unsigned long addr);
 
 void rpmsg_destroy_ept(struct rpmsg_endpoint *rp_ept);
 
 int
-rpmsg_send_offchannel_raw(struct rpmsg_channel *, unsigned long, unsigned long, char *, int, int);
+rpmsg_send_offchannel_raw(struct rpmsg_channel *, unsigned long, unsigned long,
+			  char *, int, int);
 
 /**
  * rpmsg_sendto() - send a message across to the remote processor, specify dst
@@ -181,12 +182,14 @@ rpmsg_send_offchannel_raw(struct rpmsg_channel *, unsigned long, unsigned long, 
  * Returns 0 on success and an appropriate error value on failure.
  */
 static inline
-int rpmsg_sendto(struct rpmsg_channel *rpdev, void *data, int len, unsigned long dst)
+    int rpmsg_sendto(struct rpmsg_channel *rpdev, void *data, int len,
+		     unsigned long dst)
 {
-    if (!rpdev || !data)
-        return RPMSG_ERR_PARAM;
+	if (!rpdev || !data)
+		return RPMSG_ERR_PARAM;
 
-    return rpmsg_send_offchannel_raw(rpdev, rpdev->src, dst, (char *)data, len, RPMSG_TRUE);
+	return rpmsg_send_offchannel_raw(rpdev, rpdev->src, dst, (char *)data,
+					 len, RPMSG_TRUE);
 }
 
 /**
@@ -208,10 +211,11 @@ int rpmsg_sendto(struct rpmsg_channel *rpdev, void *data, int len, unsigned long
  */
 static inline int rpmsg_send(struct rpmsg_channel *rpdev, void *data, int len)
 {
-    if (!rpdev || !data)
-        return RPMSG_ERR_PARAM;
+	if (!rpdev || !data)
+		return RPMSG_ERR_PARAM;
 
-    return rpmsg_send_offchannel_raw(rpdev, rpdev->src, rpdev->dst, (char*)data, len, RPMSG_TRUE);
+	return rpmsg_send_offchannel_raw(rpdev, rpdev->src, rpdev->dst,
+					 (char *)data, len, RPMSG_TRUE);
 }
 
 /**
@@ -235,13 +239,14 @@ static inline int rpmsg_send(struct rpmsg_channel *rpdev, void *data, int len)
  * Returns 0 on success and an appropriate error value on failure.
  */
 static inline
-int rpmsg_send_offchannel(struct rpmsg_channel *rpdev, unsigned long src, unsigned long dst,
-							void *data, int len)
+    int rpmsg_send_offchannel(struct rpmsg_channel *rpdev, unsigned long src,
+			      unsigned long dst, void *data, int len)
 {
-    if (!rpdev || !data)
-        return RPMSG_ERR_PARAM;
+	if (!rpdev || !data)
+		return RPMSG_ERR_PARAM;
 
-    return rpmsg_send_offchannel_raw(rpdev, src, dst, (char *)data, len, RPMSG_TRUE);
+	return rpmsg_send_offchannel_raw(rpdev, src, dst, (char *)data, len,
+					 RPMSG_TRUE);
 }
 
 /**
@@ -261,13 +266,14 @@ int rpmsg_send_offchannel(struct rpmsg_channel *rpdev, unsigned long src, unsign
  * Returns 0 on success and an appropriate error value on failure.
  */
 static inline
-int rpmsg_trysend(struct rpmsg_channel *rpdev, void *data, int len)
+    int rpmsg_trysend(struct rpmsg_channel *rpdev, void *data, int len)
 {
 
-    if (!rpdev || !data)
-        return RPMSG_ERR_PARAM;
+	if (!rpdev || !data)
+		return RPMSG_ERR_PARAM;
 
-	return rpmsg_send_offchannel_raw(rpdev, rpdev->src, rpdev->dst, (char *)data, len, RPMSG_FALSE);
+	return rpmsg_send_offchannel_raw(rpdev, rpdev->src, rpdev->dst,
+					 (char *)data, len, RPMSG_FALSE);
 }
 
 /**
@@ -288,16 +294,18 @@ int rpmsg_trysend(struct rpmsg_channel *rpdev, void *data, int len)
  * Returns 0 on success and an appropriate error value on failure.
  */
 static inline
-int rpmsg_trysendto(struct rpmsg_channel *rpdev, void *data, int len, unsigned long dst)
+    int rpmsg_trysendto(struct rpmsg_channel *rpdev, void *data, int len,
+			unsigned long dst)
 {
-    unsigned long src;
+	unsigned long src;
 
-    if (!rpdev || !data)
-        return RPMSG_ERR_PARAM;
+	if (!rpdev || !data)
+		return RPMSG_ERR_PARAM;
 
-    src = rpdev->src;
+	src = rpdev->src;
 
-	return rpmsg_send_offchannel_raw(rpdev, src, dst, (char *)data, len, RPMSG_FALSE);
+	return rpmsg_send_offchannel_raw(rpdev, src, dst, (char *)data, len,
+					 RPMSG_FALSE);
 }
 
 /**
@@ -320,13 +328,14 @@ int rpmsg_trysendto(struct rpmsg_channel *rpdev, void *data, int len, unsigned l
  * Returns 0 on success and an appropriate error value on failure.
  */
 static inline
-int rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev, unsigned long src, unsigned long dst,
-							void *data, int len)
+    int rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev, unsigned long src,
+				 unsigned long dst, void *data, int len)
 {
 	if (!rpdev || !data)
-	    return RPMSG_ERR_PARAM;
+		return RPMSG_ERR_PARAM;
 
-    return rpmsg_send_offchannel_raw(rpdev, src, dst, (char *)data, len, RPMSG_FALSE);
+	return rpmsg_send_offchannel_raw(rpdev, src, dst, (char *)data, len,
+					 RPMSG_FALSE);
 }
 
 /**
@@ -348,9 +357,9 @@ int rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev, unsigned long src, uns
  */
 
 int rpmsg_init(int dev_id, struct remote_device **rdev,
-               rpmsg_chnl_cb_t channel_created,
-               rpmsg_chnl_cb_t channel_destroyed,
-               rpmsg_rx_cb_t default_cb, int role);
+	       rpmsg_chnl_cb_t channel_created,
+	       rpmsg_chnl_cb_t channel_destroyed,
+	       rpmsg_rx_cb_t default_cb, int role);
 
 /**
  * rpmsg_deinit
@@ -388,7 +397,8 @@ int rpmsg_get_buffer_size(struct rpmsg_channel *rp_chnl);
  * @return - pointer to new rpmsg channel
  *
  */
-struct rpmsg_channel *rpmsg_create_channel(struct remote_device *rdev, char *name);
+struct rpmsg_channel *rpmsg_create_channel(struct remote_device *rdev,
+					   char *name);
 
 /**
  * rpmsg_delete_channel
@@ -401,4 +411,4 @@ struct rpmsg_channel *rpmsg_create_channel(struct remote_device *rdev, char *nam
  */
 void rpmsg_delete_channel(struct rpmsg_channel *rp_chnl);
 
-#endif /* _RPMSG_H_ */
+#endif				/* _RPMSG_H_ */

@@ -38,12 +38,13 @@
 
 XScuGic InterruptController;
 
-int zynqMP_r5_gic_initialize() {
+int zynqMP_r5_gic_initialize()
+{
 	u32 Status;
 
 	Xil_ExceptionDisable();
 
-	XScuGic_Config *IntcConfig; /* The configuration parameters of the interrupt controller */
+	XScuGic_Config *IntcConfig;	/* The configuration parameters of the interrupt controller */
 
 	/*
 	 * Initialize the interrupt controller driver
@@ -54,7 +55,7 @@ int zynqMP_r5_gic_initialize() {
 	}
 
 	Status = XScuGic_CfgInitialize(&InterruptController, IntcConfig,
-					IntcConfig->CpuBaseAddress);
+				       IntcConfig->CpuBaseAddress);
 	if (Status != XST_SUCCESS) {
 		return XST_FAILURE;
 	}
@@ -64,8 +65,8 @@ int zynqMP_r5_gic_initialize() {
 	 * logic in the ARM processor.
 	 */
 	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
-				(Xil_ExceptionHandler) zynqMP_r5_irq_isr,
-				&InterruptController);
+				     (Xil_ExceptionHandler) zynqMP_r5_irq_isr,
+				     &InterruptController);
 
 	Xil_ExceptionEnable();
 
@@ -74,16 +75,19 @@ int zynqMP_r5_gic_initialize() {
 
 extern void bm_env_isr(int vector);
 
-void zynqMP_r5_irq_isr() {
+void zynqMP_r5_irq_isr()
+{
 
 	unsigned int raw_irq;
 	int irq_vector;
-	raw_irq = (unsigned int)XScuGic_CPUReadReg(&InterruptController,XSCUGIC_INT_ACK_OFFSET);
-	irq_vector = (int) (raw_irq & XSCUGIC_ACK_INTID_MASK);
+	raw_irq =
+	    (unsigned int)XScuGic_CPUReadReg(&InterruptController,
+					     XSCUGIC_INT_ACK_OFFSET);
+	irq_vector = (int)(raw_irq & XSCUGIC_ACK_INTID_MASK);
 
 	bm_env_isr(irq_vector);
 
-	XScuGic_CPUWriteReg(&InterruptController,XSCUGIC_EOI_OFFSET, raw_irq);
+	XScuGic_CPUWriteReg(&InterruptController, XSCUGIC_EOI_OFFSET, raw_irq);
 }
 
 /*
@@ -95,7 +99,8 @@ void zynqMP_r5_irq_isr() {
 
 #define IPI_TOTAL 11
 
-typedef void (*ipi_handler_t)(unsigned long ipi_base_addr, unsigned int intr_mask, void *data);
+typedef void (*ipi_handler_t) (unsigned long ipi_base_addr,
+			       unsigned int intr_mask, void *data);
 
 struct ipi_handler_info {
 	unsigned long ipi_base_addr;
@@ -106,97 +111,118 @@ struct ipi_handler_info {
 
 struct ipi_handler_info ipi_handler_table[IPI_TOTAL];
 
-int ipi_index_map (unsigned int ipi_intr_mask) {
+int ipi_index_map(unsigned int ipi_intr_mask)
+{
 	switch (ipi_intr_mask) {
-		case 0x08000000:
-			return 10;
-		case 0x04000000:
-			return 9;
-		case 0x02000000:
-			return 8;
-		case 0x01000000:
-			return 7;
-		case 0x00080000:
-			return 6;
-		case 0x00040000:
-			return 5;
-		case 0x00020000:
-			return 4;
-		case 0x00010000:
-			return 3;
-		case 0x00000200:
-			return 2;
-		case 0x00000100:
-			return 1;
-		case 0x00000001:
-			return 0;
-		default:
-			return -1;
+	case 0x08000000:
+		return 10;
+	case 0x04000000:
+		return 9;
+	case 0x02000000:
+		return 8;
+	case 0x01000000:
+		return 7;
+	case 0x00080000:
+		return 6;
+	case 0x00040000:
+		return 5;
+	case 0x00020000:
+		return 4;
+	case 0x00010000:
+		return 3;
+	case 0x00000200:
+		return 2;
+	case 0x00000100:
+		return 1;
+	case 0x00000001:
+		return 0;
+	default:
+		return -1;
 	}
 }
 
-void ipi_trigger(unsigned long ipi_base_addr, unsigned int trigger_mask) {
+void ipi_trigger(unsigned long ipi_base_addr, unsigned int trigger_mask)
+{
 	Xil_Out32((ipi_base_addr + IPI_TRIG_OFFSET), trigger_mask);
 }
 
-void ipi_register_handler(unsigned long ipi_base_addr, unsigned int intr_mask, void *data,
-	void *ipi_handler) {
+void ipi_register_handler(unsigned long ipi_base_addr, unsigned int intr_mask,
+			  void *data, void *ipi_handler)
+{
 	int ipi_hd_i = ipi_index_map(intr_mask);
 	if (ipi_hd_i < 0)
 		return;
 	ipi_handler_table[ipi_hd_i].ipi_base_addr = ipi_base_addr;
 	ipi_handler_table[ipi_hd_i].intr_mask = intr_mask;
-	ipi_handler_table[ipi_hd_i].ipi_handler = (ipi_handler_t)ipi_handler;
+	ipi_handler_table[ipi_hd_i].ipi_handler = (ipi_handler_t) ipi_handler;
 	ipi_handler_table[ipi_hd_i].data = data;
 	Xil_Out32((ipi_base_addr + IPI_IER_OFFSET), intr_mask);
 }
 
-void ipi_unregister_handler(unsigned long ipi_base_addr, unsigned int intr_mask) {
+void ipi_unregister_handler(unsigned long ipi_base_addr, unsigned int intr_mask)
+{
 	int ipi_hd_i = ipi_index_map(intr_mask);
 	if (ipi_hd_i < 0)
 		return;
-	memset(&(ipi_handler_table[ipi_hd_i]), 0, sizeof(struct ipi_handler_info));
+	memset(&(ipi_handler_table[ipi_hd_i]), 0,
+	       sizeof(struct ipi_handler_info));
 }
 
-void ipi_isr(int vect_id, void *data) {
+void ipi_isr(int vect_id, void *data)
+{
 	unsigned long ipi_base_addr = *((unsigned long *)data);
-	unsigned int ipi_intr_status = (unsigned int)Xil_In32(ipi_base_addr + IPI_ISR_OFFSET);
+	unsigned int ipi_intr_status =
+	    (unsigned int)Xil_In32(ipi_base_addr + IPI_ISR_OFFSET);
 	int i = 0;
 	do {
 		Xil_Out32((ipi_base_addr + IPI_ISR_OFFSET), ipi_intr_status);
 		for (i = 0; i < IPI_TOTAL; i++) {
 			if (ipi_base_addr != ipi_handler_table[i].ipi_base_addr)
 				continue;
-			if (!(ipi_intr_status && (ipi_handler_table[i].intr_mask)))
+			if (!
+			    (ipi_intr_status
+			     && (ipi_handler_table[i].intr_mask)))
 				continue;
-			ipi_handler_table[i].ipi_handler(ipi_base_addr, ipi_handler_table[i].intr_mask, ipi_handler_table[i].data);
+			ipi_handler_table[i].ipi_handler(ipi_base_addr,
+							 ipi_handler_table[i].
+							 intr_mask,
+							 ipi_handler_table[i].
+							 data);
 		}
-		ipi_intr_status = (unsigned int)Xil_In32(ipi_base_addr + IPI_ISR_OFFSET);
-	}while (ipi_intr_status);
+		ipi_intr_status =
+		    (unsigned int)Xil_In32(ipi_base_addr + IPI_ISR_OFFSET);
+	} while (ipi_intr_status);
 }
 
-int platform_interrupt_enable(unsigned int vector,unsigned int polarity,unsigned int priority) {
-	XScuGic_EnableIntr(XPAR_SCUGIC_0_DIST_BASEADDR,vector);
+int platform_interrupt_enable(unsigned int vector, unsigned int polarity,
+			      unsigned int priority)
+{
+	XScuGic_EnableIntr(XPAR_SCUGIC_0_DIST_BASEADDR, vector);
 	return (vector);
 }
 
-int platform_interrupt_disable(unsigned int vector) {
-	XScuGic_DisableIntr(XPAR_SCUGIC_0_DIST_BASEADDR,vector);
+int platform_interrupt_disable(unsigned int vector)
+{
+	XScuGic_DisableIntr(XPAR_SCUGIC_0_DIST_BASEADDR, vector);
 	return (vector);
 }
 
-void platform_cache_all_flush_invalidate() {
-		Xil_DCacheFlush();
-		Xil_DCacheInvalidate();
-		Xil_ICacheInvalidate();
+void platform_cache_all_flush_invalidate()
+{
+	Xil_DCacheFlush();
+	Xil_DCacheInvalidate();
+	Xil_ICacheInvalidate();
 }
 
-void platform_cache_disable() {
-		Xil_DCacheDisable();
-		Xil_ICacheDisable();
+void platform_cache_disable()
+{
+	Xil_DCacheDisable();
+	Xil_ICacheDisable();
 }
 
-void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size,unsigned int flags) {
+void platform_map_mem_region(unsigned int va, unsigned int pa,
+			     unsigned int size, unsigned int flags)
+{
 	unsigned int r5_flags;
 
 	/* Assume DEVICE_SHARED if nothing indicates this is memory.  */
@@ -221,23 +247,27 @@ void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size,
 	return;
 }
 
-unsigned long platform_vatopa(void *addr) {
-	 return ((unsigned long)addr);
- }
+unsigned long platform_vatopa(void *addr)
+{
+	return ((unsigned long)addr);
+}
 
-void *platform_patova(unsigned long addr) {
+void *platform_patova(unsigned long addr)
+{
 	return ((void *)addr);
 }
 
 unsigned int old_value = 0;
 
-void restore_global_interrupts() {
+void restore_global_interrupts()
+{
 
 	ARM_AR_INT_BITS_SET(old_value);
 
 }
 
-void disable_global_interrupts() {
+void disable_global_interrupts()
+{
 
 	unsigned int value = 0;
 
@@ -274,9 +304,10 @@ void disable_global_interrupts() {
  *       A constant value of 0.
  *
  **/
-__attribute__((weak)) int _fstat(int file, struct stat * st)
+__attribute__ ((weak))
+int _fstat(int file, struct stat *st)
 {
-    return(0);
+	return (0);
 }
 
 /**
@@ -292,9 +323,10 @@ __attribute__((weak)) int _fstat(int file, struct stat * st)
  * @return s - A constant value of 1.
  *
  */
-__attribute__((weak)) int _isatty(int file)
+__attribute__ ((weak))
+int _isatty(int file)
 {
-    return(1);
+	return (1);
 }
 
 /**
@@ -312,9 +344,10 @@ __attribute__((weak)) int _isatty(int file)
  * @return - A constant value of 0.
  *
  */
-__attribute__((weak)) int _lseek(int file, int ptr, int dir)
+__attribute__ ((weak))
+int _lseek(int file, int ptr, int dir)
 {
-    return(0);
+	return (0);
 }
 
 #if (RTL_RPC == 0)
@@ -330,10 +363,11 @@ __attribute__((weak)) int _lseek(int file, int ptr, int dir)
  * return -  A constant value of 1.
  *
  */
-__attribute__((weak)) int _open(const char * filename, int flags, int mode)
+__attribute__ ((weak))
+int _open(const char *filename, int flags, int mode)
 {
-    /* Any number will work. */
-    return(1);
+	/* Any number will work. */
+	return (1);
 }
 
 /**
@@ -348,9 +382,10 @@ __attribute__((weak)) int _open(const char * filename, int flags, int mode)
  * return A constant value of -1.
  *
  */
-__attribute__((weak)) int _close(int file)
+__attribute__ ((weak))
+int _close(int file)
 {
-    return(-1);
+	return (-1);
 }
 
 /**
@@ -365,9 +400,10 @@ __attribute__((weak)) int _close(int file)
  * return -  A constant value of 1.
  *
  */
-__attribute__((weak)) int _read(int fd, char * buffer, int buflen)
+__attribute__ ((weak))
+int _read(int fd, char *buffer, int buflen)
 {
-    return -1;
+	return -1;
 }
 
 /**
@@ -383,8 +419,9 @@ __attribute__((weak)) int _read(int fd, char * buffer, int buflen)
  * return len                            - The length of the string
  *
  */
-__attribute__((weak)) int _write (int file, const char * ptr, int len)
+__attribute__ ((weak))
+int _write(int file, const char *ptr, int len)
 {
-    return 0;
+	return 0;
 }
 #endif

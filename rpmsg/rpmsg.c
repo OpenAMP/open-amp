@@ -75,29 +75,30 @@
  */
 
 int rpmsg_init(int dev_id, struct remote_device **rdev,
-                rpmsg_chnl_cb_t channel_created,
-                rpmsg_chnl_cb_t channel_destroyed,
-                rpmsg_rx_cb_t default_cb, int role) {
-    int status;
+	       rpmsg_chnl_cb_t channel_created,
+	       rpmsg_chnl_cb_t channel_destroyed,
+	       rpmsg_rx_cb_t default_cb, int role)
+{
+	int status;
 
-    /* Initialize IPC environment */
-    status = env_init();
-    if (status == RPMSG_SUCCESS) {
-        /* Initialize the remote device for given cpu id */
-        status = rpmsg_rdev_init(rdev, dev_id, role, channel_created,
-                        channel_destroyed, default_cb);
-        if (status == RPMSG_SUCCESS) {
-            /* Kick off IPC with the remote device */
-            status = rpmsg_start_ipc(*rdev);
-        }
-    }
+	/* Initialize IPC environment */
+	status = env_init();
+	if (status == RPMSG_SUCCESS) {
+		/* Initialize the remote device for given cpu id */
+		status = rpmsg_rdev_init(rdev, dev_id, role, channel_created,
+					 channel_destroyed, default_cb);
+		if (status == RPMSG_SUCCESS) {
+			/* Kick off IPC with the remote device */
+			status = rpmsg_start_ipc(*rdev);
+		}
+	}
 
-    /* Deinit system in case of error */
-    if (status != RPMSG_SUCCESS) {
-        rpmsg_deinit(*rdev);
-    }
+	/* Deinit system in case of error */
+	if (status != RPMSG_SUCCESS) {
+		rpmsg_deinit(*rdev);
+	}
 
-    return status;
+	return status;
 }
 
 /**
@@ -109,11 +110,12 @@ int rpmsg_init(int dev_id, struct remote_device **rdev,
  *
  */
 
-void rpmsg_deinit(struct remote_device *rdev) {
-    if (rdev) {
-        rpmsg_rdev_deinit(rdev);
-        env_deinit();
-    }
+void rpmsg_deinit(struct remote_device *rdev)
+{
+	if (rdev) {
+		rpmsg_rdev_deinit(rdev);
+		env_deinit();
+	}
 }
 
 /**
@@ -132,90 +134,94 @@ void rpmsg_deinit(struct remote_device *rdev) {
  */
 
 int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, unsigned long src,
-                unsigned long dst, char *data, int size, int wait) {
-    struct remote_device *rdev;
-    struct rpmsg_hdr *rp_hdr;
-    void *buffer;
-    int status = RPMSG_SUCCESS;
-    unsigned short idx;
-    int tick_count = 0;
-    unsigned long buff_len;
+			      unsigned long dst, char *data, int size, int wait)
+{
+	struct remote_device *rdev;
+	struct rpmsg_hdr *rp_hdr;
+	void *buffer;
+	int status = RPMSG_SUCCESS;
+	unsigned short idx;
+	int tick_count = 0;
+	unsigned long buff_len;
 
-    if (!rp_chnl) {
-        return RPMSG_ERR_PARAM;
-    }
+	if (!rp_chnl) {
+		return RPMSG_ERR_PARAM;
+	}
 
-    /* Get the associated remote device for channel. */
-    rdev = rp_chnl->rdev;
+	/* Get the associated remote device for channel. */
+	rdev = rp_chnl->rdev;
 
-    /* Validate device state */
-    if (rp_chnl->state != RPMSG_CHNL_STATE_ACTIVE
-                    || rdev->state != RPMSG_DEV_STATE_ACTIVE) {
-        return RPMSG_ERR_DEV_STATE;
-    }
+	/* Validate device state */
+	if (rp_chnl->state != RPMSG_CHNL_STATE_ACTIVE
+	    || rdev->state != RPMSG_DEV_STATE_ACTIVE) {
+		return RPMSG_ERR_DEV_STATE;
+	}
 
-    /* Lock the device to enable exclusive access to virtqueues */
-    env_lock_mutex(rdev->lock);
-    /* Get rpmsg buffer for sending message. */
-    buffer = rpmsg_get_tx_buffer(rdev, &buff_len, &idx);
-    if (!buffer && !wait) {
-        status = RPMSG_ERR_NO_MEM;
-    }
-    env_unlock_mutex(rdev->lock);
+	/* Lock the device to enable exclusive access to virtqueues */
+	env_lock_mutex(rdev->lock);
+	/* Get rpmsg buffer for sending message. */
+	buffer = rpmsg_get_tx_buffer(rdev, &buff_len, &idx);
+	if (!buffer && !wait) {
+		status = RPMSG_ERR_NO_MEM;
+	}
+	env_unlock_mutex(rdev->lock);
 
-    if (status == RPMSG_SUCCESS) {
+	if (status == RPMSG_SUCCESS) {
 
-        while (!buffer) {
-            /*
-             * Wait parameter is true - pool the buffer for
-             * 15 secs as defined by the APIs.
-             */
-            env_sleep_msec(RPMSG_TICKS_PER_INTERVAL);
-            env_lock_mutex(rdev->lock);
-            buffer = rpmsg_get_tx_buffer(rdev, &buff_len, &idx);
-            env_unlock_mutex(rdev->lock);
-            tick_count += RPMSG_TICKS_PER_INTERVAL;
-            if (tick_count >= (RPMSG_TICK_COUNT / RPMSG_TICKS_PER_INTERVAL)) {
-                status = RPMSG_ERR_NO_BUFF;
-                break;
-            }
-        }
+		while (!buffer) {
+			/*
+			 * Wait parameter is true - pool the buffer for
+			 * 15 secs as defined by the APIs.
+			 */
+			env_sleep_msec(RPMSG_TICKS_PER_INTERVAL);
+			env_lock_mutex(rdev->lock);
+			buffer = rpmsg_get_tx_buffer(rdev, &buff_len, &idx);
+			env_unlock_mutex(rdev->lock);
+			tick_count += RPMSG_TICKS_PER_INTERVAL;
+			if (tick_count >=
+			    (RPMSG_TICK_COUNT / RPMSG_TICKS_PER_INTERVAL)) {
+				status = RPMSG_ERR_NO_BUFF;
+				break;
+			}
+		}
 
-        if (status == RPMSG_SUCCESS) {
-            //FIXME : may be just copy the data size equal to buffer length and Tx it.
-            if (size > (buff_len - sizeof(struct rpmsg_hdr)))
-                status = RPMSG_ERR_BUFF_SIZE;
+		if (status == RPMSG_SUCCESS) {
+			//FIXME : may be just copy the data size equal to buffer length and Tx it.
+			if (size > (buff_len - sizeof(struct rpmsg_hdr)))
+				status = RPMSG_ERR_BUFF_SIZE;
 
-            if (status == RPMSG_SUCCESS) {
-                rp_hdr = (struct rpmsg_hdr *) buffer;
+			if (status == RPMSG_SUCCESS) {
+				rp_hdr = (struct rpmsg_hdr *)buffer;
 
-                /* Initialize RPMSG header. */
-                rp_hdr->dst = dst;
-                rp_hdr->src = src;
-                rp_hdr->len = size;
+				/* Initialize RPMSG header. */
+				rp_hdr->dst = dst;
+				rp_hdr->src = src;
+				rp_hdr->len = size;
 
-                /* Copy data to rpmsg buffer. */
-                env_memcpy(rp_hdr->data, data, size);
+				/* Copy data to rpmsg buffer. */
+				env_memcpy(rp_hdr->data, data, size);
 
-                env_lock_mutex(rdev->lock);
-                /* Enqueue buffer on virtqueue. */
-                status = rpmsg_enqueue_buffer(rdev, buffer, buff_len, idx);
-                if (status == RPMSG_SUCCESS) {
-                    /* Let the other side know that there is a job to process. */
-                    virtqueue_kick(rdev->tvq);
-                }
-                env_unlock_mutex(rdev->lock);
-            }
+				env_lock_mutex(rdev->lock);
+				/* Enqueue buffer on virtqueue. */
+				status =
+				    rpmsg_enqueue_buffer(rdev, buffer, buff_len,
+							 idx);
+				if (status == RPMSG_SUCCESS) {
+					/* Let the other side know that there is a job to process. */
+					virtqueue_kick(rdev->tvq);
+				}
+				env_unlock_mutex(rdev->lock);
+			}
 
-        }
-    }
+		}
+	}
 
-    /* Do cleanup in case of error.*/
-    if (status != RPMSG_SUCCESS) {
-        rpmsg_free_buffer(rdev, buffer);
-    }
+	/* Do cleanup in case of error. */
+	if (status != RPMSG_SUCCESS) {
+		rpmsg_free_buffer(rdev, buffer);
+	}
 
-    return status;
+	return status;
 }
 
 /**
@@ -228,42 +234,45 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, unsigned long src,
  * @return - buffer size
  *
  */
-int rpmsg_get_buffer_size(struct rpmsg_channel *rp_chnl) {
-    struct remote_device *rdev;
-    int length;
+int rpmsg_get_buffer_size(struct rpmsg_channel *rp_chnl)
+{
+	struct remote_device *rdev;
+	int length;
 
-    if (!rp_chnl) {
-        return RPMSG_ERR_PARAM;
-    }
+	if (!rp_chnl) {
+		return RPMSG_ERR_PARAM;
+	}
 
-    /* Get associated remote device for channel. */
-    rdev = rp_chnl->rdev;
+	/* Get associated remote device for channel. */
+	rdev = rp_chnl->rdev;
 
-    /* Validate device state */
-    if (rp_chnl->state != RPMSG_CHNL_STATE_ACTIVE
-                    || rdev->state != RPMSG_DEV_STATE_ACTIVE) {
-        return RPMSG_ERR_DEV_STATE;
-    }
+	/* Validate device state */
+	if (rp_chnl->state != RPMSG_CHNL_STATE_ACTIVE
+	    || rdev->state != RPMSG_DEV_STATE_ACTIVE) {
+		return RPMSG_ERR_DEV_STATE;
+	}
 
-    env_lock_mutex(rdev->lock);
+	env_lock_mutex(rdev->lock);
 
-    if (rdev->role == RPMSG_REMOTE) {
-        /*
-         * If device role is Remote then buffers are provided by us
-         * (RPMSG Master), so just provide the macro.
-         */
-        length = RPMSG_BUFFER_SIZE - sizeof(struct rpmsg_hdr);
-    } else {
-        /*
-         * If other core is Master then buffers are provided by it,
-         * so get the buffer size from the virtqueue.
-         */
-        length = (int) virtqueue_get_desc_size(rdev->tvq) - sizeof(struct rpmsg_hdr);
-    }
+	if (rdev->role == RPMSG_REMOTE) {
+		/*
+		 * If device role is Remote then buffers are provided by us
+		 * (RPMSG Master), so just provide the macro.
+		 */
+		length = RPMSG_BUFFER_SIZE - sizeof(struct rpmsg_hdr);
+	} else {
+		/*
+		 * If other core is Master then buffers are provided by it,
+		 * so get the buffer size from the virtqueue.
+		 */
+		length =
+		    (int)virtqueue_get_desc_size(rdev->tvq) -
+		    sizeof(struct rpmsg_hdr);
+	}
 
-    env_unlock_mutex(rdev->lock);
+	env_unlock_mutex(rdev->lock);
 
-    return length;
+	return length;
 }
 
 /**
@@ -280,24 +289,26 @@ int rpmsg_get_buffer_size(struct rpmsg_channel *rp_chnl) {
  *
  */
 struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_channel *rp_chnl,
-                rpmsg_rx_cb_t cb, void *priv, unsigned long addr) {
+					rpmsg_rx_cb_t cb, void *priv,
+					unsigned long addr)
+{
 
-    struct remote_device *rdev = RPMSG_NULL;
-    struct rpmsg_endpoint *rp_ept = RPMSG_NULL;
+	struct remote_device *rdev = RPMSG_NULL;
+	struct rpmsg_endpoint *rp_ept = RPMSG_NULL;
 
-    if (!rp_chnl || !cb) {
-        return RPMSG_NULL ;
-    }
+	if (!rp_chnl || !cb) {
+		return RPMSG_NULL;
+	}
 
-    rdev = rp_chnl->rdev;
+	rdev = rp_chnl->rdev;
 
-    rp_ept = _create_endpoint(rdev, cb, priv, addr);
+	rp_ept = _create_endpoint(rdev, cb, priv, addr);
 
-    if (rp_ept) {
-        rp_ept->rp_chnl = rp_chnl;
-    }
+	if (rp_ept) {
+		rp_ept->rp_chnl = rp_chnl;
+	}
 
-    return rp_ept;
+	return rp_ept;
 }
 
 /**
@@ -308,18 +319,19 @@ struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_channel *rp_chnl,
  * @param rp_ept - pointer to endpoint to destroy
  *
  */
-void rpmsg_destroy_ept(struct rpmsg_endpoint *rp_ept) {
+void rpmsg_destroy_ept(struct rpmsg_endpoint *rp_ept)
+{
 
-    struct remote_device *rdev;
-    struct rpmsg_channel *rp_chnl;
+	struct remote_device *rdev;
+	struct rpmsg_channel *rp_chnl;
 
-    if (!rp_ept)
-        return;
+	if (!rp_ept)
+		return;
 
-    rp_chnl = rp_ept->rp_chnl;
-    rdev = rp_chnl->rdev;
+	rp_chnl = rp_ept->rp_chnl;
+	rdev = rp_chnl->rdev;
 
-    _destroy_endpoint(rdev, rp_ept);
+	_destroy_endpoint(rdev, rp_ept);
 }
 
 /**
@@ -338,44 +350,45 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *rp_ept) {
  *
  */
 struct rpmsg_channel *rpmsg_create_channel(struct remote_device *rdev,
-                char *name) {
+					   char *name)
+{
 
-    struct rpmsg_channel *rp_chnl;
-    struct rpmsg_endpoint *rp_ept;
+	struct rpmsg_channel *rp_chnl;
+	struct rpmsg_endpoint *rp_ept;
 
-    if (!rdev || !name) {
-        return RPMSG_NULL ;
-    }
+	if (!rdev || !name) {
+		return RPMSG_NULL;
+	}
 
-    /* Create channel instance */
-    rp_chnl = _rpmsg_create_channel(rdev, name, RPMSG_NS_EPT_ADDR,
-                    RPMSG_NS_EPT_ADDR);
-    if (!rp_chnl) {
-        return RPMSG_NULL ;
-    }
+	/* Create channel instance */
+	rp_chnl = _rpmsg_create_channel(rdev, name, RPMSG_NS_EPT_ADDR,
+					RPMSG_NS_EPT_ADDR);
+	if (!rp_chnl) {
+		return RPMSG_NULL;
+	}
 
-    /* Create default endpoint for the channel */
-    rp_ept = rpmsg_create_ept(rp_chnl , rdev->default_cb, rdev,
-                    RPMSG_ADDR_ANY);
+	/* Create default endpoint for the channel */
+	rp_ept = rpmsg_create_ept(rp_chnl, rdev->default_cb, rdev,
+				  RPMSG_ADDR_ANY);
 
-    if (!rp_ept) {
-        _rpmsg_delete_channel(rp_chnl);
-        return RPMSG_NULL;
-    }
+	if (!rp_ept) {
+		_rpmsg_delete_channel(rp_chnl);
+		return RPMSG_NULL;
+	}
 
-    rp_chnl->rp_ept = rp_ept;
-    rp_chnl->src = rp_ept->addr;
-    rp_chnl->state = RPMSG_CHNL_STATE_NS;
+	rp_chnl->rp_ept = rp_ept;
+	rp_chnl->src = rp_ept->addr;
+	rp_chnl->state = RPMSG_CHNL_STATE_NS;
 
-    /* Notify the application of channel creation event */
-    if (rdev->channel_created) {
-        rdev->channel_created(rp_chnl);
-    }
+	/* Notify the application of channel creation event */
+	if (rdev->channel_created) {
+		rdev->channel_created(rp_chnl);
+	}
 
-    /* Send NS announcement to remote processor */
-    rpmsg_send_ns_message(rdev, rp_chnl, RPMSG_NS_CREATE);
+	/* Send NS announcement to remote processor */
+	rpmsg_send_ns_message(rdev, rp_chnl, RPMSG_NS_CREATE);
 
-    return rp_chnl;
+	return rp_chnl;
 }
 
 /**
@@ -387,28 +400,29 @@ struct rpmsg_channel *rpmsg_create_channel(struct remote_device *rdev,
  * @param rp_chnl - pointer to rpmsg channel to delete
  *
  */
-void rpmsg_delete_channel(struct rpmsg_channel *rp_chnl) {
+void rpmsg_delete_channel(struct rpmsg_channel *rp_chnl)
+{
 
-    struct remote_device *rdev;
+	struct remote_device *rdev;
 
-    if (!rp_chnl) {
-        return;
-    }
+	if (!rp_chnl) {
+		return;
+	}
 
-    rdev = rp_chnl->rdev;
+	rdev = rp_chnl->rdev;
 
-    if (rp_chnl->state > RPMSG_CHNL_STATE_IDLE) {
-        /* Notify the other processor that channel no longer exists */
-        rpmsg_send_ns_message(rdev, rp_chnl, RPMSG_NS_DESTROY);
-    }
+	if (rp_chnl->state > RPMSG_CHNL_STATE_IDLE) {
+		/* Notify the other processor that channel no longer exists */
+		rpmsg_send_ns_message(rdev, rp_chnl, RPMSG_NS_DESTROY);
+	}
 
-    /* Notify channel deletion to application */
-    if (rdev->channel_destroyed) {
-        rdev->channel_destroyed(rp_chnl);
-    }
+	/* Notify channel deletion to application */
+	if (rdev->channel_destroyed) {
+		rdev->channel_destroyed(rp_chnl);
+	}
 
-    rpmsg_destroy_ept(rp_chnl->rp_ept);
-    _rpmsg_delete_channel(rp_chnl);
+	rpmsg_destroy_ept(rp_chnl->rp_ept);
+	_rpmsg_delete_channel(rp_chnl);
 
-    return;
+	return;
 }

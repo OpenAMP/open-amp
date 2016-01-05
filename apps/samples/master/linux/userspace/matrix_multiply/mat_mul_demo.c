@@ -41,14 +41,14 @@ static void matrix_print(struct _matrix *m)
 }
 
 static void generate_matrices(int num_matrices,
-				unsigned int matrix_size, void *p_data)
+			      unsigned int matrix_size, void *p_data)
 {
-	int	i, j, k;
+	int i, j, k;
 	struct _matrix *p_matrix = p_data;
-	time_t	t;
+	time_t t;
 	unsigned long value;
 
-	srand((unsigned) time(&t));
+	srand((unsigned)time(&t));
 
 	for (i = 0; i < num_matrices; i++) {
 		/* Initialize workload */
@@ -63,7 +63,8 @@ static void generate_matrices(int num_matrices,
 				value = value % 10;
 				p_matrix[i].elements[j][k] = value;
 				printf(" %d ",
-				(unsigned int)p_matrix[i].elements[j][k]);
+				       (unsigned int)p_matrix[i].
+				       elements[j][k]);
 			}
 		}
 		printf("\r\n");
@@ -117,12 +118,12 @@ void *ui_thread_entry(void *ptr)
 
 			printf("\r\n Writing generated matrices to rpmsg ");
 			printf("rpmsg device, %d bytes written .. \r\n",
-					sizeof(i_matrix));
+			       sizeof(i_matrix));
 
 			write(fd, i_matrix, sizeof(i_matrix));
 
 			/* adding this so the threads
-			dont overlay the strings they print */
+			   dont overlay the strings they print */
 			sleep(1);
 		} else if (cmd == 2) {
 			flag = 0;
@@ -192,13 +193,13 @@ int main(int argc, char *argv[])
 	pthread_create(&ui_thread, NULL, &ui_thread_entry, "ui_thread");
 
 	pthread_create(&compute_thread, NULL, &compute_thread_entry,
-				"compute_thread");
+		       "compute_thread");
 	pthread_join(ui_thread, NULL);
 
 	pthread_join(compute_thread, NULL);
 
 	/* Send shutdown message to remote */
-	write(fd, &shutdown_msg , sizeof(int));
+	write(fd, &shutdown_msg, sizeof(int));
 	sleep(1);
 
 	printf("\r\n Quitting application .. \r\n");
@@ -210,5 +211,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
-

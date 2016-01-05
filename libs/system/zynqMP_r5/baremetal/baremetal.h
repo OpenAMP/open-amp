@@ -37,12 +37,12 @@
 #define INTC_DEVICE_ID		XPAR_SCUGIC_0_DEVICE_ID
 
 /* IPI REGs OFFSET */
-#define IPI_TRIG_OFFSET          0x00000000 /* IPI trigger register offset */
-#define IPI_OBS_OFFSET           0x00000004 /* IPI observation register offset */
-#define IPI_ISR_OFFSET           0x00000010 /* IPI interrupt status register offset */
-#define IPI_IMR_OFFSET           0x00000014 /* IPI interrupt mask register offset */
-#define IPI_IER_OFFSET           0x00000018 /* IPI interrupt enable register offset */
-#define IPI_IDR_OFFSET           0x0000001C /* IPI interrupt disable register offset */
+#define IPI_TRIG_OFFSET          0x00000000	/* IPI trigger register offset */
+#define IPI_OBS_OFFSET           0x00000004	/* IPI observation register offset */
+#define IPI_ISR_OFFSET           0x00000010	/* IPI interrupt status register offset */
+#define IPI_IMR_OFFSET           0x00000014	/* IPI interrupt mask register offset */
+#define IPI_IER_OFFSET           0x00000018	/* IPI interrupt enable register offset */
+#define IPI_IDR_OFFSET           0x0000001C	/* IPI interrupt disable register offset */
 
 #define platform_dcache_all_flush() { Xil_DCacheFlush(); }
 
@@ -95,12 +95,14 @@ void zynqMP_r5_irq_isr();
 
 void restore_global_interrupts();
 void disable_global_interrupts();
-int platform_interrupt_enable(unsigned int vector,unsigned int polarity, unsigned int priority);
+int platform_interrupt_enable(unsigned int vector, unsigned int polarity,
+			      unsigned int priority);
 int platform_interrupt_disable(unsigned int vector);
 void platform_cache_all_flush_invalidate();
 void platform_cache_disable();
-void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size, unsigned int flags);
+void platform_map_mem_region(unsigned int va, unsigned int pa,
+			     unsigned int size, unsigned int flags);
 unsigned long platform_vatopa(void *addr);
 void *platform_patova(unsigned long addr);
 
-#endif /* _BAREMETAL_H */
+#endif				/* _BAREMETAL_H */

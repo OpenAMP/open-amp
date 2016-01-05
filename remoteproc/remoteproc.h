@@ -66,10 +66,10 @@
  */
 OPENAMP_PACKED_BEGIN
 struct resource_table {
-    unsigned int ver;
-    unsigned int num;
-    unsigned int reserved[2];
-    unsigned int offset[0];
+	unsigned int ver;
+	unsigned int num;
+	unsigned int reserved[2];
+	unsigned int offset[0];
 } OPENAMP_PACKED_END;
 
 /**
@@ -83,8 +83,8 @@ struct resource_table {
  */
 OPENAMP_PACKED_BEGIN
 struct fw_rsc_hdr {
-    unsigned int type;
-    unsigned char data[0];
+	unsigned int type;
+	unsigned char data[0];
 } OPENAMP_PACKED_END;
 
 /**
@@ -108,11 +108,11 @@ struct fw_rsc_hdr {
  * please update it as needed.
  */
 enum fw_resource_type {
-    RSC_CARVEOUT    = 0,
-    RSC_DEVMEM  = 1,
-    RSC_TRACE   = 2,
-    RSC_VDEV    = 3,
-    RSC_LAST    = 4,
+	RSC_CARVEOUT = 0,
+	RSC_DEVMEM = 1,
+	RSC_TRACE = 2,
+	RSC_VDEV = 3,
+	RSC_LAST = 4,
 };
 
 #define FW_RSC_ADDR_ANY (0xFFFFFFFFFFFFFFFF)
@@ -162,13 +162,13 @@ enum fw_resource_type {
  */
 OPENAMP_PACKED_BEGIN
 struct fw_rsc_carveout {
-    unsigned int type;
-    unsigned int da;
-    unsigned int pa;
-    unsigned int len;
-    unsigned int flags;
-    unsigned int reserved;
-    unsigned char name[32];
+	unsigned int type;
+	unsigned int da;
+	unsigned int pa;
+	unsigned int len;
+	unsigned int flags;
+	unsigned int reserved;
+	unsigned char name[32];
 } OPENAMP_PACKED_END;
 
 /**
@@ -202,13 +202,13 @@ struct fw_rsc_carveout {
  */
 OPENAMP_PACKED_BEGIN
 struct fw_rsc_devmem {
-    unsigned int type;
-    unsigned int da;
-    unsigned int pa;
-    unsigned int len;
-    unsigned int flags;
-    unsigned int reserved;
-    unsigned char name[32];
+	unsigned int type;
+	unsigned int da;
+	unsigned int pa;
+	unsigned int len;
+	unsigned int flags;
+	unsigned int reserved;
+	unsigned char name[32];
 } OPENAMP_PACKED_END;
 
 /**
@@ -229,11 +229,11 @@ struct fw_rsc_devmem {
  */
 OPENAMP_PACKED_BEGIN
 struct fw_rsc_trace {
-    unsigned int type;
-    unsigned int da;
-    unsigned int len;
-    unsigned int reserved;
-    unsigned char name[32];
+	unsigned int type;
+	unsigned int da;
+	unsigned int len;
+	unsigned int reserved;
+	unsigned char name[32];
 } OPENAMP_PACKED_END;
 
 /**
@@ -255,11 +255,11 @@ struct fw_rsc_trace {
  */
 OPENAMP_PACKED_BEGIN
 struct fw_rsc_vdev_vring {
-    unsigned int da;
-    unsigned int align;
-    unsigned int num;
-    unsigned int notifyid;
-    unsigned int reserved;
+	unsigned int da;
+	unsigned int align;
+	unsigned int num;
+	unsigned int notifyid;
+	unsigned int reserved;
 } OPENAMP_PACKED_END;
 
 /**
@@ -299,16 +299,16 @@ struct fw_rsc_vdev_vring {
  */
 OPENAMP_PACKED_BEGIN
 struct fw_rsc_vdev {
-    unsigned int type;
-    unsigned int id;
-    unsigned int notifyid;
-    unsigned int dfeatures;
-    unsigned int gfeatures;
-    unsigned int config_len;
-    unsigned char status;
-    unsigned char num_of_vrings;
-    unsigned char reserved[2];
-    struct fw_rsc_vdev_vring vring[0];
+	unsigned int type;
+	unsigned int id;
+	unsigned int notifyid;
+	unsigned int dfeatures;
+	unsigned int gfeatures;
+	unsigned int config_len;
+	unsigned char status;
+	unsigned char num_of_vrings;
+	unsigned char reserved[2];
+	struct fw_rsc_vdev_vring vring[0];
 } OPENAMP_PACKED_END;
 
 /**
@@ -328,13 +328,13 @@ struct fw_rsc_vdev {
  *
  */
 struct remote_proc {
-    struct hil_proc *proc;
-    struct remote_device *rdev;
-    struct remoteproc_loader *loader;
-    rpmsg_chnl_cb_t channel_created;
-    rpmsg_chnl_cb_t channel_destroyed;
-    rpmsg_rx_cb_t default_cb;
-    int role;
+	struct hil_proc *proc;
+	struct remote_device *rdev;
+	struct remoteproc_loader *loader;
+	rpmsg_chnl_cb_t channel_created;
+	rpmsg_chnl_cb_t channel_destroyed;
+	rpmsg_rx_cb_t default_cb;
+	int role;
 };
 
 /**
@@ -348,8 +348,8 @@ struct remote_proc {
  *
  */
 struct rsc_table_info {
-    struct resource_table *rsc_tab;
-    int size;
+	struct resource_table *rsc_tab;
+	int size;
 };
 
 /* Definitions for device types , null pointer, etc.*/
@@ -394,13 +394,11 @@ struct rsc_table_info {
  * @param returns - status of execution
  *
  */
-int remoteproc_resource_init(
-                struct rsc_table_info *rsc_info,
-                rpmsg_chnl_cb_t channel_created,
-                rpmsg_chnl_cb_t channel_destroyed,
-                rpmsg_rx_cb_t default_cb,
-                struct remote_proc** rproc_handle);
-
+int remoteproc_resource_init(struct rsc_table_info *rsc_info,
+			     rpmsg_chnl_cb_t channel_created,
+			     rpmsg_chnl_cb_t channel_destroyed,
+			     rpmsg_rx_cb_t default_cb,
+			     struct remote_proc **rproc_handle);
 
 /**
  * remoteproc_resource_deinit
@@ -431,9 +429,10 @@ int remoteproc_resource_deinit(struct remote_proc *rproc);
  *
  */
 int remoteproc_init(char *fw_name,
-                rpmsg_chnl_cb_t channel_created,
-                rpmsg_chnl_cb_t channel_destroyed,
-                rpmsg_rx_cb_t default_cb, struct remote_proc** rproc_handle);
+		    rpmsg_chnl_cb_t channel_created,
+		    rpmsg_chnl_cb_t channel_destroyed,
+		    rpmsg_rx_cb_t default_cb,
+		    struct remote_proc **rproc_handle);
 
 /**
  * remoteproc_deinit
@@ -470,4 +469,4 @@ int remoteproc_boot(struct remote_proc *rproc);
  */
 int remoteproc_shutdown(struct remote_proc *rproc);
 
-#endif /* REMOTEPROC_H_ */
+#endif				/* REMOTEPROC_H_ */
