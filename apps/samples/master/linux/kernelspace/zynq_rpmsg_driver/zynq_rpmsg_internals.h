@@ -23,32 +23,31 @@
  * GNU General Public License for more details.
  */
 
-
 #define ZYNQ_RPMSG_NUM_VRINGS		2
 struct zynq_rpmsg_vring {
 
-	void	   *va;
+	void *va;
 	dma_addr_t dma;
-	int		len;
-	u32		da;
-	u32		align;
+	int len;
+	u32 da;
+	u32 align;
 	struct virtqueue *vq;
 };
 
 struct zynq_rpmsg_instance {
 
-	u32	 vring0;
-	u32	 vring1;
-	u32	 mem_start;
-	u32	 mem_end;
-	u32	 num_descs;
-	u32	 dev_feature;
-	u32	 gen_feature;
-	u32	 num_vrings;
-	u32	 align;
-	u32	 virtioid;
-	u32	 ringtx;
-	u32	 ringrx;
+	u32 vring0;
+	u32 vring1;
+	u32 mem_start;
+	u32 mem_end;
+	u32 num_descs;
+	u32 dev_feature;
+	u32 gen_feature;
+	u32 num_vrings;
+	u32 align;
+	u32 virtioid;
+	u32 ringtx;
+	u32 ringrx;
 
 	struct virtio_device virtio_dev;
 
@@ -64,4 +63,3 @@ extern void clear_ipi_handler(int ipinr);
 
 extern void gic_raise_softirq_unicore(unsigned long cpu, unsigned int irq);
 #endif
-

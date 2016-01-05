@@ -221,7 +221,7 @@ void env_wmb();
  *
  * @return - status of function execution
  */
-int env_create_mutex(void **lock , int count);
+int env_create_mutex(void **lock, int count);
 
 /**
  * env_delete_mutex
@@ -270,7 +270,7 @@ void env_unlock_mutex(void *lock);
 #define LOCKED			0
 #define UNLOCKED		1
 
-int env_create_sync_lock(void **lock , int state);
+int env_create_sync_lock(void **lock, int state);
 
 /**
  * env_create_sync_lock
@@ -282,7 +282,6 @@ int env_create_sync_lock(void **lock , int state);
  */
 
 void env_delete_sync_lock(void *lock);
-
 
 /**
  * env_acquire_sync_lock
@@ -338,10 +337,10 @@ void env_restore_interrupts();
  */
 
 void env_register_isr(int vector, void *data,
-                void (*isr)(int vector, void *data));
+		      void (*isr) (int vector, void *data));
 
 void env_update_isr(int vector, void *data,
-                void (*isr)(int vector, void *data));
+		    void (*isr) (int vector, void *data));
 
 /**
  * env_enable_interrupt
@@ -354,7 +353,7 @@ void env_update_isr(int vector, void *data,
  */
 
 void env_enable_interrupt(unsigned int vector, unsigned int priority,
-                unsigned int polarity);
+			  unsigned int polarity);
 
 /**
  * env_disable_interrupt
@@ -404,7 +403,7 @@ void env_disable_interrupt(unsigned int vector);
 #define TLB_MEM                             (1 << 7)
 
 void env_map_memory(unsigned int pa, unsigned int va, unsigned int size,
-                unsigned int flags);
+		    unsigned int flags);
 
 /**
  * env_get_timestamp
@@ -426,4 +425,4 @@ void env_disable_cache();
 
 typedef void LOCK;
 
-#endif /* _ENV_H_ */
+#endif				/* _ENV_H_ */

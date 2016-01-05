@@ -45,53 +45,69 @@
 
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops proc_ops = {
-	.enable_interrupt	= _enable_interrupt,
-	.reg_ipi_after_deinit	= _reg_ipi_after_deinit,
-	.notify			= _notify,
-	.boot_cpu		= _boot_cpu,
-	.shutdown_cpu		= _shutdown_cpu,
+	.enable_interrupt = _enable_interrupt,
+	.reg_ipi_after_deinit = _reg_ipi_after_deinit,
+	.notify = _notify,
+	.boot_cpu = _boot_cpu,
+	.shutdown_cpu = _shutdown_cpu,
 };
 
 extern void ipi_enable_interrupt(unsigned int vector);
 extern void ipi_isr(int vect_id, void *data);
 
-extern void ipi_register_interrupt(unsigned long ipi_base_addr, unsigned int intr_mask, void *data, void *ipi_handler);
+extern void ipi_register_interrupt(unsigned long ipi_base_addr,
+				   unsigned int intr_mask, void *data,
+				   void *ipi_handler);
 
-void _ipi_handler (unsigned long ipi_base_addr, unsigned int intr_mask, void *data) {
-	struct proc_vring *vring_hw = (struct proc_vring *) data;
+void _ipi_handler(unsigned long ipi_base_addr, unsigned int intr_mask,
+		  void *data)
+{
+	struct proc_vring *vring_hw = (struct proc_vring *)data;
 	platform_dcache_all_flush();
 	hil_isr(vring_hw);
 }
 
-void _ipi_handler_deinit (unsigned long ipi_base_addr, unsigned int intr_mask, void *data) {
+void _ipi_handler_deinit(unsigned long ipi_base_addr, unsigned int intr_mask,
+			 void *data)
+{
 	return;
 }
 
-int _enable_interrupt(struct proc_vring *vring_hw) {
+int _enable_interrupt(struct proc_vring *vring_hw)
+{
 
-	struct ipi_info *chn_ipi_info = (struct ipi_info *)(vring_hw->intr_info.data);
+	struct ipi_info *chn_ipi_info =
+	    (struct ipi_info *)(vring_hw->intr_info.data);
 
 	if (vring_hw->intr_info.vect_id < 0)
 		return 0;
 	/* Register IPI handler */
-	ipi_register_handler(chn_ipi_info->ipi_base_addr, chn_ipi_info->ipi_chn_mask, vring_hw, _ipi_handler);
-	/* Register ISR*/
-	env_register_isr(vring_hw->intr_info.vect_id, &(chn_ipi_info->ipi_base_addr), ipi_isr);
+	ipi_register_handler(chn_ipi_info->ipi_base_addr,
+			     chn_ipi_info->ipi_chn_mask, vring_hw,
+			     _ipi_handler);
+	/* Register ISR */
+	env_register_isr(vring_hw->intr_info.vect_id,
+			 &(chn_ipi_info->ipi_base_addr), ipi_isr);
 	/* Enable IPI interrupt */
 	env_enable_interrupt(vring_hw->intr_info.vect_id,
-		vring_hw->intr_info.priority,
-		vring_hw->intr_info.trigger_type);
+			     vring_hw->intr_info.priority,
+			     vring_hw->intr_info.trigger_type);
 	return 0;
 }
 
-void _reg_ipi_after_deinit(struct proc_vring *vring_hw) {
-	struct ipi_info *chn_ipi_info = (struct ipi_info *)(vring_hw->intr_info.data);
+void _reg_ipi_after_deinit(struct proc_vring *vring_hw)
+{
+	struct ipi_info *chn_ipi_info =
+	    (struct ipi_info *)(vring_hw->intr_info.data);
 	env_disable_interrupts();
-	ipi_register_handler(chn_ipi_info->ipi_base_addr, chn_ipi_info->ipi_chn_mask, 0, _ipi_handler_deinit);
+	ipi_register_handler(chn_ipi_info->ipi_base_addr,
+			     chn_ipi_info->ipi_chn_mask, 0,
+			     _ipi_handler_deinit);
 	env_restore_interrupts();
 }
 
-void _notify(int cpu_id, struct proc_intr *intr_info) {
+void _notify(int cpu_id, struct proc_intr *intr_info)
+{
 
 	struct ipi_info *chn_ipi_info = (struct ipi_info *)(intr_info->data);
 	if (chn_ipi_info == NULL)
@@ -102,11 +118,12 @@ void _notify(int cpu_id, struct proc_intr *intr_info) {
 	ipi_trigger(chn_ipi_info->ipi_base_addr, chn_ipi_info->ipi_chn_mask);
 }
 
-int _boot_cpu(int cpu_id, unsigned int load_addr) {
+int _boot_cpu(int cpu_id, unsigned int load_addr)
+{
 	return -1;
 }
 
-void _shutdown_cpu(int cpu_id) {
+void _shutdown_cpu(int cpu_id)
+{
 	return;
 }
-

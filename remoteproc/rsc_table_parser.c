@@ -30,13 +30,12 @@
 #include "rsc_table_parser.h"
 
 /* Resources handler */
-rsc_handler rsc_handler_table[] =
-{
-    handle_carve_out_rsc,
-    handle_trace_rsc,
-    handle_dev_mem_rsc,
-    handle_vdev_rsc,
-    handle_mmu_rsc
+rsc_handler rsc_handler_table[] = {
+	handle_carve_out_rsc,
+	handle_trace_rsc,
+	handle_dev_mem_rsc,
+	handle_vdev_rsc,
+	handle_mmu_rsc
 };
 
 /**
@@ -51,50 +50,53 @@ rsc_handler rsc_handler_table[] =
  * @returns - execution status
  *
  */
-int handle_rsc_table(struct remote_proc *rproc, struct resource_table *rsc_table,
-                int size) {
+int handle_rsc_table(struct remote_proc *rproc,
+		     struct resource_table *rsc_table, int size)
+{
 
-    unsigned char *rsc_start;
-    unsigned int *rsc_offset;
-    unsigned int rsc_type;
-    int idx, status = 0;
+	unsigned char *rsc_start;
+	unsigned int *rsc_offset;
+	unsigned int rsc_type;
+	int idx, status = 0;
 
-    /* Validate rsc table header fields*/
+	/* Validate rsc table header fields */
 
-    /* Minimum rsc table size */
-    if (sizeof(struct resource_table) > size) {
-        return (RPROC_ERR_RSC_TAB_TRUNC);
-    }
+	/* Minimum rsc table size */
+	if (sizeof(struct resource_table) > size) {
+		return (RPROC_ERR_RSC_TAB_TRUNC);
+	}
 
-    /* Supported version */
-    if (rsc_table->ver != RSC_TAB_SUPPORTED_VERSION) {
-        return (RPROC_ERR_RSC_TAB_VER);
-    }
+	/* Supported version */
+	if (rsc_table->ver != RSC_TAB_SUPPORTED_VERSION) {
+		return (RPROC_ERR_RSC_TAB_VER);
+	}
 
-    /* Offset array */
-    if (sizeof(struct resource_table)
-                    + rsc_table->num * sizeof(rsc_table->offset[0]) > size) {
-        return (RPROC_ERR_RSC_TAB_TRUNC);
-    }
+	/* Offset array */
+	if (sizeof(struct resource_table)
+	    + rsc_table->num * sizeof(rsc_table->offset[0]) > size) {
+		return (RPROC_ERR_RSC_TAB_TRUNC);
+	}
 
-    /* Reserved fields - must be zero */
-    if ((rsc_table->reserved[0] != 0 || rsc_table->reserved[1]) != 0) {
-        return RPROC_ERR_RSC_TAB_RSVD;
-    }
+	/* Reserved fields - must be zero */
+	if ((rsc_table->reserved[0] != 0 || rsc_table->reserved[1]) != 0) {
+		return RPROC_ERR_RSC_TAB_RSVD;
+	}
 
-    rsc_start = (unsigned char *) rsc_table;
+	rsc_start = (unsigned char *)rsc_table;
 
-    /* Loop through the offset array and parse each resource entry */
-    for (idx = 0; idx < rsc_table->num; idx++) {
-        rsc_offset = (unsigned int *) (rsc_start + rsc_table->offset[idx]);
-        rsc_type = *rsc_offset;
-        status = rsc_handler_table[rsc_type](rproc, (void *) rsc_offset);
-        if (status != RPROC_SUCCESS) {
-            break;
-        }
-    }
+	/* Loop through the offset array and parse each resource entry */
+	for (idx = 0; idx < rsc_table->num; idx++) {
+		rsc_offset =
+		    (unsigned int *)(rsc_start + rsc_table->offset[idx]);
+		rsc_type = *rsc_offset;
+		status =
+		    rsc_handler_table[rsc_type] (rproc, (void *)rsc_offset);
+		if (status != RPROC_SUCCESS) {
+			break;
+		}
+	}
 
-    return status;
+	return status;
 }
 
 /**
@@ -108,25 +110,26 @@ int handle_rsc_table(struct remote_proc *rproc, struct resource_table *rsc_table
  * @returns - execution status
  *
  */
-int handle_carve_out_rsc(struct remote_proc *rproc, void *rsc) {
-    struct fw_rsc_carveout *carve_rsc = (struct fw_rsc_carveout *) rsc;
+int handle_carve_out_rsc(struct remote_proc *rproc, void *rsc)
+{
+	struct fw_rsc_carveout *carve_rsc = (struct fw_rsc_carveout *)rsc;
 
-    /* Validate resource fields */
-    if (!carve_rsc) {
-        return RPROC_ERR_RSC_TAB_NP;
-    }
+	/* Validate resource fields */
+	if (!carve_rsc) {
+		return RPROC_ERR_RSC_TAB_NP;
+	}
 
-    if (carve_rsc->reserved) {
-        return RPROC_ERR_RSC_TAB_RSVD;
-    }
+	if (carve_rsc->reserved) {
+		return RPROC_ERR_RSC_TAB_RSVD;
+	}
 
-    if (rproc->role == RPROC_MASTER) {
-        /* Map memory region for loading the image */
-        env_map_memory(carve_rsc->da, carve_rsc->da, carve_rsc->len,
-                        (SHARED_MEM | UNCACHED));
-    }
+	if (rproc->role == RPROC_MASTER) {
+		/* Map memory region for loading the image */
+		env_map_memory(carve_rsc->da, carve_rsc->da, carve_rsc->len,
+			       (SHARED_MEM | UNCACHED));
+	}
 
-    return RPROC_SUCCESS;
+	return RPROC_SUCCESS;
 }
 
 /**
@@ -140,8 +143,9 @@ int handle_carve_out_rsc(struct remote_proc *rproc, void *rsc) {
  * @returns - execution status
  *
  */
-int handle_trace_rsc(struct remote_proc *rproc, void *rsc) {
-    return RPROC_ERR_RSC_TAB_NS;
+int handle_trace_rsc(struct remote_proc *rproc, void *rsc)
+{
+	return RPROC_ERR_RSC_TAB_NS;
 }
 
 /**
@@ -155,8 +159,9 @@ int handle_trace_rsc(struct remote_proc *rproc, void *rsc) {
  * @returns - execution status
  *
  */
-int handle_dev_mem_rsc(struct remote_proc *rproc, void *rsc) {
-    return RPROC_ERR_RSC_TAB_NS;
+int handle_dev_mem_rsc(struct remote_proc *rproc, void *rsc)
+{
+	return RPROC_ERR_RSC_TAB_NS;
 }
 
 /**
@@ -170,52 +175,53 @@ int handle_dev_mem_rsc(struct remote_proc *rproc, void *rsc) {
  * @returns - execution status
  *
  */
-int handle_vdev_rsc(struct remote_proc *rproc, void *rsc) {
+int handle_vdev_rsc(struct remote_proc *rproc, void *rsc)
+{
 
-    struct fw_rsc_vdev *vdev_rsc = (struct fw_rsc_vdev *) rsc;
-    struct fw_rsc_vdev_vring *vring;
-    struct proc_vdev *vdev;
-    struct proc_vring *vring_table;
-    int idx;
+	struct fw_rsc_vdev *vdev_rsc = (struct fw_rsc_vdev *)rsc;
+	struct fw_rsc_vdev_vring *vring;
+	struct proc_vdev *vdev;
+	struct proc_vring *vring_table;
+	int idx;
 
-    if (!vdev_rsc) {
-        return RPROC_ERR_RSC_TAB_NP;
-    }
+	if (!vdev_rsc) {
+		return RPROC_ERR_RSC_TAB_NP;
+	}
 
-    /* Maximum supported vrings per Virtio device */
-    if (vdev_rsc->num_of_vrings > RSC_TAB_MAX_VRINGS) {
-        return RPROC_ERR_RSC_TAB_VDEV_NRINGS;
-    }
+	/* Maximum supported vrings per Virtio device */
+	if (vdev_rsc->num_of_vrings > RSC_TAB_MAX_VRINGS) {
+		return RPROC_ERR_RSC_TAB_VDEV_NRINGS;
+	}
 
-    /* Reserved fields - must be zero */
-    if (vdev_rsc->reserved[0] || vdev_rsc->reserved[1]) {
-        return RPROC_ERR_RSC_TAB_RSVD;
-    }
+	/* Reserved fields - must be zero */
+	if (vdev_rsc->reserved[0] || vdev_rsc->reserved[1]) {
+		return RPROC_ERR_RSC_TAB_RSVD;
+	}
 
-    /* Get the Virtio device from HIL proc */
-    vdev = hil_get_vdev_info(rproc->proc);
+	/* Get the Virtio device from HIL proc */
+	vdev = hil_get_vdev_info(rproc->proc);
 
-    /* Initialize HIL Virtio device resources */
-    vdev->num_vrings = vdev_rsc->num_of_vrings;
-    vdev->dfeatures = vdev_rsc->dfeatures;
-    vdev->gfeatures = vdev_rsc->gfeatures;
-    vring_table = &vdev->vring_info[0];
+	/* Initialize HIL Virtio device resources */
+	vdev->num_vrings = vdev_rsc->num_of_vrings;
+	vdev->dfeatures = vdev_rsc->dfeatures;
+	vdev->gfeatures = vdev_rsc->gfeatures;
+	vring_table = &vdev->vring_info[0];
 
-    for (idx = 0; idx < vdev_rsc->num_of_vrings; idx++) {
-        vring = &vdev_rsc->vring[idx];
+	for (idx = 0; idx < vdev_rsc->num_of_vrings; idx++) {
+		vring = &vdev_rsc->vring[idx];
 
-        /* Initialize HIL vring resources */
-        vring_table[idx].phy_addr = (void *) vring->da;
-        vring_table[idx].num_descs = vring->num;
-        vring_table[idx].align = vring->align;
+		/* Initialize HIL vring resources */
+		vring_table[idx].phy_addr = (void *)vring->da;
+		vring_table[idx].num_descs = vring->num;
+		vring_table[idx].align = vring->align;
 
-        /* Enable access to vring memory regions */
-        env_map_memory(vring->da, vring->da,
-                        vring_size(vring->num, vring->align),
-                        (SHARED_MEM | UNCACHED));
-    }
+		/* Enable access to vring memory regions */
+		env_map_memory(vring->da, vring->da,
+			       vring_size(vring->num, vring->align),
+			       (SHARED_MEM | UNCACHED));
+	}
 
-    return RPROC_SUCCESS;
+	return RPROC_SUCCESS;
 }
 
 /**
@@ -229,6 +235,7 @@ int handle_vdev_rsc(struct remote_proc *rproc, void *rsc) {
  * @returns - execution status
  *
  */
-int handle_mmu_rsc(struct remote_proc *rproc, void *rsc) {
-    return RPROC_ERR_RSC_TAB_NS;
+int handle_mmu_rsc(struct remote_proc *rproc, void *rsc)
+{
+	return RPROC_ERR_RSC_TAB_NS;
 }

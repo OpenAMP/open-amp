@@ -35,16 +35,14 @@
 static const char init_msg[] = "init_msg";
 
 static const char *const shutdown_argv[]
-		= { "/sbin/shutdown", "-h", "-P", "now", NULL };
-
-
+= { "/sbin/shutdown", "-h", "-P", "now", NULL };
 
 struct _matrix {
 	unsigned int size;
 	unsigned int elements[MATRIX_SIZE][MATRIX_SIZE];
 };
 
-static struct	_matrix p_matrix[NUM_MATRIX];
+static struct _matrix p_matrix[NUM_MATRIX];
 
 static void matrix_print(struct _matrix *m)
 {
@@ -61,9 +59,9 @@ static void matrix_print(struct _matrix *m)
 }
 
 static void generate_matrices(int num_matrices, unsigned int matrix_size,
-				void *p_data)
+			      void *p_data)
 {
-	int	i, j, k, val;
+	int i, j, k, val;
 	struct _matrix *p_matrix = p_data;
 
 	/* Generate two random matrices */
@@ -81,9 +79,10 @@ static void generate_matrices(int num_matrices, unsigned int matrix_size,
 			for (k = 0; k < matrix_size; k++) {
 				get_random_bytes(&val, sizeof(val));
 				p_matrix[i].elements[j][k] =
-						((val & 0x7F) % 10);
+				    ((val & 0x7F) % 10);
 				pr_cont(" %d ",
-				(unsigned int)p_matrix[i].elements[j][k]);
+					(unsigned int)p_matrix[i].
+					elements[j][k]);
 			}
 		}
 		pr_err("\r\n");
@@ -92,7 +91,7 @@ static void generate_matrices(int num_matrices, unsigned int matrix_size,
 }
 
 static void rpmsg_mat_mul_kern_app_cb(struct rpmsg_channel *rpdev, void *data,
-					int len, void *priv, u32 src)
+				      int len, void *priv, u32 src)
 {
 	int err = 0;
 	int shutdown_msg = SHUTDOWN_MSG;
@@ -101,18 +100,20 @@ static void rpmsg_mat_mul_kern_app_cb(struct rpmsg_channel *rpdev, void *data,
 		return;
 	}
 
-	if ((*(int *) data) == SHUTDOWN_MSG) {
+	if ((*(int *)data) == SHUTDOWN_MSG) {
 		/* Shutdown Linux if such a message is received. Only applicable
-			when Linux is a remoteproc remote. */
-		dev_info(&rpdev->dev,"shutdown message is received. Shutting down...\n");
-		call_usermodehelper(shutdown_argv[0], shutdown_argv,
-					NULL, UMH_NO_WAIT);
+		   when Linux is a remoteproc remote. */
+		dev_info(&rpdev->dev,
+			 "shutdown message is received. Shutting down...\n");
+		call_usermodehelper(shutdown_argv[0], shutdown_argv, NULL,
+				    UMH_NO_WAIT);
 	} else {
 		/* print results */
 		matrix_print((struct _matrix *)data);
 
 		/* Send payload to remote. */
-		err = rpmsg_sendto(rpdev, &shutdown_msg, sizeof(int), rpdev->dst);
+		err =
+		    rpmsg_sendto(rpdev, &shutdown_msg, sizeof(int), rpdev->dst);
 
 		if (err)
 			pr_err(" Shutdown send failed!\r\n");
@@ -133,16 +134,19 @@ static int rpmsg_mat_mul_kern_app_probe(struct rpmsg_channel *rpdev)
 	dev_info(&rpdev->dev, "Sent init_msg to target 0x%x.", rpdev->dst);
 
 	dev_info(&rpdev->dev, "new channel: 0x%x -> 0x%x!\n",
-			rpdev->src, rpdev->dst);
+		 rpdev->src, rpdev->dst);
 
 	/* Generate random matrices */
 	generate_matrices(NUM_MATRIX, MATRIX_SIZE, p_matrix);
 
 	/* Send matrices to remote for computation */
-	err = rpmsg_sendto(rpdev, p_matrix, sizeof(struct _matrix) * 2, rpdev->dst);
+	err =
+	    rpmsg_sendto(rpdev, p_matrix, sizeof(struct _matrix) * 2,
+			 rpdev->dst);
 
-	pr_info("\r\n Master : Linux : Sent %d bytes of data over rpmsg channel to remote \r\n",
-		sizeof(struct _matrix) * 2);
+	pr_info
+	    ("\r\n Master : Linux : Sent %d bytes of data over rpmsg channel to remote \r\n",
+	     sizeof(struct _matrix) * 2);
 
 	if (err) {
 		pr_err(" send failed!\r\n");
@@ -157,7 +161,7 @@ static void rpmsg_mat_mul_kern_app_remove(struct rpmsg_channel *rpdev)
 }
 
 static struct rpmsg_device_id rpmsg_mat_mul_kern_app_id_table[] = {
-	{ .name = "rpmsg-openamp-demo-channel" },
+	{.name = "rpmsg-openamp-demo-channel"},
 	{},
 };
 
@@ -183,6 +187,6 @@ static void __exit fini(void)
 module_init(init);
 module_exit(fini);
 
-
-MODULE_DESCRIPTION("Sample driver to exposes rpmsg svcs to userspace via a char device");
+MODULE_DESCRIPTION
+    ("Sample driver to exposes rpmsg svcs to userspace via a char device");
 MODULE_LICENSE("GPL v2");

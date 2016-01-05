@@ -65,11 +65,11 @@
  * each of which begins with a resource entry header (as described below).
  */
 struct resource_table {
-    unsigned int ver;
-    unsigned int num;
-    unsigned int reserved[2];
-    unsigned int offset[0];
-} __attribute__((__packed__));
+	unsigned int ver;
+	unsigned int num;
+	unsigned int reserved[2];
+	unsigned int offset[0];
+} __attribute__ ((__packed__));
 
 /**
  * struct fw_rsc_hdr - firmware resource entry header
@@ -81,9 +81,9 @@ struct resource_table {
  * this header, and it should be parsed according to the resource type.
  */
 struct fw_rsc_hdr {
-    unsigned int type;
-    unsigned char data[0];
-} __attribute__((__packed__));
+	unsigned int type;
+	unsigned char data[0];
+} __attribute__ ((__packed__));
 
 /**
  * enum fw_resource_type - types of resource entries
@@ -106,11 +106,11 @@ struct fw_rsc_hdr {
  * please update it as needed.
  */
 enum fw_resource_type {
-    RSC_CARVEOUT    = 0,
-    RSC_DEVMEM  = 1,
-    RSC_TRACE   = 2,
-    RSC_VDEV    = 3,
-    RSC_LAST    = 4,
+	RSC_CARVEOUT = 0,
+	RSC_DEVMEM = 1,
+	RSC_TRACE = 2,
+	RSC_VDEV = 3,
+	RSC_LAST = 4,
 };
 
 #define FW_RSC_ADDR_ANY (0xFFFFFFFFFFFFFFFF)
@@ -159,14 +159,14 @@ enum fw_resource_type {
  * (mainly for debugging purposes).
  */
 struct fw_rsc_carveout {
-    unsigned int type;
-    unsigned int da;
-    unsigned int pa;
-    unsigned int len;
-    unsigned int flags;
-    unsigned int reserved;
-    unsigned char name[32];
-} __attribute__((__packed__));
+	unsigned int type;
+	unsigned int da;
+	unsigned int pa;
+	unsigned int len;
+	unsigned int flags;
+	unsigned int reserved;
+	unsigned char name[32];
+} __attribute__ ((__packed__));
 
 /**
  * struct fw_rsc_devmem - iommu mapping request
@@ -198,14 +198,14 @@ struct fw_rsc_carveout {
  * access to physical addresses that are outside those ranges.
  */
 struct fw_rsc_devmem {
-    unsigned int type;
-    unsigned int da;
-    unsigned int pa;
-    unsigned int len;
-    unsigned int flags;
-    unsigned int reserved;
-    unsigned char name[32];
-} __attribute__((__packed__));
+	unsigned int type;
+	unsigned int da;
+	unsigned int pa;
+	unsigned int len;
+	unsigned int flags;
+	unsigned int reserved;
+	unsigned char name[32];
+} __attribute__ ((__packed__));
 
 /**
  * struct fw_rsc_trace - trace buffer declaration
@@ -224,12 +224,12 @@ struct fw_rsc_devmem {
  * user via debugfs entries (called trace0, trace1, etc..).
  */
 struct fw_rsc_trace {
-    unsigned int type;
-    unsigned int da;
-    unsigned int len;
-    unsigned int reserved;
-    unsigned char name[32];
-} __attribute__((__packed__));
+	unsigned int type;
+	unsigned int da;
+	unsigned int len;
+	unsigned int reserved;
+	unsigned char name[32];
+} __attribute__ ((__packed__));
 
 /**
  * struct fw_rsc_vdev_vring - vring descriptor entry
@@ -249,12 +249,12 @@ struct fw_rsc_trace {
  * dynamically allocation of the vring's device address is supported.
  */
 struct fw_rsc_vdev_vring {
-    unsigned int da;
-    unsigned int align;
-    unsigned int num;
-    unsigned int notifyid;
-    unsigned int reserved;
-} __attribute__((__packed__));
+	unsigned int da;
+	unsigned int align;
+	unsigned int num;
+	unsigned int notifyid;
+	unsigned int reserved;
+} __attribute__ ((__packed__));
 
 /**
  * struct fw_rsc_vdev - virtio device header
@@ -292,17 +292,17 @@ struct fw_rsc_vdev_vring {
  * spec). the size of the config space is specified by @config_len.
  */
 struct fw_rsc_vdev {
-    unsigned int type;
-    unsigned int id;
-    unsigned int notifyid;
-    unsigned int dfeatures;
-    unsigned int gfeatures;
-    unsigned int config_len;
-    unsigned char status;
-    unsigned char num_of_vrings;
-    unsigned char reserved[2];
-    struct fw_rsc_vdev_vring vring[0];
-} __attribute__((__packed__));
+	unsigned int type;
+	unsigned int id;
+	unsigned int notifyid;
+	unsigned int dfeatures;
+	unsigned int gfeatures;
+	unsigned int config_len;
+	unsigned char status;
+	unsigned char num_of_vrings;
+	unsigned char reserved[2];
+	struct fw_rsc_vdev_vring vring[0];
+} __attribute__ ((__packed__));
 
 /**
  * struct remote_proc
@@ -321,13 +321,13 @@ struct fw_rsc_vdev {
  *
  */
 struct remote_proc {
-    struct hil_proc *proc;
-    struct remote_device *rdev;
-    struct remoteproc_loader *loader;
-    rpmsg_chnl_cb_t channel_created;
-    rpmsg_chnl_cb_t channel_destroyed;
-    rpmsg_rx_cb_t default_cb;
-    int role;
+	struct hil_proc *proc;
+	struct remote_device *rdev;
+	struct remoteproc_loader *loader;
+	rpmsg_chnl_cb_t channel_created;
+	rpmsg_chnl_cb_t channel_destroyed;
+	rpmsg_rx_cb_t default_cb;
+	int role;
 };
 
 /**
@@ -341,8 +341,8 @@ struct remote_proc {
  *
  */
 struct rsc_table_info {
-    struct resource_table *rsc_tab;
-    int size;
+	struct resource_table *rsc_tab;
+	int size;
 };
 
 /* Definitions for device types , null pointer, etc.*/
@@ -387,13 +387,11 @@ struct rsc_table_info {
  * @param returns - status of execution
  *
  */
-int remoteproc_resource_init(
-                struct rsc_table_info *rsc_info,
-                rpmsg_chnl_cb_t channel_created,
-                rpmsg_chnl_cb_t channel_destroyed,
-                rpmsg_rx_cb_t default_cb,
-                struct remote_proc** rproc_handle);
-
+int remoteproc_resource_init(struct rsc_table_info *rsc_info,
+			     rpmsg_chnl_cb_t channel_created,
+			     rpmsg_chnl_cb_t channel_destroyed,
+			     rpmsg_rx_cb_t default_cb,
+			     struct remote_proc **rproc_handle);
 
 /**
  * remoteproc_resource_deinit
@@ -424,9 +422,10 @@ int remoteproc_resource_deinit(struct remote_proc *rproc);
  *
  */
 int remoteproc_init(char *fw_name,
-                rpmsg_chnl_cb_t channel_created,
-                rpmsg_chnl_cb_t channel_destroyed,
-                rpmsg_rx_cb_t default_cb, struct remote_proc** rproc_handle);
+		    rpmsg_chnl_cb_t channel_created,
+		    rpmsg_chnl_cb_t channel_destroyed,
+		    rpmsg_rx_cb_t default_cb,
+		    struct remote_proc **rproc_handle);
 
 /**
  * remoteproc_deinit
@@ -463,4 +462,4 @@ int remoteproc_boot(struct remote_proc *rproc);
  */
 int remoteproc_shutdown(struct remote_proc *rproc);
 
-#endif /* REMOTEPROC_H_ */
+#endif				/* REMOTEPROC_H_ */

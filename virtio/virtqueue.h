@@ -30,7 +30,7 @@
  */
 
 #include <stdint.h>
-typedef         uint8_t                             boolean;
+typedef uint8_t boolean;
 
 #include "virtio_ring.h"
 #include "../porting/env/env.h"
@@ -79,77 +79,77 @@ typedef         uint8_t                             boolean;
  * only used when the EVENT_IDX feature is negotiated.
  */
 typedef enum {
-    VQ_POSTPONE_SHORT,
-    VQ_POSTPONE_LONG,
-    VQ_POSTPONE_EMPTIED    /* Until all available desc are used. */
+	VQ_POSTPONE_SHORT,
+	VQ_POSTPONE_LONG,
+	VQ_POSTPONE_EMPTIED	/* Until all available desc are used. */
 } vq_postpone_t;
 
 struct virtqueue {
-    //TODO: Need to define proper structure for
-    //        virtio device with RPmsg and paravirtualization.
+	//TODO: Need to define proper structure for
+	//        virtio device with RPmsg and paravirtualization.
 
-    struct virtio_device *vq_dev;
-    char vq_name[VIRTQUEUE_MAX_NAME_SZ];
-    uint16_t vq_queue_index;
-    uint16_t vq_nentries;
-    uint32_t vq_flags;
-    int vq_alignment;
-    int vq_ring_size;
-    boolean vq_inuse;
-    void *vq_ring_mem;
-    void (*callback)(struct virtqueue *vq);
-    void (*notify)(struct virtqueue *vq);
-    int vq_max_indirect_size;
-    int vq_indirect_mem_size;
-    struct vring vq_ring;
-    uint16_t vq_free_cnt;
-    uint16_t vq_queued_cnt;
+	struct virtio_device *vq_dev;
+	char vq_name[VIRTQUEUE_MAX_NAME_SZ];
+	uint16_t vq_queue_index;
+	uint16_t vq_nentries;
+	uint32_t vq_flags;
+	int vq_alignment;
+	int vq_ring_size;
+	boolean vq_inuse;
+	void *vq_ring_mem;
+	void (*callback) (struct virtqueue * vq);
+	void (*notify) (struct virtqueue * vq);
+	int vq_max_indirect_size;
+	int vq_indirect_mem_size;
+	struct vring vq_ring;
+	uint16_t vq_free_cnt;
+	uint16_t vq_queued_cnt;
 
-    /*
-     * Head of the free chain in the descriptor table. If
-     * there are no free descriptors, this will be set to
-     * VQ_RING_DESC_CHAIN_END.
-     */
-    uint16_t vq_desc_head_idx;
+	/*
+	 * Head of the free chain in the descriptor table. If
+	 * there are no free descriptors, this will be set to
+	 * VQ_RING_DESC_CHAIN_END.
+	 */
+	uint16_t vq_desc_head_idx;
 
-    /*
-     * Last consumed descriptor in the used table,
-     * trails vq_ring.used->idx.
-     */
-    uint16_t vq_used_cons_idx;
+	/*
+	 * Last consumed descriptor in the used table,
+	 * trails vq_ring.used->idx.
+	 */
+	uint16_t vq_used_cons_idx;
 
-    /*
-     * Last consumed descriptor in the available table -
-     * used by the consumer side.
-     */
-    uint16_t vq_available_idx;
+	/*
+	 * Last consumed descriptor in the available table -
+	 * used by the consumer side.
+	 */
+	uint16_t vq_available_idx;
 
-    uint8_t padd;
+	uint8_t padd;
 
-    /*
-     * Used by the host side during callback. Cookie
-     * holds the address of buffer received from other side.
-     * Other fields in this structure are not used currently.
-     */
+	/*
+	 * Used by the host side during callback. Cookie
+	 * holds the address of buffer received from other side.
+	 * Other fields in this structure are not used currently.
+	 */
 
-    struct vq_desc_extra {
-        void *cookie;
-        struct vring_desc *indirect;
-        uint32_t indirect_paddr;
-        uint16_t ndescs;
-    } vq_descx[0];
+	struct vq_desc_extra {
+		void *cookie;
+		struct vring_desc *indirect;
+		uint32_t indirect_paddr;
+		uint16_t ndescs;
+	} vq_descx[0];
 };
 
 /* struct to hold vring specific information */
 struct vring_alloc_info {
-    void         *phy_addr;
-    uint32_t     align;
-    uint16_t     num_descs;
-    uint16_t     pad;
+	void *phy_addr;
+	uint32_t align;
+	uint16_t num_descs;
+	uint16_t pad;
 };
 
-typedef void   vq_callback(struct virtqueue *);
-typedef void   vq_notify(struct virtqueue *);
+typedef void vq_callback(struct virtqueue *);
+typedef void vq_notify(struct virtqueue *);
 
 #if (VQUEUE_DEBUG == true)
 
@@ -191,23 +191,26 @@ typedef void   vq_notify(struct virtqueue *);
 
 #endif
 
-int virtqueue_create(struct virtio_device *device, unsigned short id, char *name,
-        struct vring_alloc_info *ring, void (*callback)(struct virtqueue *vq),
-        void (*notify)(struct virtqueue *vq), struct virtqueue **v_queue);
+int virtqueue_create(struct virtio_device *device, unsigned short id,
+		     char *name, struct vring_alloc_info *ring,
+		     void (*callback) (struct virtqueue * vq),
+		     void (*notify) (struct virtqueue * vq),
+		     struct virtqueue **v_queue);
 
 int virtqueue_add_buffer(struct virtqueue *vq, struct llist *buffer,
-        int readable, int writable, void *cookie);
+			 int readable, int writable, void *cookie);
 
 int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
-        void* buffer_addr, uint32_t len, int writable, boolean has_next);
+				void *buffer_addr, uint32_t len, int writable,
+				boolean has_next);
 
-void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len);
+void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len);
 
-void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
-        uint32_t *len);
+void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
+				     uint32_t * len);
 
 int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
-        uint32_t len);
+				  uint32_t len);
 
 void virtqueue_disable_cb(struct virtqueue *vq);
 
@@ -223,4 +226,4 @@ void virtqueue_notification(struct virtqueue *vq);
 
 uint32_t virtqueue_get_desc_size(struct virtqueue *vq);
 
-#endif /* VIRTQUEUE_H_ */
+#endif				/* VIRTQUEUE_H_ */

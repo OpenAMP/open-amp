@@ -51,54 +51,61 @@
  *
  */
 int remoteproc_resource_init(struct rsc_table_info *rsc_info,
-                rpmsg_chnl_cb_t channel_created, rpmsg_chnl_cb_t channel_destroyed,
-                rpmsg_rx_cb_t default_cb, struct remote_proc** rproc_handle) {
+			     rpmsg_chnl_cb_t channel_created,
+			     rpmsg_chnl_cb_t channel_destroyed,
+			     rpmsg_rx_cb_t default_cb,
+			     struct remote_proc **rproc_handle)
+{
 
-    struct remote_proc *rproc;
-    int status;
+	struct remote_proc *rproc;
+	int status;
 
-    if(!rsc_info) {
-        return RPROC_ERR_PARAM;
-    }
+	if (!rsc_info) {
+		return RPROC_ERR_PARAM;
+	}
 
-    /* Initialize environment component */
-    status = env_init();
-    if (status != RPROC_SUCCESS) {
-        return status;
-    }
+	/* Initialize environment component */
+	status = env_init();
+	if (status != RPROC_SUCCESS) {
+		return status;
+	}
 
-    rproc = env_allocate_memory(sizeof(struct remote_proc));
-    if (rproc) {
-        env_memset(rproc, 0x00, sizeof(struct remote_proc));
-        /* There can be only one master for remote configuration so use the
-         * rsvd cpu id for creating hil proc */
-        rproc->proc = hil_create_proc(HIL_RSVD_CPU_ID);
-        if (rproc->proc) {
-            /* Parse resource table */
-            status = handle_rsc_table(rproc, rsc_info->rsc_tab, rsc_info->size);
-            if (status == RPROC_SUCCESS) {
-                /* Initialize RPMSG "messaging" component */
-                *rproc_handle = rproc;
-                status = rpmsg_init(rproc->proc->cpu_id, &rproc->rdev,
-                                channel_created, channel_destroyed, default_cb,
-                                RPMSG_MASTER);
-            } else {
-                status = RPROC_ERR_NO_RSC_TABLE;
-            }
-        } else {
-            status = RPROC_ERR_CPU_ID;
-        }
-    } else {
-        status = RPROC_ERR_NO_MEM;
-    }
+	rproc = env_allocate_memory(sizeof(struct remote_proc));
+	if (rproc) {
+		env_memset(rproc, 0x00, sizeof(struct remote_proc));
+		/* There can be only one master for remote configuration so use the
+		 * rsvd cpu id for creating hil proc */
+		rproc->proc = hil_create_proc(HIL_RSVD_CPU_ID);
+		if (rproc->proc) {
+			/* Parse resource table */
+			status =
+			    handle_rsc_table(rproc, rsc_info->rsc_tab,
+					     rsc_info->size);
+			if (status == RPROC_SUCCESS) {
+				/* Initialize RPMSG "messaging" component */
+				*rproc_handle = rproc;
+				status =
+				    rpmsg_init(rproc->proc->cpu_id,
+					       &rproc->rdev, channel_created,
+					       channel_destroyed, default_cb,
+					       RPMSG_MASTER);
+			} else {
+				status = RPROC_ERR_NO_RSC_TABLE;
+			}
+		} else {
+			status = RPROC_ERR_CPU_ID;
+		}
+	} else {
+		status = RPROC_ERR_NO_MEM;
+	}
 
-    /* Cleanup in case of error */
-    if (status != RPROC_SUCCESS) {
-         *rproc_handle = 0;
-        (void) remoteproc_resource_deinit(rproc);
-        return status;
-    }
-    return status;
+	/* Cleanup in case of error */
+	if (status != RPROC_SUCCESS) {
+		*rproc_handle = 0;
+		(void)remoteproc_resource_deinit(rproc);
+		return status;
+	}
+	return status;
 }
 
 /**
@@ -112,38 +119,41 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
  *
  */
 
-int remoteproc_resource_deinit(struct remote_proc *rproc) {
-    int i = 0;
-    struct proc_vring *vring_hw = 0;
-    if (rproc) {
-        if (rproc->rdev) {
-            /* disable IPC interrupts */
-            if (rproc->proc->ops->reg_ipi_after_deinit) {
-                for(i = 0; i < 2; i++) {
-                    vring_hw = &rproc->proc->vdev.vring_info[i];
-                    rproc->proc->ops->reg_ipi_after_deinit(vring_hw);
-                }
-            }
-            rpmsg_deinit(rproc->rdev);
-        }
-        if (rproc->proc) {
-            hil_delete_proc(rproc->proc);
-        }
+int remoteproc_resource_deinit(struct remote_proc *rproc)
+{
+	int i = 0;
+	struct proc_vring *vring_hw = 0;
+	if (rproc) {
+		if (rproc->rdev) {
+			/* disable IPC interrupts */
+			if (rproc->proc->ops->reg_ipi_after_deinit) {
+				for (i = 0; i < 2; i++) {
+					vring_hw =
+					    &rproc->proc->vdev.vring_info[i];
+					rproc->proc->ops->
+					    reg_ipi_after_deinit(vring_hw);
+				}
+			}
+			rpmsg_deinit(rproc->rdev);
+		}
+		if (rproc->proc) {
+			hil_delete_proc(rproc->proc);
+		}
 
-        env_free_memory(rproc);
-    }
+		env_free_memory(rproc);
+	}
 
-    env_deinit();
+	env_deinit();
 
-    /* Disable the caches - This is required if master boots firmwares
-     * multiple times without hard reset on same core. If caches are
-     * not invalidated at this point in time then subsequent firmware
-     * boots on the same core may experience cache inconsistencies.
-     *
-     */
-    env_disable_cache();
+	/* Disable the caches - This is required if master boots firmwares
+	 * multiple times without hard reset on same core. If caches are
+	 * not invalidated at this point in time then subsequent firmware
+	 * boots on the same core may experience cache inconsistencies.
+	 *
+	 */
+	env_disable_cache();
 
-    return RPROC_SUCCESS;
+	return RPROC_SUCCESS;
 }
 
 /**
@@ -162,83 +172,90 @@ int remoteproc_resource_deinit(struct remote_proc *rproc) {
  *
  */
 int remoteproc_init(char *fw_name, rpmsg_chnl_cb_t channel_created,
-                rpmsg_chnl_cb_t channel_destroyed, rpmsg_rx_cb_t default_cb,
-                struct remote_proc** rproc_handle) {
+		    rpmsg_chnl_cb_t channel_destroyed, rpmsg_rx_cb_t default_cb,
+		    struct remote_proc **rproc_handle)
+{
 
-    struct remote_proc *rproc;
-    struct resource_table *rsc_table;
-    unsigned int fw_addr, fw_size, rsc_size;
-    int status, cpu_id;
+	struct remote_proc *rproc;
+	struct resource_table *rsc_table;
+	unsigned int fw_addr, fw_size, rsc_size;
+	int status, cpu_id;
 
-    if (!fw_name) {
-        return RPROC_ERR_PARAM;
-    }
+	if (!fw_name) {
+		return RPROC_ERR_PARAM;
+	}
 
-    /* Initialize environment component */
-    status = env_init();
-    if (status != RPROC_SUCCESS) {
-        return status;
-    }
+	/* Initialize environment component */
+	status = env_init();
+	if (status != RPROC_SUCCESS) {
+		return status;
+	}
 
-    rproc = env_allocate_memory(sizeof(struct remote_proc));
-    if (rproc) {
-        env_memset((void *) rproc, 0x00, sizeof(struct remote_proc));
-        /* Get CPU ID for the given firmware name */
-        cpu_id = hil_get_cpuforfw(fw_name);
-        if (cpu_id >= 0) {
-            /* Create proc instance */
-            rproc->proc = hil_create_proc(cpu_id);
-            if (rproc->proc) {
-                /* Retrieve firmware attributes */
-                status = hil_get_firmware(fw_name, &fw_addr, &fw_size);
-                if (!status) {
-                    /* Initialize ELF loader - currently only ELF format is supported */
-                    rproc->loader = remoteproc_loader_init(ELF_LOADER);
-                    if (rproc->loader) {
-                        /* Attach the given firmware with the ELF parser/loader */
-                        status = remoteproc_loader_attach_firmware(
-                                        rproc->loader, (void *) fw_addr);
-                    } else {
-                        status = RPROC_ERR_LOADER;
-                    }
-                }
-            } else {
-                status = RPROC_ERR_NO_MEM;
-            }
-        } else {
-            status = RPROC_ERR_INVLD_FW;
-        }
-    } else {
-        status = RPROC_ERR_NO_MEM;
-    }
+	rproc = env_allocate_memory(sizeof(struct remote_proc));
+	if (rproc) {
+		env_memset((void *)rproc, 0x00, sizeof(struct remote_proc));
+		/* Get CPU ID for the given firmware name */
+		cpu_id = hil_get_cpuforfw(fw_name);
+		if (cpu_id >= 0) {
+			/* Create proc instance */
+			rproc->proc = hil_create_proc(cpu_id);
+			if (rproc->proc) {
+				/* Retrieve firmware attributes */
+				status =
+				    hil_get_firmware(fw_name, &fw_addr,
+						     &fw_size);
+				if (!status) {
+					/* Initialize ELF loader - currently only ELF format is supported */
+					rproc->loader =
+					    remoteproc_loader_init(ELF_LOADER);
+					if (rproc->loader) {
+						/* Attach the given firmware with the ELF parser/loader */
+						status =
+						    remoteproc_loader_attach_firmware
+						    (rproc->loader,
+						     (void *)fw_addr);
+					} else {
+						status = RPROC_ERR_LOADER;
+					}
+				}
+			} else {
+				status = RPROC_ERR_NO_MEM;
+			}
+		} else {
+			status = RPROC_ERR_INVLD_FW;
+		}
+	} else {
+		status = RPROC_ERR_NO_MEM;
+	}
 
-    if (!status) {
-        rproc->role = RPROC_MASTER;
+	if (!status) {
+		rproc->role = RPROC_MASTER;
 
-        /* Get resource table from firmware */
-        rsc_table = remoteproc_loader_retrieve_resource_section(rproc->loader,
-                        &rsc_size);
-        if (rsc_table) {
-            /* Parse resource table */
-            status = handle_rsc_table(rproc, rsc_table, rsc_size);
-        } else {
-            status = RPROC_ERR_NO_RSC_TABLE;
-        }
-    }
+		/* Get resource table from firmware */
+		rsc_table =
+		    remoteproc_loader_retrieve_resource_section(rproc->loader,
+								&rsc_size);
+		if (rsc_table) {
+			/* Parse resource table */
+			status = handle_rsc_table(rproc, rsc_table, rsc_size);
+		} else {
+			status = RPROC_ERR_NO_RSC_TABLE;
+		}
+	}
 
-    /* Cleanup in case of error */
-    if (status != RPROC_SUCCESS) {
-        (void) remoteproc_deinit(rproc);
-        return status;
-    }
+	/* Cleanup in case of error */
+	if (status != RPROC_SUCCESS) {
+		(void)remoteproc_deinit(rproc);
+		return status;
+	}
 
-    rproc->channel_created = channel_created;
-    rproc->channel_destroyed = channel_destroyed;
-    rproc->default_cb = default_cb;
+	rproc->channel_created = channel_created;
+	rproc->channel_destroyed = channel_destroyed;
+	rproc->default_cb = default_cb;
 
-    *rproc_handle = rproc;
+	*rproc_handle = rproc;
 
-    return status;
+	return status;
 }
 
 /**
@@ -251,23 +268,24 @@ int remoteproc_init(char *fw_name, rpmsg_chnl_cb_t channel_created,
  * @param returns - status of function execution
  *
  */
-int remoteproc_deinit(struct remote_proc *rproc) {
+int remoteproc_deinit(struct remote_proc *rproc)
+{
 
-    if (rproc) {
-        if (rproc->loader) {
-            (void) remoteproc_loader_delete(rproc->loader);
-            rproc->loader = RPROC_NULL;
-        }
-        if (rproc->proc) {
-            hil_delete_proc(rproc->proc);
-            rproc->proc = RPROC_NULL;
-        }
-        env_free_memory(rproc);
-    }
+	if (rproc) {
+		if (rproc->loader) {
+			(void)remoteproc_loader_delete(rproc->loader);
+			rproc->loader = RPROC_NULL;
+		}
+		if (rproc->proc) {
+			hil_delete_proc(rproc->proc);
+			rproc->proc = RPROC_NULL;
+		}
+		env_free_memory(rproc);
+	}
 
-    env_deinit();
+	env_deinit();
 
-    return RPROC_SUCCESS;
+	return RPROC_SUCCESS;
 }
 
 /**
@@ -280,58 +298,63 @@ int remoteproc_deinit(struct remote_proc *rproc) {
  *
  * @param returns - status of function execution
  */
-int remoteproc_boot(struct remote_proc *rproc) {
+int remoteproc_boot(struct remote_proc *rproc)
+{
 
-    void *load_addr;
-    int status;
+	void *load_addr;
+	int status;
 
-    if (!rproc) {
-        return RPROC_ERR_PARAM;
-    }
+	if (!rproc) {
+		return RPROC_ERR_PARAM;
+	}
 
-    /* Stop the remote CPU */
-    hil_shutdown_cpu(rproc->proc);
+	/* Stop the remote CPU */
+	hil_shutdown_cpu(rproc->proc);
 
-    /* Load the firmware */
-    status = remoteproc_loader_load_remote_firmware(rproc->loader);
-    if (status == RPROC_SUCCESS) {
-        load_addr = remoteproc_get_load_address(rproc->loader);
-        if (load_addr != RPROC_ERR_PTR) {
-            /* Start the remote cpu */
-            status = hil_boot_cpu(rproc->proc,
-                            (unsigned int) load_addr);
-            if (status == RPROC_SUCCESS) {
-                /* Wait for remote side to come up. This delay is arbitrary and may
-                 * need adjustment for different configuration of remote systems */
-                env_sleep_msec(RPROC_BOOT_DELAY);
+	/* Load the firmware */
+	status = remoteproc_loader_load_remote_firmware(rproc->loader);
+	if (status == RPROC_SUCCESS) {
+		load_addr = remoteproc_get_load_address(rproc->loader);
+		if (load_addr != RPROC_ERR_PTR) {
+			/* Start the remote cpu */
+			status = hil_boot_cpu(rproc->proc,
+					      (unsigned int)load_addr);
+			if (status == RPROC_SUCCESS) {
+				/* Wait for remote side to come up. This delay is arbitrary and may
+				 * need adjustment for different configuration of remote systems */
+				env_sleep_msec(RPROC_BOOT_DELAY);
 
-                /* Initialize RPMSG "messaging" component */
+				/* Initialize RPMSG "messaging" component */
 
-                /* It is a work-around to work with remote Linux context. 
-                   Since the upstream Linux rpmsg implementation always 
-                   assumes itself to be an rpmsg master, we initialize
-                   the remote device as an rpmsg master for remote Linux
-                   configuration only. */
+				/* It is a work-around to work with remote Linux context. 
+				   Since the upstream Linux rpmsg implementation always 
+				   assumes itself to be an rpmsg master, we initialize
+				   the remote device as an rpmsg master for remote Linux
+				   configuration only. */
 #if defined (OPENAMP_REMOTE_LINUX_ENABLE)
-                status = rpmsg_init(rproc->proc->cpu_id, &rproc->rdev,
-                                rproc->channel_created,
-                                rproc->channel_destroyed, rproc->default_cb,
-                                 RPMSG_MASTER);
+				status =
+				    rpmsg_init(rproc->proc->cpu_id,
+					       &rproc->rdev,
+					       rproc->channel_created,
+					       rproc->channel_destroyed,
+					       rproc->default_cb, RPMSG_MASTER);
 #else
-                status = rpmsg_init(rproc->proc->cpu_id, &rproc->rdev,
-                                rproc->channel_created,
-                                rproc->channel_destroyed, rproc->default_cb,
-                                 RPMSG_REMOTE);
+				status =
+				    rpmsg_init(rproc->proc->cpu_id,
+					       &rproc->rdev,
+					       rproc->channel_created,
+					       rproc->channel_destroyed,
+					       rproc->default_cb, RPMSG_REMOTE);
 #endif
-            }
-        } else {
-            status = RPROC_ERR_LOADER;
-        }
-    } else {
-        status = RPROC_ERR_LOADER;
-    }
+			}
+		} else {
+			status = RPROC_ERR_LOADER;
+		}
+	} else {
+		status = RPROC_ERR_LOADER;
+	}
 
-    return status;
+	return status;
 }
 
 /**
@@ -343,17 +366,18 @@ int remoteproc_boot(struct remote_proc *rproc) {
  *
  * @param returns - status of function execution
  */
-int remoteproc_shutdown(struct remote_proc *rproc) {
+int remoteproc_shutdown(struct remote_proc *rproc)
+{
 
-    if (rproc) {
-        if (rproc->rdev) {
-            rpmsg_deinit(rproc->rdev);
-            rproc->rdev = RPROC_NULL;
-        }
-        if (rproc->proc) {
-            hil_shutdown_cpu(rproc->proc);
-        }
-    }
+	if (rproc) {
+		if (rproc->rdev) {
+			rpmsg_deinit(rproc->rdev);
+			rproc->rdev = RPROC_NULL;
+		}
+		if (rproc->proc) {
+			hil_shutdown_cpu(rproc->proc);
+		}
+	}
 
-    return RPROC_SUCCESS;
+	return RPROC_SUCCESS;
 }

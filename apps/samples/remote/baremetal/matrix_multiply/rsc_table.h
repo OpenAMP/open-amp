@@ -56,4 +56,3 @@ struct remote_resource_table {
 	struct fw_rsc_vdev_vring rpmsg_vring0;
 	struct fw_rsc_vdev_vring rpmsg_vring1;
 };
-

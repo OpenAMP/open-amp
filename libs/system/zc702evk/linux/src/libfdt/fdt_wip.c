@@ -65,7 +65,7 @@ int fdt_setprop_inplace(void *fdt, int nodeoffset, const char *name,
 	int proplen;
 
 	propval = fdt_getprop_w(fdt, nodeoffset, name, &proplen);
-	if (! propval)
+	if (!propval)
 		return proplen;
 
 	if (proplen != len)
@@ -89,7 +89,7 @@ int fdt_nop_property(void *fdt, int nodeoffset, const char *name)
 	int len;
 
 	prop = fdt_get_property_w(fdt, nodeoffset, name, &len);
-	if (! prop)
+	if (!prop)
 		return len;
 
 	_fdt_nop_region(prop, len + sizeof(*prop));
@@ -122,7 +122,7 @@ int fdt_nop_node(void *fdt, int nodeoffset)
 
 #define FDT_MAX_DEPTH	32
 
-static int str_in_list(const char *str, char * const list[], int count)
+static int str_in_list(const char *str, char *const list[], int count)
 {
 	int i;
 
@@ -133,8 +133,8 @@ static int str_in_list(const char *str, char * const list[], int count)
 	return 0;
 }
 
-int fdt_find_regions(const void *fdt, char * const inc[], int inc_count,
-		     char * const exc_prop[], int exc_prop_count,
+int fdt_find_regions(const void *fdt, char *const inc[], int inc_count,
+		     char *const exc_prop[], int exc_prop_count,
 		     struct fdt_region region[], int max_regions,
 		     char *path, int path_len, int add_string_tab)
 {
@@ -204,8 +204,7 @@ int fdt_find_regions(const void *fdt, char * const inc[], int inc_count,
 		case FDT_END_NODE:
 			include = want;
 			want = stack[depth--];
-			while (end > path && *--end != '/')
-				;
+			while (end > path && *--end != '/') ;
 			*end = '\0';
 			break;
 
@@ -218,7 +217,7 @@ int fdt_find_regions(const void *fdt, char * const inc[], int inc_count,
 			/* Should we merge with previous? */
 			if (count && count <= max_regions &&
 			    offset == region[count - 1].offset +
-					region[count - 1].size - base)
+			    region[count - 1].size - base)
 				start = region[--count].offset - base;
 			else
 				start = offset;

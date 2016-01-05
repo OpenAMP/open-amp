@@ -45,13 +45,11 @@ struct _payload *r_payload;
 #define PAYLOAD_MAX_SIZE	(MAX_RPMSG_BUFF_SIZE - 24)
 #define NUM_PAYLOADS		(PAYLOAD_MAX_SIZE/PAYLOAD_MIN_SIZE)
 
-
-
 int main(int argc, char *argv[])
 {
 	int flag = 1;
 	int shutdown_msg = SHUTDOWN_MSG;
-	int cmd, ret, i,j, expect_rnum, rnum;
+	int cmd, ret, i, j, expect_rnum, rnum;
 	int size, bytes_rcvd, bytes_sent;
 	err_cnt = 0;
 
@@ -76,8 +74,12 @@ int main(int argc, char *argv[])
 
 	printf(" rpmsg kernel fifo free space = %u \r\n", size);
 
-	i_payload = (struct _payload *)malloc(2 * sizeof(unsigned long) + PAYLOAD_MAX_SIZE);
-	r_payload = (struct _payload *)malloc(2 * sizeof(unsigned long) + PAYLOAD_MAX_SIZE);
+	i_payload =
+	    (struct _payload *)malloc(2 * sizeof(unsigned long) +
+				      PAYLOAD_MAX_SIZE);
+	r_payload =
+	    (struct _payload *)malloc(2 * sizeof(unsigned long) +
+				      PAYLOAD_MAX_SIZE);
 
 	if (i_payload == 0 || r_payload == 0) {
 		printf("ERROR: Failed to allocate memory for payload.\n");
@@ -107,7 +109,7 @@ int main(int argc, char *argv[])
 			expect_rnum = 0;
 			rnum = 0;
 			for (i = 0, size = PAYLOAD_MIN_SIZE; i < NUM_PAYLOADS;
-			i++, size++) {
+			     i++, size++) {
 				i_payload->num = i;
 				i_payload->size = size;
 
@@ -116,10 +118,11 @@ int main(int argc, char *argv[])
 
 				printf("\r\n sending payload number");
 				printf(" %d of size %d \r\n", i_payload->num,
-				(2 * sizeof(unsigned long)) + size);
+				       (2 * sizeof(unsigned long)) + size);
 
 				bytes_sent = write(fd, i_payload,
-				(2 * sizeof(unsigned long)) + size);
+						   (2 * sizeof(unsigned long)) +
+						   size);
 
 				if (bytes_sent <= 0) {
 					printf("\r\n Error sending data");
@@ -131,14 +134,19 @@ int main(int argc, char *argv[])
 
 				r_payload->num = 0;
 				bytes_rcvd = read(fd, r_payload,
-						(2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
+						  (2 * sizeof(unsigned long)) +
+						  PAYLOAD_MAX_SIZE);
 				while (bytes_rcvd <= 0) {
 					usleep(10000);
 					bytes_rcvd = read(fd, r_payload,
-						(2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
+							  (2 *
+							   sizeof(unsigned
+								  long)) +
+							  PAYLOAD_MAX_SIZE);
 				}
 				printf(" received payload number ");
-				printf("%d of size %d \r\n", r_payload->num, bytes_rcvd);
+				printf("%d of size %d \r\n", r_payload->num,
+				       bytes_rcvd);
 				rnum = r_payload->num + 1;
 
 				/* Validate data buffer integrity. */
@@ -152,14 +160,15 @@ int main(int argc, char *argv[])
 					}
 				}
 				bytes_rcvd = read(fd, r_payload,
-				(2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
+						  (2 * sizeof(unsigned long)) +
+						  PAYLOAD_MAX_SIZE);
 
 			}
 
 			printf("\r\n **********************************");
 			printf("****\r\n");
 			printf("\r\n Test Results: Error count = %d\r\n",
-			err_cnt);
+			       err_cnt);
 			printf("\r\n **********************************");
 			printf("****\r\n");
 		} else if (cmd == 2) {
@@ -181,5 +190,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
-

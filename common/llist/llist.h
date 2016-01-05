@@ -27,7 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 /**************************************************************************
  * FILE NAME
  *
@@ -47,13 +46,13 @@
 #define LLIST_H_
 
 struct llist {
-    void *data;
-    unsigned int attr;
-    struct llist *next;
-    struct llist *prev;
+	void *data;
+	unsigned int attr;
+	struct llist *next;
+	struct llist *prev;
 };
 
 void add_to_list(struct llist **head, struct llist *node);
 void remove_from_list(struct llist **head, struct llist *node);
 
-#endif /* LLIST_H_ */
+#endif				/* LLIST_H_ */

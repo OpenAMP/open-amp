@@ -30,7 +30,7 @@
 static void vq_ring_init(struct virtqueue *);
 static void vq_ring_update_avail(struct virtqueue *, uint16_t);
 static uint16_t vq_ring_add_buffer(struct virtqueue *, struct vring_desc *,
-        uint16_t, struct llist *, int, int);
+				   uint16_t, struct llist *, int, int);
 static int vq_ring_enable_interrupt(struct virtqueue *, uint16_t);
 static void vq_ring_free_chain(struct virtqueue *, uint16_t);
 static int vq_ring_must_notify_host(struct virtqueue *vq);
@@ -52,62 +52,64 @@ static int virtqueue_nused(struct virtqueue *vq);
  *
  * @return          - Function status
  */
-int virtqueue_create(struct virtio_device *virt_dev, unsigned short id, char *name,
-        struct vring_alloc_info *ring, void (*callback)(struct virtqueue *vq),
-        void (*notify)(struct virtqueue *vq),
-        struct virtqueue **v_queue) {
+int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
+		     char *name, struct vring_alloc_info *ring,
+		     void (*callback) (struct virtqueue * vq),
+		     void (*notify) (struct virtqueue * vq),
+		     struct virtqueue **v_queue)
+{
 
-    struct virtqueue *vq = VQ_NULL;
-    int status = VQUEUE_SUCCESS;
-    uint32_t vq_size = 0;
+	struct virtqueue *vq = VQ_NULL;
+	int status = VQUEUE_SUCCESS;
+	uint32_t vq_size = 0;
 
-    VQ_PARAM_CHK(ring == VQ_NULL, status, ERROR_VQUEUE_INVLD_PARAM);
-    VQ_PARAM_CHK(ring->num_descs == 0, status, ERROR_VQUEUE_INVLD_PARAM);
-    VQ_PARAM_CHK(ring->num_descs & (ring->num_descs - 1), status,
-            ERROR_VRING_ALIGN);
+	VQ_PARAM_CHK(ring == VQ_NULL, status, ERROR_VQUEUE_INVLD_PARAM);
+	VQ_PARAM_CHK(ring->num_descs == 0, status, ERROR_VQUEUE_INVLD_PARAM);
+	VQ_PARAM_CHK(ring->num_descs & (ring->num_descs - 1), status,
+		     ERROR_VRING_ALIGN);
 
-    //TODO : Error check for indirect buffer addition
+	//TODO : Error check for indirect buffer addition
 
-    if (status == VQUEUE_SUCCESS) {
+	if (status == VQUEUE_SUCCESS) {
 
-        vq_size = sizeof(struct virtqueue)
-                + (ring->num_descs) * sizeof(struct vq_desc_extra);
-        vq = (struct virtqueue *) env_allocate_memory(vq_size);
+		vq_size = sizeof(struct virtqueue)
+		    + (ring->num_descs) * sizeof(struct vq_desc_extra);
+		vq = (struct virtqueue *)env_allocate_memory(vq_size);
 
-        if (vq == VQ_NULL) {
-            return (ERROR_NO_MEM);
-        }
+		if (vq == VQ_NULL) {
+			return (ERROR_NO_MEM);
+		}
 
-        env_memset(vq, 0x00, vq_size);
+		env_memset(vq, 0x00, vq_size);
 
-        vq->vq_dev = virt_dev;
-        env_strncpy(vq->vq_name, name, VIRTQUEUE_MAX_NAME_SZ);
-        vq->vq_queue_index = id;
-        vq->vq_alignment = ring->align;
-        vq->vq_nentries = ring->num_descs;
-        vq->vq_free_cnt = vq->vq_nentries;
-        vq->callback = callback;
-        vq->notify = notify;
+		vq->vq_dev = virt_dev;
+		env_strncpy(vq->vq_name, name, VIRTQUEUE_MAX_NAME_SZ);
+		vq->vq_queue_index = id;
+		vq->vq_alignment = ring->align;
+		vq->vq_nentries = ring->num_descs;
+		vq->vq_free_cnt = vq->vq_nentries;
+		vq->callback = callback;
+		vq->notify = notify;
 
-        //TODO : Whether we want to support indirect addition or not.
-        vq->vq_ring_size = vring_size(ring->num_descs, ring->align);
-        vq->vq_ring_mem = (void *) ring->phy_addr;
+		//TODO : Whether we want to support indirect addition or not.
+		vq->vq_ring_size = vring_size(ring->num_descs, ring->align);
+		vq->vq_ring_mem = (void *)ring->phy_addr;
 
-        /* Initialize vring control block in virtqueue. */
-        vq_ring_init(vq);
+		/* Initialize vring control block in virtqueue. */
+		vq_ring_init(vq);
 
-        /* Disable callbacks - will be enabled by the application
-         * once initialization is completed.
-         */
-        virtqueue_disable_cb(vq);
+		/* Disable callbacks - will be enabled by the application
+		 * once initialization is completed.
+		 */
+		virtqueue_disable_cb(vq);
 
-        *v_queue = vq;
+		*v_queue = vq;
 
-        //TODO : Need to add cleanup in case of error used with the indirect buffer addition
-        //TODO: do we need to save the new queue in db based on its id
-    }
+		//TODO : Need to add cleanup in case of error used with the indirect buffer addition
+		//TODO: do we need to save the new queue in db based on its id
+	}
 
-    return (status);
+	return (status);
 }
 
 /**
@@ -124,61 +126,63 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id, char *na
  * @return                  - Function status
  */
 int virtqueue_add_buffer(struct virtqueue *vq, struct llist *buffer,
-        int readable, int writable, void *cookie) {
+			 int readable, int writable, void *cookie)
+{
 
-    struct vq_desc_extra *dxp = VQ_NULL;
-    int status = VQUEUE_SUCCESS;
-    uint16_t head_idx;
-    uint16_t idx;
-    int needed;
+	struct vq_desc_extra *dxp = VQ_NULL;
+	int status = VQUEUE_SUCCESS;
+	uint16_t head_idx;
+	uint16_t idx;
+	int needed;
 
-    needed = readable + writable;
+	needed = readable + writable;
 
-    VQ_PARAM_CHK(vq == VQ_NULL, status, ERROR_VQUEUE_INVLD_PARAM);
-    VQ_PARAM_CHK(needed < 1, status, ERROR_VQUEUE_INVLD_PARAM);
-    VQ_PARAM_CHK(vq->vq_free_cnt == 0, status, ERROR_VRING_FULL);
+	VQ_PARAM_CHK(vq == VQ_NULL, status, ERROR_VQUEUE_INVLD_PARAM);
+	VQ_PARAM_CHK(needed < 1, status, ERROR_VQUEUE_INVLD_PARAM);
+	VQ_PARAM_CHK(vq->vq_free_cnt == 0, status, ERROR_VRING_FULL);
 
-    //TODO: Add parameters validation for indirect buffer addition
+	//TODO: Add parameters validation for indirect buffer addition
 
-    VQUEUE_BUSY(vq);
+	VQUEUE_BUSY(vq);
 
-    if (status == VQUEUE_SUCCESS) {
+	if (status == VQUEUE_SUCCESS) {
 
-        //TODO : Indirect buffer addition support
+		//TODO : Indirect buffer addition support
 
-        VQASSERT(vq, cookie != VQ_NULL, "enqueuing with no cookie");
+		VQASSERT(vq, cookie != VQ_NULL, "enqueuing with no cookie");
 
-        head_idx = vq->vq_desc_head_idx;
-        VQ_RING_ASSERT_VALID_IDX(vq, head_idx);
-        dxp = &vq->vq_descx[head_idx];
+		head_idx = vq->vq_desc_head_idx;
+		VQ_RING_ASSERT_VALID_IDX(vq, head_idx);
+		dxp = &vq->vq_descx[head_idx];
 
-        VQASSERT(vq, (dxp->cookie == VQ_NULL), "cookie already exists for index");
+		VQASSERT(vq, (dxp->cookie == VQ_NULL),
+			 "cookie already exists for index");
 
-        dxp->cookie = cookie;
-        dxp->ndescs = needed;
+		dxp->cookie = cookie;
+		dxp->ndescs = needed;
 
-        /* Enqueue buffer onto the ring. */
-        idx = vq_ring_add_buffer(vq, vq->vq_ring.desc, head_idx, buffer,
-                readable, writable);
+		/* Enqueue buffer onto the ring. */
+		idx = vq_ring_add_buffer(vq, vq->vq_ring.desc, head_idx, buffer,
+					 readable, writable);
 
-        vq->vq_desc_head_idx = idx;
-        vq->vq_free_cnt -= needed;
+		vq->vq_desc_head_idx = idx;
+		vq->vq_free_cnt -= needed;
 
-        if (vq->vq_free_cnt == 0)
-            VQ_RING_ASSERT_CHAIN_TERM(vq);
-        else
-            VQ_RING_ASSERT_VALID_IDX(vq, idx);
+		if (vq->vq_free_cnt == 0)
+			VQ_RING_ASSERT_CHAIN_TERM(vq);
+		else
+			VQ_RING_ASSERT_VALID_IDX(vq, idx);
 
-        /*
-         * Update vring_avail control block fields so that other
-         * side can get buffer using it.
-         */
-        vq_ring_update_avail(vq, head_idx);
-    }
+		/*
+		 * Update vring_avail control block fields so that other
+		 * side can get buffer using it.
+		 */
+		vq_ring_update_avail(vq, head_idx);
+	}
 
-    VQUEUE_IDLE(vq);
+	VQUEUE_IDLE(vq);
 
-    return (status);
+	return (status);
 }
 
 /**
@@ -195,55 +199,57 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct llist *buffer,
  * @return                      - Function status
  */
 int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
-        void *buffer_addr, uint32_t len, int writable, boolean has_next) {
+				void *buffer_addr, uint32_t len, int writable,
+				boolean has_next)
+{
 
-    struct vq_desc_extra *dxp;
-    struct vring_desc *dp;
-    uint16_t head_idx;
-    uint16_t idx;
-    int status = VQUEUE_SUCCESS;
+	struct vq_desc_extra *dxp;
+	struct vring_desc *dp;
+	uint16_t head_idx;
+	uint16_t idx;
+	int status = VQUEUE_SUCCESS;
 
-    VQ_PARAM_CHK(vq == VQ_NULL, status, ERROR_VQUEUE_INVLD_PARAM);
-    VQ_PARAM_CHK(vq->vq_free_cnt == 0, status, ERROR_VRING_FULL);
+	VQ_PARAM_CHK(vq == VQ_NULL, status, ERROR_VQUEUE_INVLD_PARAM);
+	VQ_PARAM_CHK(vq->vq_free_cnt == 0, status, ERROR_VRING_FULL);
 
-    VQUEUE_BUSY(vq);
+	VQUEUE_BUSY(vq);
 
-    if (status == VQUEUE_SUCCESS) {
+	if (status == VQUEUE_SUCCESS) {
 
-        VQASSERT(vq, cookie != VQ_NULL, "enqueuing with no cookie");
+		VQASSERT(vq, cookie != VQ_NULL, "enqueuing with no cookie");
 
-        head_idx = vq->vq_desc_head_idx;
-        dxp = &vq->vq_descx[head_idx];
+		head_idx = vq->vq_desc_head_idx;
+		dxp = &vq->vq_descx[head_idx];
 
-        dxp->cookie = cookie;
-        dxp->ndescs = 1;
-        idx = head_idx;
+		dxp->cookie = cookie;
+		dxp->ndescs = 1;
+		idx = head_idx;
 
-        dp = &vq->vq_ring.desc[idx];
-        dp->addr = env_map_vatopa(buffer_addr);
-        dp->len = len;
-        dp->flags = 0;
-        idx = dp->next;
+		dp = &vq->vq_ring.desc[idx];
+		dp->addr = env_map_vatopa(buffer_addr);
+		dp->len = len;
+		dp->flags = 0;
+		idx = dp->next;
 
-        if (has_next)
-            dp->flags |= VRING_DESC_F_NEXT;
-        if (writable)
-            dp->flags |= VRING_DESC_F_WRITE;
+		if (has_next)
+			dp->flags |= VRING_DESC_F_NEXT;
+		if (writable)
+			dp->flags |= VRING_DESC_F_WRITE;
 
-        vq->vq_desc_head_idx = idx;
-        vq->vq_free_cnt--;
+		vq->vq_desc_head_idx = idx;
+		vq->vq_free_cnt--;
 
-        if (vq->vq_free_cnt == 0)
-            VQ_RING_ASSERT_CHAIN_TERM(vq);
-        else
-            VQ_RING_ASSERT_VALID_IDX(vq, idx);
+		if (vq->vq_free_cnt == 0)
+			VQ_RING_ASSERT_CHAIN_TERM(vq);
+		else
+			VQ_RING_ASSERT_VALID_IDX(vq, idx);
 
-        vq_ring_update_avail(vq, head_idx);
-    }
+		vq_ring_update_avail(vq, head_idx);
+	}
 
-    VQUEUE_IDLE(vq);
+	VQUEUE_IDLE(vq);
 
-    return (status);
+	return (status);
 }
 
 /**
@@ -254,33 +260,34 @@ int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
  *
  * @return              - Pointer to used buffer
  */
-void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len) {
-    struct vring_used_elem *uep;
-    void *cookie;
-    uint16_t used_idx, desc_idx;
+void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len)
+{
+	struct vring_used_elem *uep;
+	void *cookie;
+	uint16_t used_idx, desc_idx;
 
-    if ((vq == VQ_NULL) || (vq->vq_used_cons_idx == vq->vq_ring.used->idx))
-        return (VQ_NULL);
+	if ((vq == VQ_NULL) || (vq->vq_used_cons_idx == vq->vq_ring.used->idx))
+		return (VQ_NULL);
 
-    VQUEUE_BUSY(vq);
+	VQUEUE_BUSY(vq);
 
-    used_idx = vq->vq_used_cons_idx++ & (vq->vq_nentries - 1);
-    uep = &vq->vq_ring.used->ring[used_idx];
+	used_idx = vq->vq_used_cons_idx++ & (vq->vq_nentries - 1);
+	uep = &vq->vq_ring.used->ring[used_idx];
 
-    env_rmb();
+	env_rmb();
 
-    desc_idx = (uint16_t) uep->id;
-    if (len != VQ_NULL)
-        *len = uep->len;
+	desc_idx = (uint16_t) uep->id;
+	if (len != VQ_NULL)
+		*len = uep->len;
 
-    vq_ring_free_chain(vq, desc_idx);
+	vq_ring_free_chain(vq, desc_idx);
 
-    cookie = vq->vq_descx[desc_idx].cookie;
-    vq->vq_descx[desc_idx].cookie = VQ_NULL;
+	cookie = vq->vq_descx[desc_idx].cookie;
+	vq->vq_descx[desc_idx].cookie = VQ_NULL;
 
-    VQUEUE_IDLE(vq);
+	VQUEUE_IDLE(vq);
 
-    return (cookie);
+	return (cookie);
 }
 
 /**
@@ -289,23 +296,25 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len) {
  * @param vq        - Pointer to VirtIO queue control block
  *
  */
-void virtqueue_free(struct virtqueue *vq) {
+void virtqueue_free(struct virtqueue *vq)
+{
 
-    if (vq != VQ_NULL) {
+	if (vq != VQ_NULL) {
 
-        if (vq->vq_free_cnt != vq->vq_nentries) {
-            env_print("\r\nWARNING %s: freeing non-empty virtqueue\r\n", vq->vq_name);
-        }
+		if (vq->vq_free_cnt != vq->vq_nentries) {
+			env_print
+			    ("\r\nWARNING %s: freeing non-empty virtqueue\r\n",
+			     vq->vq_name);
+		}
+		//TODO : Need to free indirect buffers here
 
-        //TODO : Need to free indirect buffers here
+		if (vq->vq_ring_mem != VQ_NULL) {
+			vq->vq_ring_size = 0;
+			vq->vq_ring_mem = VQ_NULL;
+		}
 
-        if (vq->vq_ring_mem != VQ_NULL) {
-            vq->vq_ring_size = 0;
-            vq->vq_ring_mem = VQ_NULL;
-        }
-
-        env_free_memory(vq);
-    }
+		env_free_memory(vq);
+	}
 }
 
 /**
@@ -318,29 +327,30 @@ void virtqueue_free(struct virtqueue *vq) {
  *
  * @return                          - Pointer to available buffer
  */
-void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
-        uint32_t *len) {
+void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
+				     uint32_t * len)
+{
 
-    uint16_t head_idx = 0;
-    void *buffer;
+	uint16_t head_idx = 0;
+	void *buffer;
 
-    if (vq->vq_available_idx == vq->vq_ring.avail->idx) {
-        return (VQ_NULL);
-    }
+	if (vq->vq_available_idx == vq->vq_ring.avail->idx) {
+		return (VQ_NULL);
+	}
 
-    VQUEUE_BUSY(vq);
+	VQUEUE_BUSY(vq);
 
-    head_idx = vq->vq_available_idx++ & (vq->vq_nentries - 1);
-    *avail_idx = vq->vq_ring.avail->ring[head_idx];
+	head_idx = vq->vq_available_idx++ & (vq->vq_nentries - 1);
+	*avail_idx = vq->vq_ring.avail->ring[head_idx];
 
-    env_rmb();
+	env_rmb();
 
-    buffer = env_map_patova(vq->vq_ring.desc[*avail_idx].addr);
-    *len = vq->vq_ring.desc[*avail_idx].len;
+	buffer = env_map_patova(vq->vq_ring.desc[*avail_idx].addr);
+	*len = vq->vq_ring.desc[*avail_idx].len;
 
-    VQUEUE_IDLE(vq);
+	VQUEUE_IDLE(vq);
 
-    return (buffer);
+	return (buffer);
 }
 
 /**
@@ -353,29 +363,30 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
  * @return                       - Function status
  */
 int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
-        uint32_t len) {
+				  uint32_t len)
+{
 
-    struct vring_used_elem *used_desc = VQ_NULL;
-    uint16_t used_idx;
+	struct vring_used_elem *used_desc = VQ_NULL;
+	uint16_t used_idx;
 
-    if ((head_idx > vq->vq_nentries) || (head_idx < 0)) {
-        return (ERROR_VRING_NO_BUFF);
-    }
+	if ((head_idx > vq->vq_nentries) || (head_idx < 0)) {
+		return (ERROR_VRING_NO_BUFF);
+	}
 
-    VQUEUE_BUSY(vq);
+	VQUEUE_BUSY(vq);
 
-    used_idx = vq->vq_ring.used->idx & (vq->vq_nentries - 1);
-    used_desc = &(vq->vq_ring.used->ring[used_idx]);
-    used_desc->id = head_idx;
-    used_desc->len = len;
+	used_idx = vq->vq_ring.used->idx & (vq->vq_nentries - 1);
+	used_desc = &(vq->vq_ring.used->ring[used_idx]);
+	used_desc->id = head_idx;
+	used_desc->len = len;
 
-    env_wmb();
+	env_wmb();
 
-    vq->vq_ring.used->idx++;
+	vq->vq_ring.used->idx++;
 
-    VQUEUE_IDLE(vq);
+	VQUEUE_IDLE(vq);
 
-    return (VQUEUE_SUCCESS);
+	return (VQUEUE_SUCCESS);
 }
 
 /**
@@ -385,9 +396,10 @@ int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
  *
  * @return              - Function status
  */
-int virtqueue_enable_cb(struct virtqueue *vq) {
+int virtqueue_enable_cb(struct virtqueue *vq)
+{
 
-    return (vq_ring_enable_interrupt(vq, 0));
+	return (vq_ring_enable_interrupt(vq, 0));
 }
 
 /**
@@ -396,18 +408,19 @@ int virtqueue_enable_cb(struct virtqueue *vq) {
  * @param vq           - Pointer to VirtIO queue control block
  *
  */
-void virtqueue_disable_cb(struct virtqueue *vq) {
+void virtqueue_disable_cb(struct virtqueue *vq)
+{
 
-    VQUEUE_BUSY(vq);
+	VQUEUE_BUSY(vq);
 
-    if (vq->vq_flags & VIRTQUEUE_FLAG_EVENT_IDX) {
-        vring_used_event(&vq->vq_ring)= vq->vq_used_cons_idx - vq->vq_nentries
-        - 1;
-    } else {
-        vq->vq_ring.avail->flags |= VRING_AVAIL_F_NO_INTERRUPT;
-    }
+	if (vq->vq_flags & VIRTQUEUE_FLAG_EVENT_IDX) {
+		vring_used_event(&vq->vq_ring) =
+		    vq->vq_used_cons_idx - vq->vq_nentries - 1;
+	} else {
+		vq->vq_ring.avail->flags |= VRING_AVAIL_F_NO_INTERRUPT;
+	}
 
-    VQUEUE_IDLE(vq);
+	VQUEUE_IDLE(vq);
 }
 
 /**
@@ -415,19 +428,20 @@ void virtqueue_disable_cb(struct virtqueue *vq) {
  *
  * @param vq      - Pointer to VirtIO queue control block
  */
-void virtqueue_kick(struct virtqueue *vq) {
+void virtqueue_kick(struct virtqueue *vq)
+{
 
-    VQUEUE_BUSY(vq);
+	VQUEUE_BUSY(vq);
 
-    /* Ensure updated avail->idx is visible to host. */
-    env_mb();
+	/* Ensure updated avail->idx is visible to host. */
+	env_mb();
 
-    if (vq_ring_must_notify_host(vq))
-        vq_ring_notify_host(vq);
+	if (vq_ring_must_notify_host(vq))
+		vq_ring_notify_host(vq);
 
-    vq->vq_queued_cnt = 0;
+	vq->vq_queued_cnt = 0;
 
-    VQUEUE_IDLE(vq);
+	VQUEUE_IDLE(vq);
 }
 
 /**
@@ -435,18 +449,20 @@ void virtqueue_kick(struct virtqueue *vq) {
  *
  * @param vq - Pointer to VirtIO queue control block
  */
-void virtqueue_dump(struct virtqueue *vq) {
+void virtqueue_dump(struct virtqueue *vq)
+{
 
-    if (vq == VQ_NULL)
-        return;
+	if (vq == VQ_NULL)
+		return;
 
-    env_print("VQ: %s - size=%d; free=%d; used=%d; queued=%d; "
-            "desc_head_idx=%d; avail.idx=%d; used_cons_idx=%d; "
-            "used.idx=%d; avail.flags=0x%x; used.flags=0x%x\r\n", vq->vq_name,
-            vq->vq_nentries, vq->vq_free_cnt, virtqueue_nused(vq),
-            vq->vq_queued_cnt, vq->vq_desc_head_idx, vq->vq_ring.avail->idx,
-            vq->vq_used_cons_idx, vq->vq_ring.used->idx,
-            vq->vq_ring.avail->flags, vq->vq_ring.used->flags);
+	env_print("VQ: %s - size=%d; free=%d; used=%d; queued=%d; "
+		  "desc_head_idx=%d; avail.idx=%d; used_cons_idx=%d; "
+		  "used.idx=%d; avail.flags=0x%x; used.flags=0x%x\r\n",
+		  vq->vq_name, vq->vq_nentries, vq->vq_free_cnt,
+		  virtqueue_nused(vq), vq->vq_queued_cnt, vq->vq_desc_head_idx,
+		  vq->vq_ring.avail->idx, vq->vq_used_cons_idx,
+		  vq->vq_ring.used->idx, vq->vq_ring.avail->flags,
+		  vq->vq_ring.used->flags);
 }
 
 /**
@@ -456,25 +472,27 @@ void virtqueue_dump(struct virtqueue *vq) {
  *
  * @return              - Descriptor length
  */
-uint32_t virtqueue_get_desc_size(struct virtqueue *vq) {
-    uint16_t head_idx = 0;
-    uint16_t avail_idx = 0;
-    uint32_t len = 0;
+uint32_t virtqueue_get_desc_size(struct virtqueue * vq)
+{
+	uint16_t head_idx = 0;
+	uint16_t avail_idx = 0;
+	uint32_t len = 0;
 
-    if (vq->vq_available_idx == vq->vq_ring.avail->idx) {
-        return (VQ_NULL);
-    }
+	if (vq->vq_available_idx == vq->vq_ring.avail->idx) {
+		return (VQ_NULL);
+	}
 
-    VQUEUE_BUSY(vq);
+	VQUEUE_BUSY(vq);
 
-    head_idx = vq->vq_available_idx & (vq->vq_nentries - 1);
-    avail_idx = vq->vq_ring.avail->ring[head_idx];
-    len = vq->vq_ring.desc[avail_idx].len;
+	head_idx = vq->vq_available_idx & (vq->vq_nentries - 1);
+	avail_idx = vq->vq_ring.avail->ring[head_idx];
+	len = vq->vq_ring.desc[avail_idx].len;
 
-    VQUEUE_IDLE(vq);
+	VQUEUE_IDLE(vq);
 
-    return (len);
+	return (len);
 }
+
 /**************************************************************************
  *                            Helper Functions                            *
  **************************************************************************/
@@ -485,35 +503,37 @@ uint32_t virtqueue_get_desc_size(struct virtqueue *vq) {
  *
  */
 static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
-        struct vring_desc *desc, uint16_t head_idx, struct llist *buffer,
-        int readable, int writable) {
+				   struct vring_desc *desc, uint16_t head_idx,
+				   struct llist *buffer, int readable,
+				   int writable)
+{
 
-    struct vring_desc *dp;
-    int i, needed;
-    uint16_t idx;
+	struct vring_desc *dp;
+	int i, needed;
+	uint16_t idx;
 
-    needed = readable + writable;
+	needed = readable + writable;
 
-    for (i = 0, idx = head_idx; (i < needed && buffer != VQ_NULL);
-            i++, idx = dp->next, buffer = buffer->next) {
+	for (i = 0, idx = head_idx; (i < needed && buffer != VQ_NULL);
+	     i++, idx = dp->next, buffer = buffer->next) {
 
-        VQASSERT(vq, idx != VQ_RING_DESC_CHAIN_END,
-                "premature end of free desc chain");
+		VQASSERT(vq, idx != VQ_RING_DESC_CHAIN_END,
+			 "premature end of free desc chain");
 
-        dp = &desc[idx];
-        dp->addr = env_map_vatopa(buffer->data);
-        dp->len = buffer->attr;
-        dp->flags = 0;
+		dp = &desc[idx];
+		dp->addr = env_map_vatopa(buffer->data);
+		dp->len = buffer->attr;
+		dp->flags = 0;
 
-        if (i < needed - 1)
-            dp->flags |= VRING_DESC_F_NEXT;
+		if (i < needed - 1)
+			dp->flags |= VRING_DESC_F_NEXT;
 
-        /* Readable buffers are inserted into vring before the writable buffers.*/
-        if (i >= readable)
-            dp->flags |= VRING_DESC_F_WRITE;
-    }
+		/* Readable buffers are inserted into vring before the writable buffers. */
+		if (i >= readable)
+			dp->flags |= VRING_DESC_F_WRITE;
+	}
 
-    return (idx);
+	return (idx);
 }
 
 /**
@@ -521,38 +541,39 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
  * vq_ring_free_chain
  *
  */
-static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx) {
-    struct vring_desc *dp;
-    struct vq_desc_extra *dxp;
+static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx)
+{
+	struct vring_desc *dp;
+	struct vq_desc_extra *dxp;
 
-    VQ_RING_ASSERT_VALID_IDX(vq, desc_idx);
-    dp = &vq->vq_ring.desc[desc_idx];
-    dxp = &vq->vq_descx[desc_idx];
+	VQ_RING_ASSERT_VALID_IDX(vq, desc_idx);
+	dp = &vq->vq_ring.desc[desc_idx];
+	dxp = &vq->vq_descx[desc_idx];
 
-    if (vq->vq_free_cnt == 0)
-        VQ_RING_ASSERT_CHAIN_TERM(vq);
+	if (vq->vq_free_cnt == 0)
+		VQ_RING_ASSERT_CHAIN_TERM(vq);
 
-    vq->vq_free_cnt += dxp->ndescs;
-    dxp->ndescs--;
+	vq->vq_free_cnt += dxp->ndescs;
+	dxp->ndescs--;
 
-    if ((dp->flags & VRING_DESC_F_INDIRECT) == 0) {
-        while (dp->flags & VRING_DESC_F_NEXT) {
-            VQ_RING_ASSERT_VALID_IDX(vq, dp->next);
-            dp = &vq->vq_ring.desc[dp->next];
-            dxp->ndescs--;
-        }
-    }
+	if ((dp->flags & VRING_DESC_F_INDIRECT) == 0) {
+		while (dp->flags & VRING_DESC_F_NEXT) {
+			VQ_RING_ASSERT_VALID_IDX(vq, dp->next);
+			dp = &vq->vq_ring.desc[dp->next];
+			dxp->ndescs--;
+		}
+	}
 
-    VQASSERT(vq, (dxp->ndescs == 0),
-            "failed to free entire desc chain, remaining");
+	VQASSERT(vq, (dxp->ndescs == 0),
+		 "failed to free entire desc chain, remaining");
 
-    /*
-     * We must append the existing free chain, if any, to the end of
-     * newly freed chain. If the virtqueue was completely used, then
-     * head would be VQ_RING_DESC_CHAIN_END (ASSERTed above).
-     */
-    dp->next = vq->vq_desc_head_idx;
-    vq->vq_desc_head_idx = desc_idx;
+	/*
+	 * We must append the existing free chain, if any, to the end of
+	 * newly freed chain. If the virtqueue was completely used, then
+	 * head would be VQ_RING_DESC_CHAIN_END (ASSERTed above).
+	 */
+	dp->next = vq->vq_desc_head_idx;
+	vq->vq_desc_head_idx = desc_idx;
 }
 
 /**
@@ -560,20 +581,21 @@ static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx) {
  * vq_ring_init
  *
  */
-static void vq_ring_init(struct virtqueue *vq) {
-    struct vring *vr;
-    unsigned char *ring_mem;
-    int i, size;
+static void vq_ring_init(struct virtqueue *vq)
+{
+	struct vring *vr;
+	unsigned char *ring_mem;
+	int i, size;
 
-    ring_mem = vq->vq_ring_mem;
-    size = vq->vq_nentries;
-    vr = &vq->vq_ring;
+	ring_mem = vq->vq_ring_mem;
+	size = vq->vq_nentries;
+	vr = &vq->vq_ring;
 
-    vring_init(vr, size, ring_mem, vq->vq_alignment);
+	vring_init(vr, size, ring_mem, vq->vq_alignment);
 
-    for (i = 0; i < size - 1; i++)
-        vr->desc[i].next = i + 1;
-    vr->desc[i].next = VQ_RING_DESC_CHAIN_END;
+	for (i = 0; i < size - 1; i++)
+		vr->desc[i].next = i + 1;
+	vr->desc[i].next = VQ_RING_DESC_CHAIN_END;
 }
 
 /**
@@ -581,25 +603,26 @@ static void vq_ring_init(struct virtqueue *vq) {
  * vq_ring_update_avail
  *
  */
-static void vq_ring_update_avail(struct virtqueue *vq, uint16_t desc_idx) {
-    uint16_t avail_idx;
+static void vq_ring_update_avail(struct virtqueue *vq, uint16_t desc_idx)
+{
+	uint16_t avail_idx;
 
-    /*
-     * Place the head of the descriptor chain into the next slot and make
-     * it usable to the host. The chain is made available now rather than
-     * deferring to virtqueue_notify() in the hopes that if the host is
-     * currently running on another CPU, we can keep it processing the new
-     * descriptor.
-     */
-    avail_idx = vq->vq_ring.avail->idx & (vq->vq_nentries - 1);
-    vq->vq_ring.avail->ring[avail_idx] = desc_idx;
+	/*
+	 * Place the head of the descriptor chain into the next slot and make
+	 * it usable to the host. The chain is made available now rather than
+	 * deferring to virtqueue_notify() in the hopes that if the host is
+	 * currently running on another CPU, we can keep it processing the new
+	 * descriptor.
+	 */
+	avail_idx = vq->vq_ring.avail->idx & (vq->vq_nentries - 1);
+	vq->vq_ring.avail->ring[avail_idx] = desc_idx;
 
-    env_wmb();
+	env_wmb();
 
-    vq->vq_ring.avail->idx++;
+	vq->vq_ring.avail->idx++;
 
-    /* Keep pending count until virtqueue_notify(). */
-    vq->vq_queued_cnt++;
+	/* Keep pending count until virtqueue_notify(). */
+	vq->vq_queued_cnt++;
 }
 
 /**
@@ -607,30 +630,31 @@ static void vq_ring_update_avail(struct virtqueue *vq, uint16_t desc_idx) {
  * vq_ring_enable_interrupt
  *
  */
-static int vq_ring_enable_interrupt(struct virtqueue *vq, uint16_t ndesc) {
+static int vq_ring_enable_interrupt(struct virtqueue *vq, uint16_t ndesc)
+{
 
-    /*
-     * Enable interrupts, making sure we get the latest index of
-     * what's already been consumed.
-     */
-    if (vq->vq_flags & VIRTQUEUE_FLAG_EVENT_IDX) {
-        vring_used_event(&vq->vq_ring)= vq->vq_used_cons_idx + ndesc;
-    } else {
-        vq->vq_ring.avail->flags &= ~VRING_AVAIL_F_NO_INTERRUPT;
-    }
+	/*
+	 * Enable interrupts, making sure we get the latest index of
+	 * what's already been consumed.
+	 */
+	if (vq->vq_flags & VIRTQUEUE_FLAG_EVENT_IDX) {
+		vring_used_event(&vq->vq_ring) = vq->vq_used_cons_idx + ndesc;
+	} else {
+		vq->vq_ring.avail->flags &= ~VRING_AVAIL_F_NO_INTERRUPT;
+	}
 
-    env_mb();
+	env_mb();
 
-    /*
-     * Enough items may have already been consumed to meet our threshold
-     * since we last checked. Let our caller know so it processes the new
-     * entries.
-     */
-    if (virtqueue_nused(vq) > ndesc) {
-        return (1);
-    }
+	/*
+	 * Enough items may have already been consumed to meet our threshold
+	 * since we last checked. Let our caller know so it processes the new
+	 * entries.
+	 */
+	if (virtqueue_nused(vq) > ndesc) {
+		return (1);
+	}
 
-    return (0);
+	return (0);
 }
 
 /**
@@ -638,10 +662,11 @@ static int vq_ring_enable_interrupt(struct virtqueue *vq, uint16_t ndesc) {
  * virtqueue_interrupt
  *
  */
-void virtqueue_notification(struct virtqueue *vq) {
+void virtqueue_notification(struct virtqueue *vq)
+{
 
-    if (vq->callback != VQ_NULL)
-        vq->callback(vq);
+	if (vq->callback != VQ_NULL)
+		vq->callback(vq);
 }
 
 /**
@@ -649,18 +674,19 @@ void virtqueue_notification(struct virtqueue *vq) {
  * vq_ring_must_notify_host
  *
  */
-static int vq_ring_must_notify_host(struct virtqueue *vq) {
-    uint16_t new_idx, prev_idx, event_idx;
+static int vq_ring_must_notify_host(struct virtqueue *vq)
+{
+	uint16_t new_idx, prev_idx, event_idx;
 
-    if (vq->vq_flags & VIRTQUEUE_FLAG_EVENT_IDX) {
-        new_idx = vq->vq_ring.avail->idx;
-        prev_idx = new_idx - vq->vq_queued_cnt;
-        event_idx = vring_avail_event(&vq->vq_ring);
+	if (vq->vq_flags & VIRTQUEUE_FLAG_EVENT_IDX) {
+		new_idx = vq->vq_ring.avail->idx;
+		prev_idx = new_idx - vq->vq_queued_cnt;
+		event_idx = vring_avail_event(&vq->vq_ring);
 
-        return (vring_need_event(event_idx, new_idx, prev_idx) != 0);
-    }
+		return (vring_need_event(event_idx, new_idx, prev_idx) != 0);
+	}
 
-    return ((vq->vq_ring.used->flags & VRING_USED_F_NO_NOTIFY) == 0);
+	return ((vq->vq_ring.used->flags & VRING_USED_F_NO_NOTIFY) == 0);
 }
 
 /**
@@ -668,10 +694,11 @@ static int vq_ring_must_notify_host(struct virtqueue *vq) {
  * vq_ring_notify_host
  *
  */
-static void vq_ring_notify_host(struct virtqueue *vq) {
+static void vq_ring_notify_host(struct virtqueue *vq)
+{
 
-    if (vq->notify != VQ_NULL)
-        vq->notify(vq);
+	if (vq->notify != VQ_NULL)
+		vq->notify(vq);
 }
 
 /**
@@ -679,13 +706,14 @@ static void vq_ring_notify_host(struct virtqueue *vq) {
  * virtqueue_nused
  *
  */
-static int virtqueue_nused(struct virtqueue *vq) {
-    uint16_t used_idx, nused;
+static int virtqueue_nused(struct virtqueue *vq)
+{
+	uint16_t used_idx, nused;
 
-    used_idx = vq->vq_ring.used->idx;
+	used_idx = vq->vq_ring.used->idx;
 
-    nused = (uint16_t) (used_idx - vq->vq_used_cons_idx);
-    VQASSERT(vq, nused <= vq->vq_nentries, "used more than available");
+	nused = (uint16_t) (used_idx - vq->vq_used_cons_idx);
+	VQASSERT(vq, nused <= vq->vq_nentries, "used more than available");
 
-    return (nused);
+	return (nused);
 }

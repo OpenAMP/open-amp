@@ -70,51 +70,52 @@ extern int platform_get_processor_for_fw(char *fw_name);
  * @return - pointer to proc instance
  *
  */
-struct hil_proc *hil_create_proc(int cpu_id) {
-    struct hil_proc *proc = NULL;
-    struct llist *node = NULL;
-    struct llist *proc_hd = procs.proc_list;
-    int status;
+struct hil_proc *hil_create_proc(int cpu_id)
+{
+	struct hil_proc *proc = NULL;
+	struct llist *node = NULL;
+	struct llist *proc_hd = procs.proc_list;
+	int status;
 
-    /* If proc already exists then return it */
-    while (proc_hd != NULL) {
-        proc = (struct hil_proc *) proc_hd->data;
-        if (proc->cpu_id == cpu_id) {
-            return proc;
-        }
-        proc_hd = proc_hd->next;
-    }
+	/* If proc already exists then return it */
+	while (proc_hd != NULL) {
+		proc = (struct hil_proc *)proc_hd->data;
+		if (proc->cpu_id == cpu_id) {
+			return proc;
+		}
+		proc_hd = proc_hd->next;
+	}
 
-    /* Allocate memory for proc instance */
-    proc = env_allocate_memory(sizeof(struct hil_proc));
-    if (!proc) {
-        return NULL;
-    }
+	/* Allocate memory for proc instance */
+	proc = env_allocate_memory(sizeof(struct hil_proc));
+	if (!proc) {
+		return NULL;
+	}
 
-    /* Get HW specfic info */
-    status = platform_get_processor_info(proc, cpu_id);
-    if (status) {
-        env_free_memory(proc);
-        return NULL;
-    }
+	/* Get HW specfic info */
+	status = platform_get_processor_info(proc, cpu_id);
+	if (status) {
+		env_free_memory(proc);
+		return NULL;
+	}
 
-    /* Enable mapping for the shared memory region */
-    env_map_memory((unsigned int) proc->sh_buff.start_addr,
-                    (unsigned int) proc->sh_buff.start_addr, proc->sh_buff.size,
-                    (SHARED_MEM | UNCACHED));
+	/* Enable mapping for the shared memory region */
+	env_map_memory((unsigned int)proc->sh_buff.start_addr,
+		       (unsigned int)proc->sh_buff.start_addr,
+		       proc->sh_buff.size, (SHARED_MEM | UNCACHED));
 
-    /* Put the new proc in the procs list */
-    node = env_allocate_memory(sizeof(struct llist));
+	/* Put the new proc in the procs list */
+	node = env_allocate_memory(sizeof(struct llist));
 
-    if (!node) {
-        env_free_memory(proc);
-        return NULL;
-    }
+	if (!node) {
+		env_free_memory(proc);
+		return NULL;
+	}
 
-    node->data = proc;
-    add_to_list(&procs.proc_list, node);
+	node->data = proc;
+	add_to_list(&procs.proc_list, node);
 
-    return proc;
+	return proc;
 }
 
 /**
@@ -127,8 +128,9 @@ struct hil_proc *hil_create_proc(int cpu_id) {
  * @return - cpu id
  *
  */
-int hil_get_cpuforfw(char *fw_name) {
-    return (platform_get_processor_for_fw(fw_name));
+int hil_get_cpuforfw(char *fw_name)
+{
+	return (platform_get_processor_for_fw(fw_name));
 }
 
 /**
@@ -140,26 +142,26 @@ int hil_get_cpuforfw(char *fw_name) {
  * @param proc - pointer to hil remote_proc instance
  *
  */
-void hil_delete_proc(struct hil_proc *proc) {
-    struct llist *proc_hd = NULL;
+void hil_delete_proc(struct hil_proc *proc)
+{
+	struct llist *proc_hd = NULL;
 
-    if (!proc)
-        return;
+	if (!proc)
+		return;
 
-    proc_hd = procs.proc_list;
+	proc_hd = procs.proc_list;
 
-    while (proc_hd != NULL) {
-        if (proc_hd->data == proc) {
-            remove_from_list(&procs.proc_list, proc_hd);
-            env_free_memory(proc_hd);
-            break;
-        }
-        proc_hd = proc_hd->next;
-    }
+	while (proc_hd != NULL) {
+		if (proc_hd->data == proc) {
+			remove_from_list(&procs.proc_list, proc_hd);
+			env_free_memory(proc_hd);
+			break;
+		}
+		proc_hd = proc_hd->next;
+	}
 
-    env_free_memory(proc);
+	env_free_memory(proc);
 }
-
 
 /**
  * hil_isr()
@@ -171,7 +173,8 @@ void hil_delete_proc(struct hil_proc *proc) {
  * @param vring_hw   - pointer to vring control block
  *
  */
-void hil_isr(struct proc_vring *vring_hw){
+void hil_isr(struct proc_vring *vring_hw)
+{
 	virtqueue_notification(vring_hw->vq);
 }
 
@@ -186,21 +189,22 @@ void hil_isr(struct proc_vring *vring_hw){
  * @return - pointer to hil proc instance
  *
  */
-struct hil_proc *hil_get_proc(int cpu_id) {
-    struct llist *proc_hd = procs.proc_list;
+struct hil_proc *hil_get_proc(int cpu_id)
+{
+	struct llist *proc_hd = procs.proc_list;
 
-    if (!proc_hd)
-        return NULL;
+	if (!proc_hd)
+		return NULL;
 
-    while (proc_hd != NULL) {
-        struct hil_proc *proc = (struct hil_proc *) proc_hd->data;
-        if (proc->cpu_id == cpu_id) {
-            return proc;
-        }
-        proc_hd = proc_hd->next;
-    }
+	while (proc_hd != NULL) {
+		struct hil_proc *proc = (struct hil_proc *)proc_hd->data;
+		if (proc->cpu_id == cpu_id) {
+			return proc;
+		}
+		proc_hd = proc_hd->next;
+	}
 
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -215,9 +219,10 @@ struct hil_proc *hil_get_proc(int cpu_id) {
  * @return - pointer to channel info control block
  *
  */
-struct proc_chnl *hil_get_chnl_info(struct hil_proc *proc, int *num_chnls) {
-    *num_chnls = proc->num_chnls;
-    return (proc->chnls);
+struct proc_chnl *hil_get_chnl_info(struct hil_proc *proc, int *num_chnls)
+{
+	*num_chnls = proc->num_chnls;
+	return (proc->chnls);
 }
 
 /**
@@ -231,8 +236,9 @@ struct proc_chnl *hil_get_chnl_info(struct hil_proc *proc, int *num_chnls) {
  *
  */
 
-struct proc_vdev *hil_get_vdev_info(struct hil_proc *proc) {
-    return (&proc->vdev);
+struct proc_vdev *hil_get_vdev_info(struct hil_proc *proc)
+{
+	return (&proc->vdev);
 
 }
 
@@ -248,10 +254,11 @@ struct proc_vdev *hil_get_vdev_info(struct hil_proc *proc) {
  *
  * @return - pointer to vring hardware info table
  */
-struct proc_vring *hil_get_vring_info(struct proc_vdev *vdev, int *num_vrings) {
+struct proc_vring *hil_get_vring_info(struct proc_vdev *vdev, int *num_vrings)
+{
 
-    *num_vrings = vdev->num_vrings;
-    return (vdev->vring_info);
+	*num_vrings = vdev->num_vrings;
+	return (vdev->vring_info);
 
 }
 
@@ -267,8 +274,9 @@ struct proc_vring *hil_get_vring_info(struct proc_vdev *vdev, int *num_vrings) {
  * @return - pointer to shared memory region used for buffers
  *
  */
-struct proc_shm *hil_get_shm_info(struct hil_proc *proc) {
-    return (&proc->sh_buff);
+struct proc_shm *hil_get_shm_info(struct hil_proc *proc)
+{
+	return (&proc->sh_buff);
 }
 
 /**
@@ -284,17 +292,18 @@ struct proc_shm *hil_get_shm_info(struct hil_proc *proc) {
  *
  * @return            - execution status
  */
-int hil_enable_vring_notifications(int vring_index, struct virtqueue *vq) {
-    struct hil_proc *proc_hw = (struct hil_proc *) vq->vq_dev->device;
-    struct proc_vring *vring_hw = &proc_hw->vdev.vring_info[vring_index];
-    /* Save virtqueue pointer for later reference */
-    vring_hw->vq = vq;
+int hil_enable_vring_notifications(int vring_index, struct virtqueue *vq)
+{
+	struct hil_proc *proc_hw = (struct hil_proc *)vq->vq_dev->device;
+	struct proc_vring *vring_hw = &proc_hw->vdev.vring_info[vring_index];
+	/* Save virtqueue pointer for later reference */
+	vring_hw->vq = vq;
 
-    if (proc_hw->ops->enable_interrupt) {
-        proc_hw->ops->enable_interrupt(vring_hw);
-    }
+	if (proc_hw->ops->enable_interrupt) {
+		proc_hw->ops->enable_interrupt(vring_hw);
+	}
 
-    return 0;
+	return 0;
 }
 
 /**
@@ -307,13 +316,15 @@ int hil_enable_vring_notifications(int vring_index, struct virtqueue *vq) {
  * @param vq - pointer to virtqueue
  *
  */
-void hil_vring_notify(struct virtqueue *vq) {
-    struct hil_proc *proc_hw = (struct hil_proc *) vq->vq_dev->device;
-    struct proc_vring *vring_hw = &proc_hw->vdev.vring_info[vq->vq_queue_index];
+void hil_vring_notify(struct virtqueue *vq)
+{
+	struct hil_proc *proc_hw = (struct hil_proc *)vq->vq_dev->device;
+	struct proc_vring *vring_hw =
+	    &proc_hw->vdev.vring_info[vq->vq_queue_index];
 
-    if (proc_hw->ops->notify) {
-        proc_hw->ops->notify(proc_hw->cpu_id, &vring_hw->intr_info);
-    }
+	if (proc_hw->ops->notify) {
+		proc_hw->ops->notify(proc_hw->cpu_id, &vring_hw->intr_info);
+	}
 }
 
 /**
@@ -327,9 +338,10 @@ void hil_vring_notify(struct virtqueue *vq) {
  *
  * @return - execution status
  */
-int hil_get_status(struct hil_proc *proc) {
-    /* For future use only.*/
-    return 0;
+int hil_get_status(struct hil_proc *proc)
+{
+	/* For future use only. */
+	return 0;
 }
 
 /**
@@ -342,9 +354,10 @@ int hil_get_status(struct hil_proc *proc) {
  *
  * @return - execution status
  */
-int hil_set_status(struct hil_proc *proc) {
-    /* For future use only.*/
-    return 0;
+int hil_set_status(struct hil_proc *proc)
+{
+	/* For future use only. */
+	return 0;
 }
 
 /**
@@ -357,17 +370,17 @@ int hil_set_status(struct hil_proc *proc) {
  *
  * @return - execution status
  */
-int hil_boot_cpu(struct hil_proc *proc, unsigned int start_addr) {
+int hil_boot_cpu(struct hil_proc *proc, unsigned int start_addr)
+{
 
-    if (proc->ops->boot_cpu) {
-        proc->ops->boot_cpu(proc->cpu_id, start_addr);
-    }
-
+	if (proc->ops->boot_cpu) {
+		proc->ops->boot_cpu(proc->cpu_id, start_addr);
+	}
 #if defined (OPENAMP_BENCHMARK_ENABLE)
-    boot_time_stamp = env_get_timestamp();
+	boot_time_stamp = env_get_timestamp();
 #endif
 
-    return 0;
+	return 0;
 }
 
 /**
@@ -378,13 +391,13 @@ int hil_boot_cpu(struct hil_proc *proc, unsigned int start_addr) {
  * @param proc - pointer to remote proc
  *
  */
-void hil_shutdown_cpu(struct hil_proc *proc) {
-    if (proc->ops->shutdown_cpu) {
-        proc->ops->shutdown_cpu(proc->cpu_id);
-    }
-
+void hil_shutdown_cpu(struct hil_proc *proc)
+{
+	if (proc->ops->shutdown_cpu) {
+		proc->ops->shutdown_cpu(proc->cpu_id);
+	}
 #if defined (OPENAMP_BENCHMARK_ENABLE)
-    shutdown_time_stamp = env_get_timestamp();
+	shutdown_time_stamp = env_get_timestamp();
 #endif
 }
 
@@ -401,6 +414,8 @@ void hil_shutdown_cpu(struct hil_proc *proc) {
  * returns -  status of function execution
  *
  */
-int hil_get_firmware(char *fw_name, unsigned int *start_addr, unsigned int *size){
-    return (config_get_firmware(fw_name , start_addr, size));
+int hil_get_firmware(char *fw_name, unsigned int *start_addr,
+		     unsigned int *size)
+{
+	return (config_get_firmware(fw_name, start_addr, size));
 }

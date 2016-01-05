@@ -163,10 +163,10 @@
 #define MEM_BARRIER()
 #endif
 
-#define 		MIDR_ARCH_MASK              		   0x000F0000    /* Main ID register's architecture mask */
-#define 		MIDR_ARCH_ARMV7             		   0xF           /* ARMv7 */
-#define 		MIDR_PART_NO_CORTEX_A      			   0xC00         /* Primary part number of Cortex-A series. */
-#define 		MIDR_PART_NO_MASK           		   0x0000FF00    /* Primary part number mask  */
+#define 		MIDR_ARCH_MASK              		   0x000F0000	/* Main ID register's architecture mask */
+#define 		MIDR_ARCH_ARMV7             		   0xF	/* ARMv7 */
+#define 		MIDR_PART_NO_CORTEX_A      			   0xC00	/* Primary part number of Cortex-A series. */
+#define 		MIDR_PART_NO_MASK           		   0x0000FF00	/* Primary part number mask  */
 #define         ARM_AR_INTERRUPTS_DISABLE_BITS         0x000000C0
 #define         ARM_AR_INTERRUPTS_ENABLE_BITS          0x00000000
 
@@ -372,51 +372,48 @@ extern unsigned char ARM_AR_ISR_SYS_Stack[ARM_AR_ISR_STACK_SIZE];
 /* Memory Regions for MMU Mapping */
 #if (BAREMETAL_MASTER == 1)
 
-#define ELF_START       0x10000000        /* Image entry point address */
-#define ELF_END         0x0FE00000        /* size of code,data,heap and stack sections */
+#define ELF_START       0x10000000	/* Image entry point address */
+#define ELF_END         0x0FE00000	/* size of code,data,heap and stack sections */
 
-#define TLB_MEM_START   0x1FE00000        /* Address of TLB memory */
+#define TLB_MEM_START   0x1FE00000	/* Address of TLB memory */
 
 #else
 
-#define ELF_START       0x00000000        /* Image entry point address */
-#define ELF_END         0x08000000        /* size of code,data,heap and stack sections */
+#define ELF_START       0x00000000	/* Image entry point address */
+#define ELF_END         0x08000000	/* size of code,data,heap and stack sections */
 
-#define TLB_MEM_START   0x0FE00000        /* Address of TLB memory */
+#define TLB_MEM_START   0x0FE00000	/* Address of TLB memory */
 
 #endif
 
 /* The vector table address is the same as image entry point */
 #define RAM_VECTOR_TABLE_ADDR           ELF_START
 
-#define TLB_SIZE        2*1024*1024       /* TLB memory size */
+#define TLB_SIZE        2*1024*1024	/* TLB memory size */
 
-#define PERIPH_BASE     0xE0000000        /* Peripheral registers start */
-#define PERIPH_SIZE     3 *1024 *1024     /* size */
+#define PERIPH_BASE     0xE0000000	/* Peripheral registers start */
+#define PERIPH_SIZE     3 *1024 *1024	/* size */
 
-#define SLCR_BASE       0xF8000000        /* SLCR registers start */
-#define SLCR_SIZE       3 * 1024          /* size */
+#define SLCR_BASE       0xF8000000	/* SLCR registers start */
+#define SLCR_SIZE       3 * 1024	/* size */
 
-#define CPU_BASE        0xF8F00000        /* CPU registers start */
-#define CPU_SIZE        12 *1024          /* size */
-
-
+#define CPU_BASE        0xF8F00000	/* CPU registers start */
+#define CPU_SIZE        12 *1024	/* size */
 
 typedef enum {
-    TRIG_NOT_SUPPORTED,
-    TRIG_RISING_EDGE,
-    TRIG_FALLING_EDGE,
-    TRIG_LEVEL_LOW,
-    TRIG_LEVEL_HIGH,
-    TRIG_RISING_FALLING_EDGES,
-    TRIG_HIGH_LOW_RISING_FALLING_EDGES
-
+	TRIG_NOT_SUPPORTED,
+	TRIG_RISING_EDGE,
+	TRIG_FALLING_EDGE,
+	TRIG_LEVEL_LOW,
+	TRIG_LEVEL_HIGH,
+	TRIG_RISING_FALLING_EDGES,
+	TRIG_HIGH_LOW_RISING_FALLING_EDGES
 } INT_TRIG_TYPE;
 
 typedef enum {
-    NOCACHE,
-    WRITEBACK,
-    WRITETHROUGH
+	NOCACHE,
+	WRITEBACK,
+	WRITETHROUGH
 } CACHE_TYPE;
 
 /* This macro executes a ISB instruction */
@@ -664,11 +661,12 @@ typedef enum {
 
 int arm_ar_mem_enable_mmu();
 void arm_ar_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
-		unsigned int size, int is_mem_mapped, CACHE_TYPE cache_type);
+			   unsigned int size, int is_mem_mapped,
+			   CACHE_TYPE cache_type);
 
 int zc702evk_gic_initialize();
 int zc702evk_gic_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
-		int priority);
+				  int priority);
 int zc702evk_gic_interrupt_disable(int vector_id);
 void zc702evk_gic_pr_int_initialize(void);
 void arm_arch_install_isr_vector_table(unsigned long addr);
@@ -676,12 +674,13 @@ void restore_global_interrupts();
 void disable_global_interrupts();
 void init_arm_stacks(void);
 int platform_interrupt_enable(int vector_id, INT_TRIG_TYPE trigger_type,
-                int priority);
+			      int priority);
 int platform_interrupt_disable(int vector_id);
 void platform_cache_all_flush_invalidate();
 void platform_cache_disable();
-void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size, unsigned int flags);
+void platform_map_mem_region(unsigned int va, unsigned int pa,
+			     unsigned int size, unsigned int flags);
 unsigned long platform_vatopa(void *addr);
 void *platform_patova(unsigned long addr);
 
-#endif /* _BAREMETAL_H */
+#endif				/* _BAREMETAL_H */

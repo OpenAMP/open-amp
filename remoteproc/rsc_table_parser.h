@@ -39,15 +39,15 @@
 #define RSC_TAB_MAX_VRINGS                  2
 
 /* Standard control request handling. */
-typedef int (*rsc_handler)(struct remote_proc *rproc, void * rsc);
+typedef int (*rsc_handler) (struct remote_proc * rproc, void *rsc);
 
 /* Function prototypes */
-int handle_rsc_table(struct remote_proc *rproc, struct resource_table *rsc_table,
-                int len);
+int handle_rsc_table(struct remote_proc *rproc,
+		     struct resource_table *rsc_table, int len);
 int handle_carve_out_rsc(struct remote_proc *rproc, void *rsc);
 int handle_trace_rsc(struct remote_proc *rproc, void *rsc);
 int handle_dev_mem_rsc(struct remote_proc *rproc, void *rsc);
 int handle_vdev_rsc(struct remote_proc *rproc, void *rsc);
 int handle_mmu_rsc(struct remote_proc *rproc, void *rsc);
 
-#endif /* RSC_TABLE_PARSER_H */
+#endif				/* RSC_TABLE_PARSER_H */

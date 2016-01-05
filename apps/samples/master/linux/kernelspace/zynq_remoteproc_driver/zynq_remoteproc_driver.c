@@ -124,9 +124,9 @@ static int zynq_rproc_stop(struct rproc *rproc)
 }
 
 static struct rproc_ops zynq_rproc_ops = {
-	.start		= zynq_rproc_start,
-	.stop		= zynq_rproc_stop,
-	.kick		= zynq_rproc_kick,
+	.start = zynq_rproc_start,
+	.stop = zynq_rproc_stop,
+	.kick = zynq_rproc_kick,
 };
 
 /* Just to detect bug if interrupt forwarding is broken */
@@ -145,7 +145,7 @@ static irqreturn_t zynq_remoteproc_interrupt(int irq, void *dev_id)
 	 * and it is forwarded to Linux which update own statistic
 	 * in (/proc/interrupt) and forward it to firmware.
 	 *
-	 * gic_set_cpu(1, irq);	- setup cpu1 as destination cpu
+	 * gic_set_cpu(1, irq); - setup cpu1 as destination cpu
 	 * gic_raise_softirq(cpumask_of(1), irq); - forward irq to firmware
 	 */
 
@@ -172,7 +172,7 @@ static void clear_irq(struct platform_device *pdev)
 static int zynq_remoteproc_probe(struct platform_device *pdev)
 {
 	const unsigned char *prop;
-	struct resource *res; /* IO mem resources */
+	struct resource *res;	/* IO mem resources */
 	int ret = 0;
 	struct irq_list *tmp;
 	int count = 0;
@@ -204,8 +204,9 @@ static int zynq_remoteproc_probe(struct platform_device *pdev)
 
 	/* Alloc phys addr from 0 to max_addr for firmware */
 	ret = dma_declare_coherent_memory(&pdev->dev, local->mem_start,
-		local->mem_start, local->mem_end - local->mem_start + 1,
-		DMA_MEMORY_IO);
+					  local->mem_start,
+					  local->mem_end - local->mem_start + 1,
+					  DMA_MEMORY_IO);
 	if (!ret) {
 		dev_err(&pdev->dev, "dma_declare_coherent_memory failed\n");
 		ret = -ENOMEM;
@@ -243,10 +244,10 @@ static int zynq_remoteproc_probe(struct platform_device *pdev)
 		/* Allocating shared IRQs will ensure that any module will
 		 * use these IRQs */
 		ret = request_irq(tmp->irq, zynq_remoteproc_interrupt, 0,
-					dev_name(&pdev->dev), &pdev->dev);
+				  dev_name(&pdev->dev), &pdev->dev);
 		if (ret) {
 			dev_err(&pdev->dev, "IRQ %d already allocated\n",
-								tmp->irq);
+				tmp->irq);
 			goto irq_fault;
 		}
 
@@ -296,7 +297,8 @@ static int zynq_remoteproc_probe(struct platform_device *pdev)
 	if (prop) {
 		dev_dbg(&pdev->dev, "Using firmware: %s\n", prop);
 		local->rproc = rproc_alloc(&pdev->dev, dev_name(&pdev->dev),
-				&zynq_rproc_ops, prop, sizeof(struct rproc));
+					   &zynq_rproc_ops, prop,
+					   sizeof(struct rproc));
 		if (!local->rproc) {
 			dev_err(&pdev->dev, "rproc allocation failed\n");
 			goto ipi_fault;
@@ -312,18 +314,18 @@ static int zynq_remoteproc_probe(struct platform_device *pdev)
 	} else
 		ret = -ENODEV;
 
-rproc_fault:
+ rproc_fault:
 	rproc_put(local->rproc);
-ipi_fault:
+ ipi_fault:
 	clear_ipi_handler(local->ipino);
 
-irq_fault:
+ irq_fault:
 	clear_irq(pdev);
 
-dma_mask_fault:
+ dma_mask_fault:
 	dma_release_declared_memory(&pdev->dev);
 
-dma_fault:
+ dma_fault:
 	/* Cpu can't be power on - for example in nosmp mode */
 	ret |= cpu_up(1);
 	if (ret)
@@ -357,24 +359,27 @@ static int zynq_remoteproc_remove(struct platform_device *pdev)
 
 /* Match table for OF platform binding */
 static const struct of_device_id zynq_remoteproc_match[] = {
-	{ .compatible = "xlnx,zynq_remoteproc", },
+	{.compatible = "xlnx,zynq_remoteproc",},
 	{ /* end of list */ },
 };
+
 MODULE_DEVICE_TABLE(of, zynq_remoteproc_match);
 
 static struct platform_driver zynq_remoteproc_driver = {
 	.probe = zynq_remoteproc_probe,
 	.remove = zynq_remoteproc_remove,
 	.driver = {
-		.name = "zynq_remoteproc",
-		.owner = THIS_MODULE,
-		.of_match_table = zynq_remoteproc_match,
-	},
+		   .name = "zynq_remoteproc",
+		   .owner = THIS_MODULE,
+		   .of_match_table = zynq_remoteproc_match,
+		   },
 };
+
 module_platform_driver(zynq_remoteproc_driver);
 
 module_param(firmware, charp, 0);
-MODULE_PARM_DESC(firmware, "Override the firmware image name. Default value in DTS.");
+MODULE_PARM_DESC(firmware,
+		 "Override the firmware image name. Default value in DTS.");
 
 MODULE_AUTHOR("Michal Simek <monstr@monstr.eu");
 MODULE_LICENSE("GPL v2");

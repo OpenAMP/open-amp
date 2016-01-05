@@ -55,49 +55,50 @@
  * @return - pointer to memory pool
  *
  */
-struct sh_mem_pool * sh_mem_create_pool(void *start_addr, unsigned int size,
-                unsigned int buff_size) {
-    struct sh_mem_pool *mem_pool;
-    int status, pool_size;
-    int num_buffs, bmp_size;
+struct sh_mem_pool *sh_mem_create_pool(void *start_addr, unsigned int size,
+				       unsigned int buff_size)
+{
+	struct sh_mem_pool *mem_pool;
+	int status, pool_size;
+	int num_buffs, bmp_size;
 
-    if (!start_addr || !size || !buff_size)
-        return NULL;
+	if (!start_addr || !size || !buff_size)
+		return NULL;
 
-    /* Word align the buffer size */
-    buff_size = WORD_ALIGN(buff_size);
+	/* Word align the buffer size */
+	buff_size = WORD_ALIGN(buff_size);
 
-    /* Get number of buffers. */
-    num_buffs = (size / buff_size) + ((size % buff_size) == 0 ? 0 : 1);
+	/* Get number of buffers. */
+	num_buffs = (size / buff_size) + ((size % buff_size) == 0 ? 0 : 1);
 
-    /*
-     * Size of the bitmap required to maintain buffers info. One word(32 bit) can
-     * keep track of 32 buffers.
-     */
-    bmp_size = (num_buffs / BITMAP_WORD_SIZE)
-                    + ((num_buffs % BITMAP_WORD_SIZE) == 0 ? 0 : 1);
+	/*
+	 * Size of the bitmap required to maintain buffers info. One word(32 bit) can
+	 * keep track of 32 buffers.
+	 */
+	bmp_size = (num_buffs / BITMAP_WORD_SIZE)
+	    + ((num_buffs % BITMAP_WORD_SIZE) == 0 ? 0 : 1);
 
-    /* Total size required for pool control block. */
-    pool_size = sizeof(struct sh_mem_pool) + WORD_SIZE * bmp_size;
+	/* Total size required for pool control block. */
+	pool_size = sizeof(struct sh_mem_pool) + WORD_SIZE * bmp_size;
 
-    /* Create pool control block. */
-    mem_pool = env_allocate_memory(pool_size);
+	/* Create pool control block. */
+	mem_pool = env_allocate_memory(pool_size);
 
-    if (mem_pool) {
-        /* Initialize pool parameters */
-        env_memset(mem_pool, 0x00, pool_size);
-        status = env_create_mutex(&mem_pool->lock , 1);
-        if (status){
-            env_free_memory(mem_pool);
-            return NULL;
-        }
-        mem_pool->start_addr = start_addr;
-        mem_pool->buff_size = buff_size;
-        mem_pool->bmp_size = bmp_size;
-        mem_pool->total_buffs = num_buffs;
-    }
+	if (mem_pool) {
+		/* Initialize pool parameters */
+		env_memset(mem_pool, 0x00, pool_size);
+		status = env_create_mutex(&mem_pool->lock, 1);
+		if (status) {
+			env_free_memory(mem_pool);
+			return NULL;
+		}
+		mem_pool->start_addr = start_addr;
+		mem_pool->buff_size = buff_size;
+		mem_pool->bmp_size = bmp_size;
+		mem_pool->total_buffs = num_buffs;
+	}
 
-    return mem_pool;
+	return mem_pool;
 }
 
 /**
@@ -110,39 +111,41 @@ struct sh_mem_pool * sh_mem_create_pool(void *start_addr, unsigned int size,
  * @return - pointer to allocated buffer
  *
  */
-void * sh_mem_get_buffer(struct sh_mem_pool *pool) {
-    void *buff = NULL;
-    int idx, bit_idx;
+void *sh_mem_get_buffer(struct sh_mem_pool *pool)
+{
+	void *buff = NULL;
+	int idx, bit_idx;
 
-    if (!pool)
-        return NULL;
+	if (!pool)
+		return NULL;
 
-    env_lock_mutex(pool->lock);
+	env_lock_mutex(pool->lock);
 
-    if (pool->used_buffs >= pool->total_buffs) {
-        env_unlock_mutex(pool->lock);
-        return NULL;
-    }
+	if (pool->used_buffs >= pool->total_buffs) {
+		env_unlock_mutex(pool->lock);
+		return NULL;
+	}
 
-    for (idx = 0; idx < pool->bmp_size; idx++) {
-        /*
-         * Find the first 0 bit in the buffers bitmap. The 0th bit
-         * represents a free buffer.
-         */
-        bit_idx = get_first_zero_bit(pool->bitmap[idx]);
-        if (bit_idx < 32) {
-            /* Set bit to mark it as consumed. */
-            pool->bitmap[idx] |= (1 << bit_idx);
-            buff = (char *) pool->start_addr +
-                            pool->buff_size * (idx * BITMAP_WORD_SIZE + bit_idx);
-            pool->used_buffs++;
-            break;
-        }
-    }
+	for (idx = 0; idx < pool->bmp_size; idx++) {
+		/*
+		 * Find the first 0 bit in the buffers bitmap. The 0th bit
+		 * represents a free buffer.
+		 */
+		bit_idx = get_first_zero_bit(pool->bitmap[idx]);
+		if (bit_idx < 32) {
+			/* Set bit to mark it as consumed. */
+			pool->bitmap[idx] |= (1 << bit_idx);
+			buff = (char *)pool->start_addr +
+			    pool->buff_size * (idx * BITMAP_WORD_SIZE +
+					       bit_idx);
+			pool->used_buffs++;
+			break;
+		}
+	}
 
-    env_unlock_mutex(pool->lock);
+	env_unlock_mutex(pool->lock);
 
-    return buff;
+	return buff;
 }
 
 /**
@@ -155,31 +158,32 @@ void * sh_mem_get_buffer(struct sh_mem_pool *pool) {
  *
  * @return  - none
  */
-void sh_mem_free_buffer(void *buff, struct sh_mem_pool *pool) {
-    unsigned long *bitmask;
-    int bmp_idx, bit_idx, buff_idx;
+void sh_mem_free_buffer(void *buff, struct sh_mem_pool *pool)
+{
+	unsigned long *bitmask;
+	int bmp_idx, bit_idx, buff_idx;
 
-    if (!pool || !buff)
-        return;
+	if (!pool || !buff)
+		return;
 
-    /* Acquire the pool lock */
-    env_lock_mutex(pool->lock);
+	/* Acquire the pool lock */
+	env_lock_mutex(pool->lock);
 
-    /* Map the buffer address to its index. */
-    buff_idx = ((char *) buff - (char*) pool->start_addr) / pool->buff_size;
+	/* Map the buffer address to its index. */
+	buff_idx = ((char *)buff - (char *)pool->start_addr) / pool->buff_size;
 
-    /* Translate the buffer index to bitmap index. */
-    bmp_idx = buff_idx / BITMAP_WORD_SIZE;
-    bit_idx = buff_idx % BITMAP_WORD_SIZE;
-    bitmask = &pool->bitmap[bmp_idx];
+	/* Translate the buffer index to bitmap index. */
+	bmp_idx = buff_idx / BITMAP_WORD_SIZE;
+	bit_idx = buff_idx % BITMAP_WORD_SIZE;
+	bitmask = &pool->bitmap[bmp_idx];
 
-    /* Mark the buffer as free */
-    *bitmask ^= (1 << bit_idx);
+	/* Mark the buffer as free */
+	*bitmask ^= (1 << bit_idx);
 
-    pool->used_buffs--;
+	pool->used_buffs--;
 
-    /* Release the pool lock. */
-    env_unlock_mutex(pool->lock);
+	/* Release the pool lock. */
+	env_unlock_mutex(pool->lock);
 
 }
 
@@ -192,12 +196,13 @@ void sh_mem_free_buffer(void *buff, struct sh_mem_pool *pool) {
  *
  * @return  - none
  */
-void sh_mem_delete_pool(struct sh_mem_pool *pool) {
+void sh_mem_delete_pool(struct sh_mem_pool *pool)
+{
 
-    if (pool) {
-        env_delete_mutex(pool->lock);
-        env_free_memory(pool);
-    }
+	if (pool) {
+		env_delete_mutex(pool->lock);
+		env_free_memory(pool);
+	}
 }
 
 /**
@@ -209,22 +214,23 @@ void sh_mem_delete_pool(struct sh_mem_pool *pool) {
  *
  * @return - 0th bit position
  */
-unsigned int get_first_zero_bit(unsigned long value) {
-    unsigned int idx;
-    unsigned int tmp32;
+unsigned int get_first_zero_bit(unsigned long value)
+{
+	unsigned int idx;
+	unsigned int tmp32;
 
-    /* Invert value */
-    value = ~value;
+	/* Invert value */
+	value = ~value;
 
-    /* (~value) & (2's complement of value) */
-    value = (value & (-value)) - 1;
+	/* (~value) & (2's complement of value) */
+	value = (value & (-value)) - 1;
 
-    /* log2(value) */
+	/* log2(value) */
 
-    tmp32 = value - ((value >> 1) & 033333333333)
-                    - ((value >> 2) & 011111111111);
+	tmp32 = value - ((value >> 1) & 033333333333)
+	    - ((value >> 2) & 011111111111);
 
-    idx = ((tmp32 + (tmp32 >> 3)) & 030707070707) % 63;
+	idx = ((tmp32 + (tmp32 >> 3)) & 030707070707) % 63;
 
-    return idx;
+	return idx;
 }

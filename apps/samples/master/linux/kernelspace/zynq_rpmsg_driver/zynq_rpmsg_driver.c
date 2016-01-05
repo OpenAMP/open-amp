@@ -67,7 +67,7 @@ static void zynq_rpmsg_virtio_notify(struct virtqueue *vq)
 
 static void zynq_rpmsg_virtio_del_vqs(struct virtio_device *vdev)
 {
-	struct zynq_rpmsg_vring   *local_vring;
+	struct zynq_rpmsg_vring *local_vring;
 	int i;
 
 	for (i = 0; i < ZYNQ_RPMSG_NUM_VRINGS; i++) {
@@ -76,23 +76,23 @@ static void zynq_rpmsg_virtio_del_vqs(struct virtio_device *vdev)
 
 		vring_del_virtqueue(local_vring->vq);
 
-		local_vring->vq =  NULL;
+		local_vring->vq = NULL;
 
 		dma_free_coherent(&(zynq_rpmsg_platform->dev),
-					local_vring->len, local_vring->va,
-					local_vring->dma);
+				  local_vring->len, local_vring->va,
+				  local_vring->dma);
 	}
 }
 
 static int zynq_rpmsg_virtio_find_vqs(struct virtio_device *vdev,
-					unsigned nvqs, struct virtqueue *vqs[],
-					vq_callback_t *callbacks[],
-					const char *names[])
+				      unsigned nvqs, struct virtqueue *vqs[],
+				      vq_callback_t * callbacks[],
+				      const char *names[])
 {
-	int				i;
-	struct zynq_rpmsg_vring   *local_vring;
-	void				*vring_va;
-	int				 size;
+	int i;
+	struct zynq_rpmsg_vring *local_vring;
+	void *vring_va;
+	int size;
 
 	/* Skip through the vrings. */
 	for (i = 0; i < nvqs; i++) {
@@ -101,24 +101,23 @@ static int zynq_rpmsg_virtio_find_vqs(struct virtio_device *vdev,
 
 		local_vring->len = zynq_rpmsg_p->num_descs;
 
-		size = vring_size(zynq_rpmsg_p->num_descs,
-					zynq_rpmsg_p->align);
+		size = vring_size(zynq_rpmsg_p->num_descs, zynq_rpmsg_p->align);
 
 		/* Allocate non-cacheable memory for the vring. */
 		local_vring->va = dma_alloc_coherent
-					(&(zynq_rpmsg_platform->dev),
-					size, &(local_vring->dma), GFP_KERNEL);
+		    (&(zynq_rpmsg_platform->dev),
+		     size, &(local_vring->dma), GFP_KERNEL);
 
 		vring_va = local_vring->va;
 
 		memset(vring_va, 0, size);
 
 		local_vring->vq = vring_new_virtqueue(i,
-						zynq_rpmsg_p->num_descs,
-						zynq_rpmsg_p->align, vdev,
-						false, vring_va,
-						zynq_rpmsg_virtio_notify,
-						callbacks[i], names[i]);
+						      zynq_rpmsg_p->num_descs,
+						      zynq_rpmsg_p->align, vdev,
+						      false, vring_va,
+						      zynq_rpmsg_virtio_notify,
+						      callbacks[i], names[i]);
 
 		vqs[i] = local_vring->vq;
 	}
@@ -133,7 +132,7 @@ static u8 zynq_rpmsg_virtio_get_status(struct virtio_device *vdev)
 
 static void zynq_rpmsg_virtio_set_status(struct virtio_device *vdev, u8 status)
 {
-   /* */
+	/* */
 }
 
 static void zynq_rpmsg_virtio_reset(struct virtio_device *vdev)
@@ -166,18 +165,18 @@ static void mid_level_type_release(struct device *dev)
 }
 
 static struct virtio_config_ops zynq_rpmsg_virtio_config_ops = {
-	.get_features	= zynq_rpmsg_virtio_get_features,
+	.get_features = zynq_rpmsg_virtio_get_features,
 	.finalize_features = zynq_rpmsg_virtio_finalize_features,
-	.find_vqs	= zynq_rpmsg_virtio_find_vqs,
-	.del_vqs	= zynq_rpmsg_virtio_del_vqs,
-	.reset		= zynq_rpmsg_virtio_reset,
-	.set_status	= zynq_rpmsg_virtio_set_status,
-	.get_status	= zynq_rpmsg_virtio_get_status,
+	.find_vqs = zynq_rpmsg_virtio_find_vqs,
+	.del_vqs = zynq_rpmsg_virtio_del_vqs,
+	.reset = zynq_rpmsg_virtio_reset,
+	.set_status = zynq_rpmsg_virtio_set_status,
+	.get_status = zynq_rpmsg_virtio_get_status,
 };
 
 static struct device_type mid_level_type = {
-	.name		= "rpmsg_mid",
-	.release	= mid_level_type_release,
+	.name = "rpmsg_mid",
+	.release = mid_level_type_release,
 };
 
 static void handle_event(struct work_struct *work)
@@ -191,7 +190,8 @@ static void handle_event(struct work_struct *work)
 	vq = zynq_rpmsg_p->vrings[0].vq;
 
 	if (vring_interrupt(0, vq) == IRQ_NONE)
-		dev_dbg(&zynq_rpmsg_platform->dev, "no message found in vqid 0\n");
+		dev_dbg(&zynq_rpmsg_platform->dev,
+			"no message found in vqid 0\n");
 }
 
 static void ipi_handler(void)
@@ -220,7 +220,7 @@ static int zynq_rpmsg_initialize(struct platform_device *pdev)
 
 	/* Register ipi handler. */
 	ret = set_ipi_handler(zynq_rpmsg_p->vring0, ipi_handler,
-				"Firmware kick");
+			      "Firmware kick");
 
 	if (ret) {
 		dev_err(&pdev->dev, "IPI handler already registered\n");
@@ -232,11 +232,11 @@ static int zynq_rpmsg_initialize(struct platform_device *pdev)
 
 	/* Memory allocations for vrings. */
 	ret = dma_declare_coherent_memory(&pdev->dev,
-					zynq_rpmsg_p->mem_start,
-					zynq_rpmsg_p->mem_start,
-					zynq_rpmsg_p->mem_end -
-					zynq_rpmsg_p->mem_start + 1,
-					DMA_MEMORY_IO);
+					  zynq_rpmsg_p->mem_start,
+					  zynq_rpmsg_p->mem_start,
+					  zynq_rpmsg_p->mem_end -
+					  zynq_rpmsg_p->mem_start + 1,
+					  DMA_MEMORY_IO);
 
 	if (!ret) {
 		dev_err(&pdev->dev, "dma_declare_coherent_memory failed\n");
@@ -273,9 +273,9 @@ static int zynq_rpmsg_initialize(struct platform_device *pdev)
 	/* Setup the virtio device structure. */
 	virtio_dev = &(zynq_rpmsg_p->virtio_dev);
 
-	virtio_dev->id.device	= zynq_rpmsg_p->virtioid;
-	virtio_dev->config	  = &zynq_rpmsg_virtio_config_ops;
-	virtio_dev->dev.parent  = &(zynq_rpmsg_p->mid_dev);
+	virtio_dev->id.device = zynq_rpmsg_p->virtioid;
+	virtio_dev->config = &zynq_rpmsg_virtio_config_ops;
+	virtio_dev->dev.parent = &(zynq_rpmsg_p->mid_dev);
 	virtio_dev->dev.release = zynq_rpmsg_vdev_release;
 
 	/* Register the virtio device. */
@@ -310,7 +310,6 @@ static int zynq_rpmsg_retrieve_dts_info(struct platform_device *pdev)
 
 	zynq_rpmsg_p->vring0 = be32_to_cpup(of_prop);
 
-
 	/* Read vring1 ipi number */
 	of_prop = of_get_property(pdev->dev.of_node, "vring1", NULL);
 	if (!of_prop) {
@@ -331,7 +330,8 @@ static int zynq_rpmsg_retrieve_dts_info(struct platform_device *pdev)
 	/* Read dev-feature  */
 	of_prop = of_get_property(pdev->dev.of_node, "dev-feature", NULL);
 	if (!of_prop) {
-		dev_err(&pdev->dev, "Please specify dev features node property\n");
+		dev_err(&pdev->dev,
+			"Please specify dev features node property\n");
 		return -ENODEV;
 	}
 
@@ -340,7 +340,8 @@ static int zynq_rpmsg_retrieve_dts_info(struct platform_device *pdev)
 	/* Read gen-feature */
 	of_prop = of_get_property(pdev->dev.of_node, "gen-feature", NULL);
 	if (!of_prop) {
-		dev_err(&pdev->dev, "Please specify gen features node property\n");
+		dev_err(&pdev->dev,
+			"Please specify gen features node property\n");
 		return -ENODEV;
 	}
 
@@ -349,14 +350,16 @@ static int zynq_rpmsg_retrieve_dts_info(struct platform_device *pdev)
 	/* Read number of vrings */
 	of_prop = of_get_property(pdev->dev.of_node, "num-vrings", NULL);
 	if (!of_prop) {
-		dev_err(&pdev->dev, "Please specify num-vrings node property\n");
+		dev_err(&pdev->dev,
+			"Please specify num-vrings node property\n");
 		return -ENODEV;
 	}
 
 	zynq_rpmsg_p->num_vrings = be32_to_cpup(of_prop);
 
 	if (zynq_rpmsg_p->num_vrings > 2) {
-		dev_err(&pdev->dev, "We do not currently support more than 2 vrings.\n");
+		dev_err(&pdev->dev,
+			"We do not currently support more than 2 vrings.\n");
 		return -ENODEV;
 	}
 
@@ -369,7 +372,7 @@ static int zynq_rpmsg_retrieve_dts_info(struct platform_device *pdev)
 
 	zynq_rpmsg_p->align = be32_to_cpup(of_prop);
 
-	/* Read virtio ID*/
+	/* Read virtio ID */
 	of_prop = of_get_property(pdev->dev.of_node, "virtioid", NULL);
 	if (!of_prop) {
 		dev_err(&pdev->dev, "Please specify virtio id property\n");
@@ -409,7 +412,8 @@ static int zynq_rpmsg_probe(struct platform_device *pdev)
 	zynq_rpmsg_p = kzalloc(sizeof(struct zynq_rpmsg_instance), GFP_KERNEL);
 
 	if (!zynq_rpmsg_p) {
-		dev_err(&pdev->dev, "Unable to alloc memory for zynq_rpmsg instance.\n");
+		dev_err(&pdev->dev,
+			"Unable to alloc memory for zynq_rpmsg instance.\n");
 		return -ENOMEM;
 	}
 
@@ -440,22 +444,22 @@ static int zynq_rpmsg_remove(struct platform_device *pdev)
 	return 0;
 }
 
-
 /* Match table for OF platform binding */
 static struct of_device_id zynq_rpmsg_match[] = {
-	{ .compatible = "xlnx,zynq_rpmsg_driver", },
+	{.compatible = "xlnx,zynq_rpmsg_driver",},
 	{ /* end of list */ },
 };
+
 MODULE_DEVICE_TABLE(of, zynq_rpmsg_match);
 
 static struct platform_driver zynq_rpmsg_driver = {
 	.probe = zynq_rpmsg_probe,
 	.remove = zynq_rpmsg_remove,
 	.driver = {
-		.name = "zynq_rpmsg_driver",
-		.owner = THIS_MODULE,
-		.of_match_table = zynq_rpmsg_match,
-	},
+		   .name = "zynq_rpmsg_driver",
+		   .owner = THIS_MODULE,
+		   .of_match_table = zynq_rpmsg_match,
+		   },
 };
 
 static int __init init(void)
@@ -468,9 +472,9 @@ static void __exit fini(void)
 	platform_driver_unregister(&zynq_rpmsg_driver);
 }
 
-
 module_init(init);
 module_exit(fini);
 
 MODULE_LICENSE("GPL v2");
-MODULE_DESCRIPTION("Zynq RPMSG driver to use RPMSG framework without remoteproc");
+MODULE_DESCRIPTION
+    ("Zynq RPMSG driver to use RPMSG framework without remoteproc");
