@@ -25,8 +25,8 @@ $(SAMPLE_OUT): $(SAMPLEOBJFILES)
 	@echo 'Finished building target: $@'
 
 	@echo 'Copying ELF image to firmware folder'
-	mkdir -p $(OHOME)/apps/firmware/$(MACHINE)/$(OS)/rpc_demo
-	$(CP) $(SAMPLE_OUT) $(OHOME)/apps/firmware/$(MACHINE)/$(OS)/rpc_demo/firmware
+	mkdir -p $(OHOME)/apps/firmware/$(MACHINE)/$(SYSTEM)/rpc_demo
+	$(CP) $(SAMPLE_OUT) $(OHOME)/apps/firmware/$(MACHINE)/$(SYSTEM)/rpc_demo/firmware
 
 %.o:%.c
 	@echo CC $(<:.c=.o)

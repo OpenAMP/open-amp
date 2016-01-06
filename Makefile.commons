@@ -6,19 +6,19 @@ ifeq ($(MACHINE),)
 export MACHINE := zc702evk
 endif
 
-ifeq ($(OS),)
-export OS := baremetal
+ifeq ($(SYSTEM),)
+export SYSTEM := baremetal
 endif
 
 ifeq ($(OHOME),)
 export OHOME := $(CURDIR)
 endif
 
-include porting/os/$(OS)/machine/$(MACHINE)/Makefile.platform
+include porting/system/$(SYSTEM)/machine/$(MACHINE)/Makefile.platform
 
 GENERAL_INCLUDES := -I"$(OHOME)/include"
 
-ifeq ($(OS),baremetal)
+ifeq ($(SYSTEM),baremetal)
 CFLAGS +=-D"ENV=1"
 CFLAGS +=-D"OPENAMP_BAREMETAL=1"
 

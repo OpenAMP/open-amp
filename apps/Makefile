@@ -5,7 +5,7 @@
 include ../Makefile.commons
 
 all:
-ifeq ($(OS),baremetal)
+ifeq ($(SYSTEM),baremetal)
 ifeq ($(ROLE),remote)
 	make  -C samples/remote/baremetal/matrix_multiply -f make
 	make  -C tests/remote/baremetal/echo_test -f make
@@ -20,7 +20,7 @@ linux_remote:
 	make  -f tests/master/baremetal/func_test_suite/make
 
 clean:
-ifeq ($(OS),baremetal)
+ifeq ($(SYSTEM),baremetal)
 ifeq ($(ROLE),remote)
 	make  -C samples/remote/baremetal/matrix_multiply -f make clean
 	make  -C tests/remote/baremetal/echo_test -f make clean
