@@ -17,6 +17,7 @@ $(wildcard common/hil/*.c) \
 $(wildcard common/llist/*.c) \
 $(wildcard common/shm/*.c) \
 $(wildcard common/firmware/*.c) \
+$(wildcard proxy/*.c) \
 $(wildcard porting/system/$(SYSTEM)/*.c) \
 $(wildcard porting/system/$(SYSTEM)/machine/$(MACHINE)/*.c) \
 $(wildcard porting/machine/$(MACHINE)/*.c)
