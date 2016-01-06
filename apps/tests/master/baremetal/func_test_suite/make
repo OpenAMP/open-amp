@@ -5,7 +5,7 @@ SAMPLE_OUT := tests/master/baremetal/func_test_suite/func_test_suite.out
 SAMPLE_C_SRC := tests/master/baremetal/func_test_suite/func_test_suite.c
 REMOTE_OUT   := func_test_suite.out
 DST_DIR := tests/master/baremetal/func_test_suite
-LINUX_SRC_DIR := firmware/$(PLAT)/linux
+LINUX_SRC_DIR := firmware/$(MACHINE)/linux
 
 SAMPLEOBJFILES := $(patsubst %.c, %.o, $(SAMPLE_C_SRC))
 SAMPLE_DEPS := $(patsubst %.c, %.d, $(SAMPLE_C_SRC))
@@ -16,7 +16,7 @@ $(SAMPLE_OUT): $(REMOTE_OUT)$(SAMPLEOBJFILES)
 
 	@echo 'Building func_test_suite test for baremetal : $@'
 
-	$(LD)  -Wl,-Map=tests/master/baremetal/func_test_suite/func_test_suite.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(PLAT)/baremetal/linker_master.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(PLAT)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(DST_DIR)/firmware1.o $(DST_DIR)/firmware2.o -lopen_amp -lbaremetal_master -lc -lm -lstdc++ -lcs3 -lcs3arm -lcs3unhosted -Wl,--end-group	
+	$(LD)  -Wl,-Map=tests/master/baremetal/func_test_suite/func_test_suite.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(MACHINE)/baremetal/linker_master.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(MACHINE)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(DST_DIR)/firmware1.o $(DST_DIR)/firmware2.o -lopen_amp -lbaremetal_master -lc -lm -lstdc++ -lcs3 -lcs3arm -lcs3unhosted -Wl,--end-group	
 	
 	$(OBJCPY) -O binary $(SAMPLE_OUT) $(SAMPLE_BIN)
 		

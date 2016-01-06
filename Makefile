@@ -5,8 +5,8 @@ include Makefile.commons
 
 LIB := libs/open_amp/libopen_amp.a
 
-INCLUDES := -I"include" -I"include/openamp/porting/os/$(OS)/platforms/$(PLAT)"
-INCLUDES += -I"libs/system/$(PLAT)/$(OS)"
+INCLUDES := -I"include" -I"include/openamp/porting/os/$(OS)/machine/$(MACHINE)"
+INCLUDES += -I"libs/system/$(MACHINE)/$(OS)"
 CFLAGS += $(INCLUDES)
 
 C_SRCFILES += \
@@ -18,10 +18,10 @@ $(wildcard common/llist/*.c) \
 $(wildcard common/shm/*.c) \
 $(wildcard common/firmware/*.c) \
 $(wildcard porting/env/*.c) \
-$(wildcard porting/$(PLAT)/*.c)
+$(wildcard porting/machine/$(MACHINE)/*.c)
 
 AS_SRCFILES += \
-$(wildcard porting/$(PLAT)/*.S)
+$(wildcard porting/$(MACHINE)/*.S)
 
 OBJFILES := $(patsubst %.c, %.o, $(C_SRCFILES)) $(patsubst %.S, %.o, $(AS_SRCFILES))
 
