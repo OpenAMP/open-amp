@@ -3,7 +3,7 @@ RM               := rm -f
 CP               := cp
 
 ifeq ($(MACHINE),)
-export MACHINE := zc702evk
+export MACHINE := zynq7
 endif
 
 ifeq ($(SYSTEM),)
