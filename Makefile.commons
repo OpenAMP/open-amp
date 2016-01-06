@@ -2,8 +2,8 @@ INCLUDE          :=
 RM               := rm -f
 CP               := cp
 
-ifeq ($(PLAT),)
-export PLAT := zc702evk
+ifeq ($(MACHINE),)
+export MACHINE := zc702evk
 endif
 
 ifeq ($(OS),)
@@ -14,8 +14,7 @@ ifeq ($(OHOME),)
 export OHOME := $(CURDIR)
 endif
 
-include porting/os/$(OS)/platforms/$(PLAT)/Makefile.platform
-
+include porting/os/$(OS)/machine/$(MACHINE)/Makefile.platform
 
 GENERAL_INCLUDES := -I"$(OHOME)/include"
 

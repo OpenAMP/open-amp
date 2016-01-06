@@ -10,11 +10,11 @@ SAMPLE_MAP := $(patsubst %.out, %.map, $(SAMPLE_OUT))
 
 LIBS := -lopen_amp -lbaremetal_remote -lc -lm
 
-ifeq ($(PLAT),zynqMP_r5)
+ifeq ($(MACHINE),zynqMP_r5)
 CFLAGS += -DZYNQMP_R5
 LIBS += -lxil
 else
-ifeq ($(PLAT),zc702evk)
+ifeq ($(MACHINE),zc702evk)
 CFLAGS += -DZYNQ_A9
 LIBS += -lcs3 -lcs3arm -lcs3unhosted
 endif
@@ -22,12 +22,12 @@ endif
 
 $(SAMPLE_OUT): $(SAMPLEOBJFILES) 
 	@echo 'Building matrix multiplication sample for baremetal environment : $@'
-	$(LD) -Wl,-Map=matrix_multiply.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(PLAT)/baremetal/linker_remote.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(PLAT)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(LIBS) -Wl,--end-group 	
+	$(LD) -Wl,-Map=matrix_multiply.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(MACHINE)/baremetal/linker_remote.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(MACHINE)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(LIBS) -Wl,--end-group 	
 	@echo 'Finished building target: $@'
 
 	@echo 'Copying ELF image to firmware folder'
-	mkdir -p $(OHOME)/apps/firmware/$(PLAT)/$(OS)/matrix_multiply
-	$(CP) $(SAMPLE_OUT) $(OHOME)/apps/firmware/$(PLAT)/$(OS)/matrix_multiply/firmware
+	mkdir -p $(OHOME)/apps/firmware/$(MACHINE)/$(OS)/matrix_multiply
+	$(CP) $(SAMPLE_OUT) $(OHOME)/apps/firmware/$(MACHINE)/$(OS)/matrix_multiply/firmware
 
 %.o:%.c
 	@echo CC $(<:.c=.o)

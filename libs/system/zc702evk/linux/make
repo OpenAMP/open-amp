@@ -16,7 +16,7 @@ $(BOOTSTRAP_OUT): $(BOOTSTRAPOBJFILES)
 
 	@echo 'Building linux aggregate image : $@'
 
-	$(LD)  -nostartfiles -T"$(OHOME)/libs/system/$(PLAT)/linux/link_remote.ld" -L"$(OHOME)/libs/system/$(PLAT)/linux/lib/$(CROSS)"  -o "$(BOOTSTRAP_OUT)" -Wl,--start-group $(BOOTSTRAPOBJFILES) -lc -lm -lstdc++ -lzlib -lfdt -Wl,--end-group 	
+	$(LD)  -nostartfiles -T"$(OHOME)/libs/system/$(MACHINE)/linux/link_remote.ld" -L"$(OHOME)/libs/system/$(MACHINE)/linux/lib/$(CROSS)"  -o "$(BOOTSTRAP_OUT)" -Wl,--start-group $(BOOTSTRAPOBJFILES) -lc -lm -lstdc++ -lzlib -lfdt -Wl,--end-group 	
 	
 	@echo 'Copying ELF image to firmware folder'
 

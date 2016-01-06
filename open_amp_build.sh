@@ -10,11 +10,11 @@ if [ "$1" == "-c" ]; then
 		
 	cd apps
 
-	make OS=baremetal PLAT=zc702evk ROLE=remote clean
+	make OS=baremetal MACHINE=zc702evk ROLE=remote clean
 	
-	make OS=baremetal PLAT=zc702evk ROLE=master clean
+	make OS=baremetal MACHINE=zc702evk ROLE=master clean
 
-	make clean_linux_remote OS=baremetal PLAT=zc702evk ROLE=master
+	make clean_linux_remote OS=baremetal MACHINE=zc702evk ROLE=master
 		
 	cd firmware 
 	
@@ -43,7 +43,7 @@ else
 	echo Building open AMP components..
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	make OS=baremetal PLAT=zc702evk ROLE=remote
+	make OS=baremetal MACHINE=zc702evk ROLE=remote
 
     	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo Build remote baremetal applications
@@ -55,13 +55,13 @@ else
 	echo Cleaning applications..
 	echo ~~~~~~~~~~~~~~~~~~~~~~~
 
-	make OS=baremetal PLAT=zc702evk ROLE=remote clean
+	make OS=baremetal MACHINE=zc702evk ROLE=remote clean
 
     	echo ~~~~~~~~~~~~~~~~~~~~~~~
 	echo Building applications..
 	echo ~~~~~~~~~~~~~~~~~~~~~~~
 
-	make OS=baremetal PLAT=zc702evk ROLE=remote
+	make OS=baremetal MACHINE=zc702evk ROLE=remote
 
 	cd ..
 
@@ -88,7 +88,7 @@ else
     echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	echo Building open AMP components..
 	echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	make OS=baremetal PLAT=zc702evk ROLE=master LINUXREMOTE=1
+	make OS=baremetal MACHINE=zc702evk ROLE=master LINUXREMOTE=1
 
 	# Build baremetal master with linux remote
 	cd apps
@@ -97,13 +97,13 @@ else
 	echo Cleaning applications..
 	echo ~~~~~~~~~~~~~~~~~~~~~~~
 	
-	make clean_linux_remote OS=baremetal PLAT=zc702evk ROLE=master
+	make clean_linux_remote OS=baremetal MACHINE=zc702evk ROLE=master
     
     
     echo ~~~~~~~~~~~~~~~~~~~~~~~
 	echo Building applications..
 	echo ~~~~~~~~~~~~~~~~~~~~~~~
-	make linux_remote OS=baremetal PLAT=zc702evk ROLE=master
+	make linux_remote OS=baremetal MACHINE=zc702evk ROLE=master
 
 	cd ..
 	

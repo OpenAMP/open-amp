@@ -14,10 +14,10 @@ $(SAMPLE_OUT): $(SAMPLEOBJFILES)
 
 	@echo 'Building remote test suite for baremetal : $@'
 
-	$(LD)  -Wl,-Map=tests/remote/baremetal/func_test_suite/func_test_suite.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(PLAT)/baremetal/linker_remote.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(PLAT)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) -lopen_amp -lbaremetal_remote -lc -lm -lstdc++ -lcs3 -lcs3arm -lcs3unhosted -Wl,--end-group	
+	$(LD)  -Wl,-Map=tests/remote/baremetal/func_test_suite/func_test_suite.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(MACHINE)/baremetal/linker_remote.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(MACHINE)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) -lopen_amp -lbaremetal_remote -lc -lm -lstdc++ -lcs3 -lcs3arm -lcs3unhosted -Wl,--end-group	
 	
 	@echo 'Copying ELF image to firmware folder'
-	$(CP) $(SAMPLE_OUT) firmware/$(PLAT)/$(OS)/func_test_suite/firmware
+	$(CP) $(SAMPLE_OUT) firmware/$(MACHINE)/$(OS)/func_test_suite/firmware
 	
 	@echo 'Finished building target: $@'
 	
