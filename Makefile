@@ -22,7 +22,7 @@ $(wildcard porting/system/$(SYSTEM)/machine/$(MACHINE)/*.c) \
 $(wildcard porting/machine/$(MACHINE)/*.c)
 
 AS_SRCFILES += \
-$(wildcard porting/$(MACHINE)/*.S)
+$(wildcard porting/system/$(SYSTEM)/machine/$(MACHINE)/*.S)
 
 OBJFILES := $(patsubst %.c, %.o, $(C_SRCFILES)) $(patsubst %.S, %.o, $(AS_SRCFILES))
 
