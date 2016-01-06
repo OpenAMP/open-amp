@@ -26,8 +26,8 @@ $(SAMPLE_OUT): $(SAMPLEOBJFILES)
 	@echo 'Finished building target: $@'
 
 	@echo 'Copying ELF image to firmware folder'
-	mkdir -p $(OHOME)/apps/firmware/$(MACHINE)/$(OS)/matrix_multiply
-	$(CP) $(SAMPLE_OUT) $(OHOME)/apps/firmware/$(MACHINE)/$(OS)/matrix_multiply/firmware
+	mkdir -p $(OHOME)/apps/firmware/$(MACHINE)/$(SYSTEM)/matrix_multiply
+	$(CP) $(SAMPLE_OUT) $(OHOME)/apps/firmware/$(MACHINE)/$(SYSTEM)/matrix_multiply/firmware
 
 %.o:%.c
 	@echo CC $(<:.c=.o)

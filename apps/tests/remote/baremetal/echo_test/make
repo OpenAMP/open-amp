@@ -30,8 +30,8 @@ $(SAMPLE_OUT): $(SAMPLEOBJFILES)
 
 	$(LD)  -Wl,-Map=echo_test.map -Wl,--gc-sections -T"$(OHOME)/libs/system/$(MACHINE)/baremetal/linker_remote.ld" -L"$(OHOME)/libs/open_amp" -L"$(OHOME)/libs/system/$(MACHINE)/baremetal" -o "$(SAMPLE_OUT)" -Wl,--start-group $(SAMPLEOBJFILES) $(LIBS) -Wl,--end-group
 	
-	mkdir -p $(OHOME)/apps/firmware/$(MACHINE)/$(OS)/echo_test
-	$(CP) $(SAMPLE_OUT) $(OHOME)/apps/firmware/$(MACHINE)/$(OS)/echo_test/firmware
+	mkdir -p $(OHOME)/apps/firmware/$(MACHINE)/$(SYSTEM)/echo_test
+	$(CP) $(SAMPLE_OUT) $(OHOME)/apps/firmware/$(MACHINE)/$(SYSTEM)/echo_test/firmware
 	
 	@echo 'Finished building target: $@'
 	

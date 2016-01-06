@@ -14,4 +14,4 @@ AR               = $(CROSS)ar
 LD               = $(CROSS)gcc
 OBJCPY           = $(CROSS)objcopy
 
-INCLUDE += -I$(OHOME)/libs/system/$(MACHINE)/$(OS)/xil_standalone_lib
+INCLUDE += -I$(OHOME)/libs/system/$(MACHINE)/$(SYSTEM)/xil_standalone_lib
