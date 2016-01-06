@@ -34,7 +34,7 @@
 #include "xil_mmu.h"
 #include "xil_mpu.h"
 #include "baremetal.h"
-#include "../../../../porting/env/env.h"
+#include "openamp/env.h"
 
 XScuGic InterruptController;
 
