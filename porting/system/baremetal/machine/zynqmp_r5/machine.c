@@ -33,7 +33,7 @@
 #include "xil_cache.h"
 #include "xil_mmu.h"
 #include "xil_mpu.h"
-#include "baremetal.h"
+#include "machine.h"
 #include "openamp/env.h"
 
 XScuGic InterruptController;

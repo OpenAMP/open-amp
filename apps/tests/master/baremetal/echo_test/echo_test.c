@@ -17,7 +17,7 @@ Linux to gracefully shutdown. */
 
 #define BAREMETAL_MASTER 1
 
-#include "baremetal.h"
+#include "machine.h"
 
 #define SHUTDOWN_MSG	0xEF56A55A
 

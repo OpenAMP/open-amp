@@ -39,6 +39,15 @@
 #define         MEM_WRITE16(addr,data)  *(volatile unsigned short *)(addr) = (unsigned short)(data)
 #define         MEM_WRITE32(addr,data)  *(volatile unsigned long *)(addr) = (unsigned long)(data)
 
+/* Memory barrier */
+#if (defined(__CC_ARM))
+#define MEM_BARRIER() __schedule_barrier()
+#elif (defined(__GNUC__))
+#define MEM_BARRIER() asm volatile("dsb" : : : "memory")
+#else
+#define MEM_BARRIER()
+#endif
+
 /* Define bit values for the architecture's status register / machine state register /
  etc that are used to enable and disable interrupts for the given architecture. */
 #define         ARM_AR_INTERRUPTS_DISABLE_BITS         0x000000C0
@@ -649,6 +658,30 @@ typedef enum {
                     ARM_AR_NOP_EXECUTE();                                                  \
                     ARM_AR_NOP_EXECUTE();                                                 \
                 }
+
+static inline unsigned int xchg(void* plock, unsigned int lockVal)
+{
+	volatile unsigned int tmpVal = 0;
+	volatile unsigned int tmpVal1 = 0;
+
+#ifdef __GNUC__
+
+	asm (
+		"1:                                \n\t"
+		"LDREX  %[tmpVal], [%[plock]]      \n\t"
+		"STREX  %[tmpVal1], %[lockVal], [%[plock]] \n\t"
+		"CMP    %[tmpVal1], #0                     \n\t"
+		"BNE    1b                         \n\t"
+		"DMB                               \n\t"
+		: [tmpVal] "=&r"(tmpVal)
+		: [tmpVal1] "r" (tmpVal1), [lockVal] "r"(lockVal), [plock] "r"(plock)
+		: "cc", "memory"
+	);
+
+#endif
+
+	return tmpVal;
+}
 
 int arm_ar_mem_enable_mmu();
 void arm_ar_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
