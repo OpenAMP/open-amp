@@ -22,14 +22,10 @@ INCLUDES :=
 -include system/$(SYSTEM)/machine/$(MACHINE)/Makefile.platform
 -include system/$(SYSTEM)/Makefile.include
 
-ifeq ($(SYSTEM),generic)
-CFLAGS +=-D"OPENAMP_BAREMETAL=1"
-
 ifeq ($(ROLE),master)
 CFLAGS+=-D"MASTER=1"
 else
 CFLAGS+=-D"MASTER=0"
-endif
 endif
 
 ifeq ($(BENCHMARK),1)
