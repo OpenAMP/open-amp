@@ -31,28 +31,60 @@
 /* This file populates resource table for BM remote
  * for use by the Linux Master */
 
-#include <stddef.h>
 #include "openamp/open_amp.h"
+#include "rsc_table.h"
 
-#define NO_RESOURCE_ENTRIES         8
+/* Place resource table in special ELF section */
+#define __section(S)            __attribute__((__section__(#S)))
+#define __resource              __section(.resource_table)
 
-/* Resource table for the given remote */
-struct remote_resource_table {
-	unsigned int version;
-	unsigned int num;
-	unsigned int reserved[2];
-	unsigned int offset[NO_RESOURCE_ENTRIES];
-	/* text carveout entry */
-#ifdef ZYNQMP_R5
-	struct fw_rsc_carveout ocm_0_cout;
-	struct fw_rsc_carveout ocm_1_cout;
-#else
-#ifdef ZYNQ_A9
-	struct fw_rsc_carveout elf_cout;
-#endif
-#endif
-	/* rpmsg vdev entry */
-	struct fw_rsc_vdev rpmsg_vdev;
-	struct fw_rsc_vdev_vring rpmsg_vring0;
-	struct fw_rsc_vdev_vring rpmsg_vring1;
+#define RPMSG_IPU_C0_FEATURES        1
+
+/* VirtIO rpmsg device id */
+#define VIRTIO_ID_RPMSG_             7
+
+/* Remote supports Name Service announcement */
+#define VIRTIO_RPMSG_F_NS           0
+
+/* Resource table entries */
+#define ELF_START                   0x00000000
+#define ELF_END                     0x08000000
+#define NUM_VRINGS                  0x02
+#define VRING_ALIGN                 0x1000
+#define RING_TX                     0x08000000
+#define RING_RX                     0x08004000
+#define VRING_SIZE                  256
+
+#define NUM_TABLE_ENTRIES           2
+#define CARVEOUT_SRC_OFFSETS        offsetof(struct remote_resource_table, elf_cout),
+#define CARVEOUT_SRC                { RSC_CARVEOUT, ELF_START, ELF_START, ELF_END, 0, 0, "ELF_COUT", },
+
+
+const struct remote_resource_table __resource resources = {
+	/* Version */
+	1,
+
+	/* NUmber of table entries */
+	NUM_TABLE_ENTRIES,
+	/* reserved fields */
+	{0, 0,},
+
+	/* Offsets of rsc entries */
+	{
+	 CARVEOUT_SRC_OFFSETS
+	 offsetof(struct remote_resource_table, rpmsg_vdev),
+	 },
+
+	/* End of ELF file */
+	CARVEOUT_SRC
+	    /* Virtio device entry */
+	{RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,
+	 NUM_VRINGS, {0, 0},
+	 },
+
+	/* Vring rsc entry - part of vdev rsc entry */
+	{
+	 RING_TX, VRING_ALIGN, VRING_SIZE, 1, 0},
+	{
+	 RING_RX, VRING_ALIGN, VRING_SIZE, 2, 0},
 };

@@ -46,7 +46,6 @@
 /* Remote supports Name Service announcement */
 #define VIRTIO_RPMSG_F_NS           0
 
-#ifdef ZYNQMP_R5
 #define OCM_0_START                 0xFFFC0000
 #define OCM_0_LEN                   0x20000
 #define OCM_1_START                 0xFFFF0000
@@ -69,24 +68,6 @@
 
 #define CARVEOUT_SRC                {RSC_CARVEOUT, OCM_0_START, OCM_0_START, OCM_0_LEN, 0, 0, "OCM0_COUT",}, \
 					                {RSC_CARVEOUT, OCM_1_START, OCM_1_START, OCM_1_LEN, 0, 0, "ELF_DATA_COUT",},
-
-#else
-#ifdef ZYNQ_A9
-/* Resource table entries */
-#define ELF_START                   0x00000000
-#define ELF_END                     0x08000000
-#define NUM_VRINGS                  0x02
-#define VRING_ALIGN                 0x1000
-#define RING_TX                     0x08000000
-#define RING_RX                     0x08004000
-#define VRING_SIZE                  256
-
-#define NUM_TABLE_ENTRIES           2
-#define CARVEOUT_SRC_OFFSETS        offsetof(struct remote_resource_table, elf_cout),
-#define CARVEOUT_SRC                { RSC_CARVEOUT, ELF_START, ELF_START, ELF_END, 0, 0, "ELF_COUT", },
-
-#endif
-#endif
 
 const struct remote_resource_table __resource resources = {
 	/* Version */
