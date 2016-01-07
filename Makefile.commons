@@ -16,8 +16,6 @@ endif
 
 include porting/system/$(SYSTEM)/machine/$(MACHINE)/Makefile.platform
 
-GENERAL_INCLUDES := -I"$(OHOME)/include"
-
 ifeq ($(SYSTEM),baremetal)
 CFLAGS +=-D"ENV=1"
 CFLAGS +=-D"OPENAMP_BAREMETAL=1"
@@ -36,6 +34,4 @@ endif
 ifeq ($(LINUXREMOTE),1)
 CFLAGS+=-D"OPENAMP_REMOTE_LINUX_ENABLE"
 endif
-
-CFLAGS += $(GENERAL_INCLUDES)
 
