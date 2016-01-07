@@ -1,5 +1,3 @@
-# Include commons make file to get platform and tool chain specific variables.
-include Makefile.commons
 
 XIL_DIR := ./xil_standalone_lib
 LIB := libxil.a
