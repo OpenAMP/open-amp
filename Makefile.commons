@@ -7,7 +7,7 @@ export MACHINE := zynq7
 endif
 
 ifeq ($(SYSTEM),)
-export SYSTEM := baremetal
+export SYSTEM := generic
 endif
 
 ifeq ($(OHOME),)
