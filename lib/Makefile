@@ -22,12 +22,6 @@ INCLUDES :=
 -include system/$(SYSTEM)/machine/$(MACHINE)/Makefile.platform
 -include system/$(SYSTEM)/Makefile.include
 
-ifeq ($(ROLE),master)
-CFLAGS+=-D"MASTER=1"
-else
-CFLAGS+=-D"MASTER=0"
-endif
-
 ifeq ($(BENCHMARK),1)
 CFLAGS+=-D"OPENAMP_BENCHMARK_ENABLE"
 endif
