@@ -11,7 +11,7 @@ ifeq ($(BUILDROOT),)
 BUILDROOT := $(CURDIR)/.build
 endif
 
-export SYSTEM MACHINE ROLE OHOME BUILDROOT
+export SYSTEM MACHINE OHOME BUILDROOT
 
 .PHONY: all lib obsolete apps clean clean_lib clean_obsolete clean_apps
 
