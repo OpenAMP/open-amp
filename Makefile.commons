@@ -1,7 +1,6 @@
 INCLUDE          := 
 RM               := rm -f
 CP               := cp
-OHOME            := $(OPENAMP)
 
 ifeq ($(PLAT),)
 export PLAT := zc702evk
@@ -9,6 +8,10 @@ endif
 
 ifeq ($(OS),)
 export OS := baremetal
+endif
+
+ifeq ($(OHOME),)
+export OHOME := $(CURDIR)
 endif
 
 include porting/os/$(OS)/platforms/$(PLAT)/Makefile.platform
