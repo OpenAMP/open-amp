@@ -13,10 +13,7 @@ C_SRCFILES += \
 $(wildcard remoteproc/*.c) \
 $(wildcard virtio/*.c) \
 $(wildcard rpmsg/*.c) \
-$(wildcard common/hil/*.c) \
-$(wildcard common/llist/*.c) \
-$(wildcard common/shm/*.c) \
-$(wildcard common/firmware/*.c) \
+$(wildcard common/*.c) \
 $(wildcard proxy/*.c) \
 $(wildcard porting/system/$(SYSTEM)/*.c) \
 $(wildcard porting/system/$(SYSTEM)/machine/$(MACHINE)/*.c) \
