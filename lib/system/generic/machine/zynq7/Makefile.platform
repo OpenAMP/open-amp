@@ -13,3 +13,9 @@ AS               = $(CROSS)as
 AR               = $(CROSS)ar
 LD               = $(CROSS)gcc
 OBJCPY           = $(CROSS)objcopy
+
+ifeq ($(REMOTEPROC_MASTER),y)
+CFLAGS += -D"BAREMETAL_MASTER=1"
+else
+CFLAGS += -D"BAREMETAL_MASTER=0"
+endif
