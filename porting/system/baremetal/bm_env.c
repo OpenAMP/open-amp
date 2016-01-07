@@ -43,7 +43,7 @@
 
 #ifdef OPENAMP_BAREMETAL
 #include "openamp/env.h"
-#include "platform.h"
+#include "machine.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -52,7 +52,7 @@
 extern void restore_global_interrupts();
 extern void disable_global_interrupts();
 extern int platform_interrupt_enable(unsigned int vector,unsigned int polarity, unsigned int priority);
-extern int platform_interrupt_disable(int vector_id);
+extern int platform_interrupt_disable(unsigned int vector_id);
 extern void platform_cache_all_flush_invalidate();
 extern void platform_cache_disable();
 extern void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size, unsigned int flags);

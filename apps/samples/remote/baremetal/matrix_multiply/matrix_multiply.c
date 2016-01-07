@@ -8,7 +8,7 @@ multiplies them and returns the result to the master core. */
 #include <string.h>
 #include "openamp/open_amp.h"
 #include "rsc_table.h"
-#include "baremetal.h"
+#include "machine.h"
 
 #define	MAX_SIZE                6
 #define NUM_MATRIX              2

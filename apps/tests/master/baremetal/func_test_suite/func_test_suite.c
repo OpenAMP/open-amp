@@ -14,7 +14,7 @@ the rpmsg APIs and shutsdown the core once the test has been completed.*/
 
 #define BAREMETAL_MASTER 1
 
-#include "baremetal.h"
+#include "machine.h"
 
 /* Application provided callbacks */
 void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);

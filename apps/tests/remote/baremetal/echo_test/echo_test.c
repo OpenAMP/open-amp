@@ -7,7 +7,7 @@ This application echoes back data that was sent to it by the master core. */
 #include <string.h>
 #include "openamp/open_amp.h"
 #include "rsc_table.h"
-#include "baremetal.h"
+#include "machine.h"
 
 #define SHUTDOWN_MSG	0xEF56A55A
 

@@ -8,7 +8,7 @@
 #include "openamp/open_amp.h"
 #include "rsc_table.h"
 #include "test_suite.h"
-#include "baremetal.h"
+#include "machine.h"
 
 #define EPT_ADDR        59
 

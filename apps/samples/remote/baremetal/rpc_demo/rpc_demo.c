@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include "openamp/open_amp.h"
 #include "rsc_table.h"
-#include "baremetal.h"
+#include "machine.h"
 #include "openamp/rpmsg_retarget.h"
 
 /* Internal functions */

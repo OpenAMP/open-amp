@@ -30,7 +30,7 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include "baremetal.h"
+#include "machine.h"
 #include "openamp/env.h"
 unsigned char ARM_AR_ISR_IRQ_Data[ARM_AR_ISR_STACK_SIZE];
 unsigned char ARM_AR_ISR_FIQ_Data[ARM_AR_ISR_STACK_SIZE];
