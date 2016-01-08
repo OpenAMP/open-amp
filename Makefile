@@ -5,7 +5,7 @@ include Makefile.commons
 
 LIB := libs/open_amp/libopen_amp.a
 
-INCLUDES := -I"include" -I"include/openamp/porting/system/$(SYSTEM)/machine/$(MACHINE)"
+INCLUDES := -I"include" -I"include/openamp/system/$(SYSTEM)/machine/$(MACHINE)"
 INCLUDES += -I"libs/system/$(MACHINE)/$(SYSTEM)"
 CFLAGS += $(INCLUDES)
 
@@ -15,12 +15,12 @@ $(wildcard virtio/*.c) \
 $(wildcard rpmsg/*.c) \
 $(wildcard common/*.c) \
 $(wildcard proxy/*.c) \
-$(wildcard porting/system/$(SYSTEM)/*.c) \
-$(wildcard porting/system/$(SYSTEM)/machine/$(MACHINE)/*.c) \
-$(wildcard porting/machine/$(MACHINE)/*.c)
+$(wildcard system/$(SYSTEM)/*.c) \
+$(wildcard system/$(SYSTEM)/machine/$(MACHINE)/*.c) \
+$(wildcard machine/$(MACHINE)/*.c)
 
 AS_SRCFILES += \
-$(wildcard porting/system/$(SYSTEM)/machine/$(MACHINE)/*.S)
+$(wildcard system/$(SYSTEM)/machine/$(MACHINE)/*.S)
 
 OBJFILES := $(patsubst %.c, %.o, $(C_SRCFILES)) $(patsubst %.S, %.o, $(AS_SRCFILES))
 
