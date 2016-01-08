@@ -1,46 +1,46 @@
-# Make file to create ipc stack library.
+ifeq ($(SYSTEM),)
+SYSTEM := generic
+endif
 
-# Include commons make file to get platform and tool chain specific variables.
-include Makefile.commons
+ifeq ($(MACHINE),)
+MACHINE := zynq7
+endif
 
-LIB := libs/open_amp/libopen_amp.a
+OHOME := $(CURDIR)
+ifeq ($(BUILDROOT),)
+BUILDROOT := $(CURDIR)/.build
+endif
 
-INCLUDES := -I"include" -I"include/openamp/system/$(SYSTEM)/machine/$(MACHINE)"
-INCLUDES += -I"libs/system/$(MACHINE)/$(SYSTEM)"
-CFLAGS += $(INCLUDES)
+export SYSTEM MACHINE ROLE OHOME BUILDROOT
 
-C_SRCFILES += \
-$(wildcard remoteproc/*.c) \
-$(wildcard virtio/*.c) \
-$(wildcard rpmsg/*.c) \
-$(wildcard common/*.c) \
-$(wildcard proxy/*.c) \
-$(wildcard system/$(SYSTEM)/*.c) \
-$(wildcard system/$(SYSTEM)/machine/$(MACHINE)/*.c) \
-$(wildcard machine/$(MACHINE)/*.c)
+.PHONY: all lib obsolete apps clean clean_lib clean_obsolete clean_apps
 
-AS_SRCFILES += \
-$(wildcard system/$(SYSTEM)/machine/$(MACHINE)/*.S)
-
-OBJFILES := $(patsubst %.c, %.o, $(C_SRCFILES)) $(patsubst %.S, %.o, $(AS_SRCFILES))
-
-DEPFILES := $(patsubst %.c, %.d, $(C_SRCFILES)) $(patsubst %.S, %.d, $(AS_SRCFILES))
-
-all: $(LIB)
-
-$(LIB): $(OBJFILES)
-	@echo AR $@
-	$(AR) -r $@ $(OBJFILES)
-
-%.o:%.c $(HEADERS)
-	@echo CC $(<:.c=.o)
-	$(CC) $(CFLAGS) $(ARCH_CFLAGS) $(INCLUDE) -c $< -o $@
-
-%.o:%.S
-	@echo AS $(<:.S=.o)
-	$(AS) $(ARCH_ASFLAGS) $(INCLUDE) $< -o $@
+all: lib
 
 clean:
-	-$(RM) $(LIB) $(OBJFILES) $(DEPFILES)
+	rm -rf $(BUILDROOT)
 
-PHONY: all clean
+ifeq ($(WITH_OBSOLETE),y)
+all: obsolete
+endif
+ifeq ($(WITH_APPS),y)
+all: apps
+endif
+
+lib:
+	make -C lib all
+
+obsolete:
+	make -C obsolete
+
+apps:
+	make -C apps all
+
+clean_lib:
+	make -C lib clean
+
+clean_obsolete:
+	make -C obsolete clean
+
+clean_apps:
+	make -C apps clean
