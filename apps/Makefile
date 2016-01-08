@@ -6,7 +6,7 @@ export OHOME := $(SRCROOT)/../
 export BUILD := $(BUILDROOT)/apps
 
 all:
-	#make  -C matrix_multiply
+	make -C matrix_multiply all
 	make -C echo_test all
 	#make  -C rpc_demo
 
