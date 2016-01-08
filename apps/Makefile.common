@@ -1,0 +1,10 @@
+local_dir = $(dir $(realpath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))$(1)
+
+-include $(OHOME)/lib/system/$(SYSTEM)/machine/$(MACHINE)/Makefile.platform
+-include $(SRCROOT)/system/$(SYSTEM)/machine/$(MACHINE)/Makefile.include
+-include $(SRCROOT)/machine/$(MACHINE)/Makefile.include
+
+CFLAGS += -I"$(OHOME)/lib/include"
+CFLAGS += -I"$(OHOME)/lib/include/openamp/system/$(SYSTEM)/machine/$(MACHINE)"
+
+LDFLAGS += -L"$(BUILDROOT)/libs"
