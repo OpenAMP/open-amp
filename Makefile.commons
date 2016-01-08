@@ -14,7 +14,7 @@ ifeq ($(OHOME),)
 export OHOME := $(CURDIR)
 endif
 
-include porting/system/$(SYSTEM)/machine/$(MACHINE)/Makefile.platform
+include system/$(SYSTEM)/machine/$(MACHINE)/Makefile.platform
 
 ifeq ($(SYSTEM),baremetal)
 CFLAGS +=-D"ENV=1"
