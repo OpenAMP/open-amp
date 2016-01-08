@@ -1,0 +1,11 @@
+CFLAGS += -DZYNQ_A9
+CFLAGS += -I"$(call local_dir,.)"
+DEPS := -lc -lm -lcs3 -lcs3arm -lcs3unhosted
+
+ifeq ($(REMOTEPROC_MASTER),y)
+LINKERSCRIPT := $(call local_dir,linker_master.ld)
+else
+LINKERSCRIPT := $(call local_dir,linker_remote.ld)
+endif
+
+C_COMMON_SRCS := $(wildcard $(call local_dir,)*.c)
