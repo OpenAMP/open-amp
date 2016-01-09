@@ -1,0 +1,20 @@
+CFLAGS += $(ARCH_CFLAGS)
+CFLAGS += -DZYNQMP_R5
+CFLAGS += -I"$(call local_dir,.)"
+DEPS := -lxil -lc -lm
+
+ifeq ($(REMOTEPROC_MASTER),y)
+$(error "Remoteproc master is not supported for this ARCH yet.")
+else
+LINKERSCRIPT := $(call local_dir,linker_remote.ld)
+endif
+
+C_COMMON_SRCS := $(wildcard $(call local_dir,)*.c)
+
+ifeq ($(EXTRA_INCLUDES),)
+EXTRA_INCLUDES += -I"$(OHOME)/obsolete/system/$(SYSTEM)/machine/$(MACHINE)/xil_standalone_lib"
+endif
+
+ifneq ($(EXTRA_INCLUDES),)
+CFLAGS += $(EXTRA_INCLUDES)
+endif
