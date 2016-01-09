@@ -1,3 +1,4 @@
+CFLAGS += $(ARCH_CFLAGS)
 CFLAGS += -DZYNQ_A9
 CFLAGS += -I"$(call local_dir,.)"
 DEPS := -lc -lm -lcs3 -lcs3arm -lcs3unhosted
