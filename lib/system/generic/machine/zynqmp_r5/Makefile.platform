@@ -14,4 +14,8 @@ AR               = $(CROSS)ar
 LD               = $(CROSS)gcc
 OBJCPY           = $(CROSS)objcopy
 
-INCLUDES += -I$(SRCROOT)/../obsolete/system/$(SYSTEM)/machine/$(MACHINE)/xil_standalone_lib
+ifeq ($(EXTRA_INCLUDES),)
+EXTRA_INCLUDES += -I$(OHOME)/obsolete/system/$(SYSTEM)/machine/$(MACHINE)/xil_standalone_lib
+endif
+
+INCLUDES += $(EXTRA_INCLUDES)
