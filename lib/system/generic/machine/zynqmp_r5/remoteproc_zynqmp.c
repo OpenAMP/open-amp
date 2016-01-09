@@ -41,6 +41,7 @@
  **************************************************************************/
 
 #include "openamp/hil.h"
+#include "machine.h"
 
 /* -- FIX ME: ipi info is to be defined -- */
 struct ipi_info {
@@ -68,7 +69,6 @@ struct hil_platform_ops proc_ops = {
 /* Extern functions defined out from OpenAMP lib */
 extern void ipi_enable_interrupt(unsigned int vector);
 extern void ipi_isr(int vect_id, void *data);
-extern void platform_dcache_all_flush();
 
 /*------------------- Extern variable -----------------------------------*/
 extern struct hil_proc proc_table[];
