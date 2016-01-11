@@ -6,9 +6,12 @@ export OHOME := $(SRCROOT)/../
 export BUILD := $(BUILDROOT)/apps
 
 all:
+ifeq ($(REMOTEPROC_MASTER),y)
+	make -C linux_firmware_remoteproc_slave all
+endif
 	make -C matrix_multiply all
 	make -C echo_test all
-	make  -C rpc_demo all
+	make -C rpc_demo all
 
 clean:
 	rm -rf $(BUILD)
