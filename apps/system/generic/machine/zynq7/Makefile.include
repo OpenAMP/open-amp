@@ -8,7 +8,8 @@ LINKERSCRIPT := $(call local_dir,linker_master.ld)
 C_COMMON_SRCS :=  $(call local_dir,platform_info_remoteproc_master.c)
 else
 LINKERSCRIPT := $(call local_dir,linker_remote.ld)
-C_COMMON_SRCS := $(wildcard $(call local_dir,)*.c)
+C_COMMON_SRCS := $(call local_dir,platform_info.c)
+C_COMMON_SRCS += $(call local_dir,rsc_table.c)
 endif
 
 ARCH_COMMON_DIR := $(call local_dir,.)
