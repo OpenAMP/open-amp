@@ -8,6 +8,8 @@ EXES := $(BUILD)/matrix_multiplyd.out
 
 ifeq ($(REMOTEPROC_MASTER),y)
 MATRIX_MUL_D_SRCS := matrix_multiplyd_remoteproc_master.c
+EXES := $(BUILD)/matrix_multiplyd.bin
+BUILDSHARE := $(PBUILD)/share
 else
 MATRIX_MUL_D_SRCS := matrix_multiplyd.c
 endif
@@ -27,11 +29,21 @@ LIBS := -lopen_amp $(DEPS)
 
 all: $(EXES)
 
+ifeq ($(REMOTEPROC_MASTER),y)
+$(BUILD)/matrix_multiplyd.out: $(MATRIX_MUL_D_OBJS) $(C_COMMON_OBJS)
+	@echo 'Building matrix multiply for baremetal : $@'
+	$(LD)  -Wl,-Map=$(MATRIX_MUL_D_MAP) -Wl,--gc-sections -T"$(LINKERSCRIPT)" $(LDFLAGS) -o "$@" $^ -Wl,--start-group $(BUILDSHARE)/firmware1.o $(BUILDSHARE)/firmware2.o -lstdc++ $(LIBS) -Wl,--end-group
+
+$(BUILD)/matrix_multiplyd.bin: $(BUILD)/matrix_multiplyd.out
+	$(CROSS)objcopy -O binary $(BUILD)/matrix_multiplyd.out $(BUILD)/matrix_multiplyd.bin
+
+else
 $(BUILD)/matrix_multiplyd.out: $(MATRIX_MUL_D_OBJS) $(C_COMMON_OBJS)
 
-	@echo 'Building echo test for baremetal : $@'
+	@echo 'Building matrix multiply for baremetal : $@'
 
 	$(LD)  -Wl,-Map=$(MATRIX_MUL_D_MAP) -Wl,--gc-sections -T"$(LINKERSCRIPT)" $(LDFLAGS) -o "$@"  $^ -Wl,--start-group $(LIBS) -Wl,--end-group
+endif
 
 clean:
 	rm -rf $(BUILD)
