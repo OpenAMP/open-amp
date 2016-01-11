@@ -8,6 +8,8 @@ EXES := $(BUILD)/func_test_suite.out
 
 ifeq ($(REMOTEPROC_MASTER),y)
 FUNC_TEST_SUITE_SRCS := func_test_suite_remoteproc_master.c
+EXES := $(BUILD)/func_test_suite.bin
+BUILDSHARE := $(PBUILD)/share
 else
 FUNC_TEST_SUITE_SRCS := func_test_suite.c
 endif
@@ -27,11 +29,21 @@ LIBS := -lopen_amp $(DEPS)
 
 all: $(EXES)
 
+ifeq ($(REMOTEPROC_MASTER),y)
+$(BUILD)/func_test_suite.out: $(FUNC_TEST_SUITE_OBJS) $(C_COMMON_OBJS)
+	@echo 'Building function test stuie for baremetal : $@'
+	$(LD)  -Wl,-Map=$(FUNC_TEST_SUITE_MAP) -Wl,--gc-sections -T"$(LINKERSCRIPT)" $(LDFLAGS) -o "$@" $^ -Wl,--start-group $(BUILDSHARE)/firmware1.o $(BUILDSHARE)/firmware2.o -lstdc++ $(LIBS) -Wl,--end-group
+
+$(BUILD)/func_test_suite.bin: $(BUILD)/func_test_suite.out
+	$(CROSS)objcopy -O binary $(BUILD)/func_test_suite.out $(BUILD)/func_test_suite.bin
+
+else
 $(BUILD)/func_test_suite.out: $(FUNC_TEST_SUITE_OBJS) $(C_COMMON_OBJS)
 
-	@echo 'Building echo test for baremetal : $@'
+	@echo 'Building function test suite for baremetal : $@'
 
 	$(LD)  -Wl,-Map=$(FUNC_TEST_SUITE_MAP) -Wl,--gc-sections -T"$(LINKERSCRIPT)" $(LDFLAGS) -o "$@"  $^ -Wl,--start-group $(LIBS) -Wl,--end-group
+endif
 
 clean:
 	rm -rf $(BUILD)
