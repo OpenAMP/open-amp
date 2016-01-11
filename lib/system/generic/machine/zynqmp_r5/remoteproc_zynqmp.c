@@ -103,7 +103,7 @@ int _enable_interrupt(struct proc_vring *vring_hw)
 	struct ipi_info *chn_ipi_info =
 	    (struct ipi_info *)(vring_hw->intr_info.data);
 
-	if (vring_hw->intr_info.vect_id < 0)
+	if (vring_hw->intr_info.vect_id == 0xFFFFFFFF)
 		return 0;
 	/* Register IPI handler */
 	ipi_register_handler(chn_ipi_info->ipi_base_addr,
