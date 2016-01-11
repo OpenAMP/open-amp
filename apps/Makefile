@@ -11,7 +11,9 @@ ifeq ($(REMOTEPROC_MASTER),y)
 endif
 	make -C matrix_multiply all
 	make -C echo_test all
+ifneq ($(REMOTEPROC_MASTER),y)
 	make -C rpc_demo all
+endif
 
 clean:
 	rm -rf $(BUILD)
