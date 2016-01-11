@@ -5,8 +5,10 @@ DEPS := -lc -lm -lcs3 -lcs3arm -lcs3unhosted
 
 ifeq ($(REMOTEPROC_MASTER),y)
 LINKERSCRIPT := $(call local_dir,linker_master.ld)
+C_COMMON_SRCS :=  $(call local_dir,platform_info_remoteproc_master.c)
 else
 LINKERSCRIPT := $(call local_dir,linker_remote.ld)
+C_COMMON_SRCS := $(wildcard $(call local_dir,)*.c)
 endif
 
-C_COMMON_SRCS := $(wildcard $(call local_dir,)*.c)
+ARCH_COMMON_DIR := $(call local_dir,.)
