@@ -34,8 +34,8 @@
 #include "rsc_table.h"
 
 /* Place resource table in special ELF section */
-#define __section(S)            __attribute__((__section__(#S)))
-#define __resource              __section(.resource_table)
+#define __section_t(S)            __attribute__((__section__(#S)))
+#define __resource              __section_t(.resource_table)
 
 #define RPMSG_IPU_C0_FEATURES       1
 
