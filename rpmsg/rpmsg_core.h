@@ -31,6 +31,7 @@
 #ifndef _RPMSG_CORE_H_
 #define _RPMSG_CORE_H_
 
+#include "../common/compiler/compiler.h"
 #include "../porting/env/env.h"
 #include "../virtio/virtio.h"
 #include "../common/hil/hil.h"

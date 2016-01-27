@@ -8,12 +8,13 @@
 #ifndef M_EPT_FUNC_TEST_H_
 #define M_EPT_FUNC_TEST_H_
 
+OPENAMP_PACKED_STRUCT_BEGIN
 struct command
 {
     unsigned int comm_start;
     unsigned int comm_code;
     char data[0];
-}__attribute__((__packed__));
+} OPENAMP_PACKED_STRUCT_END;
 
 struct ept_cmd_data
 {
@@ -57,11 +58,12 @@ struct chnl_cmd_data
 #define PAYLOAD_MAX_SIZE    (MAX_RPMSG_BUFF_SIZE - 24)
 #define NUM_PAYLOADS        (PAYLOAD_MAX_SIZE/PAYLOAD_MIN_SIZE)
 
+OPENAMP_PACKED_STRUCT_BEGIN
 struct _payload {
     unsigned long    num;
     unsigned long    size;
     char             data[0];
-}__attribute__((__packed__));
+} OPENAMP_PACKED_STRUCT_END;
 
 
 #endif /* M_EPT_FUNC_TEST_H_ */

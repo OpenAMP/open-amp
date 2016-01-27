@@ -33,11 +33,12 @@ struct _payload {
 	char			 data[];
 };
 
+OPENAMP_PACKED_STRUCT_BEGIN
 struct command {
 	unsigned int comm_start;
 	unsigned int comm_code;
 	char data[0];
-} __attribute__((__packed__));
+} OPENAMP_PACKED_STRUCT_END;
 
 struct ept_cmd_data {
 	unsigned int src;
