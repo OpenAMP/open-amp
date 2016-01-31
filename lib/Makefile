@@ -51,8 +51,16 @@ $(wildcard system/$(SYSTEM)/*.c) \
 $(wildcard system/$(SYSTEM)/machine/$(MACHINE)/*.c) \
 $(wildcard machine/$(MACHINE)/*.c)
 
-AS_SRCFILES += \
-$(wildcard system/$(SYSTEM)/machine/$(MACHINE)/*.S)
+AS_SRCFILES =
+
+ifeq ($(MACHINE),zynqmp_r5)
+C_SRCFILES += remoteproc/drivers/zynqmp_remoteproc_a53.c
+endif
+
+ifeq ($(MACHINE),zynq7)
+C_SRCFILES += remoteproc/drivers/zynq_remoteproc_a9.c
+AS_SRCFILES += remoteproc/drivers/zynq_a9_trampoline.S
+endif
 
 OBJFILES := $(patsubst %.c, $(BUILD)/%.o, $(C_SRCFILES)) $(patsubst %.S, $(BUILD)/%.o, $(AS_SRCFILES))
 
