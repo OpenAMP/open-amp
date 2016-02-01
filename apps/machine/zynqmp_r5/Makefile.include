@@ -1,0 +1,6 @@
+CFLAGS += $(ARCH_CFLAGS)
+CFLAGS += -I"$(call local_dir,.)"
+
+C_COMMON_SRCS := $(call local_dir,platform_info.c)
+C_COMMON_SRCS += $(call local_dir,rsc_table.c)
+
