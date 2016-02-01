@@ -36,6 +36,9 @@ INCLUDES += -I"include"
 ifneq ("$(wildcard include/openamp/system/$(SYSTEM))","")
 INCLUDES += -I"include/openamp/system/$(SYSTEM)"
 endif
+ifneq ("$(wildcard include/openamp/machine/$(MACHINE))","")
+INCLUDES += -I"include/openamp/machine/$(MACHINE)"
+endif
 ifneq ("$(wildcard include/openamp/system/$(SYSTEM)/machine/$(MACHINE))","")
 INCLUDES += -I"include/openamp/system/$(SYSTEM)/machine/$(MACHINE)"
 endif

@@ -12,9 +12,10 @@ the rpmsg APIs and shutsdown the core once the test has been completed.*/
 #include "openamp/open_amp.h"
 #include "test_suite.h"
 
-#define BAREMETAL_MASTER 1
+#ifdef ZYNQ7_BAREMETAL
+#include "baremetal.h"
+#endif
 
-#include "machine.h"
 
 /* Application provided callbacks */
 void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
@@ -38,7 +39,6 @@ int test_rpmsg_remote_channel_deletion(struct rpmsg_channel *rpmsg_chnl,
 				       char *channel_name);
 int test_execute_suite(char *firmware_name);
 static void sleep();
-static void init_system();
 
 int int_flag;
 
@@ -49,32 +49,21 @@ char fw_name1[] = "firmware1";
 struct _payload *p_payload = NULL;
 struct _payload *r_payload = NULL;
 
+/* External functions */
+extern void init_system();
+
 void sleep()
 {
 	int i;
 	for (i = 0; i < 10000; i++) ;
 }
 
-static void init_system()
-{
-
-	/* Place the vector table at the image entry point */
-	arm_arch_install_isr_vector_table(RAM_VECTOR_TABLE_ADDR);
-
-	/* Enable MMU */
-	arm_ar_mem_enable_mmu();
-
-	/* Initialize ARM stacks */
-	init_arm_stacks();
-
-	/* Initialize GIC */
-	zc702evk_gic_initialize();
-}
-
 int main()
 {
+#ifdef ZYNQ7_BAREMETAL
 	/* Switch to System Mode */
 	SWITCH_TO_SYS_MODE();
+#endif
 
 	/* Initialize HW system components */
 	init_system();

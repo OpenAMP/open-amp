@@ -28,11 +28,7 @@ BOOTSTRAP_OBJS := $(patsubst %.c,$(BUILD)/%.o,$(BOOTSTRAP_SRCS)) $(patsubst %.S,
 
 LINKERSCRIPT := link_remote.ld
 
-ifeq ($(EXTRA_INCLUDES),)
-EXTRA_INCLUDES += -I"$(OHOME)/obsolete/system/$(SYSTEM)/machine/$(MACHINE)/linux_firmware"
-endif
-
-CFLAGS += $(EXTRA_INCLUDES)
+CFLAGS += -I"$(OHOME)/obsolete/system/$(SYSTEM)/machine/$(MACHINE)/linux_firmware"
 
 all: $(BOOTSTRAP_OUT)
 	cp $(BOOTSTRAP_OUT) $(BUILD)/firmware1
