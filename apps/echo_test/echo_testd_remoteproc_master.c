@@ -15,9 +15,9 @@ Linux to gracefully shutdown. */
 #include <string.h>
 #include "openamp/open_amp.h"
 
-#define BAREMETAL_MASTER 1
-
-#include "machine.h"
+#ifdef ZYNQ7_BAREMETAL
+#include "baremetal.h"
+#endif
 
 #define SHUTDOWN_MSG	0xEF56A55A
 
@@ -27,7 +27,6 @@ static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
 static void rpmsg_read_cb(struct rpmsg_channel *, void *, int, void *,
 			  unsigned long);
 static void sleep();
-static void init_system();
 
 /* Globals */
 static struct rpmsg_channel *app_rp_chnl;
@@ -36,6 +35,9 @@ static struct rpmsg_endpoint *rp_ept;
 char fw_name[] = "firmware1";
 
 static int shutdown_called = 0;
+
+/* External functions */
+extern void init_system();
 
 /* Application entry point */
 int main()
@@ -46,8 +48,10 @@ int main()
 	int shutdown_msg = SHUTDOWN_MSG;
 	int i;
 
+#ifdef ZYNQ7_BAREMETAL
 	/* Switch to System Mode */
 	SWITCH_TO_SYS_MODE();
+#endif
 
 	/* Initialize HW system components */
 	init_system();
@@ -116,18 +120,3 @@ void sleep()
 	for (i = 0; i < 100000; i++) ;
 }
 
-static void init_system()
-{
-
-	/* Place the vector table at the image entry point */
-	arm_arch_install_isr_vector_table(RAM_VECTOR_TABLE_ADDR);
-
-	/* Enable MMU */
-	arm_ar_mem_enable_mmu();
-
-	/* Initialize ARM stacks */
-	init_arm_stacks();
-
-	/* Initialize GIC */
-	zc702evk_gic_initialize();
-}

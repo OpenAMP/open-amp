@@ -8,7 +8,10 @@
 #include "openamp/open_amp.h"
 #include "rsc_table.h"
 #include "test_suite.h"
-#include "machine.h"
+
+#ifdef ZYNQ7_BAREMETAL
+#include "baremetal.h"
+#endif
 
 #define EPT_ADDR        59
 
@@ -21,7 +24,6 @@ void rpmsg_read_ept_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 		       void *pric, unsigned long src);
 
 static void sleep();
-static void init_system();
 
 /* Globals */
 static volatile int intr_flag = 0;
@@ -34,14 +36,19 @@ static char r_buffer[512];
 static struct rsc_table_info rsc_info;
 extern const struct remote_resource_table resources;
 
+/* External functions */
+extern void init_system();
+
 int main()
 {
 	struct remote_proc *proc;
 	int uninit = 0;
 	struct ept_cmd_data *ept_data;
 
+#ifdef ZYNQ7_BAREMETAL
 	/* Switch to System Mode */
 	SWITCH_TO_SYS_MODE();
+#endif
 
 	/* Initialize HW system components */
 	init_system();
@@ -149,18 +156,3 @@ void sleep()
 	for (i = 0; i < 1000; i++) ;
 }
 
-static void init_system()
-{
-
-	/* Place the vector table at the image entry point */
-	arm_arch_install_isr_vector_table(RAM_VECTOR_TABLE_ADDR);
-
-	/* Enable MMU */
-	arm_ar_mem_enable_mmu();
-
-	/* Initialize ARM stacks */
-	init_arm_stacks();
-
-	/* Initialize GIC */
-	zc702evk_gic_initialize();
-}

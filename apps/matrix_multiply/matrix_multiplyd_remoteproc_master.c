@@ -18,7 +18,10 @@ Linux to gracefully shutdown. */
 
 #define BAREMETAL_MASTER 1
 
-#include "machine.h"
+#ifdef ZYNQ7_BAREMETAL
+#include "baremetal.h"
+#endif
+
 
 #define MAX_SIZE        6
 #define NUM_MATRIX      2
@@ -35,8 +38,6 @@ static matrix matrix_array[NUM_MATRIX];
 static matrix matrix_result;
 
 /* Prototypes */
-static void init_system();
-
 void sleep();
 
 /* Application provided callbacks */
@@ -53,6 +54,9 @@ char fw_name[] = "firmware1";
 int int_flag;
 
 static int shutdown_called = 0;
+
+/* External functions */
+extern void init_system();
 
 static void Matrix_Multiply(const matrix * m, const matrix * n, matrix * r)
 {
@@ -85,8 +89,10 @@ int main()
 	int i;
 	int shutdown_msg = SHUTDOWN_MSG;
 
+#ifdef ZYNQ7_BAREMETAL
 	/* Switch to System Mode */
 	SWITCH_TO_SYS_MODE();
+#endif
 
 	/* Initialize HW system components */
 	init_system();
@@ -177,18 +183,3 @@ void sleep()
 	for (i = 0; i < 10000000; i++) ;
 }
 
-static void init_system()
-{
-
-	/* Place the vector table at the image entry point */
-	arm_arch_install_isr_vector_table(RAM_VECTOR_TABLE_ADDR);
-
-	/* Enable MMU */
-	arm_ar_mem_enable_mmu();
-
-	/* Initialize ARM stacks */
-	init_arm_stacks();
-
-	/* Initialize GIC */
-	zc702evk_gic_initialize();
-}

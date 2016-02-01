@@ -9,11 +9,13 @@
 #include <unistd.h>
 #include "openamp/open_amp.h"
 #include "rsc_table.h"
-#include "machine.h"
 #include "openamp/rpmsg_retarget.h"
 
+#ifdef ZYNQ7_BAREMETAL
+#include "baremetal.h"
+#endif
+
 /* Internal functions */
-static void init_system();
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
 static void rpmsg_read_cb(struct rpmsg_channel *, void *, int, void *,
@@ -26,6 +28,9 @@ volatile int chnl_cb_flag = 0;
 static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
 extern const struct remote_resource_table resources;
+
+/* External functions */
+extern void init_system();
 
 #define REDEF_O_CREAT 100
 #define REDEF_O_EXCL 200
@@ -50,7 +55,7 @@ int main()
 	int ret;
 	int status;
 
-#ifdef ZYNQ_A9
+#ifdef ZYNQ7_BAREMETAL
 	SWITCH_TO_SYS_MODE();
 #endif
 
@@ -191,24 +196,3 @@ static void shutdown_cb(struct rpmsg_channel *rp_chnl)
 	remoteproc_resource_deinit(proc);
 }
 
-static void init_system()
-{
-#ifdef ZYNQMP_R5
-	/* Initilaize GIC */
-	zynqMP_r5_gic_initialize();
-#else
-#ifdef ZYNQ_A9
-	/* Place the vector table at the image entry point */
-	arm_arch_install_isr_vector_table(RAM_VECTOR_TABLE_ADDR);
-
-	/* Enable MMU */
-	arm_ar_mem_enable_mmu();
-
-	/* Initialize ARM stacks */
-	init_arm_stacks();
-
-	/* Initialize GIC */
-	zc702evk_gic_initialize();
-#endif
-#endif
-}

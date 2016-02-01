@@ -7,7 +7,10 @@ This application echoes back data that was sent to it by the master core. */
 #include <string.h>
 #include "openamp/open_amp.h"
 #include "rsc_table.h"
-#include "machine.h"
+
+#ifdef ZYNQ7_BAREMETAL
+#include "baremetal.h"
+#endif
 
 #define SHUTDOWN_MSG	0xEF56A55A
 
@@ -16,8 +19,6 @@ static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
 static void rpmsg_read_cb(struct rpmsg_channel *, void *, int, void *,
 			  unsigned long);
-static void init_system();
-
 /* Globals */
 static struct rpmsg_channel *app_rp_chnl;
 static struct rpmsg_endpoint *rp_ept;
@@ -25,12 +26,15 @@ static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
 extern const struct remote_resource_table resources;
 
+/* External functions */
+extern void init_system();
+
 /* Application entry point */
 int main()
 {
 	int status = 0;
 
-#ifdef ZYNQ_A9
+#ifdef ZYNQ7_BAREMETAL
 	SWITCH_TO_SYS_MODE();
 #endif
 
@@ -81,25 +85,3 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 	}
 }
 
-static void init_system()
-{
-
-#ifdef ZYNQMP_R5
-	/* Initilaize GIC */
-	zynqMP_r5_gic_initialize();
-#else
-#ifdef ZYNQ_A9
-	/* Place the vector table at the image entry point */
-	arm_arch_install_isr_vector_table(RAM_VECTOR_TABLE_ADDR);
-
-	/* Enable MMU */
-	arm_ar_mem_enable_mmu();
-
-	/* Initialize ARM stacks */
-	init_arm_stacks();
-
-	/* Initialize GIC */
-	zc702evk_gic_initialize();
-#endif
-#endif
-}
