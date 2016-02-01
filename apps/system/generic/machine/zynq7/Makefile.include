@@ -1,15 +1,19 @@
-CFLAGS += $(ARCH_CFLAGS)
-CFLAGS += -DZYNQ_A9
+CFLAGS += -DZYNQ7_BAREMETAL
 CFLAGS += -I"$(call local_dir,.)"
-DEPS := -lc -lm -lcs3 -lcs3arm -lcs3unhosted
+DEPS := -lbaremetal -lc -lm -lcs3 -lcs3arm -lcs3unhosted
 
 ifeq ($(REMOTEPROC_MASTER),y)
 LINKERSCRIPT := $(call local_dir,linker_master.ld)
-C_COMMON_SRCS :=  $(call local_dir,platform_info_remoteproc_master.c)
+CFLAGS += -DBAREMETAL_MASTER=1
 else
 LINKERSCRIPT := $(call local_dir,linker_remote.ld)
-C_COMMON_SRCS := $(call local_dir,platform_info.c)
-C_COMMON_SRCS += $(call local_dir,rsc_table.c)
+CFLAGS += -DBAREMETAL_MASTER=0
 endif
 
-ARCH_COMMON_DIR := $(call local_dir,.)
+C_COMMON_SRCS += $(call local_dir,helper.c)
+
+ifeq ($(EXTRA_INCLUDES),)
+EXTRA_INCLUDES += -I$(OHOME)/obsolete/system/$(SYSTEM)/machine/$(MACHINE)/baremetal
+endif
+
+CFLAGS += $(EXTRA_INCLUDES)

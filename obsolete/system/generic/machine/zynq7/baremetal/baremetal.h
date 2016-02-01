@@ -39,19 +39,13 @@
 #define         MEM_WRITE16(addr,data)  *(volatile unsigned short *)(addr) = (unsigned short)(data)
 #define         MEM_WRITE32(addr,data)  *(volatile unsigned long *)(addr) = (unsigned long)(data)
 
-/* Memory barrier */
-#if (defined(__CC_ARM))
-#define MEM_BARRIER() __schedule_barrier()
-#elif (defined(__GNUC__))
-#define MEM_BARRIER() asm volatile("dsb" : : : "memory")
-#else
-#define MEM_BARRIER()
-#endif
-
 /* Define bit values for the architecture's status register / machine state register /
  etc that are used to enable and disable interrupts for the given architecture. */
 #define         ARM_AR_INTERRUPTS_DISABLE_BITS         0x000000C0
 #define         ARM_AR_INTERRUPTS_ENABLE_BITS          0x00000000
+
+#define SWITCH_TO_SYS_MODE()    ARM_AR_CPSR_C_WRITE(ARM_AR_INT_CPSR_SYS_DISABLED); \
+				ARM_AR_SP_WRITE(ARM_GE_STK_ALIGN(&ARM_AR_ISR_SYS_Stack[ARM_AR_ISR_STACK_SIZE-1]))
 
 /* This define is used to add quotes to anything passed in */
 #define         ARM_AR_QUOTES(x)           #x
@@ -362,32 +356,6 @@ extern unsigned char ARM_AR_ISR_FIQ_Data[ARM_AR_ISR_STACK_SIZE];
 extern unsigned char ARM_AR_ISR_SUP_Stack[ARM_AR_ISR_STACK_SIZE];
 extern unsigned char ARM_AR_ISR_SYS_Stack[ARM_AR_ISR_STACK_SIZE];
 
-#define SWITCH_TO_SYS_MODE()    ARM_AR_CPSR_C_WRITE(ARM_AR_INT_CPSR_SYS_DISABLED); \
-                                ARM_AR_SP_WRITE(ARM_GE_STK_ALIGN(&ARM_AR_ISR_SYS_Stack[ARM_AR_ISR_STACK_SIZE-1]))
-
-#ifndef BAREMETAL_MASTER
-#define BAREMETAL_MASTER 0
-#endif
-
-/* Memory Regions for MMU Mapping */
-#if (BAREMETAL_MASTER == 1)
-
-#define ELF_START       0x10000000	/* Image entry point address */
-#define ELF_END         0x0FE00000	/* size of code,data,heap and stack sections */
-
-#define TLB_MEM_START   0x1FE00000	/* Address of TLB memory */
-
-#else
-
-#define ELF_START       0x00000000	/* Image entry point address */
-#define ELF_END         0x08000000	/* size of code,data,heap and stack sections */
-
-#define TLB_MEM_START   0x0FE00000	/* Address of TLB memory */
-
-#endif
-
-/* The vector table address is the same as image entry point */
-#define RAM_VECTOR_TABLE_ADDR           ELF_START
 
 #define TLB_SIZE        2*1024*1024	/* TLB memory size */
 
@@ -659,49 +627,8 @@ typedef enum {
                     ARM_AR_NOP_EXECUTE();                                                 \
                 }
 
-static inline unsigned int xchg(void* plock, unsigned int lockVal)
-{
-	volatile unsigned int tmpVal = 0;
-	volatile unsigned int tmpVal1 = 0;
-
-#ifdef __GNUC__
-
-	asm (
-		"1:                                \n\t"
-		"LDREX  %[tmpVal], [%[plock]]      \n\t"
-		"STREX  %[tmpVal1], %[lockVal], [%[plock]] \n\t"
-		"CMP    %[tmpVal1], #0                     \n\t"
-		"BNE    1b                         \n\t"
-		"DMB                               \n\t"
-		: [tmpVal] "=&r"(tmpVal)
-		: [tmpVal1] "r" (tmpVal1), [lockVal] "r"(lockVal), [plock] "r"(plock)
-		: "cc", "memory"
-	);
-
-#endif
-
-	return tmpVal;
-}
-
-int arm_ar_mem_enable_mmu();
 void arm_ar_map_mem_region(unsigned int vrt_addr, unsigned int phy_addr,
 			   unsigned int size, int is_mem_mapped,
 			   CACHE_TYPE cache_type);
-
-int zc702evk_gic_initialize();
-void zc702evk_gic_pr_int_initialize(void);
-void arm_arch_install_isr_vector_table(unsigned long addr);
-void restore_global_interrupts();
-void disable_global_interrupts();
-void init_arm_stacks(void);
-int platform_interrupt_enable(unsigned int vector, unsigned int polarity,
-			      unsigned int priority);
-int platform_interrupt_disable(unsigned int vector);
-void platform_cache_all_flush_invalidate();
-void platform_cache_disable();
-void platform_map_mem_region(unsigned int va, unsigned int pa,
-			     unsigned int size, unsigned int flags);
-unsigned long platform_vatopa(void *addr);
-void *platform_patova(unsigned long addr);
 
 #endif				/* _BAREMETAL_H */

@@ -43,20 +43,10 @@
 
 #include "openamp/env.h"
 #include "machine.h"
+#include "machine_system.h"
 
 #include <stdlib.h>
 #include <string.h>
-
-/* External defined functions */
-extern void restore_global_interrupts();
-extern void disable_global_interrupts();
-extern int platform_interrupt_enable(unsigned int vector,unsigned int polarity, unsigned int priority);
-extern int platform_interrupt_disable(unsigned int vector_id);
-extern void platform_cache_all_flush_invalidate();
-extern void platform_cache_disable();
-extern void platform_map_mem_region(unsigned int va,unsigned int pa, unsigned int size, unsigned int flags);
-extern unsigned long platform_vatopa(void *addr);
-extern void *platform_patova(unsigned long addr);
 
 static void acquire_spin_lock(void *plock);
 static void release_spin_lock(void *plock);
