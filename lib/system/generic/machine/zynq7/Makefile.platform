@@ -14,8 +14,8 @@ AR               = $(CROSS)ar
 LD               = $(CROSS)gcc
 OBJCPY           = $(CROSS)objcopy
 
-ifeq ($(REMOTEPROC_MASTER),y)
-CFLAGS += -D"BAREMETAL_MASTER=1"
-else
-CFLAGS += -D"BAREMETAL_MASTER=0"
+ifeq ($(EXTRA_INCLUDES),)
+EXTRA_INCLUDES += -I$(OHOME)/obsolete/system/$(SYSTEM)/machine/$(MACHINE)/baremetal
 endif
+
+INCLUDES += $(EXTRA_INCLUDES)
