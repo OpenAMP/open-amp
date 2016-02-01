@@ -34,61 +34,39 @@
 #include "xil_mmu.h"
 #include "xil_mpu.h"
 #include "machine.h"
+#include "machine_system.h"
 #include "openamp/env.h"
 
-XScuGic InterruptController;
+#define CORTEXR5_CPSR_INTERRUPTS_BITS (XREG_CPSR_IRQ_ENABLE | XREG_CPSR_FIQ_ENABLE)
 
-int zynqMP_r5_gic_initialize()
-{
-	u32 Status;
-
-	Xil_ExceptionDisable();
-
-	XScuGic_Config *IntcConfig;	/* The configuration parameters of the interrupt controller */
-
-	/*
-	 * Initialize the interrupt controller driver
-	 */
-	IntcConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
-	if (NULL == IntcConfig) {
-		return XST_FAILURE;
+/* This macro writes the current program status register (CPSR - all fields) */
+#define ARM_AR_CPSR_CXSF_WRITE(cpsr_cxsf_value) \
+	{ \
+		asm volatile("    MSR     CPSR_cxsf, %0" \
+			: /* No outputs */ \
+			: "r" (cpsr_cxsf_value) ); \
 	}
 
-	Status = XScuGic_CfgInitialize(&InterruptController, IntcConfig,
-				       IntcConfig->CpuBaseAddress);
-	if (Status != XST_SUCCESS) {
-		return XST_FAILURE;
+/* This macro sets the interrupt related bits in the status register / control
+ register to the specified value. */
+#define ARM_AR_INT_BITS_SET(set_bits) \
+	{ \
+		int     tmp_val; \
+		tmp_val = mfcpsr(); \
+		tmp_val &= ~((unsigned int)CORTEXR5_CPSR_INTERRUPTS_BITS); \
+		tmp_val |= set_bits; \
+		ARM_AR_CPSR_CXSF_WRITE(tmp_val); \
 	}
 
-	/*
-	 * Register the interrupt handler to the hardware interrupt handling
-	 * logic in the ARM processor.
-	 */
-	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
-				     (Xil_ExceptionHandler) zynqMP_r5_irq_isr,
-				     &InterruptController);
-
-	Xil_ExceptionEnable();
-
-	return 0;
-}
-
-extern void bm_env_isr(int vector);
-
-void zynqMP_r5_irq_isr()
-{
-
-	unsigned int raw_irq;
-	int irq_vector;
-	raw_irq =
-	    (unsigned int)XScuGic_CPUReadReg(&InterruptController,
-					     XSCUGIC_INT_ACK_OFFSET);
-	irq_vector = (int)(raw_irq & XSCUGIC_ACK_INTID_MASK);
-
-	bm_env_isr(irq_vector);
-
-	XScuGic_CPUWriteReg(&InterruptController, XSCUGIC_EOI_OFFSET, raw_irq);
-}
+/* This macro gets the interrupt related bits from the status register / control
+ register. */
+#define ARM_AR_INT_BITS_GET(get_bits_ptr) \
+	{ \
+		int     tmp_val; \
+		tmp_val = mfcpsr(); \
+		tmp_val &= CORTEXR5_CPSR_INTERRUPTS_BITS; \
+		*get_bits_ptr = tmp_val; \
+	}
 
 /*
  ***********************************************************************
@@ -205,6 +183,11 @@ int platform_interrupt_disable(unsigned int vector)
 {
 	XScuGic_DisableIntr(XPAR_SCUGIC_0_DIST_BASEADDR, vector);
 	return (vector);
+}
+
+void platform_dcache_all_flush()
+{
+	Xil_DCacheFlush();
 }
 
 void platform_cache_all_flush_invalidate()
