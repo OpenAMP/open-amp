@@ -60,6 +60,8 @@ struct isr_info {
 	int vector;
 	int priority;
 	int type;
+	char *name;
+	int shared;
 	void *data;
 	void (*isr)(int vector, void *data);
 };
@@ -367,6 +369,34 @@ void env_restore_interrupts()
 }
 
 /**
+ * env_register_isr_shared
+ *
+ * Registers interrupt handler for the given interrupt vector.
+ *
+ * @param vector - interrupt vector number
+ * @param isr    - interrupt handler
+ * @param name   - interrupt name
+ * @param shared - if the interrupt is shared or not
+ */
+void env_register_isr_shared(int vector, void *data,
+		      void (*isr) (int vector, void *data),
+		      char *name,
+		      int shared)
+{
+	env_disable_interrupts();
+
+	if (Intr_Count < ISR_COUNT) {
+		/* Save interrupt data */
+		isr_table[Intr_Count].vector = vector;
+		isr_table[Intr_Count].data = data;
+		isr_table[Intr_Count].name = name;
+		isr_table[Intr_Count].shared = shared;
+		isr_table[Intr_Count++].isr = isr;
+	}
+
+	env_restore_interrupts();
+}
+/**
  * env_register_isr
  *
  * Registers interrupt handler for the given interrupt vector.
@@ -377,20 +407,13 @@ void env_restore_interrupts()
 void env_register_isr(int vector, void *data,
 		      void (*isr) (int vector, void *data))
 {
-	env_disable_interrupts();
-
-	if (Intr_Count < ISR_COUNT) {
-		/* Save interrupt data */
-		isr_table[Intr_Count].vector = vector;
-		isr_table[Intr_Count].data = data;
-		isr_table[Intr_Count++].isr = isr;
-	}
-
-	env_restore_interrupts();
+	env_register_isr_shared(vector, data, isr, 0, 0);
 }
 
 void env_update_isr(int vector, void *data,
-		    void (*isr) (int vector, void *data))
+		    void (*isr) (int vector, void *data),
+		    char *name,
+		    int shared)
 {
 	int idx;
 	struct isr_info *info;
@@ -400,8 +423,12 @@ void env_update_isr(int vector, void *data,
 	for (idx = 0; idx < ISR_COUNT; idx++) {
 		info = &isr_table[idx];
 		if (info->vector == vector) {
+			if (name && strcmp(info->name, name)) {
+				continue;
+			}
 			info->data = data;
 			info->isr = isr;
+			info->shared = shared;
 			break;
 		}
 	}
@@ -511,7 +538,8 @@ void bm_env_isr(int vector)
 			info->isr(info->vector, info->data);
 			env_enable_interrupt(info->vector, info->priority,
 					     info->type);
-			break;
+			if (!info->shared)
+				break;
 		}
 	}
 }

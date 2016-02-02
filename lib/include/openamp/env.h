@@ -338,9 +338,27 @@ void env_restore_interrupts();
 
 void env_register_isr(int vector, void *data,
 		      void (*isr) (int vector, void *data));
+/**
+ * env_register_isr_shared
+ *
+ * Registers interrupt handler for the given shared interrupt vector.
+ *
+ * @param vector - interrupt vector number
+ * @param data   - private data
+ * @param isr    - interrupt handler
+ * @oaram name   - interrup handler name
+ * @param shared - if the interrupt is a shared interrupt
+ */
+
+void env_register_isr_shared(int vector, void *data,
+		      void (*isr) (int vector, void *data),
+		      char *name,
+		      int shared);
 
 void env_update_isr(int vector, void *data,
-		    void (*isr) (int vector, void *data));
+		    void (*isr) (int vector, void *data),
+		    char *name,
+		    int shared);
 
 /**
  * env_enable_interrupt
