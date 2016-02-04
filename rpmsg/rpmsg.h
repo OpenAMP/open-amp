@@ -52,7 +52,7 @@
  *
  * Every message sent(/received) on the rpmsg bus begins with this header.
  */
-OPENAMP_PACKED_STRUCT_BEGIN
+OPENAMP_PACKED_BEGIN
 struct rpmsg_hdr {
 	unsigned long src;
 	unsigned long dst;
@@ -60,7 +60,7 @@ struct rpmsg_hdr {
 	unsigned short len;
 	unsigned short flags;
 	unsigned char data[0];
-} OPENAMP_PACKED_STRUCT_END;
+} OPENAMP_PACKED_END;
 
 /**
  * struct rpmsg_ns_msg - dynamic name service announcement message
@@ -74,12 +74,12 @@ struct rpmsg_hdr {
  * or ->remove() handler of the appropriate rpmsg driver will be invoked
  * (if/as-soon-as one is registered).
  */
-OPENAMP_PACKED_STRUCT_BEGIN
+OPENAMP_PACKED_BEGIN
 struct rpmsg_ns_msg {
 	char name[RPMSG_NAME_SIZE];
 	unsigned long addr;
 	unsigned long flags;
-} OPENAMP_PACKED_STRUCT_END;
+} OPENAMP_PACKED_END;
 
 /**
  * enum rpmsg_ns_flags - dynamic name service announcement flags

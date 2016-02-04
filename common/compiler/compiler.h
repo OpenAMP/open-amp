@@ -45,34 +45,34 @@
 /* IAR ARM build tools */
 #if defined(__ICCARM__)
 
-#ifndef OPENAMP_PACKED_STRUCT_BEGIN
-#define OPENAMP_PACKED_STRUCT_BEGIN __packed
+#ifndef OPENAMP_PACKED_BEGIN
+#define OPENAMP_PACKED_BEGIN __packed
 #endif
 
-#ifndef OPENAMP_PACKED_STRUCT_END
-#define OPENAMP_PACKED_STRUCT_END
+#ifndef OPENAMP_PACKED_END
+#define OPENAMP_PACKED_END
 #endif
 
 /* GNUC */
 #elif defined(__GNUC__)
 
-#ifndef OPENAMP_PACKED_STRUCT_BEGIN
-#define OPENAMP_PACKED_STRUCT_BEGIN
+#ifndef OPENAMP_PACKED_BEGIN
+#define OPENAMP_PACKED_BEGIN
 #endif
 
-#ifndef OPENAMP_PACKED_STRUCT_END
-#define OPENAMP_PACKED_STRUCT_END __attribute__((__packed__))
+#ifndef OPENAMP_PACKED_END
+#define OPENAMP_PACKED_END __attribute__((__packed__))
 #endif
 
 /* ARM GCC */
 #elif defined(__CC_ARM)
 
-#ifndef OPENAMP_PACKED_STRUCT_BEGIN
-#define OPENAMP_PACKED_STRUCT_BEGIN _Pragma("pack(1U)")
+#ifndef OPENAMP_PACKED_BEGIN
+#define OPENAMP_PACKED_BEGIN _Pragma("pack(1U)")
 #endif
 
-#ifndef OPENAMP_PACKED_STRUCT_END
-#define OPENAMP_PACKED_STRUCT_END _Pragma("pack()")
+#ifndef OPENAMP_PACKED_END
+#define OPENAMP_PACKED_END _Pragma("pack()")
 #endif
 
 /* There is no default definition here to avoid wrong structures packing in case of not supported compiler */
