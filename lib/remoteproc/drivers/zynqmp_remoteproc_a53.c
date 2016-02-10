@@ -112,8 +112,13 @@ void _ipi_handler_deinit(int vect_id, void *data)
 
 static int _enable_interrupt(struct proc_vring *vring_hw)
 {
-	if (vring_hw->intr_info.vect_id == 0xFFFFFFFF)
+	struct ipi_info *chn_ipi_info =
+	    (struct ipi_info *)(vring_hw->intr_info.data);
+	unsigned int ipi_base_addr = chn_ipi_info->ipi_base_addr;
+
+	if (vring_hw->intr_info.vect_id == 0xFFFFFFFF) {
 		return 0;
+	}
 
 	/* Register ISR */
 	env_register_isr_shared(vring_hw->intr_info.vect_id,
@@ -122,6 +127,8 @@ static int _enable_interrupt(struct proc_vring *vring_hw)
 	env_enable_interrupt(vring_hw->intr_info.vect_id,
 			     vring_hw->intr_info.priority,
 			     vring_hw->intr_info.trigger_type);
+	HIL_MEM_WRITE32((ipi_base_addr + IPI_IER_OFFSET),
+		chn_ipi_info->ipi_chn_mask);
 	return 0;
 }
 
