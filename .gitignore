@@ -1,10 +1,8 @@
 *.o
 *~
-*.a
 !libs/system/zc702evk/linux/lib/*/*.a
 *.bin
 *.map
 *.out
 *.log
 *.d
-firmware
