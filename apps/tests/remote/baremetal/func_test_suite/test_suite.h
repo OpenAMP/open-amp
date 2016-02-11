@@ -2,19 +2,12 @@
 #ifndef M_EPT_FUNC_TEST_H_
 #define M_EPT_FUNC_TEST_H_
 
-#if defined(__IAR_SYSTEMS_ICC__)
-__packed
-#endif
 struct command
 {
     unsigned int comm_start;
     unsigned int comm_code;
-    char data[1];
-#if defined(__IAR_SYSTEMS_ICC__)
-};
-#else
-}__attribute__((packed));
-#endif
+    char data[0];
+}__attribute__((__packed__));
 
 struct ept_cmd_data
 {
@@ -57,18 +50,11 @@ struct chnl_cmd_data
 #define PAYLOAD_MAX_SIZE    (MAX_RPMSG_BUFF_SIZE - 24)
 #define NUM_PAYLOADS        (PAYLOAD_MAX_SIZE/PAYLOAD_MIN_SIZE)
 
-#if defined(__IAR_SYSTEMS_ICC__)
-__packed
-#endif
 struct _payload {
     unsigned long    num;
     unsigned long    size;
     char             data[0];
-#if defined(__IAR_SYSTEMS_ICC__)
-};
-#else
-}__attribute__((packed));
-#endif
+}__attribute__((__packed__));
 
 
 #endif /* M_EPT_FUNC_TEST_H_ */

@@ -41,9 +41,6 @@
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
 #define RPMSG_NAME_SIZE     32
 
-#if defined(__IAR_SYSTEMS_ICC__)
-__packed
-#endif
 /**
  * struct rpmsg_hdr - common header for all rpmsg messages
  * @src: source address
@@ -56,21 +53,14 @@ __packed
  * Every message sent(/received) on the rpmsg bus begins with this header.
  */
 struct rpmsg_hdr {
-    unsigned long src;
-    unsigned long dst;
-    unsigned long reserved;
-    unsigned short len;
-    unsigned short flags;
-    unsigned char data[1];
-#if defined(__IAR_SYSTEMS_ICC__)
-};
-#else
-}__attribute__((packed));
-#endif
+	unsigned long src;
+	unsigned long dst;
+	unsigned long reserved;
+	unsigned short len;
+	unsigned short flags;
+	unsigned char data[0];
+} __attribute__((packed));
 
-#if defined(__IAR_SYSTEMS_ICC__)
-__packed
-#endif
 /**
  * struct rpmsg_ns_msg - dynamic name service announcement message
  * @name: name of remote service that is published
@@ -84,14 +74,10 @@ __packed
  * (if/as-soon-as one is registered).
  */
 struct rpmsg_ns_msg {
-    char name[RPMSG_NAME_SIZE];
-    unsigned long addr;
-    unsigned long flags;
-#if defined(__IAR_SYSTEMS_ICC__)
-};
-#else
-}__attribute__((packed));
-#endif
+	char name[RPMSG_NAME_SIZE];
+	unsigned long addr;
+	unsigned long flags;
+} __attribute__((packed));
 
 /**
  * enum rpmsg_ns_flags - dynamic name service announcement flags
