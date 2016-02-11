@@ -2,6 +2,7 @@
  * Copyright (c) 2014, Mentor Graphics Corporation
  * All rights reserved.
  * Copyright (c) 2015 Xilinx, Inc. All rights reserved.
+ * Copyright (c) 2016 NXP, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -218,6 +219,10 @@ void rpmsg_rdev_deinit(struct remote_device *rdev)
 	}
 	if (rdev->lock) {
 		env_delete_mutex(rdev->lock);
+	}
+	if (rdev->proc) {
+		hil_delete_proc(rdev->proc);
+		rdev->proc = RPROC_NULL;
 	}
 
 	env_free_memory(rdev);
