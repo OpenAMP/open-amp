@@ -2,6 +2,7 @@
  * Copyright (c) 2014, Mentor Graphics Corporation
  * All rights reserved.
  * Copyright (c) 2015 Xilinx, Inc. All rights reserved.
+ * Copyright (c) 2016 NXP, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -708,7 +709,7 @@ int rpmsg_get_address(unsigned long *bitmap, int size)
 		tmp32 = get_first_zero_bit(bitmap[i]);
 
 		if (tmp32 < 32) {
-			addr = tmp32 + i + 1;
+			addr = tmp32 + (i*32);
 			bitmap[i] |= (1 << tmp32);
 			break;
 		}
