@@ -2,6 +2,7 @@
  * Copyright (c) 2014, Mentor Graphics Corporation
  * All rights reserved.
  * Copyright (c) 2015 Xilinx, Inc. All rights reserved.
+ * Copyright (c) 2016 NXP, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -477,7 +478,7 @@ void *rpmsg_get_rx_buffer(struct remote_device *rdev, unsigned long *len,
 void rpmsg_free_buffer(struct remote_device *rdev, void *buffer)
 {
 	if (rdev->role == RPMSG_REMOTE) {
-		sh_mem_free_buffer(rdev->mem_pool, buffer);
+		sh_mem_free_buffer(buffer, rdev->mem_pool);
 	}
 }
 
