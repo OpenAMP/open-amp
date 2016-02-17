@@ -332,7 +332,7 @@ void rpmsg_send_ns_message(struct remote_device *rdev,
 	/* Fill out name service data. */
 	rp_hdr->dst = RPMSG_NS_EPT_ADDR;
 	rp_hdr->len = sizeof(struct rpmsg_ns_msg);
-	ns_msg = (struct rpmsg_ns_msg *)rp_hdr->data;
+	ns_msg = (struct rpmsg_ns_msg *) RPMSG_LOCATE_DATA(rp_hdr);
 	env_strncpy(ns_msg->name, rp_chnl->name, sizeof(rp_chnl->name));
 	ns_msg->flags = flags;
 	ns_msg->addr = rp_chnl->src;
@@ -605,7 +605,7 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 				rdev->channel_created(rp_chnl);
 			}
 		} else {
-			rp_ept->cb(rp_chnl, rp_hdr->data, rp_hdr->len,
+			rp_ept->cb(rp_chnl, (void *)RPMSG_LOCATE_DATA(rp_hdr), rp_hdr->len,
 				   rp_ept->priv, rp_hdr->src);
 		}
 
