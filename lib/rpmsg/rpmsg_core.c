@@ -709,7 +709,7 @@ int rpmsg_get_address(unsigned long *bitmap, int size)
 		tmp32 = get_first_zero_bit(bitmap[i]);
 
 		if (tmp32 < 32) {
-			addr = tmp32 + i + 1;
+			addr = tmp32 + (i*32);
 			bitmap[i] |= (1 << tmp32);
 			break;
 		}
