@@ -133,7 +133,7 @@ static int _enable_interrupt(struct proc_vring *vring_hw)
 }
 
 /* In case there is an interrupt received after deinit. */
-void _reg_ipi_after_deinit(struct proc_vring *vring_hw)
+static void _reg_ipi_after_deinit(struct proc_vring *vring_hw)
 {
 	struct ipi_info *chn_ipi_info =
 	    (struct ipi_info *)(vring_hw->intr_info.data);
@@ -148,7 +148,7 @@ void _reg_ipi_after_deinit(struct proc_vring *vring_hw)
                     "remoteproc_a53", 1);
 }
 
-void _notify(int cpu_id, struct proc_intr *intr_info)
+static void _notify(int cpu_id, struct proc_intr *intr_info)
 {
 
 	(void)cpu_id;
@@ -162,14 +162,14 @@ void _notify(int cpu_id, struct proc_intr *intr_info)
 			chn_ipi_info->ipi_chn_mask);
 }
 
-int _boot_cpu(int cpu_id, unsigned int load_addr)
+static int _boot_cpu(int cpu_id, unsigned int load_addr)
 {
 	(void)cpu_id;
 	(void)load_addr;
 	return -1;
 }
 
-void _shutdown_cpu(int cpu_id)
+static void _shutdown_cpu(int cpu_id)
 {
 	(void)cpu_id;
 	return;

@@ -66,11 +66,11 @@ struct isr_info {
 	void (*isr)(int vector, void *data);
 };
 struct isr_info isr_table[ISR_COUNT];
-int Intr_Count = 0;
+static int intr_count = 0;
 /* Flag to show status of global interrupts. 0 for disabled and 1 for enabled. This
  * is added to prevent recursive global interrupts enablement/disablement.
  */
-int Intr_Enable_Flag = 1;
+static int intr_enable_flag = 1;
 
 /**
  * env_init
@@ -348,9 +348,9 @@ void env_sleep_msec(int num_msec)
  */
 void env_disable_interrupts()
 {
-	if (Intr_Enable_Flag == 1) {
+	if (intr_enable_flag == 1) {
 		disable_global_interrupts();
-		Intr_Enable_Flag = 0;
+		intr_enable_flag = 0;
 	}
 }
 
@@ -362,9 +362,9 @@ void env_disable_interrupts()
  */
 void env_restore_interrupts()
 {
-	if (Intr_Enable_Flag == 0) {
+	if (intr_enable_flag == 0) {
 		restore_global_interrupts();
-		Intr_Enable_Flag = 1;
+		intr_enable_flag = 1;
 	}
 }
 
@@ -385,13 +385,13 @@ void env_register_isr_shared(int vector, void *data,
 {
 	env_disable_interrupts();
 
-	if (Intr_Count < ISR_COUNT) {
+	if (intr_count < ISR_COUNT) {
 		/* Save interrupt data */
-		isr_table[Intr_Count].vector = vector;
-		isr_table[Intr_Count].data = data;
-		isr_table[Intr_Count].name = name;
-		isr_table[Intr_Count].shared = shared;
-		isr_table[Intr_Count++].isr = isr;
+		isr_table[intr_count].vector = vector;
+		isr_table[intr_count].data = data;
+		isr_table[intr_count].name = name;
+		isr_table[intr_count].shared = shared;
+		isr_table[intr_count++].isr = isr;
 	}
 
 	env_restore_interrupts();
