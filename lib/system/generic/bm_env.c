@@ -509,6 +509,19 @@ void env_disable_cache()
 }
 
 /**
+ * env_flush_invalidate_all_caches
+ *
+ * Flush and Invalidate all caches.
+ *
+ */
+
+void env_flush_invalidate_all_caches(void)
+{
+	platform_cache_all_flush_invalidate();
+}
+
+
+/**
  * 
  * env_get_timestamp
  *

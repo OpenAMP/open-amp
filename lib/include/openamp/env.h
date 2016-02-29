@@ -438,8 +438,15 @@ unsigned long long env_get_timestamp(void);
  * Disables system caches.
  *
  */
+void env_disable_cache(void);
 
-void env_disable_cache();
+/**
+ * env_flush_invalidate_all_caches
+ * 
+ * Flush and Invalidate all caches.
+ *
+ */
+void env_flush_invalidate_all_caches(void);
 
 typedef void LOCK;
 
