@@ -172,7 +172,7 @@ static void _shutdown_cpu(int cpu_id)
 	lock_slcr();
 }
 
-static void platform_isr(int vect_id, void *data)
-{
-	hil_isr(((struct proc_vring *)data));
-}
+
+
+
+

@@ -89,7 +89,7 @@ void _ipi_handler(int vect_id, void *data)
 	    (unsigned int)HIL_MEM_READ32(ipi_base_addr + IPI_ISR_OFFSET);
 	if (ipi_intr_status & chn_ipi_info->ipi_chn_mask) {
 		platform_dcache_all_flush();
-		hil_isr(vring_hw);
+		platform_isr(vect_id, data);
 		HIL_MEM_WRITE32((ipi_base_addr + IPI_ISR_OFFSET),
 				chn_ipi_info->ipi_chn_mask);
 	}
