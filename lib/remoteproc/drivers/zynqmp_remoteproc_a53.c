@@ -51,20 +51,21 @@ struct ipi_info {
 
 /*--------------------------- Declare Functions ------------------------ */
 static int _enable_interrupt(struct proc_vring *vring_hw);
+static void _reg_ipi_after_deinit(struct proc_vring *vring_hw);
 static void _notify(int cpu_id, struct proc_intr *intr_info);
 static int _boot_cpu(int cpu_id, unsigned int load_addr);
 static void _shutdown_cpu(int cpu_id);
+
 static void _ipi_handler(int vect_id, void *data);
 static void _ipi_handler_deinit(int vect_id, void *data);
-static void _reg_ipi_after_deinit(struct proc_vring *vring_hw);
 
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops proc_ops = {
-	.enable_interrupt = _enable_interrupt,
+	.enable_interrupt     = _enable_interrupt,
 	.reg_ipi_after_deinit = _reg_ipi_after_deinit,
-	.notify = _notify,
-	.boot_cpu = _boot_cpu,
-	.shutdown_cpu = _shutdown_cpu,
+	.notify               = _notify,
+	.boot_cpu             = _boot_cpu,
+	.shutdown_cpu         = _shutdown_cpu,
 };
 
 /* Extern functions defined out from OpenAMP lib */
@@ -157,6 +158,7 @@ static void _notify(int cpu_id, struct proc_intr *intr_info)
 		return;
 	platform_dcache_all_flush();
 	env_wmb();
+
 	/* Trigger IPI */
 	HIL_MEM_WRITE32((chn_ipi_info->ipi_base_addr + IPI_TRIG_OFFSET),
 			chn_ipi_info->ipi_chn_mask);
@@ -191,8 +193,10 @@ static void _shutdown_cpu(int cpu_id)
 int platform_get_processor_info(struct hil_proc *proc , int cpu_id)
 {
 	int idx;
+	unsigned int u_cpu_id = cpu_id;
+
 	for(idx = 0; idx < proc_table_size; idx++) {
-		if((cpu_id == HIL_RSVD_CPU_ID) || (proc_table[idx].cpu_id == cpu_id) ) {
+		if ((u_cpu_id == HIL_RSVD_CPU_ID) || (proc_table[idx].cpu_id == u_cpu_id)) {
 			env_memcpy(proc,&proc_table[idx], sizeof(struct hil_proc));
 			return 0;
 		}

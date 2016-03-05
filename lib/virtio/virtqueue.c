@@ -168,10 +168,11 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct llist *buffer,
 		vq->vq_desc_head_idx = idx;
 		vq->vq_free_cnt -= needed;
 
-		if (vq->vq_free_cnt == 0)
+		if (vq->vq_free_cnt == 0) {
 			VQ_RING_ASSERT_CHAIN_TERM(vq);
-		else
+		} else {
 			VQ_RING_ASSERT_VALID_IDX(vq, idx);
+		}
 
 		/*
 		 * Update vring_avail control block fields so that other
@@ -239,10 +240,11 @@ int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
 		vq->vq_desc_head_idx = idx;
 		vq->vq_free_cnt--;
 
-		if (vq->vq_free_cnt == 0)
+		if (vq->vq_free_cnt == 0) {
 			VQ_RING_ASSERT_CHAIN_TERM(vq);
-		else
+		} else {
 			VQ_RING_ASSERT_VALID_IDX(vq, idx);
+		}
 
 		vq_ring_update_avail(vq, head_idx);
 	}
@@ -369,7 +371,7 @@ int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 	struct vring_used_elem *used_desc = VQ_NULL;
 	uint16_t used_idx;
 
-	if ((head_idx > vq->vq_nentries) || (head_idx < 0)) {
+	if (head_idx > vq->vq_nentries) {
 		return (ERROR_VRING_NO_BUFF);
 	}
 
@@ -512,6 +514,8 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 	int i, needed;
 	uint16_t idx;
 
+	(void)vq;
+
 	needed = readable + writable;
 
 	for (i = 0, idx = head_idx; (i < needed && buffer != VQ_NULL);
@@ -550,8 +554,9 @@ static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx)
 	dp = &vq->vq_ring.desc[desc_idx];
 	dxp = &vq->vq_descx[desc_idx];
 
-	if (vq->vq_free_cnt == 0)
+	if (vq->vq_free_cnt == 0) {
 		VQ_RING_ASSERT_CHAIN_TERM(vq);
+	}
 
 	vq->vq_free_cnt += dxp->ndescs;
 	dxp->ndescs--;

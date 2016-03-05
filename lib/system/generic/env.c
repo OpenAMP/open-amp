@@ -31,7 +31,7 @@
 /**************************************************************************
  * FILE NAME
  *
- *       bm_env.c
+ *       env.c
  *
  *
  * DESCRIPTION
@@ -237,6 +237,9 @@ void *env_map_patova(unsigned long address)
  */
 int env_create_mutex(void **lock, int count)
 {
+	(void)lock;
+	(void)count;
+
 	return 0;
 }
 
@@ -248,6 +251,7 @@ int env_create_mutex(void **lock, int count)
  */
 void env_delete_mutex(void *lock)
 {
+	(void)lock;
 }
 
 /**
@@ -258,6 +262,8 @@ void env_delete_mutex(void *lock)
  */
 void env_lock_mutex(void *lock)
 {
+	(void)lock;
+
 	env_disable_interrupts();
 }
 
@@ -269,6 +275,7 @@ void env_lock_mutex(void *lock)
 
 void env_unlock_mutex(void *lock)
 {
+	(void)lock;
 	env_restore_interrupts();
 }
 
@@ -337,6 +344,7 @@ void env_release_sync_lock(void *lock)
 
 void env_sleep_msec(int num_msec)
 {
+	(void)num_msec; /* TODO: implement sleep_msec*/
 
 }
 
@@ -454,7 +462,7 @@ void env_enable_interrupt(unsigned int vector, unsigned int priority,
 	env_disable_interrupts();
 
 	for (idx = 0; idx < ISR_COUNT; idx++) {
-		if (isr_table[idx].vector == vector) {
+		if (isr_table[idx].vector == (int)vector) {
 			isr_table[idx].priority = priority;
 			isr_table[idx].type = polarity;
 			platform_interrupt_enable(vector, polarity, priority);
@@ -502,7 +510,7 @@ void env_map_memory(unsigned int pa, unsigned int va, unsigned int size,
  *
  */
 
-void env_disable_cache()
+void env_disable_cache(void)
 {
 	platform_cache_all_flush_invalidate();
 	platform_cache_disable();
@@ -564,7 +572,7 @@ void bm_env_isr(int vector)
  */
 static void acquire_spin_lock(void *plock)
 {
-	const int lockVal = 0;
+	const unsigned int lockVal = 0;
 	volatile unsigned int retVal;
 
 	do {

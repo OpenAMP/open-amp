@@ -36,4 +36,3 @@ zynq_trampoline_jump:
 	.word
 .global zynq_trampoline_end
 zynq_trampoline_end:
-

@@ -367,7 +367,7 @@ static int elf_loader_relocs_specific(struct elf_decode_info *elf_info,
 
 	unsigned char *section_load_addr = (unsigned char *)section->sh_addr;
 	int status = 0;
-	int i;
+	unsigned int i;
 
 	/* Check the section type. */
 	if (section->sh_type == SHT_REL) {

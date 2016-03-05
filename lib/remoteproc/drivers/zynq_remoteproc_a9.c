@@ -40,6 +40,7 @@
  **************************************************************************/
 
 #include "openamp/hil.h"
+#include "openamp/machine/machine_common.h"
 
 /* ------------------------- Macros --------------------------*/
 #define ESAL_DP_SLCR_BASE                  0xF8000000
@@ -80,14 +81,13 @@ static int _enable_interrupt(struct proc_vring *vring_hw);
 static void _notify(int cpu_id, struct proc_intr *intr_info);
 static int _boot_cpu(int cpu_id, unsigned int load_addr);
 static void _shutdown_cpu(int cpu_id);
-static void platform_isr(int vect_id, void *data);
 
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops proc_ops = {
 	.enable_interrupt = _enable_interrupt,
-	.notify = _notify,
-	.boot_cpu = _boot_cpu,
-	.shutdown_cpu = _shutdown_cpu,
+	.notify           = _notify,
+	.boot_cpu         = _boot_cpu,
+	.shutdown_cpu     = _shutdown_cpu,
 };
 
 static int _enable_interrupt(struct proc_vring *vring_hw)
@@ -171,8 +171,5 @@ static void _shutdown_cpu(int cpu_id)
 
 	lock_slcr();
 }
-
-
-
 
 

@@ -253,13 +253,13 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 		}
 	} else {
 		addr = rpmsg_get_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE);
-		if (addr < 0) {
+		if ((int)addr < 0) {
 			status = RPMSG_ERR_DEV_ADDR;
 		}
 	}
 
 	/* Do cleanup in case of error and return */
-	if (status) {
+	if (RPMSG_SUCCESS != status) {
 		env_free_memory(node);
 		env_free_memory(rp_ept);
 		env_unlock_mutex(rdev->lock);
@@ -641,6 +641,9 @@ void rpmsg_ns_callback(struct rpmsg_channel *server_chnl, void *data, int len,
 	struct rpmsg_channel *rp_chnl;
 	struct rpmsg_ns_msg *ns_msg;
 	struct llist *node;
+
+	(void)server_chnl;
+	(void)src;
 
 	rdev = (struct remote_device *)priv;
 

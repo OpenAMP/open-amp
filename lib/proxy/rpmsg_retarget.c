@@ -10,15 +10,17 @@
  *	such as _open, _read, _write, _close.
  *************************************************************************/
 static struct _rpc_data *rpc_data;
-static unsigned int rpc_data_synclock = 0;
+
 int get_response = 0;
 
 int send_rpc(void *data, int len);
-static int rpc_count = 0;
 
 void rpc_cb(struct rpmsg_channel *rtl_rp_chnl, void *data, int len, void *priv,
 	    unsigned long src)
 {
+	(void)priv;
+	(void)src;
+
 	memcpy(rpc_data->rpc_response, data, len);
 	env_release_sync_lock(rpc_data->sync_lock);
 	get_response = 1;
@@ -66,6 +68,8 @@ int rpmsg_retarget_init(struct rpmsg_channel *rp_chnl, rpc_shutdown_cb cb)
 
 int rpmsg_retarget_deinit(struct rpmsg_channel *rp_chnl)
 {
+	(void)rp_chnl;
+
 	env_free_memory(rpc_data->rpc);
 	env_free_memory(rpc_data->rpc_response);
 	env_delete_mutex(rpc_data->rpc_lock);
