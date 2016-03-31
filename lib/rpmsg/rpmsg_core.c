@@ -326,8 +326,10 @@ void rpmsg_send_ns_message(struct remote_device *rdev,
 
 	/* Get Tx buffer. */
 	rp_hdr = (struct rpmsg_hdr *)rpmsg_get_tx_buffer(rdev, &len, &idx);
-	if (!rp_hdr)
+	if (!rp_hdr) {
+		env_unlock_mutex(rdev->lock);
 		return;
+	}
 
 	/* Fill out name service data. */
 	rp_hdr->dst = RPMSG_NS_EPT_ADDR;
