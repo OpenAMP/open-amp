@@ -160,8 +160,6 @@ int rpmsg_rdev_init(struct remote_device **rdev, int dev_id, int role,
 void rpmsg_rdev_deinit(struct remote_device *rdev);
 struct llist *rpmsg_rdev_get_chnl_node_from_id(struct remote_device *rdev,
 					       char *rp_chnl_id);
-struct llist *rpmsg_rdev_get_chnl_from_addr(struct remote_device *rdev,
-					    unsigned long addr);
 struct llist *rpmsg_rdev_get_endpoint_from_addr(struct remote_device *rdev,
 						unsigned long addr);
 int rpmsg_rdev_notify(struct remote_device *rdev);

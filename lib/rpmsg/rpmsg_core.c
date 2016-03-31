@@ -188,16 +188,19 @@ void _rpmsg_delete_channel(struct rpmsg_channel *rp_chnl)
 {
 	struct llist *node;
 	if (rp_chnl) {
+		env_lock_mutex(rp_chnl->rdev->lock);
 		node =
 		    rpmsg_rdev_get_chnl_node_from_id(rp_chnl->rdev,
 						     rp_chnl->name);
 		if (node) {
-			env_lock_mutex(rp_chnl->rdev->lock);
 			remove_from_list(&rp_chnl->rdev->rp_channels, node);
 			env_unlock_mutex(rp_chnl->rdev->lock);
+			/* free node and rp_chnl */
 			env_free_memory(node);
+			env_free_memory(rp_chnl);
+		} else {
+			env_unlock_mutex(rp_chnl->rdev->lock);
 		}
-		env_free_memory(rp_chnl);
 	}
 }
 
@@ -291,16 +294,19 @@ void _destroy_endpoint(struct remote_device *rdev,
 		       struct rpmsg_endpoint *rp_ept)
 {
 	struct llist *node;
+	env_lock_mutex(rdev->lock);
 	node = rpmsg_rdev_get_endpoint_from_addr(rdev, rp_ept->addr);
 	if (node) {
-		env_lock_mutex(rdev->lock);
 		rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE,
 				      rp_ept->addr);
 		remove_from_list(&rdev->rp_endpoints, node);
 		env_unlock_mutex(rdev->lock);
+		/* free node and rp_ept */
 		env_free_memory(node);
+		env_free_memory(rp_ept);
+	} else {
+		env_unlock_mutex(rdev->lock);
 	}
-	env_free_memory(rp_ept);
 }
 
 /**
@@ -586,7 +592,9 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 	while (rp_hdr) {
 
 		/* Get the channel node from the remote device channels list. */
+		env_lock_mutex(rdev->lock);
 		node = rpmsg_rdev_get_endpoint_from_addr(rdev, rp_hdr->dst);
+		env_unlock_mutex(rdev->lock);
 
 		if (!node)
 			/* Fatal error no endpoint for the given dst addr. */
@@ -657,7 +665,9 @@ void rpmsg_ns_callback(struct rpmsg_channel *server_chnl, void *data, int len,
 	ns_msg->name[len - 1] = '\0';
 
 	if (ns_msg->flags & RPMSG_NS_DESTROY) {
+		env_lock_mutex(rdev->lock);
 		node = rpmsg_rdev_get_chnl_node_from_id(rdev, ns_msg->name);
+		env_unlock_mutex(rdev->lock);
 		if (node) {
 			rp_chnl = (struct rpmsg_channel *)node->data;
 			if (rdev->channel_destroyed) {

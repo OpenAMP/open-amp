@@ -206,7 +206,10 @@ void rpmsg_rdev_deinit(struct remote_device *rdev)
 	}
 
 	/* Delete name service endpoint */
+
+	env_lock_mutex(rdev->lock);
 	node = rpmsg_rdev_get_endpoint_from_addr(rdev, RPMSG_NS_EPT_ADDR);
+	env_unlock_mutex(rdev->lock);
 	if (node) {
 		_destroy_endpoint(rdev, (struct rpmsg_endpoint *)node->data);
 	}
@@ -234,7 +237,8 @@ void rpmsg_rdev_deinit(struct remote_device *rdev)
 /**
  * rpmsg_rdev_get_chnl_node_from_id
  *
- * This function returns channel node based on channel name.
+ * This function returns channel node based on channel name. It must be called
+ * with mutex locked.
  *
  * @param stack      - pointer to remote device
  * @param rp_chnl_id - rpmsg channel name
@@ -250,51 +254,15 @@ struct llist *rpmsg_rdev_get_chnl_node_from_id(struct remote_device *rdev,
 
 	rp_chnl_head = rdev->rp_channels;
 
-	env_lock_mutex(rdev->lock);
 	while (rp_chnl_head) {
 		rp_chnl = (struct rpmsg_channel *)rp_chnl_head->data;
 		if (env_strncmp
 		    (rp_chnl->name, rp_chnl_id, sizeof(rp_chnl->name))
 		    == 0) {
-			env_unlock_mutex(rdev->lock);
 			return rp_chnl_head;
 		}
 		rp_chnl_head = rp_chnl_head->next;
 	}
-	env_unlock_mutex(rdev->lock);
-
-	return RPMSG_NULL;
-}
-
-/**
- * rpmsg_rdev_get_chnl_from_addr
- *
- * This function returns channel node based on src/dst address.
- *
- * @param rdev - pointer remote device control block
- * @param addr - src/dst address
- *
- * @return - channel node
- *
- */
-struct llist *rpmsg_rdev_get_chnl_from_addr(struct remote_device *rdev,
-					    unsigned long addr)
-{
-	struct rpmsg_channel *rp_chnl;
-	struct llist *rp_chnl_head;
-
-	rp_chnl_head = rdev->rp_channels;
-
-	env_lock_mutex(rdev->lock);
-	while (rp_chnl_head) {
-		rp_chnl = (struct rpmsg_channel *)rp_chnl_head->data;
-		if ((rp_chnl->src == addr) || (rp_chnl->dst == addr)) {
-			env_unlock_mutex(rdev->lock);
-			return rp_chnl_head;
-		}
-		rp_chnl_head = rp_chnl_head->next;
-	}
-	env_unlock_mutex(rdev->lock);
 
 	return RPMSG_NULL;
 }
@@ -302,7 +270,8 @@ struct llist *rpmsg_rdev_get_chnl_from_addr(struct remote_device *rdev,
 /**
  * rpmsg_rdev_get_endpoint_from_addr
  *
- * This function returns endpoint node based on src address.
+ * This function returns endpoint node based on src address. It must be called
+ * with mutex locked.
  *
  * @param rdev - pointer remote device control block
  * @param addr - src address
@@ -317,17 +286,14 @@ struct llist *rpmsg_rdev_get_endpoint_from_addr(struct remote_device *rdev,
 
 	rp_ept_lut_head = rdev->rp_endpoints;
 
-	env_lock_mutex(rdev->lock);
 	while (rp_ept_lut_head) {
 		struct rpmsg_endpoint *rp_ept =
 		    (struct rpmsg_endpoint *)rp_ept_lut_head->data;
 		if (rp_ept->addr == addr) {
-			env_unlock_mutex(rdev->lock);
 			return rp_ept_lut_head;
 		}
 		rp_ept_lut_head = rp_ept_lut_head->next;
 	}
-	env_unlock_mutex(rdev->lock);
 
 	return RPMSG_NULL;
 }
