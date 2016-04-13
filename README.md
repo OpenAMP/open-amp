@@ -73,7 +73,7 @@ The OpenAMP library will be generated to `build/usr/local/lib` directory, header
 ```
 $ mkdir build
 $ cd build/
-$ cmake ../open-amp -DCMAKE_TOOLCHAIN_FILE=zynq7_generic -DWITH_OBSOLETE=on -DWITH_APPS=ON
+$ cmake ../../open-amp -DCMAKE_TOOLCHAIN_FILE=zynq7_generic -DWITH_OBSOLETE=on -DWITH_APPS=ON
 $ make DESTDIR=$(pwd) install
 ```
 
