@@ -140,10 +140,10 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, unsigned long src,
 	struct remote_device *rdev;
 	struct rpmsg_hdr *rp_hdr;
 	void *buffer;
-	int status = RPMSG_SUCCESS;
 	unsigned short idx;
 	int tick_count = 0;
 	unsigned long buff_len;
+	int ret;
 
 	if (!rp_chnl) {
 		return RPMSG_ERR_PARAM;
@@ -158,71 +158,58 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, unsigned long src,
 		return RPMSG_ERR_DEV_STATE;
 	}
 
+	if (size > (rpmsg_get_buffer_size(rp_chnl))) {
+		return RPMSG_ERR_BUFF_SIZE;
+	}
+
 	/* Lock the device to enable exclusive access to virtqueues */
 	env_lock_mutex(rdev->lock);
 	/* Get rpmsg buffer for sending message. */
 	buffer = rpmsg_get_tx_buffer(rdev, &buff_len, &idx);
-	if (!buffer && !wait) {
-		status = RPMSG_ERR_NO_MEM;
-	}
+	/* Unlock the device */
 	env_unlock_mutex(rdev->lock);
 
-	if (status == RPMSG_SUCCESS) {
+	if (!buffer && !wait) {
+		return RPMSG_ERR_NO_BUFF;
+	}
 
-		while (!buffer) {
-			/*
-			 * Wait parameter is true - pool the buffer for
-			 * 15 secs as defined by the APIs.
-			 */
-			env_sleep_msec(RPMSG_TICKS_PER_INTERVAL);
-			env_lock_mutex(rdev->lock);
-			buffer = rpmsg_get_tx_buffer(rdev, &buff_len, &idx);
-			env_unlock_mutex(rdev->lock);
-			tick_count += RPMSG_TICKS_PER_INTERVAL;
-			if (tick_count >=
-			    (RPMSG_TICK_COUNT / RPMSG_TICKS_PER_INTERVAL)) {
-				status = RPMSG_ERR_NO_BUFF;
-				break;
-			}
-		}
-
-		if (status == RPMSG_SUCCESS) {
-			//FIXME : may be just copy the data size equal to buffer length and Tx it.
-			if ((unsigned int)size > (buff_len - sizeof(struct rpmsg_hdr)))
-				status = RPMSG_ERR_BUFF_SIZE;
-
-			if (status == RPMSG_SUCCESS) {
-				rp_hdr = (struct rpmsg_hdr *)buffer;
-
-				/* Initialize RPMSG header. */
-				rp_hdr->dst = dst;
-				rp_hdr->src = src;
-				rp_hdr->len = size;
-
-				/* Copy data to rpmsg buffer. */
-				env_memcpy((void*)RPMSG_LOCATE_DATA(rp_hdr), data, size);
-
-				env_lock_mutex(rdev->lock);
-				/* Enqueue buffer on virtqueue. */
-				status =
-				    rpmsg_enqueue_buffer(rdev, buffer, buff_len,
-							 idx);
-				if (status == RPMSG_SUCCESS) {
-					/* Let the other side know that there is a job to process. */
-					virtqueue_kick(rdev->tvq);
-				}
-				env_unlock_mutex(rdev->lock);
-			}
-
+	while (!buffer) {
+		/*
+		 * Wait parameter is true - pool the buffer for
+		 * 15 secs as defined by the APIs.
+		 */
+		env_sleep_msec(RPMSG_TICKS_PER_INTERVAL);
+		env_lock_mutex(rdev->lock);
+		buffer = rpmsg_get_tx_buffer(rdev, &buff_len, &idx);
+		env_unlock_mutex(rdev->lock);
+		tick_count += RPMSG_TICKS_PER_INTERVAL;
+		if (!buffer && (tick_count >=
+		    (RPMSG_TICK_COUNT / RPMSG_TICKS_PER_INTERVAL))) {
+			return RPMSG_ERR_NO_BUFF;
 		}
 	}
 
-	/* Do cleanup in case of error. */
-	if (status != RPMSG_SUCCESS) {
-		rpmsg_free_buffer(rdev, buffer);
-	}
+	rp_hdr = (struct rpmsg_hdr *)buffer;
 
-	return status;
+	/* Initialize RPMSG header. */
+	rp_hdr->dst = dst;
+	rp_hdr->src = src;
+	rp_hdr->len = size;
+
+	/* Copy data to rpmsg buffer. */
+	env_memcpy((void*)RPMSG_LOCATE_DATA(rp_hdr), data, size);
+
+	env_lock_mutex(rdev->lock);
+
+	/* Enqueue buffer on virtqueue. */
+	ret = rpmsg_enqueue_buffer(rdev, buffer, buff_len, idx);
+	env_assert(ret == VQUEUE_SUCCESS, "FATAL: RPMSG failed to enqueue buffer.\n");
+	/* Let the other side know that there is a job to process. */
+	virtqueue_kick(rdev->tvq);
+
+	env_unlock_mutex(rdev->lock);
+
+	return RPMSG_SUCCESS;
 }
 
 /**
@@ -240,18 +227,8 @@ int rpmsg_get_buffer_size(struct rpmsg_channel *rp_chnl)
 	struct remote_device *rdev;
 	int length;
 
-	if (!rp_chnl) {
-		return RPMSG_ERR_PARAM;
-	}
-
 	/* Get associated remote device for channel. */
 	rdev = rp_chnl->rdev;
-
-	/* Validate device state */
-	if (rp_chnl->state != RPMSG_CHNL_STATE_ACTIVE
-	    || rdev->state != RPMSG_DEV_STATE_ACTIVE) {
-		return RPMSG_ERR_DEV_STATE;
-	}
 
 	env_lock_mutex(rdev->lock);
 
