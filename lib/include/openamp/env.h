@@ -56,6 +56,7 @@
  *       env_strcpy
  *       env_strncpy
  *       env_print
+ *       env_assert
  *       env_map_vatopa
  *       env_map_patova
  *       env_mb
@@ -139,6 +140,10 @@ int env_strcmp(const char *, const char *);
 void env_strncpy(char *, const char *, unsigned long);
 int env_strncmp(char *, const char *, unsigned long);
 #define env_print(...)  printf(__VA_ARGS__)
+#define env_assert(_exp, _msg) do { \
+	if (!(_exp)) {env_print("%s: %s", __func__, _msg); while(1);} \
+	} while(0)
+
 
 /**
  *-----------------------------------------------------------------------------
