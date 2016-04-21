@@ -68,15 +68,15 @@
 #define RPMSG_TICKS_PER_INTERVAL                10
 
 /* Error macros. */
-#define RPMSG_ERRORS_BASE                       -3000
-#define RPMSG_ERR_NO_MEM                        (RPMSG_ERRORS_BASE - 1)
-#define RPMSG_ERR_NO_BUFF                       (RPMSG_ERRORS_BASE - 2)
-#define RPMSG_ERR_MAX_VQ                        (RPMSG_ERRORS_BASE - 3)
-#define RPMSG_ERR_PARAM                         (RPMSG_ERRORS_BASE - 4)
-#define RPMSG_ERR_DEV_STATE                     (RPMSG_ERRORS_BASE - 5)
-#define RPMSG_ERR_BUFF_SIZE                     (RPMSG_ERRORS_BASE - 6)
-#define RPMSG_ERR_DEV_ID                        (RPMSG_ERRORS_BASE - 7)
-#define RPMSG_ERR_DEV_ADDR                      (RPMSG_ERRORS_BASE - 8)
+#define RPMSG_ERROR_BASE                        -2000
+#define RPMSG_ERR_NO_MEM                        (RPMSG_ERROR_BASE - 1)
+#define RPMSG_ERR_NO_BUFF                       (RPMSG_ERROR_BASE - 2)
+#define RPMSG_ERR_MAX_VQ                        (RPMSG_ERROR_BASE - 3)
+#define RPMSG_ERR_PARAM                         (RPMSG_ERROR_BASE - 4)
+#define RPMSG_ERR_DEV_STATE                     (RPMSG_ERROR_BASE - 5)
+#define RPMSG_ERR_BUFF_SIZE                     (RPMSG_ERROR_BASE - 6)
+#define RPMSG_ERR_DEV_ID                        (RPMSG_ERROR_BASE - 7)
+#define RPMSG_ERR_DEV_ADDR                      (RPMSG_ERROR_BASE - 8)
 
 struct rpmsg_channel;
 typedef void (*rpmsg_rx_cb_t) (struct rpmsg_channel *, void *, int, void *,
