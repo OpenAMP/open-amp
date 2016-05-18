@@ -18,5 +18,5 @@ open-amp@googlegroups.com
 ### Xilinx Platform - Zynq-7000
 Wendy Liang <wendy.liang@xilinx.com>
 
-### Xilinx Platform - Zynq UltraScale++ MPSoC
+### Xilinx Platform - Zynq UltraScale+ MPSoC
 Wendy Liang <wendy.liang@xilinx.com>
