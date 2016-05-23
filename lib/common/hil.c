@@ -45,9 +45,10 @@
  **************************************************************************/
 
 #include "openamp/hil.h"
+#include "metal/utilities.h"
 
 /*--------------------------- Globals ---------------------------------- */
-struct hil_proc_list procs;
+static METAL_DECLARE_LIST (procs);
 
 #if defined (OPENAMP_BENCHMARK_ENABLE)
 
@@ -72,18 +73,16 @@ extern int platform_get_processor_for_fw(char *fw_name);
  */
 struct hil_proc *hil_create_proc(int cpu_id)
 {
-	struct hil_proc *proc = NULL;
-	struct llist *node = NULL;
-	struct llist *proc_hd = procs.proc_list;
+	struct hil_proc *proc;
+	struct metal_list *node;
 	int status;
 
 	/* If proc already exists then return it */
-	while (proc_hd != NULL) {
-		proc = (struct hil_proc *)proc_hd->data;
+	metal_list_for_each(&procs, node) {
+		proc = metal_container_of(node, struct hil_proc, node);
 		if (proc->cpu_id == (unsigned int)cpu_id) {
 			return proc;
 		}
-		proc_hd = proc_hd->next;
 	}
 
 	/* Allocate memory for proc instance */
@@ -104,16 +103,7 @@ struct hil_proc *hil_create_proc(int cpu_id)
 		       (unsigned int)proc->sh_buff.start_addr,
 		       proc->sh_buff.size, (SHARED_MEM | UNCACHED));
 
-	/* Put the new proc in the procs list */
-	node = env_allocate_memory(sizeof(struct llist));
-
-	if (!node) {
-		env_free_memory(proc);
-		return NULL;
-	}
-
-	node->data = proc;
-	add_to_list(&procs.proc_list, node);
+	metal_list_add_tail(&procs, &proc->node);
 
 	return proc;
 }
@@ -144,23 +134,15 @@ int hil_get_cpuforfw(char *fw_name)
  */
 void hil_delete_proc(struct hil_proc *proc)
 {
-	struct llist *proc_hd = NULL;
-
-	if (!proc)
-		return;
-
-	proc_hd = procs.proc_list;
-
-	while (proc_hd != NULL) {
-		if (proc_hd->data == proc) {
-			remove_from_list(&procs.proc_list, proc_hd);
-			env_free_memory(proc_hd);
+	struct metal_list *node;
+	metal_list_for_each(&procs, node) {
+		if (proc ==
+			metal_container_of(node, struct hil_proc, node)) {
+			metal_list_del(&proc->node);
 			env_free_memory(proc);
-			break;
+			return;
 		}
-		proc_hd = proc_hd->next;
 	}
-
 }
 
 /**
@@ -191,17 +173,14 @@ void hil_isr(struct proc_vring *vring_hw)
  */
 struct hil_proc *hil_get_proc(int cpu_id)
 {
-	struct llist *proc_hd = procs.proc_list;
+	struct metal_list *node;
+	struct hil_proc *proc;
 
-	if (!proc_hd)
-		return NULL;
-
-	while (proc_hd != NULL) {
-		struct hil_proc *proc = (struct hil_proc *)proc_hd->data;
+	metal_list_for_each(&procs, node) {
+		proc = metal_container_of(node, struct hil_proc, node);
 		if (proc->cpu_id == (unsigned int)cpu_id) {
 			return proc;
 		}
-		proc_hd = proc_hd->next;
 	}
 
 	return NULL;

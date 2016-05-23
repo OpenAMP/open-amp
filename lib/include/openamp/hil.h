@@ -44,6 +44,7 @@
 
 #include "openamp/virtio.h"
 #include "openamp/firmware.h"
+#include "metal/list.h"
 
 /* Configurable parameters */
 #define HIL_MAX_CORES                   2
@@ -170,17 +171,8 @@ struct hil_proc {
 	unsigned long cpu_bitmask;
 	/* Spin lock - This field is for future use. */
 	volatile unsigned int *slock;
-};
-
-/**
- * struct hil_proc_list
- *
- * This structure serves as lists for cores present in the system.
- * It provides entry point to access remote core parameters.
- *
- */
-struct hil_proc_list {
-	struct llist *proc_list;
+	/* List node */
+	struct metal_list node;
 };
 
 /**
