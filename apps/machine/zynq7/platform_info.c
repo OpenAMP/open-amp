@@ -147,7 +147,9 @@ struct hil_proc proc_table[] = {
 	 /* Next three fields are for future use only */
 	 0,
 	 0,
-	 NULL},
+	 NULL,
+	 {NULL, NULL}
+	},
 
 	/* CPU node for remote context */
 	{
@@ -192,7 +194,9 @@ struct hil_proc proc_table[] = {
 	 /* Next three fields are for future use only */
 	 0,
 	 0,
-	 NULL}
+	 NULL,
+	 {NULL, NULL}
+	}
 };
 
 /**

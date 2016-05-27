@@ -159,7 +159,9 @@ struct hil_proc proc_table[] = {
 	 /* Next three fields are for future use only */
 	 0,
 	 0,
-	 NULL},
+	 NULL,
+	 {NULL, NULL}
+	},
 
 	/* CPU node for remote context */
 	{
@@ -206,7 +208,9 @@ struct hil_proc proc_table[] = {
 	 /* Next three fields are for future use only */
 	 0,
 	 0,
-	 NULL}
+	 NULL,
+	 {NULL, NULL}
+	}
 };
 
 const int proc_table_size = sizeof (proc_table)/sizeof(struct hil_proc);
