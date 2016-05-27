@@ -3,6 +3,7 @@ collector_create (APP_LIB_DIRS "")
 collector_create (APP_INC_DIRS "")
 
 set_property (GLOBAL PROPERTY APP_LIB_DEPS "-lopen_amp")
+set_property (GLOBAL APPEND PROPERTY APP_LIB_DEPS "-lmetal")
 set (APPS_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set (APPS_SHARE_DIR "${CMAKE_CURRENT_BINARY_DIR}/share")
