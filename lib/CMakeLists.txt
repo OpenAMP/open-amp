@@ -20,7 +20,8 @@ add_subdirectory (system)
 set (OPENAMP_LIB open_amp)
 
 collector_list (_list PROJECT_INC_DIRS)
-include_directories (${_list})
+
+include_directories (${_list} ${LIBMETAL_INCLUDE_DIR})
 
 get_property (_ecflags GLOBAL PROPERTY "PROJECT_LIB_EXTRA_CFLAGS")
 
