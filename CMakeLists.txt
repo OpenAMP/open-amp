@@ -17,6 +17,7 @@ include (CheckIncludeFiles)
 include (CheckCSourceCompiles)
 include (collect)
 include (options)
+include (depends)
 enable_testing ()
 
 set (OPENAMP_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
