@@ -120,7 +120,7 @@ struct remote_device {
 	struct virtqueue *tvq;
 	struct hil_proc *proc;
 	struct metal_list rp_channels;
-	struct llist *rp_endpoints;
+	struct metal_list rp_endpoints;
 	struct sh_mem_pool *mem_pool;
 	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
 	rpmsg_chnl_cb_t channel_created;
@@ -170,8 +170,9 @@ int rpmsg_rdev_init(struct remote_device **rdev, int dev_id, int role,
 void rpmsg_rdev_deinit(struct remote_device *rdev);
 struct rpmsg_channel *rpmsg_rdev_get_chnl_from_id(struct remote_device *rdev,
 					       char *rp_chnl_id);
-struct llist *rpmsg_rdev_get_endpoint_from_addr(struct remote_device *rdev,
-						unsigned long addr);
+struct rpmsg_endpoint *rpmsg_rdev_get_endpoint_from_addr(
+					struct remote_device *rdev,
+					unsigned long addr);
 int rpmsg_rdev_notify(struct remote_device *rdev);
 int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 				 const char *names[], vq_callback * callbacks[],

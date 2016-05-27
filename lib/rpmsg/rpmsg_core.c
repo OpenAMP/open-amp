@@ -208,7 +208,6 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 {
 
 	struct rpmsg_endpoint *rp_ept;
-	struct llist *node;
 	int status = RPMSG_SUCCESS;
 
 	rp_ept = env_allocate_memory(sizeof(struct rpmsg_endpoint));
@@ -216,12 +215,6 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 		return RPMSG_NULL;
 	}
 	memset(rp_ept, 0x00, sizeof(struct rpmsg_endpoint));
-
-	node = env_allocate_memory(sizeof(struct llist));
-	if (!node) {
-		env_free_memory(rp_ept);
-		return RPMSG_NULL;
-	}
 
 	metal_mutex_acquire(&rdev->lock);
 
@@ -248,7 +241,6 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 
 	/* Do cleanup in case of error and return */
 	if (RPMSG_SUCCESS != status) {
-		env_free_memory(node);
 		env_free_memory(rp_ept);
 		metal_mutex_release(&rdev->lock);
 		return RPMSG_NULL;
@@ -258,8 +250,7 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 	rp_ept->cb = cb;
 	rp_ept->priv = priv;
 
-	node->data = rp_ept;
-	add_to_list(&rdev->rp_endpoints, node);
+	metal_list_add_tail(&rdev->rp_endpoints, &rp_ept->node);
 
 	metal_mutex_release(&rdev->lock);
 
@@ -278,20 +269,13 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 void _destroy_endpoint(struct remote_device *rdev,
 		       struct rpmsg_endpoint *rp_ept)
 {
-	struct llist *node;
 	metal_mutex_acquire(&rdev->lock);
-	node = rpmsg_rdev_get_endpoint_from_addr(rdev, rp_ept->addr);
-	if (node) {
-		rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE,
-				      rp_ept->addr);
-		remove_from_list(&rdev->rp_endpoints, node);
-		metal_mutex_release(&rdev->lock);
-		/* free node and rp_ept */
-		env_free_memory(node);
-		env_free_memory(rp_ept);
-	} else {
-		metal_mutex_release(&rdev->lock);
-	}
+	rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE,
+			      rp_ept->addr);
+	metal_list_del(&rp_ept->node);
+	metal_mutex_release(&rdev->lock);
+	/* free node and rp_ept */
+	env_free_memory(rp_ept);
 }
 
 /**
@@ -543,8 +527,7 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 	struct rpmsg_channel *rp_chnl;
 	struct rpmsg_endpoint *rp_ept;
 	struct rpmsg_hdr *rp_hdr;
-	struct llist *node;
-	struct metal_list *chnode;
+	struct metal_list *node;
 	unsigned long len;
 	unsigned short idx;
 
@@ -552,8 +535,8 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 	rdev = (struct remote_device *)vdev;
 
 	if (rdev->role == RPMSG_MASTER) {
-		metal_list_for_each(&rdev->rp_channels, chnode) {
-			rp_chnl = metal_container_of(chnode,
+		metal_list_for_each(&rdev->rp_channels, node) {
+			rp_chnl = metal_container_of(node,
 				struct rpmsg_channel, node);
 			if (rp_chnl->state == RPMSG_CHNL_STATE_IDLE) {
 				if (rdev->support_ns) {
@@ -579,14 +562,12 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 
 		/* Get the channel node from the remote device channels list. */
 		metal_mutex_acquire(&rdev->lock);
-		node = rpmsg_rdev_get_endpoint_from_addr(rdev, rp_hdr->dst);
+		rp_ept = rpmsg_rdev_get_endpoint_from_addr(rdev, rp_hdr->dst);
 		metal_mutex_release(&rdev->lock);
 
-		if (!node)
+		if (!rp_ept)
 			/* Fatal error no endpoint for the given dst addr. */
 			return;
-
-		rp_ept = (struct rpmsg_endpoint *)node->data;
 
 		rp_chnl = rp_ept->rp_chnl;
 

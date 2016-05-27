@@ -150,6 +150,9 @@ int rpmsg_rdev_init(struct remote_device **rdev, int dev_id, int role,
 		}
 	}
 
+	/* Initialize endpoints list */
+	metal_list_init(&rdev_loc->rp_endpoints);
+
 	/* Initialize channels for RPMSG Remote */
 	status = rpmsg_rdev_init_channels(rdev_loc);
 
@@ -174,14 +177,14 @@ int rpmsg_rdev_init(struct remote_device **rdev, int dev_id, int role,
  */
 void rpmsg_rdev_deinit(struct remote_device *rdev)
 {
-	struct llist *node;
-	struct metal_list *chnode;
+	struct metal_list *node;
 	struct rpmsg_channel *rp_chnl;
+	struct rpmsg_endpoint *rp_ept;
 
 
 	while(!metal_list_is_empty(&rdev->rp_channels)) {
-		chnode = rdev->rp_channels.next;
-		rp_chnl = metal_container_of(chnode, struct rpmsg_channel, node);
+		node = rdev->rp_channels.next;
+		rp_chnl = metal_container_of(node, struct rpmsg_channel, node);
 
 		if (rdev->channel_destroyed) {
 			rdev->channel_destroyed(rp_chnl);
@@ -200,12 +203,11 @@ void rpmsg_rdev_deinit(struct remote_device *rdev)
 	}
 
 	/* Delete name service endpoint */
-
 	metal_mutex_acquire(&rdev->lock);
-	node = rpmsg_rdev_get_endpoint_from_addr(rdev, RPMSG_NS_EPT_ADDR);
+	rp_ept = rpmsg_rdev_get_endpoint_from_addr(rdev, RPMSG_NS_EPT_ADDR);
 	metal_mutex_release(&rdev->lock);
-	if (node) {
-		_destroy_endpoint(rdev, (struct rpmsg_endpoint *)node->data);
+	if (rp_ept) {
+		_destroy_endpoint(rdev, rp_ept);
 	}
 
 	if (rdev->rvq) {
@@ -265,23 +267,21 @@ struct rpmsg_channel *rpmsg_rdev_get_chnl_from_id(struct remote_device *rdev,
  * @param rdev - pointer remote device control block
  * @param addr - src address
  *
- * @return - endpoint node
+ * @return - rpmsg endpoint
  *
  */
-struct llist *rpmsg_rdev_get_endpoint_from_addr(struct remote_device *rdev,
+struct rpmsg_endpoint *rpmsg_rdev_get_endpoint_from_addr(struct remote_device *rdev,
 						unsigned long addr)
 {
-	struct llist *rp_ept_lut_head;
+	struct rpmsg_endpoint *rp_ept;
+	struct metal_list *node;
 
-	rp_ept_lut_head = rdev->rp_endpoints;
-
-	while (rp_ept_lut_head) {
-		struct rpmsg_endpoint *rp_ept =
-		    (struct rpmsg_endpoint *)rp_ept_lut_head->data;
+	metal_list_for_each(&rdev->rp_endpoints, node) {
+		rp_ept = metal_container_of(node,
+				struct rpmsg_endpoint, node);
 		if (rp_ept->addr == addr) {
-			return rp_ept_lut_head;
+			return rp_ept;
 		}
-		rp_ept_lut_head = rp_ept_lut_head->next;
 	}
 
 	return RPMSG_NULL;

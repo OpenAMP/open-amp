@@ -153,6 +153,7 @@ struct rpmsg_endpoint {
 	rpmsg_rx_cb_t cb;
 	uint32_t addr;
 	void *priv;
+	struct metal_list node;
 };
 
 struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_channel *rp_chnl,
