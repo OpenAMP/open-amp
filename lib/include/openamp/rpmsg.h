@@ -111,6 +111,7 @@ struct rpmsg_channel {
 	struct remote_device *rdev;
 	struct rpmsg_endpoint *rp_ept;
 	unsigned int state;
+	struct metal_list node;
 };
 
 /**

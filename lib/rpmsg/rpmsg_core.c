@@ -48,6 +48,7 @@
  **************************************************************************/
 #include <string.h>
 #include "openamp/rpmsg.h"
+#include "metal/utilities.h"
 
 /* Internal functions */
 static void rpmsg_rx_callback(struct virtqueue *vq);
@@ -152,7 +153,6 @@ struct rpmsg_channel *_rpmsg_create_channel(struct remote_device *rdev,
 					    unsigned long dst)
 {
 	struct rpmsg_channel *rp_chnl;
-	struct llist *node;
 
 	rp_chnl = env_allocate_memory(sizeof(struct rpmsg_channel));
 	if (rp_chnl) {
@@ -162,14 +162,8 @@ struct rpmsg_channel *_rpmsg_create_channel(struct remote_device *rdev,
 		rp_chnl->dst = dst;
 		rp_chnl->rdev = rdev;
 		/* Place channel on channels list */
-		node = env_allocate_memory(sizeof(struct llist));
-		if (!node) {
-			env_free_memory(rp_chnl);
-			return RPMSG_NULL;
-		}
-		node->data = rp_chnl;
 		metal_mutex_acquire(&rdev->lock);
-		add_to_list(&rdev->rp_channels, node);
+		metal_list_add_tail(&rdev->rp_channels, &rp_chnl->node);
 		metal_mutex_release(&rdev->lock);
 	}
 
@@ -187,21 +181,11 @@ struct rpmsg_channel *_rpmsg_create_channel(struct remote_device *rdev,
  */
 void _rpmsg_delete_channel(struct rpmsg_channel *rp_chnl)
 {
-	struct llist *node;
 	if (rp_chnl) {
 		metal_mutex_acquire(&rp_chnl->rdev->lock);
-		node =
-		    rpmsg_rdev_get_chnl_node_from_id(rp_chnl->rdev,
-						     rp_chnl->name);
-		if (node) {
-			remove_from_list(&rp_chnl->rdev->rp_channels, node);
-			metal_mutex_release(&rp_chnl->rdev->lock);
-			/* free node and rp_chnl */
-			env_free_memory(node);
-			env_free_memory(rp_chnl);
-		} else {
-			metal_mutex_release(&rp_chnl->rdev->lock);
-		}
+		metal_list_del(&rp_chnl->node);
+		metal_mutex_release(&rp_chnl->rdev->lock);
+		env_free_memory(rp_chnl);
 	}
 }
 
@@ -505,11 +489,10 @@ static void rpmsg_tx_callback(struct virtqueue *vq)
 	struct remote_device *rdev;
 	struct virtio_device *vdev;
 	struct rpmsg_channel *rp_chnl;
-	struct llist *chnl_hd;
+	struct metal_list *node;
 
 	vdev = (struct virtio_device *)vq->vq_dev;
 	rdev = (struct remote_device *)vdev;
-	chnl_hd = rdev->rp_channels;
 
 	/* Check if the remote device is master. */
 	if (rdev->role == RPMSG_MASTER) {
@@ -522,8 +505,9 @@ static void rpmsg_tx_callback(struct virtqueue *vq)
 		 * b. It will update the channel state to active so that further communication
 		 *    can take place.
 		 */
-		while (chnl_hd != RPMSG_NULL) {
-			rp_chnl = (struct rpmsg_channel *)chnl_hd->data;
+		metal_list_for_each(&rdev->rp_channels, node) {
+			rp_chnl = metal_container_of(node,
+				struct rpmsg_channel, node);
 
 			if (rp_chnl->state == RPMSG_CHNL_STATE_IDLE) {
 
@@ -540,7 +524,6 @@ static void rpmsg_tx_callback(struct virtqueue *vq)
 				}
 			}
 
-			chnl_hd = chnl_hd->next;
 		}
 	}
 }
@@ -561,25 +544,27 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 	struct rpmsg_endpoint *rp_ept;
 	struct rpmsg_hdr *rp_hdr;
 	struct llist *node;
+	struct metal_list *chnode;
 	unsigned long len;
 	unsigned short idx;
-	struct llist *chnl_hd;
 
 	vdev = (struct virtio_device *)vq->vq_dev;
 	rdev = (struct remote_device *)vdev;
 
-	chnl_hd = rdev->rp_channels;
-	if ((chnl_hd != RPMSG_NULL) && (rdev->role == RPMSG_MASTER)) {
-		rp_chnl = (struct rpmsg_channel *)chnl_hd->data;
-		if (rp_chnl->state == RPMSG_CHNL_STATE_IDLE) {
-			if (rdev->support_ns) {
-				rp_chnl->state = RPMSG_CHNL_STATE_NS;
-				rpmsg_send_ns_message(rdev, rp_chnl,
+	if (rdev->role == RPMSG_MASTER) {
+		metal_list_for_each(&rdev->rp_channels, chnode) {
+			rp_chnl = metal_container_of(chnode,
+				struct rpmsg_channel, node);
+			if (rp_chnl->state == RPMSG_CHNL_STATE_IDLE) {
+				if (rdev->support_ns) {
+					rp_chnl->state = RPMSG_CHNL_STATE_NS;
+					rpmsg_send_ns_message(rdev, rp_chnl,
 						      RPMSG_NS_CREATE);
-			} else {
-				rp_chnl->state = RPMSG_CHNL_STATE_ACTIVE;
+				} else {
+					rp_chnl->state = RPMSG_CHNL_STATE_ACTIVE;
+				}
+				return;
 			}
-			return;
 		}
 	}
 
@@ -651,7 +636,6 @@ void rpmsg_ns_callback(struct rpmsg_channel *server_chnl, void *data, int len,
 	struct remote_device *rdev;
 	struct rpmsg_channel *rp_chnl;
 	struct rpmsg_ns_msg *ns_msg;
-	struct llist *node;
 
 	(void)server_chnl;
 	(void)src;
@@ -667,10 +651,9 @@ void rpmsg_ns_callback(struct rpmsg_channel *server_chnl, void *data, int len,
 
 	if (ns_msg->flags & RPMSG_NS_DESTROY) {
 		metal_mutex_acquire(&rdev->lock);
-		node = rpmsg_rdev_get_chnl_node_from_id(rdev, ns_msg->name);
+		rp_chnl = rpmsg_rdev_get_chnl_from_id(rdev, ns_msg->name);
 		metal_mutex_release(&rdev->lock);
-		if (node) {
-			rp_chnl = (struct rpmsg_channel *)node->data;
+		if (rp_chnl) {
 			if (rdev->channel_destroyed) {
 				rdev->channel_destroyed(rp_chnl);
 			}

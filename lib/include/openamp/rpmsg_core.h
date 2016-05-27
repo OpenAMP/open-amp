@@ -38,6 +38,7 @@
 #include "openamp/llist.h"
 #include "openamp/rpmsg.h"
 #include "metal/mutex.h"
+#include "metal/list.h"
 
 /* Configurable parameters */
 #define RPMSG_BUFFER_SIZE                       512
@@ -118,7 +119,7 @@ struct remote_device {
 	struct virtqueue *rvq;
 	struct virtqueue *tvq;
 	struct hil_proc *proc;
-	struct llist *rp_channels;
+	struct metal_list rp_channels;
 	struct llist *rp_endpoints;
 	struct sh_mem_pool *mem_pool;
 	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
@@ -167,7 +168,7 @@ int rpmsg_rdev_init(struct remote_device **rdev, int dev_id, int role,
 		    rpmsg_chnl_cb_t channel_destroyed,
 		    rpmsg_rx_cb_t default_cb);
 void rpmsg_rdev_deinit(struct remote_device *rdev);
-struct llist *rpmsg_rdev_get_chnl_node_from_id(struct remote_device *rdev,
+struct rpmsg_channel *rpmsg_rdev_get_chnl_from_id(struct remote_device *rdev,
 					       char *rp_chnl_id);
 struct llist *rpmsg_rdev_get_endpoint_from_addr(struct remote_device *rdev,
 						unsigned long addr);

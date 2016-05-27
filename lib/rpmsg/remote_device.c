@@ -48,6 +48,7 @@
 
 #include <string.h>
 #include "openamp/rpmsg.h"
+#include "metal/utilities.h"
 
 /* Macro to initialize vring HW info */
 #define INIT_VRING_ALLOC_INFO(ring_info,vring_hw)                             \
@@ -173,15 +174,14 @@ int rpmsg_rdev_init(struct remote_device **rdev, int dev_id, int role,
  */
 void rpmsg_rdev_deinit(struct remote_device *rdev)
 {
-	struct llist *rp_chnl_head, *rp_chnl_temp, *node;
+	struct llist *node;
+	struct metal_list *chnode;
 	struct rpmsg_channel *rp_chnl;
 
-	rp_chnl_head = rdev->rp_channels;
 
-	while (rp_chnl_head != RPMSG_NULL) {
-
-		rp_chnl_temp = rp_chnl_head->next;
-		rp_chnl = (struct rpmsg_channel *)rp_chnl_head->data;
+	while(!metal_list_is_empty(&rdev->rp_channels)) {
+		chnode = rdev->rp_channels.next;
+		rp_chnl = metal_container_of(chnode, struct rpmsg_channel, node);
 
 		if (rdev->channel_destroyed) {
 			rdev->channel_destroyed(rp_chnl);
@@ -197,7 +197,6 @@ void rpmsg_rdev_deinit(struct remote_device *rdev)
 		}
 
 		_rpmsg_delete_channel(rp_chnl);
-		rp_chnl_head = rp_chnl_temp;
 	}
 
 	/* Delete name service endpoint */
@@ -228,7 +227,7 @@ void rpmsg_rdev_deinit(struct remote_device *rdev)
 }
 
 /**
- * rpmsg_rdev_get_chnl_node_from_id
+ * rpmsg_rdev_get_chnl_from_id
  *
  * This function returns channel node based on channel name. It must be called
  * with mutex locked.
@@ -236,24 +235,22 @@ void rpmsg_rdev_deinit(struct remote_device *rdev)
  * @param stack      - pointer to remote device
  * @param rp_chnl_id - rpmsg channel name
  *
- * @return - channel node
+ * @return - rpmsg channel
  *
  */
-struct llist *rpmsg_rdev_get_chnl_node_from_id(struct remote_device *rdev,
+struct rpmsg_channel *rpmsg_rdev_get_chnl_from_id(struct remote_device *rdev,
 					       char *rp_chnl_id)
 {
 	struct rpmsg_channel *rp_chnl;
-	struct llist *rp_chnl_head;
+	struct metal_list *node;
 
-	rp_chnl_head = rdev->rp_channels;
-
-	while (rp_chnl_head) {
-		rp_chnl = (struct rpmsg_channel *)rp_chnl_head->data;
-		if (strncmp(rp_chnl->name, rp_chnl_id, sizeof(rp_chnl->name))
+	metal_list_for_each(&rdev->rp_channels, node) {
+		rp_chnl = metal_container_of(node, struct rpmsg_channel, node);
+		if (strncmp
+		    (rp_chnl->name, rp_chnl_id, sizeof(rp_chnl->name))
 		    == 0) {
-			return rp_chnl_head;
+			return rp_chnl;
 		}
-		rp_chnl_head = rp_chnl_head->next;
 	}
 
 	return RPMSG_NULL;
@@ -343,6 +340,7 @@ int rpmsg_rdev_init_channels(struct remote_device *rdev)
 	struct proc_chnl *chnl_info;
 	int num_chnls, idx;
 
+	metal_list_init(&rdev->rp_channels);
 	if (rdev->role == RPMSG_MASTER) {
 
 		chnl_info = hil_get_chnl_info(rdev->proc, &num_chnls);
