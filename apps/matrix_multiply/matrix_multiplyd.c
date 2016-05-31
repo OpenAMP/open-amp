@@ -93,7 +93,7 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 	if ((*(int *)data) == SHUTDOWN_MSG) {
 		remoteproc_resource_deinit(proc);
 	} else {
-		env_memcpy(matrix_array, data, len);
+		memcpy(matrix_array, data, len);
 		/* Process received data and multiple matrices. */
 		Matrix_Multiply(&matrix_array[0], &matrix_array[1],
 				&matrix_result);

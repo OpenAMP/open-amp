@@ -54,6 +54,7 @@
  * irrespective of the fact whether it is RPMSG Remote or Master.
  *
  **************************************************************************/
+#include <string.h>
 #include "openamp/rpmsg.h"
 #include "metal/sys.h"
 
@@ -199,7 +200,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
 	rp_hdr->len = size;
 
 	/* Copy data to rpmsg buffer. */
-	env_memcpy((void*)RPMSG_LOCATE_DATA(rp_hdr), data, size);
+	memcpy((void *)RPMSG_LOCATE_DATA(rp_hdr), data, size);
 
 	metal_mutex_acquire(&rdev->lock);
 

@@ -462,7 +462,7 @@ static int elf_loader_seek_and_read(void *firmware, void *destination,
 	src = src + offset;
 
 	/* Read the data. */
-	env_memcpy((char *)destination, src, size);
+	memcpy((char *)destination, src, size);
 
 	/* Return status to caller. */
 	return (0);

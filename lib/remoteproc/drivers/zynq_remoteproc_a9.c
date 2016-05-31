@@ -39,6 +39,7 @@
  *
  **************************************************************************/
 
+#include <string.h>
 #include "openamp/hil.h"
 #include "openamp/machine/machine_common.h"
 
@@ -139,7 +140,7 @@ static int _boot_cpu(int cpu_id, unsigned int load_addr)
 		 * copy trampoline code in such cases.
 		 *
 		 */
-		env_memcpy((char *)tramp_addr, &zynq_trampoline, tramp_size);
+		memcpy((char *)tramp_addr, &zynq_trampoline, tramp_size);
 		/* Write image address at the word reserved at the trampoline end */
 		HIL_MEM_WRITE32((char *)(tramp_addr + tramp_size), load_addr);
 	}

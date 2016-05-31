@@ -39,6 +39,7 @@
  *
  **************************************************************************/
 
+#include <string.h>
 #include "openamp/hil.h"
 
 /* Reference implementation that show cases platform_get_cpu_info and 
@@ -213,8 +214,8 @@ int platform_get_processor_info(struct hil_proc *proc, int cpu_id)
 	for (idx = 0; idx < sizeof(proc_table) / sizeof(struct hil_proc); idx++) {
 		if ((cpu_id == HIL_RSVD_CPU_ID)
 		    || (proc_table[idx].cpu_id == cpu_id)) {
-			env_memcpy(proc, &proc_table[idx],
-				   sizeof(struct hil_proc));
+			memcpy(proc, &proc_table[idx],
+			       sizeof(struct hil_proc));
 			return 0;
 		}
 	}
