@@ -84,7 +84,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		memset(vq, 0x00, vq_size);
 
 		vq->vq_dev = virt_dev;
-		env_strncpy(vq->vq_name, name, VIRTQUEUE_MAX_NAME_SZ);
+		strncpy(vq->vq_name, name, VIRTQUEUE_MAX_NAME_SZ);
 		vq->vq_queue_index = id;
 		vq->vq_alignment = ring->align;
 		vq->vq_nentries = ring->num_descs;

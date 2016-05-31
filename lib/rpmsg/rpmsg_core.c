@@ -157,7 +157,7 @@ struct rpmsg_channel *_rpmsg_create_channel(struct remote_device *rdev,
 	rp_chnl = env_allocate_memory(sizeof(struct rpmsg_channel));
 	if (rp_chnl) {
 		memset(rp_chnl, 0x00, sizeof(struct rpmsg_channel));
-		env_strncpy(rp_chnl->name, name, sizeof(rp_chnl->name));
+		strncpy(rp_chnl->name, name, sizeof(rp_chnl->name));
 		rp_chnl->src = src;
 		rp_chnl->dst = dst;
 		rp_chnl->rdev = rdev;
@@ -342,7 +342,7 @@ void rpmsg_send_ns_message(struct remote_device *rdev,
 	rp_hdr->dst = RPMSG_NS_EPT_ADDR;
 	rp_hdr->len = sizeof(struct rpmsg_ns_msg);
 	ns_msg = (struct rpmsg_ns_msg *) RPMSG_LOCATE_DATA(rp_hdr);
-	env_strncpy(ns_msg->name, rp_chnl->name, sizeof(rp_chnl->name));
+	strncpy(ns_msg->name, rp_chnl->name, sizeof(rp_chnl->name));
 	ns_msg->flags = flags;
 	ns_msg->addr = rp_chnl->src;
 
