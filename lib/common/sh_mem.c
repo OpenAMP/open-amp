@@ -60,7 +60,7 @@ struct sh_mem_pool *sh_mem_create_pool(void *start_addr, unsigned int size,
 				       unsigned int buff_size)
 {
 	struct sh_mem_pool *mem_pool;
-	int status, pool_size;
+	int pool_size;
 	int num_buffs, bmp_size;
 
 	if (!start_addr || !size || !buff_size)
