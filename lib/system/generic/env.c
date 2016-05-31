@@ -96,19 +96,6 @@ void env_free_memory(void *ptr)
 
 /**
  *
- * env_memcpy - implementation
- *
- * @param dst
- * @param src
- * @param len
- */
-void env_memcpy(void *dst, void const *src, unsigned long len)
-{
-	memcpy(dst, src, len);
-}
-
-/**
- *
  * env_strcmp - implementation
  *
  * @param dst

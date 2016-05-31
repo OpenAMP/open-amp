@@ -50,7 +50,6 @@
  *
  *       env_allocate_memory
  *       env_free_memory
- *       env_memcpy
  *       env_strlen
  *       env_strcpy
  *       env_strncpy
@@ -108,7 +107,6 @@ void env_free_memory(void *ptr);
  *-------------------------------------------------------------------------
  */
 
-void env_memcpy(void *, void const *, unsigned long);
 size_t env_strlen(const char *);
 void env_strcpy(char *, const char *);
 int env_strcmp(const char *, const char *);
