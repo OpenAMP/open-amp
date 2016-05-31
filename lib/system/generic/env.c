@@ -96,19 +96,6 @@ void env_free_memory(void *ptr)
 
 /**
  *
- * env_memset - implementation
- *
- * @param ptr
- * @param value
- * @param size
- */
-void env_memset(void *ptr, int value, unsigned long size)
-{
-	memset(ptr, value, size);
-}
-
-/**
- *
  * env_memcpy - implementation
  *
  * @param dst
