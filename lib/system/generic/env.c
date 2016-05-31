@@ -230,56 +230,6 @@ void *env_map_patova(unsigned long address)
 }
 
 /**
- * env_create_mutex
- *
- * Creates a mutex with the given initial count.
- *
- */
-int env_create_mutex(void **lock, int count)
-{
-	(void)lock;
-	(void)count;
-
-	return 0;
-}
-
-/**
- * env_delete_mutex
- *
- * Deletes the given lock
- *
- */
-void env_delete_mutex(void *lock)
-{
-	(void)lock;
-}
-
-/**
- * env_lock_mutex
- *
- * Tries to acquire the lock, if lock is not available then call to
- * this function will suspend.
- */
-void env_lock_mutex(void *lock)
-{
-	(void)lock;
-
-	env_disable_interrupts();
-}
-
-/**
- * env_unlock_mutex
- *
- * Releases the given lock.
- */
-
-void env_unlock_mutex(void *lock)
-{
-	(void)lock;
-	env_restore_interrupts();
-}
-
-/**
  * env_create_sync_lock
  *
  * Creates a synchronization lock primitive. It is used

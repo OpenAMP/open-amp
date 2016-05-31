@@ -62,10 +62,6 @@
  *       env_mb
  *       env_rmb
  *       env_wmb
- *       env_create_mutex
- *       env_delete_mutex
- *       env_lock_mutex
- *       env_unlock_mutex
  *       env_sleep_msec
  *       env_disable_interrupts
  *       env_restore_interrupts
@@ -215,50 +211,6 @@ void env_wmb();
  *
  *-----------------------------------------------------------------------------
  */
-
-/**
- * env_create_mutex
- *
- * Creates a mutex with given initial count.
- *
- * @param lock -  pointer to created mutex
- * @param count - initial count 0 or 1
- *
- * @return - status of function execution
- */
-int env_create_mutex(void **lock, int count);
-
-/**
- * env_delete_mutex
- *
- * Deletes the given lock.
- *
- * @param lock - mutex to delete
- */
-
-void env_delete_mutex(void *lock);
-
-/**
- * env_lock_mutex
- *
- * Tries to acquire the lock, if lock is not available then call to
- * this function will suspend.
- *
- * @param lock - mutex to lock
- *
- */
-
-void env_lock_mutex(void *lock);
-
-/**
- * env_unlock_mutex
- *
- * Releases the given lock.
- *
- * @param lock - mutex to unlock
- */
-
-void env_unlock_mutex(void *lock);
 
 /**
  * env_create_sync_lock
