@@ -33,6 +33,7 @@
 #include "openamp/rsc_table_parser.h"
 #include "openamp/env.h"
 #include "openamp/hil.h"
+#include "metal/sys.h"
 
 /**
  * remoteproc_resource_init
@@ -65,7 +66,8 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 	}
 
 	/* Initialize environment component */
-	status = env_init();
+	struct metal_init_params init_params = METAL_INIT_DEFAULTS;
+	status = metal_init(&init_params);
 	if (status != RPROC_SUCCESS) {
 		return status;
 	}
@@ -143,7 +145,7 @@ int remoteproc_resource_deinit(struct remote_proc *rproc)
 		env_free_memory(rproc);
 	}
 
-	env_deinit();
+	metal_finish();
 
 	/*
 	 * Flush and Invalidate the caches - When the application is built with
@@ -190,7 +192,8 @@ int remoteproc_init(char *fw_name, rpmsg_chnl_cb_t channel_created,
 	}
 
 	/* Initialize environment component */
-	status = env_init();
+	struct metal_init_params init_params = METAL_INIT_DEFAULTS;
+	status = metal_init(&init_params);
 	if (status != RPROC_SUCCESS) {
 		return status;
 	}
@@ -287,7 +290,7 @@ int remoteproc_deinit(struct remote_proc *rproc)
 		env_free_memory(rproc);
 	}
 
-	env_deinit();
+	metal_finish();
 
 	return RPROC_SUCCESS;
 }

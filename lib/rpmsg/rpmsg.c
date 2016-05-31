@@ -55,6 +55,7 @@
  *
  **************************************************************************/
 #include "openamp/rpmsg.h"
+#include "metal/sys.h"
 
 /**
  * rpmsg_init
@@ -83,7 +84,8 @@ int rpmsg_init(int dev_id, struct remote_device **rdev,
 	int status;
 
 	/* Initialize IPC environment */
-	status = env_init();
+	struct metal_init_params init_params = METAL_INIT_DEFAULTS;
+	status = metal_init(&init_params);
 	if (status == RPMSG_SUCCESS) {
 		/* Initialize the remote device for given cpu id */
 		status = rpmsg_rdev_init(rdev, dev_id, role, channel_created,
@@ -115,7 +117,7 @@ void rpmsg_deinit(struct remote_device *rdev)
 {
 	if (rdev) {
 		rpmsg_rdev_deinit(rdev);
-		env_deinit();
+		metal_finish();
 	}
 }
 
