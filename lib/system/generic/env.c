@@ -73,30 +73,6 @@ static int intr_count = 0;
 static int intr_enable_flag = 1;
 
 /**
- * env_init
- *
- * Initializes OS/BM environment.
- *
- */
-int env_init()
-{
-	return 0;
-}
-
-/**
- * env_deinit
- *
- * Uninitializes OS/BM environment.
- *
- * @returns - execution status
- */
-
-int env_deinit()
-{
-	return 0;
-}
-
-/**
  * env_allocate_memory - implementation
  *
  * @param size

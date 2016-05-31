@@ -73,25 +73,6 @@
 #include <stdio.h>
 
 /**
- * env_init
- *
- * Initializes OS/BM environment.
- *
- * @returns - execution status
- */
-
-int env_init();
-
-/**
- * env_deinit
- *
- * Uninitializes OS/BM environment.
- *
- * @returns - execution status
- */
-
-int env_deinit();
-/**
  * -------------------------------------------------------------------------
  *
  * Dynamic memory management functions. The parameters
