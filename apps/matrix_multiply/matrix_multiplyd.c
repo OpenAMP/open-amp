@@ -107,7 +107,7 @@ static void Matrix_Multiply(const matrix * m, const matrix * n, matrix * r)
 {
 	int i, j, k;
 
-	env_memset(r, 0x0, sizeof(matrix));
+	memset(r, 0x0, sizeof(matrix));
 	r->size = m->size;
 
 	for (i = 0; i < m->size; ++i) {

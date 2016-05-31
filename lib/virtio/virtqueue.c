@@ -24,6 +24,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
 #include "openamp/virtqueue.h"
 
 /* Prototype for internal functions. */
@@ -80,7 +81,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 			return (ERROR_NO_MEM);
 		}
 
-		env_memset(vq, 0x00, vq_size);
+		memset(vq, 0x00, vq_size);
 
 		vq->vq_dev = virt_dev;
 		env_strncpy(vq->vq_name, name, VIRTQUEUE_MAX_NAME_SZ);

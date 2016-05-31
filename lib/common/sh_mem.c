@@ -42,6 +42,7 @@
  *       it is only being used to manage shared memory.
  *
  **************************************************************************/
+#include <string.h>
 #include "openamp/sh_mem.h"
 
 /**
@@ -87,7 +88,7 @@ struct sh_mem_pool *sh_mem_create_pool(void *start_addr, unsigned int size,
 
 	if (mem_pool) {
 		/* Initialize pool parameters */
-		env_memset(mem_pool, 0x00, pool_size);
+		memset(mem_pool, 0x00, pool_size);
 		metal_mutex_init(&mem_pool->lock);
 		mem_pool->start_addr = start_addr;
 		mem_pool->buff_size = buff_size;

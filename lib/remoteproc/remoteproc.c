@@ -28,6 +28,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
 #include "openamp/remoteproc.h"
 #include "openamp/remoteproc_loader.h"
 #include "openamp/rsc_table_parser.h"
@@ -74,7 +75,7 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 
 	rproc = env_allocate_memory(sizeof(struct remote_proc));
 	if (rproc) {
-		env_memset(rproc, 0x00, sizeof(struct remote_proc));
+		memset(rproc, 0x00, sizeof(struct remote_proc));
 		/* There can be only one master for remote configuration so use the
 		 * rsvd cpu id for creating hil proc */
 		rproc->proc = hil_create_proc(HIL_RSVD_CPU_ID);
@@ -200,7 +201,7 @@ int remoteproc_init(char *fw_name, rpmsg_chnl_cb_t channel_created,
 
 	rproc = env_allocate_memory(sizeof(struct remote_proc));
 	if (rproc) {
-		env_memset((void *)rproc, 0x00, sizeof(struct remote_proc));
+		memset((void *)rproc, 0x00, sizeof(struct remote_proc));
 		/* Get CPU ID for the given firmware name */
 		cpu_id = hil_get_cpuforfw(fw_name);
 		if (cpu_id >= 0) {

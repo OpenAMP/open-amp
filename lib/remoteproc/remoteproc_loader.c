@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
 #include "openamp/remoteproc_loader.h"
 
 /**
@@ -56,7 +57,7 @@ struct remoteproc_loader *remoteproc_loader_init(enum loader_type type)
 	}
 
 	/* Clear loader handle. */
-	env_memset(loader, 0, sizeof(struct remoteproc_loader));
+	memset(loader, 0, sizeof(struct remoteproc_loader));
 
 	/* Save loader type. */
 	loader->type = type;

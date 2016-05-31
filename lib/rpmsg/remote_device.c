@@ -46,6 +46,7 @@
  *
  **************************************************************************/
 
+#include <string.h>
 #include "openamp/rpmsg.h"
 
 /* Macro to initialize vring HW info */
@@ -113,7 +114,7 @@ int rpmsg_rdev_init(struct remote_device **rdev, int dev_id, int role,
 		return RPMSG_ERR_NO_MEM;
 	}
 
-	env_memset(rdev_loc, 0x00, sizeof(struct remote_device));
+	memset(rdev_loc, 0x00, sizeof(struct remote_device));
 	metal_mutex_init(&rdev_loc->lock);
 
 	rdev_loc->proc = proc;
@@ -406,9 +407,8 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 		INIT_VRING_ALLOC_INFO(ring_info, vring_table[idx]);
 
 		if (rdev->role == RPMSG_REMOTE) {
-			env_memset((void *)ring_info.phy_addr, 0x00,
-				   vring_size(vring_table[idx].num_descs,
-					      vring_table[idx].align));
+			memset((void *)ring_info.phy_addr, 0x00,
+			       vring_size(vring_table[idx].num_descs, vring_table[idx].align));
 		}
 
 		status =
@@ -446,7 +446,7 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 			node.attr = RPMSG_BUFFER_SIZE;
 			node.next = RPMSG_NULL;
 
-			env_memset(buffer, 0x00, RPMSG_BUFFER_SIZE);
+			memset(buffer, 0x00, RPMSG_BUFFER_SIZE);
 			status =
 			    virtqueue_add_buffer(rdev->rvq, &node, 0, 1,
 						 buffer);

@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
 #include "openamp/elf_loader.h"
 
 /* Local functions. */
@@ -97,7 +98,7 @@ int elf_loader_attach_firmware(struct remoteproc_loader *loader, void *firmware)
 	}
 
 	/* Clear the ELF decode struct. */
-	env_memset(elf_info, 0, sizeof(struct elf_decode_info));
+	memset(elf_info, 0, sizeof(struct elf_decode_info));
 
 	/* Get the essential information to decode the ELF. */
 	status = elf_loader_get_decode_info(firmware, elf_info);

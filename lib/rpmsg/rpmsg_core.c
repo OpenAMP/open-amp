@@ -46,6 +46,7 @@
  *
  *
  **************************************************************************/
+#include <string.h>
 #include "openamp/rpmsg.h"
 
 /* Internal functions */
@@ -155,7 +156,7 @@ struct rpmsg_channel *_rpmsg_create_channel(struct remote_device *rdev,
 
 	rp_chnl = env_allocate_memory(sizeof(struct rpmsg_channel));
 	if (rp_chnl) {
-		env_memset(rp_chnl, 0x00, sizeof(struct rpmsg_channel));
+		memset(rp_chnl, 0x00, sizeof(struct rpmsg_channel));
 		env_strncpy(rp_chnl->name, name, sizeof(rp_chnl->name));
 		rp_chnl->src = src;
 		rp_chnl->dst = dst;
@@ -230,7 +231,7 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 	if (!rp_ept) {
 		return RPMSG_NULL;
 	}
-	env_memset(rp_ept, 0x00, sizeof(struct rpmsg_endpoint));
+	memset(rp_ept, 0x00, sizeof(struct rpmsg_endpoint));
 
 	node = env_allocate_memory(sizeof(struct llist));
 	if (!node) {
