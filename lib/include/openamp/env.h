@@ -50,7 +50,6 @@
  *
  *       env_allocate_memory
  *       env_free_memory
- *       env_strncpy
  *       env_print
  *       env_assert
  *       env_map_vatopa
@@ -106,7 +105,6 @@ void env_free_memory(void *ptr);
  */
 
 int env_strcmp(const char *, const char *);
-void env_strncpy(char *, const char *, unsigned long);
 int env_strncmp(char *, const char *, unsigned long);
 #define env_print(...)  printf(__VA_ARGS__)
 #define env_assert(_exp, _msg) do { \

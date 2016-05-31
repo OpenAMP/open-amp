@@ -109,19 +109,6 @@ int env_strcmp(const char *dst, const char *src)
 
 /**
  *
- * env_strncpy - implementation
- *
- * @param dest
- * @param src
- * @param len
- */
-void env_strncpy(char *dest, const char *src, unsigned long len)
-{
-	strncpy(dest, src, len);
-}
-
-/**
- *
  * env_strncmp - implementation
  *
  * @param dest
