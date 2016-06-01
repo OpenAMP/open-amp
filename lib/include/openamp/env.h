@@ -104,7 +104,6 @@ void env_free_memory(void *ptr);
  *-------------------------------------------------------------------------
  */
 
-int env_strcmp(const char *, const char *);
 int env_strncmp(char *, const char *, unsigned long);
 #define env_print(...)  printf(__VA_ARGS__)
 #define env_assert(_exp, _msg) do { \
