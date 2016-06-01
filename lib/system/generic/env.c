@@ -96,19 +96,6 @@ void env_free_memory(void *ptr)
 
 /**
  *
- * env_strncmp - implementation
- *
- * @param dest
- * @param src
- * @param len
- */
-int env_strncmp(char *dest, const char *src, unsigned long len)
-{
-	return (strncmp(dest, src, len));
-}
-
-/**
- *
  * env_mb - implementation
  *
  */

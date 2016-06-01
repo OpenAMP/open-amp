@@ -96,15 +96,6 @@ void *env_allocate_memory(unsigned int size);
  */
 void env_free_memory(void *ptr);
 
-/**
- * -------------------------------------------------------------------------
- *
- * RTL Functions
- *
- *-------------------------------------------------------------------------
- */
-
-int env_strncmp(char *, const char *, unsigned long);
 #define env_print(...)  printf(__VA_ARGS__)
 #define env_assert(_exp, _msg) do { \
 	if (!(_exp)) {env_print("%s: %s", __func__, _msg); while(1);} \
