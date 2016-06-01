@@ -298,16 +298,13 @@ static int elf_loader_get_needed_sections(struct elf_decode_info *elf_info)
 					current_name++;
 
 					/* Check for '.dynsym'. */
-					if (env_strncmp
-					    (current_name, "ynsym", 5) == 0) {
+					if (strncmp(current_name, "ynsym", 5) == 0) {
 						elf_info->dynsym = current;
 						sections_to_find--;
 					}
 
 					/* Check for '.dynstr'. */
-					else if (env_strncmp
-						 (current_name, "ynstr",
-						  5) == 0) {
+					else if (strncmp(current_name, "ynstr", 5) == 0) {
 						elf_info->dynstr = current;
 						sections_to_find--;
 					}
@@ -318,24 +315,19 @@ static int elf_loader_get_needed_sections(struct elf_decode_info *elf_info)
 					current_name++;
 
 					/* Check for '.rel.plt'. */
-					if (env_strncmp
-					    (current_name, "el.plt", 6) == 0) {
+					if (strncmp(current_name, "el.plt", 6) == 0) {
 						elf_info->rel_plt = current;
 						sections_to_find--;
 					}
 
 					/* Check for '.rel.dyn'. */
-					else if (env_strncmp
-						 (current_name, "el.dyn",
-						  6) == 0) {
+					else if (strncmp(current_name, "el.dyn", 6) == 0) {
 						elf_info->rel_dyn = current;
 						sections_to_find--;
 					}
 
 					/* Check for '.resource_table'. */
-					else if (env_strncmp
-						 (current_name, "esource_table",
-						  13)
+					else if (strncmp(current_name, "esource_table", 13)
 						 == 0) {
 						elf_info->rsc = current;
 						sections_to_find--;

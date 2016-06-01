@@ -249,8 +249,7 @@ struct llist *rpmsg_rdev_get_chnl_node_from_id(struct remote_device *rdev,
 
 	while (rp_chnl_head) {
 		rp_chnl = (struct rpmsg_channel *)rp_chnl_head->data;
-		if (env_strncmp
-		    (rp_chnl->name, rp_chnl_id, sizeof(rp_chnl->name))
+		if (strncmp(rp_chnl->name, rp_chnl_id, sizeof(rp_chnl->name))
 		    == 0) {
 			return rp_chnl_head;
 		}

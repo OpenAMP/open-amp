@@ -41,6 +41,7 @@
  *
  **************************************************************************/
 
+#include <string.h>
 #include "openamp/firmware.h"
 
 /* Start and end addresses of firmware image for remotes. These are defined in the
@@ -88,8 +89,7 @@ int config_get_firmware(char *fw_name, unsigned int *start_addr,
 	unsigned int idx;
 	for (idx = 0; idx < sizeof(fw_table) / (sizeof(struct firmware_info));
 	     idx++) {
-		if (!env_strncmp((char *)fw_table[idx].name, fw_name,
-				 sizeof(fw_table[idx].name))) {
+		if (!strncmp((char *)fw_table[idx].name, fw_name, sizeof(fw_table[idx].name))) {
 			*start_addr = fw_table[idx].start_addr;
 			*size =
 			    fw_table[idx].end_addr - fw_table[idx].start_addr +
