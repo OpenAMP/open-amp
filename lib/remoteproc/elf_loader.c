@@ -242,7 +242,7 @@ void *elf_get_load_address(struct remoteproc_loader *loader)
 					  + elf_info->elf_header.e_shentsize);
 		/* Get the name of current section. */
 		char *current_name = elf_info->shstrtab + current->sh_name;
-		if (!env_strcmp(current_name, ".text")) {
+		if (!strcmp(current_name, ".text")) {
 			return ((void *)(current->sh_addr));
 		}
 		/* Move to the next section. */
