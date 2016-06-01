@@ -54,9 +54,6 @@
  *       env_assert
  *       env_map_vatopa
  *       env_map_patova
- *       env_mb
- *       env_rmb
- *       env_wmb
  *       env_sleep_msec
  *       env_disable_interrupts
  *       env_restore_interrupts
@@ -132,38 +129,6 @@ unsigned long env_map_vatopa(void *address);
  *
  */
 void *env_map_patova(unsigned long address);
-
-/**
- *-----------------------------------------------------------------------------
- *
- *  Abstractions for memory barrier instructions.
- *
- *-----------------------------------------------------------------------------
- */
-
-/**
- * env_mb
- *
- * Inserts memory barrier.
- */
-
-void env_mb();
-
-/**
- * env_rmb
- *
- * Inserts read memory barrier
- */
-
-void env_rmb();
-
-/**
- * env_wmb
- *
- * Inserts write memory barrier
- */
-
-void env_wmb();
 
 /**
  *-----------------------------------------------------------------------------

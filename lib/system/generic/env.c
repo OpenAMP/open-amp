@@ -95,32 +95,6 @@ void env_free_memory(void *ptr)
 }
 
 /**
- *
- * env_mb - implementation
- *
- */
-void env_mb()
-{
-	MEM_BARRIER();
-}
-
-/**
- * osalr_mb - implementation
- */
-void env_rmb()
-{
-	MEM_BARRIER();
-}
-
-/**
- * env_wmb - implementation
- */
-void env_wmb()
-{
-	MEM_BARRIER();
-}
-
-/**
  * env_map_vatopa - implementation
  *
  * @param address
