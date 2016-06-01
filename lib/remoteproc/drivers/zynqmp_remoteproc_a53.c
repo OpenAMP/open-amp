@@ -158,7 +158,6 @@ static void _notify(int cpu_id, struct proc_intr *intr_info)
 	if (chn_ipi_info == NULL)
 		return;
 	platform_dcache_all_flush();
-	env_wmb();
 
 	/* Trigger IPI */
 	HIL_MEM_WRITE32((chn_ipi_info->ipi_base_addr + IPI_TRIG_OFFSET),
