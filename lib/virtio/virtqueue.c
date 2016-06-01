@@ -26,6 +26,7 @@
 
 #include <string.h>
 #include "openamp/virtqueue.h"
+#include "metal/atomic.h"
 
 /* Prototype for internal functions. */
 static void vq_ring_init(struct virtqueue *);
@@ -277,7 +278,7 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len)
 	used_idx = vq->vq_used_cons_idx++ & (vq->vq_nentries - 1);
 	uep = &vq->vq_ring.used->ring[used_idx];
 
-	env_rmb();
+	atomic_thread_fence(memory_order_seq_cst);
 
 	desc_idx = (uint16_t) uep->id;
 	if (len != VQ_NULL)
@@ -346,7 +347,7 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
 	head_idx = vq->vq_available_idx++ & (vq->vq_nentries - 1);
 	*avail_idx = vq->vq_ring.avail->ring[head_idx];
 
-	env_rmb();
+	atomic_thread_fence(memory_order_seq_cst);
 
 	buffer = env_map_patova(vq->vq_ring.desc[*avail_idx].addr);
 	*len = vq->vq_ring.desc[*avail_idx].len;
@@ -383,7 +384,7 @@ int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 	used_desc->id = head_idx;
 	used_desc->len = len;
 
-	env_wmb();
+	atomic_thread_fence(memory_order_seq_cst);
 
 	vq->vq_ring.used->idx++;
 
@@ -437,7 +438,7 @@ void virtqueue_kick(struct virtqueue *vq)
 	VQUEUE_BUSY(vq);
 
 	/* Ensure updated avail->idx is visible to host. */
-	env_mb();
+	atomic_thread_fence(memory_order_seq_cst);
 
 	if (vq_ring_must_notify_host(vq))
 		vq_ring_notify_host(vq);
@@ -623,7 +624,7 @@ static void vq_ring_update_avail(struct virtqueue *vq, uint16_t desc_idx)
 	avail_idx = vq->vq_ring.avail->idx & (vq->vq_nentries - 1);
 	vq->vq_ring.avail->ring[avail_idx] = desc_idx;
 
-	env_wmb();
+	atomic_thread_fence(memory_order_seq_cst);
 
 	vq->vq_ring.avail->idx++;
 
@@ -649,7 +650,7 @@ static int vq_ring_enable_interrupt(struct virtqueue *vq, uint16_t ndesc)
 		vq->vq_ring.avail->flags &= ~VRING_AVAIL_F_NO_INTERRUPT;
 	}
 
-	env_mb();
+	atomic_thread_fence(memory_order_seq_cst);
 
 	/*
 	 * Enough items may have already been consumed to meet our threshold
