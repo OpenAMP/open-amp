@@ -79,6 +79,14 @@
 #define RPMSG_ERR_DEV_ID                        (RPMSG_ERROR_BASE - 7)
 #define RPMSG_ERR_DEV_ADDR                      (RPMSG_ERROR_BASE - 8)
 
+#if (RPMSG_DEBUG == true)
+#define RPMSG_ASSERT(_exp, _msg) do{ \
+    if (!(_exp)){ printf("%s - "_msg, __func__); while(1);} \
+    } while(0)
+#else
+#define RPMSG_ASSERT(_exp, _msg) if (!(_exp)) while(1)
+#endif
+
 struct rpmsg_channel;
 typedef void (*rpmsg_rx_cb_t) (struct rpmsg_channel *, void *, int, void *,
 			       unsigned long);

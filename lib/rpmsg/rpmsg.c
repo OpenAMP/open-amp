@@ -206,7 +206,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
 
 	/* Enqueue buffer on virtqueue. */
 	ret = rpmsg_enqueue_buffer(rdev, buffer, buff_len, idx);
-	env_assert(ret == VQUEUE_SUCCESS, "FATAL: RPMSG failed to enqueue buffer.\n");
+	RPMSG_ASSERT(ret == VQUEUE_SUCCESS, "FATAL: RPMSG failed to enqueue buffer.\n");
 	/* Let the other side know that there is a job to process. */
 	virtqueue_kick(rdev->tvq);
 
