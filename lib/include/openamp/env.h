@@ -50,8 +50,6 @@
  *
  *       env_allocate_memory
  *       env_free_memory
- *       env_print
- *       env_assert
  *       env_map_vatopa
  *       env_map_patova
  *       env_sleep_msec
@@ -92,12 +90,6 @@ void *env_allocate_memory(unsigned int size);
  * @param ptr - pointer to memory to free
  */
 void env_free_memory(void *ptr);
-
-#define env_print(...)  printf(__VA_ARGS__)
-#define env_assert(_exp, _msg) do { \
-	if (!(_exp)) {env_print("%s: %s", __func__, _msg); while(1);} \
-	} while(0)
-
 
 /**
  *-----------------------------------------------------------------------------
