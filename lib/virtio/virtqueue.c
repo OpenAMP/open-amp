@@ -306,7 +306,7 @@ void virtqueue_free(struct virtqueue *vq)
 	if (vq != VQ_NULL) {
 
 		if (vq->vq_free_cnt != vq->vq_nentries) {
-			env_print
+			printf
 			    ("\r\nWARNING %s: freeing non-empty virtqueue\r\n",
 			     vq->vq_name);
 		}
@@ -459,7 +459,7 @@ void virtqueue_dump(struct virtqueue *vq)
 	if (vq == VQ_NULL)
 		return;
 
-	env_print("VQ: %s - size=%d; free=%d; used=%d; queued=%d; "
+	printf("VQ: %s - size=%d; free=%d; used=%d; queued=%d; "
 		  "desc_head_idx=%d; avail.idx=%d; used_cons_idx=%d; "
 		  "used.idx=%d; avail.flags=0x%x; used.flags=0x%x\r\n",
 		  vq->vq_name, vq->vq_nentries, vq->vq_free_cnt,
