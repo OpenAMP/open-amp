@@ -134,8 +134,8 @@ void rpmsg_deinit(struct remote_device *rdev)
  *
  */
 
-int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, unsigned long src,
-			      unsigned long dst, char *data, int size, int wait)
+int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
+			      uint32_t dst, char *data, int size, int wait)
 {
 	struct remote_device *rdev;
 	struct rpmsg_hdr *rp_hdr;
@@ -268,7 +268,7 @@ int rpmsg_get_buffer_size(struct rpmsg_channel *rp_chnl)
  */
 struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_channel *rp_chnl,
 					rpmsg_rx_cb_t cb, void *priv,
-					unsigned long addr)
+					uint32_t addr)
 {
 
 	struct remote_device *rdev = RPMSG_NULL;
