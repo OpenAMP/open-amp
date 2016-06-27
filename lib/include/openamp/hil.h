@@ -467,6 +467,22 @@ struct hil_platform_ops {
      */
 	void (*shutdown_cpu) (int cpu_id);
 
+    /**
+     * initialize
+     *
+     *  This function initialize remote processor with platform data.
+     *
+     * @param[in] pdata - platform data
+     * @param[in] proc - pointer to the remote processor
+     * @param[in] cpu_id - CPU id
+     *
+     * @return 0 on sucess, otherwise on failure
+     *
+     */
+	int (*initialize) (void *pdata,
+				  struct hil_proc *proc,
+				  int cpu_id);
+
 };
 
 /* Utility macros for register read/write */
