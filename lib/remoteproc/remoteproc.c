@@ -66,13 +66,6 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 		return RPROC_ERR_PARAM;
 	}
 
-	/* Initialize environment component */
-	struct metal_init_params init_params = METAL_INIT_DEFAULTS;
-	status = metal_init(&init_params);
-	if (status != RPROC_SUCCESS) {
-		return status;
-	}
-
 	rproc = env_allocate_memory(sizeof(struct remote_proc));
 	if (rproc) {
 		memset(rproc, 0x00, sizeof(struct remote_proc));
@@ -91,7 +84,7 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 				    rpmsg_init(rproc->proc->cpu_id,
 					       &rproc->rdev, channel_created,
 					       channel_destroyed, default_cb,
-					       RPMSG_MASTER, 0);
+					       RPMSG_MASTER);
 			} else {
 				status = RPROC_ERR_NO_RSC_TABLE;
 			}
@@ -190,13 +183,6 @@ int remoteproc_init(char *fw_name, rpmsg_chnl_cb_t channel_created,
 
 	if (!fw_name) {
 		return RPROC_ERR_PARAM;
-	}
-
-	/* Initialize environment component */
-	struct metal_init_params init_params = METAL_INIT_DEFAULTS;
-	status = metal_init(&init_params);
-	if (status != RPROC_SUCCESS) {
-		return status;
 	}
 
 	rproc = env_allocate_memory(sizeof(struct remote_proc));
@@ -345,14 +331,14 @@ int remoteproc_boot(struct remote_proc *rproc)
 					       &rproc->rdev,
 					       rproc->channel_created,
 					       rproc->channel_destroyed,
-					       rproc->default_cb, RPMSG_MASTER, 0);
+					       rproc->default_cb, RPMSG_MASTER);
 #else
 				status =
 				    rpmsg_init(rproc->proc->cpu_id,
 					       &rproc->rdev,
 					       rproc->channel_created,
 					       rproc->channel_destroyed,
-					       rproc->default_cb, RPMSG_REMOTE, 0);
+					       rproc->default_cb, RPMSG_REMOTE);
 #endif
 			}
 		} else {
