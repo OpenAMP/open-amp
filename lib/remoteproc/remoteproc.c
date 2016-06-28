@@ -91,7 +91,7 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 				    rpmsg_init(rproc->proc->cpu_id,
 					       &rproc->rdev, channel_created,
 					       channel_destroyed, default_cb,
-					       RPMSG_MASTER);
+					       RPMSG_MASTER, 0);
 			} else {
 				status = RPROC_ERR_NO_RSC_TABLE;
 			}
@@ -345,14 +345,14 @@ int remoteproc_boot(struct remote_proc *rproc)
 					       &rproc->rdev,
 					       rproc->channel_created,
 					       rproc->channel_destroyed,
-					       rproc->default_cb, RPMSG_MASTER);
+					       rproc->default_cb, RPMSG_MASTER, 0);
 #else
 				status =
 				    rpmsg_init(rproc->proc->cpu_id,
 					       &rproc->rdev,
 					       rproc->channel_created,
 					       rproc->channel_destroyed,
-					       rproc->default_cb, RPMSG_REMOTE);
+					       rproc->default_cb, RPMSG_REMOTE, 0);
 #endif
 			}
 		} else {

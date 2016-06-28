@@ -72,6 +72,7 @@
  * @param channel_destroyed - callback function for channel deletion
  * @param default_cb        - default callback for channel I/O
  * @param role              - role of the other device, Master or Remote
+ * @param init_env          - 1 to initialize env, 0 not to
  *
  * @return - status of function execution
  *
@@ -80,21 +81,25 @@
 int rpmsg_init(int dev_id, struct remote_device **rdev,
 	       rpmsg_chnl_cb_t channel_created,
 	       rpmsg_chnl_cb_t channel_destroyed,
-	       rpmsg_rx_cb_t default_cb, int role)
+	       rpmsg_rx_cb_t default_cb, int role,
+	       int init_env)
 {
 	int status;
 
-	/* Initialize IPC environment */
-	struct metal_init_params init_params = METAL_INIT_DEFAULTS;
-	status = metal_init(&init_params);
+	if (init_env) {
+		/* Initialize IPC environment */
+		struct metal_init_params init_params = METAL_INIT_DEFAULTS;
+		status = metal_init(&init_params);
+		if (status != RPMSG_SUCCESS)
+			return status;
+	}
+
+	/* Initialize the remote device for given cpu id */
+	status = rpmsg_rdev_init(rdev, dev_id, role, channel_created,
+				 channel_destroyed, default_cb);
 	if (status == RPMSG_SUCCESS) {
-		/* Initialize the remote device for given cpu id */
-		status = rpmsg_rdev_init(rdev, dev_id, role, channel_created,
-					 channel_destroyed, default_cb);
-		if (status == RPMSG_SUCCESS) {
-			/* Kick off IPC with the remote device */
-			status = rpmsg_start_ipc(*rdev);
-		}
+		/* Kick off IPC with the remote device */
+		status = rpmsg_start_ipc(*rdev);
 	}
 
 	/* Deinit system in case of error */

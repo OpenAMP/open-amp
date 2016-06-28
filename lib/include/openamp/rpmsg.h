@@ -330,6 +330,7 @@ static inline int rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev,
  * @param channel_destroyed - callback function for channel deletion
  * @default_cb              - default callback for channel
  * @param role              - role of the other device, Master or Remote
+ * @param init_env          - 1 to initialize env, 0 not to
  * @return - status of function execution
  *
  */
@@ -337,7 +338,8 @@ static inline int rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev,
 int rpmsg_init(int dev_id, struct remote_device **rdev,
 	       rpmsg_chnl_cb_t channel_created,
 	       rpmsg_chnl_cb_t channel_destroyed,
-	       rpmsg_rx_cb_t default_cb, int role);
+	       rpmsg_rx_cb_t default_cb, int role,
+	       int init_env);
 
 /**
  * rpmsg_deinit
