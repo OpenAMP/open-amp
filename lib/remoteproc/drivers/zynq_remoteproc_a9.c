@@ -82,13 +82,15 @@ static int _enable_interrupt(struct proc_vring *vring_hw);
 static void _notify(int cpu_id, struct proc_intr *intr_info);
 static int _boot_cpu(int cpu_id, unsigned int load_addr);
 static void _shutdown_cpu(int cpu_id);
+static int _initialize(void *pdata, struct hil_proc *proc, int cpu_id);
 
 /*--------------------------- Globals ---------------------------------- */
-struct hil_platform_ops proc_ops = {
+struct hil_platform_ops zynq_a9_proc_ops = {
 	.enable_interrupt = _enable_interrupt,
 	.notify           = _notify,
 	.boot_cpu         = _boot_cpu,
 	.shutdown_cpu     = _shutdown_cpu,
+	.initialize = _initialize,
 };
 
 static int _enable_interrupt(struct proc_vring *vring_hw)
@@ -173,4 +175,11 @@ static void _shutdown_cpu(int cpu_id)
 	lock_slcr();
 }
 
-
+static int _initialize(void *pdata,
+			      struct hil_proc *proc,
+			      int cpu_id)
+{
+	(void) cpu_id;
+	memcpy(proc, pdata, sizeof(struct hil_proc));
+	return 0;
+}
