@@ -45,7 +45,7 @@
 /* Reference implementation that show cases platform_get_cpu_info and 
  platform_get_for_firmware API implementation for Bare metal environment */
 
-extern struct hil_platform_ops proc_ops;
+extern struct hil_platform_ops zynq_a9_proc_ops;
 
 /* IPC Device parameters */
 #define SHM_ADDR                          (void *)0x08008000
@@ -142,7 +142,7 @@ struct hil_proc proc_table[] = {
 	  },
 
 	 /* HIL platform ops table. */
-	 &proc_ops,
+	 &zynq_a9_proc_ops,
 
 	 /* Next three fields are for future use only */
 	 0,
@@ -150,81 +150,7 @@ struct hil_proc proc_table[] = {
 	 NULL,
 	 {NULL, NULL}
 	},
-
-	/* CPU node for remote context */
-	{
-	 /* CPU ID of remote */
-	 REMOTE_CPU_ID,
-
-	 /* Shared memory info - Last field is not used currently */
-	 {
-	  SHM_ADDR, SHM_SIZE, 0x00},
-
-	 /* VirtIO device info */
-	 {
-	  0, 0, 0,
-	  {
-	   {
-	    /* Provide vring interrupts info here. Other fields are obtained
-	     * from the rsc table so leave them empty.
-	     */
-	    NULL, NULL, 0, 0,
-	    {
-	     VRING0_IPI_VECT, 0x1006, 1}
-	    },
-	   {
-	    NULL, NULL, 0, 0,
-	    {
-	     VRING1_IPI_VECT, 0x1006, 1}
-	    }
-	   }
-	  },
-
-	 /* Number of RPMSG channels */
-	 1,
-
-	 /* RPMSG channel info - Only channel name is expected currently */
-	 {
-	  {"rpmsg-openamp-demo-channel"}
-	  },
-
-	 /* HIL platform ops table. */
-	 &proc_ops,
-
-	 /* Next three fields are for future use only */
-	 0,
-	 0,
-	 NULL,
-	 {NULL, NULL}
-	}
 };
-
-/**
- * platform_get_processor_info
- *
- * Copies the target info from the user defined data structures to
- * HIL proc  data structure.In case of remote contexts this function
- * is called with the reserved CPU ID HIL_RSVD_CPU_ID, because for
- * remotes there is only one master.
- *
- * @param proc   - HIL proc to populate
- * @param cpu_id - CPU ID
- *
- * return  - status of execution
- */
-int platform_get_processor_info(struct hil_proc *proc, int cpu_id)
-{
-	int idx;
-	for (idx = 0; idx < sizeof(proc_table) / sizeof(struct hil_proc); idx++) {
-		if ((cpu_id == HIL_RSVD_CPU_ID)
-		    || (proc_table[idx].cpu_id == cpu_id)) {
-			memcpy(proc, &proc_table[idx],
-			       sizeof(struct hil_proc));
-			return 0;
-		}
-	}
-	return -1;
-}
 
 int platform_get_processor_for_fw(char *fw_name)
 {
