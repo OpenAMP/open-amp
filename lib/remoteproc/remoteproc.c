@@ -183,7 +183,7 @@ int remoteproc_init(char *fw_name, void *pdata,
 	struct remote_proc *rproc;
 	struct resource_table *rsc_table;
 	unsigned int fw_addr, fw_size, rsc_size;
-	int status, cpu_id;
+	int status;
 
 	if (!fw_name) {
 		return RPROC_ERR_PARAM;
@@ -192,35 +192,29 @@ int remoteproc_init(char *fw_name, void *pdata,
 	rproc = env_allocate_memory(sizeof(struct remote_proc));
 	if (rproc) {
 		memset((void *)rproc, 0x00, sizeof(struct remote_proc));
-		/* Get CPU ID for the given firmware name */
-		cpu_id = hil_get_cpuforfw(fw_name);
-		if (cpu_id >= 0) {
-			/* Create proc instance */
-			rproc->proc = hil_create_proc(pdata, cpu_id);
-			if (rproc->proc) {
-				/* Retrieve firmware attributes */
-				status =
-				    hil_get_firmware(fw_name, &fw_addr,
-						     &fw_size);
-				if (!status) {
-					/* Initialize ELF loader - currently only ELF format is supported */
-					rproc->loader =
-					    remoteproc_loader_init(ELF_LOADER);
-					if (rproc->loader) {
-						/* Attach the given firmware with the ELF parser/loader */
-						status =
-						    remoteproc_loader_attach_firmware
-						    (rproc->loader,
-						     (void *)fw_addr);
-					} else {
-						status = RPROC_ERR_LOADER;
-					}
+		/* Create proc instance */
+		rproc->proc = hil_create_proc(pdata, HIL_RSVD_CPU_ID);
+		if (rproc->proc) {
+			/* Retrieve firmware attributes */
+			status =
+			    hil_get_firmware(fw_name, &fw_addr,
+					     &fw_size);
+			if (!status) {
+				/* Initialize ELF loader - currently only ELF format is supported */
+				rproc->loader =
+				    remoteproc_loader_init(ELF_LOADER);
+				if (rproc->loader) {
+					/* Attach the given firmware with the ELF parser/loader */
+					status =
+					    remoteproc_loader_attach_firmware
+					    (rproc->loader,
+					     (void *)fw_addr);
+				} else {
+					status = RPROC_ERR_LOADER;
 				}
-			} else {
-				status = RPROC_ERR_NO_MEM;
 			}
 		} else {
-			status = RPROC_ERR_INVLD_FW;
+			status = RPROC_ERR_NO_MEM;
 		}
 	} else {
 		status = RPROC_ERR_NO_MEM;
