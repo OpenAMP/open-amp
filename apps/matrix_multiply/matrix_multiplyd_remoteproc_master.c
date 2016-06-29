@@ -58,6 +58,9 @@ static int shutdown_called = 0;
 /* External functions */
 extern void init_system();
 
+/* External variables */
+extern struct hil_proc proc_table[];
+
 static void Matrix_Multiply(const matrix * m, const matrix * n, matrix * r)
 {
 	int i, j, k;
@@ -98,7 +101,7 @@ int main()
 	init_system();
 
 	status =
-	    remoteproc_init((void *)fw_name, rpmsg_channel_created,
+	    remoteproc_init((void *)fw_name, &proc_table[0], rpmsg_channel_created,
 			    rpmsg_channel_deleted, rpmsg_read_cb, &proc);
 
 	if (!status) {

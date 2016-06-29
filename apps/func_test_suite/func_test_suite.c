@@ -35,6 +35,7 @@ static char firmware_name[] = "baremetal-fn-test-suite-remote-firmware";
 static char r_buffer[512];
 static struct rsc_table_info rsc_info;
 extern const struct remote_resource_table resources;
+extern struct hil_proc proc_table[];
 
 /* External functions */
 extern void init_system();
@@ -58,7 +59,8 @@ int main()
 
 	/* This API creates the virtio devices for this remote node and initializes
 	   other relevant resources defined in the resource table */
-	remoteproc_resource_init(&rsc_info, rpmsg_channel_created,
+	remoteproc_resource_init(&rsc_info, &proc_table[0],
+				 rpmsg_channel_created,
 				 rpmsg_channel_deleted, rpmsg_read_default_cb,
 				 &proc);
 

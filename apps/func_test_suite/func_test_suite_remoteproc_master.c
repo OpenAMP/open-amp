@@ -52,6 +52,9 @@ struct _payload *r_payload = NULL;
 /* External functions */
 extern void init_system();
 
+/* External variables */
+extern struct hil_proc proc_table[];
+
 void sleep()
 {
 	int i;
@@ -157,7 +160,7 @@ int test_execute_suite(char *firmware_name)
 	int i;
 
 	status =
-	    remoteproc_init((void *)firmware_name, rpmsg_channel_created,
+	    remoteproc_init((void *)firmware_name, &proc_table[0], rpmsg_channel_created,
 			    rpmsg_channel_deleted, rpmsg_read_default_cb,
 			    &proc);
 
