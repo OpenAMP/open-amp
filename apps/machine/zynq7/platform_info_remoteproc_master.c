@@ -147,7 +147,3 @@ struct hil_proc proc_table []=
     }
 };
 
-int platform_get_processor_for_fw(char *fw_name) {
-
-    return 1;
-}
