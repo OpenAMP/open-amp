@@ -60,7 +60,7 @@ struct ipi_info {
 /* Reference implementation that show cases platform_get_cpu_info and 
  platform_get_for_firmware API implementation for Bare metal environment */
 
-extern struct hil_platform_ops proc_ops;
+extern struct hil_platform_ops zynqmp_r5_a53_proc_ops;
 
 static struct ipi_info chn_ipi_info = { IPI_BASEADDR, IPI_CHN_BITMASK };
 
@@ -154,7 +154,7 @@ struct hil_proc proc_table[] = {
 	  },
 
 	 /* HIL platform ops table. */
-	 &proc_ops,
+	 &zynqmp_r5_a53_proc_ops,
 
 	 /* Next three fields are for future use only */
 	 0,
@@ -162,56 +162,5 @@ struct hil_proc proc_table[] = {
 	 NULL,
 	 {NULL, NULL}
 	},
-
-	/* CPU node for remote context */
-	{
-	 /* CPU ID of remote */
-	 REMOTE_CPU_ID,
-
-	 /* Shared memory info - Last field is not used currently */
-	 {
-	  SHM_ADDR, SHM_SIZE, 0x00},
-
-	 /* VirtIO device info */
-	 {
-	  0, 0, 0,
-	  {
-	   {
-	    /* Provide vring interrupts info here. Other fields are obtained
-	     * from the rsc table so leave them empty.
-	     */
-	    NULL, NULL, 0, 0,
-	    {
-	     VRING0_IPI_INTR_VECT, 0x1006, 1, (void *)(&chn_ipi_info)
-	     }
-	    },
-	   {
-	    NULL, NULL, 0, 0,
-	    {
-	     VRING1_IPI_INTR_VECT, 0x1006, 1, (void *)(&chn_ipi_info)
-	     }
-	    }
-	   }
-	  },
-
-	 /* Number of RPMSG channels */
-	 1,
-
-	 /* RPMSG channel info - Only channel name is expected currently */
-	 {
-	  {"rpmsg-openamp-demo-channel"}
-	  },
-
-	 /* HIL platform ops table. */
-	 &proc_ops,
-
-	 /* Next three fields are for future use only */
-	 0,
-	 0,
-	 NULL,
-	 {NULL, NULL}
-	}
 };
-
-const int proc_table_size = sizeof (proc_table)/sizeof(struct hil_proc);
 
