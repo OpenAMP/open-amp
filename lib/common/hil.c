@@ -66,14 +66,15 @@ extern int platform_get_processor_for_fw(char *fw_name);
  * This function creates a HIL proc instance for given CPU id and populates
  * it with platform info.
  *
+ * @param pdata  - platform data for the remote processor
  * @param cpu_id - cpu id
  *
  * @return - pointer to proc instance
  *
  */
-struct hil_proc *hil_create_proc(int cpu_id)
+struct hil_proc *hil_create_proc(void *pdata, int cpu_id)
 {
-	struct hil_proc *proc;
+	struct hil_proc *proc, *proc_data;
 	struct metal_list *node;
 	int status;
 
@@ -85,6 +86,12 @@ struct hil_proc *hil_create_proc(int cpu_id)
 		}
 	}
 
+	if (!pdata)
+		return NULL;
+	proc_data = (struct hil_proc *)pdata;
+	if (!proc_data->ops || !proc_data->ops->initialize)
+		return NULL;
+
 	/* Allocate memory for proc instance */
 	proc = env_allocate_memory(sizeof(struct hil_proc));
 	if (!proc) {
@@ -92,7 +99,8 @@ struct hil_proc *hil_create_proc(int cpu_id)
 	}
 
 	/* Get HW specfic info */
-	status = platform_get_processor_info(proc, cpu_id);
+	status = proc_data->ops->initialize(pdata,
+				  proc, cpu_id);
 	if (status) {
 		env_free_memory(proc);
 		return NULL;

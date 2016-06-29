@@ -323,6 +323,7 @@ static inline int rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev,
  * device id (cpu id).The successful return from this function leaves
  * fully enabled IPC link.
  *
+ * @param pdata             - platform data for remote processor
  * @param dev_id            - rpmsg remote device for which driver is to
  *                            be initialized
  * @param rdev              - pointer to newly created remote device
@@ -334,7 +335,7 @@ static inline int rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev,
  *
  */
 
-int rpmsg_init(int dev_id, struct remote_device **rdev,
+int rpmsg_init(void *pdata, int dev_id, struct remote_device **rdev,
 	       rpmsg_chnl_cb_t channel_created,
 	       rpmsg_chnl_cb_t channel_destroyed,
 	       rpmsg_rx_cb_t default_cb, int role);

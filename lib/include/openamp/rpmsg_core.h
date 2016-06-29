@@ -163,7 +163,7 @@ void rpmsg_ns_callback(struct rpmsg_channel *server_chnl,
 		       void *data, int len, void *priv, unsigned long src);
 
 /* Remote device functions */
-int rpmsg_rdev_init(struct remote_device **rdev, int dev_id, int role,
+int rpmsg_rdev_init(void *pdata, struct remote_device **rdev, int dev_id, int role,
 		    rpmsg_chnl_cb_t channel_created,
 		    rpmsg_chnl_cb_t channel_destroyed,
 		    rpmsg_rx_cb_t default_cb);

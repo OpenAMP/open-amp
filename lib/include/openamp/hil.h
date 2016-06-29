@@ -181,12 +181,13 @@ struct hil_proc {
  * This function creates a HIL proc instance for given CPU id and populates
  * it with platform info.
  *
+ * @param pdata  - platform data for remote processor
  * @param cpu_id - cpu id
  *
  * @return - pointer to proc instance
  *
  */
-struct hil_proc *hil_create_proc(int cpu_id);
+struct hil_proc *hil_create_proc(void *pdata, int cpu_id);
 
 /**
  * hil_delete_proc

@@ -386,6 +386,7 @@ struct rsc_table_info {
  *
  * @param rsc_info          - pointer to resource table info control
  *                            block
+ * @param pdata             - platform data for remote processor
  * @param channel_created   - callback function for channel creation
  * @param channel_destroyed - callback function for channel deletion
  * @param default_cb        - default callback for channel I/O
@@ -395,6 +396,7 @@ struct rsc_table_info {
  *
  */
 int remoteproc_resource_init(struct rsc_table_info *rsc_info,
+			     void *pdata,
 			     rpmsg_chnl_cb_t channel_created,
 			     rpmsg_chnl_cb_t channel_destroyed,
 			     rpmsg_rx_cb_t default_cb,
@@ -420,6 +422,7 @@ int remoteproc_resource_deinit(struct remote_proc *rproc);
  * remoteproc master applications are allowed to call this function.
  *
  * @param fw_name           - name of firmware
+ * @param pdata             - platform data for remote processor
  * @param channel_created   - callback function for channel creation
  * @param channel_destroyed - callback function for channel deletion
  * @param default_cb        - default callback for channel I/O
@@ -428,7 +431,7 @@ int remoteproc_resource_deinit(struct remote_proc *rproc);
  * @param returns - status of function execution
  *
  */
-int remoteproc_init(char *fw_name,
+int remoteproc_init(char *fw_name, void *pdata,
 		    rpmsg_chnl_cb_t channel_created,
 		    rpmsg_chnl_cb_t channel_destroyed,
 		    rpmsg_rx_cb_t default_cb,

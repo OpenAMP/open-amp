@@ -44,6 +44,7 @@
  *
  * @param rsc_info          - pointer to resource table info control
  * 							  block
+ * @param pdata             - platform data for remote processor
  * @param channel_created   - callback function for channel creation
  * @param channel_destroyed - callback function for channel deletion
  * @param default_cb        - default callback for channel I/O
@@ -53,6 +54,7 @@
  *
  */
 int remoteproc_resource_init(struct rsc_table_info *rsc_info,
+			     void *pdata,
 			     rpmsg_chnl_cb_t channel_created,
 			     rpmsg_chnl_cb_t channel_destroyed,
 			     rpmsg_rx_cb_t default_cb,
@@ -71,7 +73,7 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 		memset(rproc, 0x00, sizeof(struct remote_proc));
 		/* There can be only one master for remote configuration so use the
 		 * rsvd cpu id for creating hil proc */
-		rproc->proc = hil_create_proc(HIL_RSVD_CPU_ID);
+		rproc->proc = hil_create_proc(pdata, HIL_RSVD_CPU_ID);
 		if (rproc->proc) {
 			/* Parse resource table */
 			status =
@@ -81,7 +83,7 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 				/* Initialize RPMSG "messaging" component */
 				*rproc_handle = rproc;
 				status =
-				    rpmsg_init(rproc->proc->cpu_id,
+				    rpmsg_init(NULL, rproc->proc->cpu_id,
 					       &rproc->rdev, channel_created,
 					       channel_destroyed, default_cb,
 					       RPMSG_MASTER);
@@ -163,6 +165,7 @@ int remoteproc_resource_deinit(struct remote_proc *rproc)
  * remoteproc master applications are allowed to call this function.
  *
  * @param fw_name           - name of frimware
+ * @param pdata             - platform data for remote processor
  * @param channel_created   - callback function for channel creation
  * @param channel_destroyed - callback function for channel deletion
  * @param default_cb        - default callback for channel I/O
@@ -171,7 +174,8 @@ int remoteproc_resource_deinit(struct remote_proc *rproc)
  * @param returns - status of function execution
  *
  */
-int remoteproc_init(char *fw_name, rpmsg_chnl_cb_t channel_created,
+int remoteproc_init(char *fw_name, void *pdata,
+		    rpmsg_chnl_cb_t channel_created,
 		    rpmsg_chnl_cb_t channel_destroyed, rpmsg_rx_cb_t default_cb,
 		    struct remote_proc **rproc_handle)
 {
@@ -192,7 +196,7 @@ int remoteproc_init(char *fw_name, rpmsg_chnl_cb_t channel_created,
 		cpu_id = hil_get_cpuforfw(fw_name);
 		if (cpu_id >= 0) {
 			/* Create proc instance */
-			rproc->proc = hil_create_proc(cpu_id);
+			rproc->proc = hil_create_proc(pdata, cpu_id);
 			if (rproc->proc) {
 				/* Retrieve firmware attributes */
 				status =
@@ -327,14 +331,14 @@ int remoteproc_boot(struct remote_proc *rproc)
 				   configuration only. */
 #if defined (OPENAMP_REMOTE_LINUX_ENABLE)
 				status =
-				    rpmsg_init(rproc->proc->cpu_id,
+				    rpmsg_init(NULL, rproc->proc->cpu_id,
 					       &rproc->rdev,
 					       rproc->channel_created,
 					       rproc->channel_destroyed,
 					       rproc->default_cb, RPMSG_MASTER);
 #else
 				status =
-				    rpmsg_init(rproc->proc->cpu_id,
+				    rpmsg_init(NULL, rproc->proc->cpu_id,
 					       &rproc->rdev,
 					       rproc->channel_created,
 					       rproc->channel_destroyed,
