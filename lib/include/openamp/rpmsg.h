@@ -185,9 +185,6 @@ rpmsg_send_offchannel_raw(struct rpmsg_channel *, uint32_t, uint32_t,
 static inline int rpmsg_sendto(struct rpmsg_channel *rpdev, void *data,
 			       int len, uint32_t dst)
 {
-	if (!rpdev || !data)
-		return RPMSG_ERR_PARAM;
-
 	return rpmsg_send_offchannel_raw(rpdev, rpdev->src, dst, (char *)data,
 					 len, RPMSG_TRUE);
 }
@@ -211,9 +208,6 @@ static inline int rpmsg_sendto(struct rpmsg_channel *rpdev, void *data,
  */
 static inline int rpmsg_send(struct rpmsg_channel *rpdev, void *data, int len)
 {
-	if (!rpdev || !data)
-		return RPMSG_ERR_PARAM;
-
 	return rpmsg_send_offchannel_raw(rpdev, rpdev->src, rpdev->dst,
 					 (char *)data, len, RPMSG_TRUE);
 }
@@ -242,9 +236,6 @@ static inline int rpmsg_send_offchannel(struct rpmsg_channel *rpdev,
 					uint32_t src, uint32_t dst,
 					void *data, int len)
 {
-	if (!rpdev || !data)
-		return RPMSG_ERR_PARAM;
-
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, (char *)data, len,
 					 RPMSG_TRUE);
 }
@@ -268,10 +259,6 @@ static inline int rpmsg_send_offchannel(struct rpmsg_channel *rpdev,
 static inline int rpmsg_trysend(struct rpmsg_channel *rpdev, void *data,
 				int len)
 {
-
-	if (!rpdev || !data)
-		return RPMSG_ERR_PARAM;
-
 	return rpmsg_send_offchannel_raw(rpdev, rpdev->src, rpdev->dst,
 					 (char *)data, len, RPMSG_FALSE);
 }
@@ -296,14 +283,7 @@ static inline int rpmsg_trysend(struct rpmsg_channel *rpdev, void *data,
 static inline int rpmsg_trysendto(struct rpmsg_channel *rpdev, void *data,
 				  int len, uint32_t dst)
 {
-	unsigned long src;
-
-	if (!rpdev || !data)
-		return RPMSG_ERR_PARAM;
-
-	src = rpdev->src;
-
-	return rpmsg_send_offchannel_raw(rpdev, src, dst, (char *)data, len,
+	return rpmsg_send_offchannel_raw(rpdev, rpdev->src, dst, (char *)data, len,
 					 RPMSG_FALSE);
 }
 
@@ -330,9 +310,6 @@ static inline int rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev,
 					   uint32_t src, uint32_t dst,
 					   void *data, int len)
 {
-	if (!rpdev || !data)
-		return RPMSG_ERR_PARAM;
-
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, (char *)data, len,
 					 RPMSG_FALSE);
 }

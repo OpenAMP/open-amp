@@ -145,7 +145,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
 	unsigned long buff_len;
 	int ret;
 
-	if (!rp_chnl) {
+	if (!rp_chnl || !data) {
 		return RPMSG_ERR_PARAM;
 	}
 
