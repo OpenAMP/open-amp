@@ -182,9 +182,8 @@ rpmsg_send_offchannel_raw(struct rpmsg_channel *, uint32_t, uint32_t,
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-static inline
-    int rpmsg_sendto(struct rpmsg_channel *rpdev, void *data, int len,
-		     uint32_t dst)
+static inline int rpmsg_sendto(struct rpmsg_channel *rpdev, void *data,
+			       int len, uint32_t dst)
 {
 	if (!rpdev || !data)
 		return RPMSG_ERR_PARAM;
@@ -239,9 +238,9 @@ static inline int rpmsg_send(struct rpmsg_channel *rpdev, void *data, int len)
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-static inline
-    int rpmsg_send_offchannel(struct rpmsg_channel *rpdev, uint32_t src,
-			      uint32_t dst, void *data, int len)
+static inline int rpmsg_send_offchannel(struct rpmsg_channel *rpdev,
+					uint32_t src, uint32_t dst,
+					void *data, int len)
 {
 	if (!rpdev || !data)
 		return RPMSG_ERR_PARAM;
@@ -266,8 +265,8 @@ static inline
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-static inline
-    int rpmsg_trysend(struct rpmsg_channel *rpdev, void *data, int len)
+static inline int rpmsg_trysend(struct rpmsg_channel *rpdev, void *data,
+				int len)
 {
 
 	if (!rpdev || !data)
@@ -294,9 +293,8 @@ static inline
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-static inline
-    int rpmsg_trysendto(struct rpmsg_channel *rpdev, void *data, int len,
-			uint32_t dst)
+static inline int rpmsg_trysendto(struct rpmsg_channel *rpdev, void *data,
+				  int len, uint32_t dst)
 {
 	unsigned long src;
 
@@ -328,9 +326,9 @@ static inline
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-static inline
-    int rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev, uint32_t src,
-				 uint32_t dst, void *data, int len)
+static inline int rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev,
+					   uint32_t src, uint32_t dst,
+					   void *data, int len)
 {
 	if (!rpdev || !data)
 		return RPMSG_ERR_PARAM;
