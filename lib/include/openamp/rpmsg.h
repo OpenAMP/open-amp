@@ -165,6 +165,29 @@ rpmsg_send_offchannel_raw(struct rpmsg_channel *, uint32_t, uint32_t,
 			  char *, int, int);
 
 /**
+ * rpmsg_send() - send a message across to the remote processor
+ * @rpdev: the rpmsg channel
+ * @data: payload of message
+ * @len: length of payload
+ *
+ * This function sends @data of length @len on the @rpdev channel.
+ * The message will be sent to the remote processor which the @rpdev
+ * channel belongs to, using @rpdev's source and destination addresses.
+ * In case there are no TX buffers available, the function will block until
+ * one becomes available, or a timeout of 15 seconds elapses. When the latter
+ * happens, -ERESTARTSYS is returned.
+ *
+ * Can only be called from process context (for now).
+ *
+ * Returns 0 on success and an appropriate error value on failure.
+ */
+static inline int rpmsg_send(struct rpmsg_channel *rpdev, void *data, int len)
+{
+	return rpmsg_send_offchannel_raw(rpdev, rpdev->src, rpdev->dst,
+					 (char *)data, len, RPMSG_TRUE);
+}
+
+/**
  * rpmsg_sendto() - send a message across to the remote processor, specify dst
  * @rpdev: the rpmsg channel
  * @data: payload of message
@@ -187,29 +210,6 @@ static inline int rpmsg_sendto(struct rpmsg_channel *rpdev, void *data,
 {
 	return rpmsg_send_offchannel_raw(rpdev, rpdev->src, dst, (char *)data,
 					 len, RPMSG_TRUE);
-}
-
-/**
- * rpmsg_send() - send a message across to the remote processor
- * @rpdev: the rpmsg channel
- * @data: payload of message
- * @len: length of payload
- *
- * This function sends @data of length @len on the @rpdev channel.
- * The message will be sent to the remote processor which the @rpdev
- * channel belongs to, using @rpdev's source and destination addresses.
- * In case there are no TX buffers available, the function will block until
- * one becomes available, or a timeout of 15 seconds elapses. When the latter
- * happens, -ERESTARTSYS is returned.
- *
- * Can only be called from process context (for now).
- *
- * Returns 0 on success and an appropriate error value on failure.
- */
-static inline int rpmsg_send(struct rpmsg_channel *rpdev, void *data, int len)
-{
-	return rpmsg_send_offchannel_raw(rpdev, rpdev->src, rpdev->dst,
-					 (char *)data, len, RPMSG_TRUE);
 }
 
 /**
