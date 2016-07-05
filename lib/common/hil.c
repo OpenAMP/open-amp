@@ -57,7 +57,6 @@ unsigned long long shutdown_time_stamp;
 
 #endif
 
-extern int platform_get_processor_info(struct hil_proc *proc, int cpu_id);
 extern int platform_get_processor_for_fw(char *fw_name);
 
 /**
