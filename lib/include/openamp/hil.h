@@ -226,18 +226,6 @@ struct hil_proc *hil_get_proc(int cpu_id);
 void hil_isr(struct proc_vring *vring_hw);
 
 /**
- * hil_get_cpuforfw
- *
- * This function provides the CPU ID for the given firmware.
- *
- * @param fw_name - name of firmware
- *
- * @return - cpu id
- *
- */
-int hil_get_cpuforfw(char *fw_name);
-
-/**
  * hil_get_vdev_info
  *
  * This function return virtio device for remote core.

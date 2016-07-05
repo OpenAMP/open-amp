@@ -57,8 +57,6 @@ unsigned long long shutdown_time_stamp;
 
 #endif
 
-extern int platform_get_processor_for_fw(char *fw_name);
-
 /**
  * hil_create_proc
  *
@@ -113,21 +111,6 @@ struct hil_proc *hil_create_proc(void *pdata, int cpu_id)
 	metal_list_add_tail(&procs, &proc->node);
 
 	return proc;
-}
-
-/**
- * hil_get_cpuforfw
- *
- * This function provides the CPU ID for the given firmware.
- *
- * @param fw_name - name of firmware
- *
- * @return - cpu id
- *
- */
-int hil_get_cpuforfw(char *fw_name)
-{
-	return (platform_get_processor_for_fw(fw_name));
 }
 
 /**
