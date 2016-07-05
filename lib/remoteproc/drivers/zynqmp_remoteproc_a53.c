@@ -188,8 +188,3 @@ static int _initialize(void *pdata,
 	return 0;
 }
 
-int platform_get_processor_for_fw(char *fw_name)
-{
-	(void)fw_name;
-	return 1;
-}
