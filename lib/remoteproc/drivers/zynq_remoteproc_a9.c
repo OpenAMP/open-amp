@@ -83,6 +83,7 @@ static void _notify(int cpu_id, struct proc_intr *intr_info);
 static int _boot_cpu(int cpu_id, unsigned int load_addr);
 static void _shutdown_cpu(int cpu_id);
 static int _initialize(void *pdata, struct hil_proc *proc, int cpu_id);
+static void _release(struct hil_proc *proc);
 
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops zynq_a9_proc_ops = {
@@ -91,6 +92,7 @@ struct hil_platform_ops zynq_a9_proc_ops = {
 	.boot_cpu         = _boot_cpu,
 	.shutdown_cpu     = _shutdown_cpu,
 	.initialize = _initialize,
+	.release = _release,
 };
 
 static int _enable_interrupt(struct proc_vring *vring_hw)
@@ -183,3 +185,9 @@ static int _initialize(void *pdata,
 	memcpy(proc, pdata, sizeof(struct hil_proc));
 	return 0;
 }
+
+static void _release(struct hil_proc *proc)
+{
+	env_free_memory(proc);
+}
+

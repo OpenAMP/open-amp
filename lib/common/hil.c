@@ -129,7 +129,7 @@ void hil_delete_proc(struct hil_proc *proc)
 		if (proc ==
 			metal_container_of(node, struct hil_proc, node)) {
 			metal_list_del(&proc->node);
-			env_free_memory(proc);
+			proc->ops->release(proc);
 			return;
 		}
 	}
