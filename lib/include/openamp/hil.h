@@ -472,6 +472,15 @@ struct hil_platform_ops {
 				  struct hil_proc *proc,
 				  int cpu_id);
 
+    /**
+     * release
+     *
+     *  This function is to release remote processor resource
+     *
+     * @param[in] proc - pointer to the remote processor
+     *
+     */
+	void (*release) (struct hil_proc *proc);
 };
 
 /* Utility macros for register read/write */
