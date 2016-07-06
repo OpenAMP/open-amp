@@ -56,7 +56,7 @@ static void _reg_ipi_after_deinit(struct proc_vring *vring_hw);
 static void _notify(int cpu_id, struct proc_intr *intr_info);
 static int _boot_cpu(int cpu_id, unsigned int load_addr);
 static void _shutdown_cpu(int cpu_id);
-static int _initialize(void *pdata, struct hil_proc *proc, int cpu_id);
+static struct hil_proc *_initialize(void *pdata, int cpu_id);
 static void _release(struct hil_proc *proc);
 
 static void _ipi_handler(int vect_id, void *data);
@@ -181,13 +181,24 @@ static void _shutdown_cpu(int cpu_id)
 	return;
 }
 
-static int _initialize(void *pdata,
-			      struct hil_proc *proc,
-			      int cpu_id)
+static struct hil_proc * _initialize(void *pdata, int cpu_id)
 {
 	(void) cpu_id;
+
+	struct hil_proc *proc;
+	/* Allocate memory for proc instance */
+	proc = env_allocate_memory(sizeof(struct hil_proc));
+	if (!proc) {
+		return NULL;
+	}
+
 	memcpy(proc, pdata, sizeof(struct hil_proc));
-	return 0;
+	/* Enable mapping for the shared memory region */
+	if (proc->sh_buff.size)
+		env_map_memory((unsigned int)proc->sh_buff.start_addr,
+			    (unsigned int)proc->sh_buff.start_addr,
+			    proc->sh_buff.size, (SHARED_MEM | UNCACHED));
+	return proc;
 }
 
 static void _release(struct hil_proc *proc)

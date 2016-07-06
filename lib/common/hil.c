@@ -71,9 +71,8 @@ unsigned long long shutdown_time_stamp;
  */
 struct hil_proc *hil_create_proc(void *pdata, int cpu_id)
 {
-	struct hil_proc *proc, *proc_data;
+	struct hil_proc *proc = 0, *proc_data;
 	struct metal_list *node;
-	int status;
 
 	/* If proc already exists then return it */
 	metal_list_for_each(&procs, node) {
@@ -83,32 +82,10 @@ struct hil_proc *hil_create_proc(void *pdata, int cpu_id)
 		}
 	}
 
-	if (!pdata)
-		return NULL;
 	proc_data = (struct hil_proc *)pdata;
-	if (!proc_data->ops || !proc_data->ops->initialize)
-		return NULL;
-
-	/* Allocate memory for proc instance */
-	proc = env_allocate_memory(sizeof(struct hil_proc));
-	if (!proc) {
-		return NULL;
-	}
-
-	/* Get HW specfic info */
-	status = proc_data->ops->initialize(pdata,
-				  proc, cpu_id);
-	if (status) {
-		env_free_memory(proc);
-		return NULL;
-	}
-
-	/* Enable mapping for the shared memory region */
-	env_map_memory((unsigned int)proc->sh_buff.start_addr,
-		       (unsigned int)proc->sh_buff.start_addr,
-		       proc->sh_buff.size, (SHARED_MEM | UNCACHED));
-
-	metal_list_add_tail(&procs, &proc->node);
+	proc = proc_data->ops->initialize(pdata, cpu_id);
+	if (proc)
+		metal_list_add_tail(&procs, &proc->node);
 
 	return proc;
 }
