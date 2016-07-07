@@ -52,7 +52,7 @@
 
 /* Macro to initialize vring HW info */
 #define INIT_VRING_ALLOC_INFO(ring_info,vring_hw)                             \
-                         (ring_info).phy_addr  = (vring_hw).phy_addr;         \
+                         (ring_info).vaddr  = (vring_hw).vaddr;               \
                          (ring_info).align     = (vring_hw).align;             \
                          (ring_info).num_descs = (vring_hw).num_descs
 
@@ -405,7 +405,7 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 		INIT_VRING_ALLOC_INFO(ring_info, vring_table[idx]);
 
 		if (rdev->role == RPMSG_REMOTE) {
-			memset((void *)ring_info.phy_addr, 0x00,
+			memset((void *)ring_info.vaddr, 0x00,
 			       vring_size(vring_table[idx].num_descs, vring_table[idx].align));
 		}
 

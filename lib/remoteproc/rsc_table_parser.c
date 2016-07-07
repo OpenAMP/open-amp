@@ -218,7 +218,8 @@ int handle_vdev_rsc(struct remote_proc *rproc, void *rsc)
 		vring = &vdev_rsc->vring[idx];
 
 		/* Initialize HIL vring resources */
-		vring_table[idx].phy_addr = (void *)vring->da;
+		vring_table[idx].vaddr =
+			env_map_patova((unsigned long)vring->da);
 		vring_table[idx].num_descs = vring->num;
 		vring_table[idx].align = vring->align;
 

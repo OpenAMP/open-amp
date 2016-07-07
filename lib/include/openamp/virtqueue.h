@@ -142,7 +142,7 @@ struct virtqueue {
 
 /* struct to hold vring specific information */
 struct vring_alloc_info {
-	void *phy_addr;
+	void *vaddr;
 	uint32_t align;
 	uint16_t num_descs;
 	uint16_t pad;

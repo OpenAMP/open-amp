@@ -95,7 +95,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 
 		//TODO : Whether we want to support indirect addition or not.
 		vq->vq_ring_size = vring_size(ring->num_descs, ring->align);
-		vq->vq_ring_mem = (void *)ring->phy_addr;
+		vq->vq_ring_mem = (void *)ring->vaddr;
 
 		/* Initialize vring control block in virtqueue. */
 		vq_ring_init(vq);

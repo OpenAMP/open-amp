@@ -100,8 +100,8 @@ struct proc_intr {
 struct proc_vring {
 	/* Pointer to virtqueue encapsulating the vring */
 	struct virtqueue *vq;
-	/* Vring physical address */
-	void *phy_addr;
+	/* Vring logical address */
+	void *vaddr;
 	/* Number of vring descriptors */
 	unsigned short num_descs;
 	/* Vring alignment */
