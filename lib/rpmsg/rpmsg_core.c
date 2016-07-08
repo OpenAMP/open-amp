@@ -413,7 +413,7 @@ void *rpmsg_get_tx_buffer(struct remote_device *rdev, unsigned long *len,
 		    virtqueue_get_available_buffer(rdev->tvq, idx,
 						   (uint32_t *) len);
 	}
-	return ((void *)env_map_vatopa(data));
+	return data;
 }
 
 /**
@@ -440,7 +440,7 @@ void *rpmsg_get_rx_buffer(struct remote_device *rdev, unsigned long *len,
 		    virtqueue_get_available_buffer(rdev->rvq, idx,
 						   (uint32_t *) len);
 	}
-	return ((void *)env_map_vatopa(data));
+	return data;
 }
 
 /**
