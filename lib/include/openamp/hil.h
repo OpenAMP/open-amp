@@ -390,14 +390,6 @@ struct hil_platform_ops {
 	int (*enable_interrupt) (struct proc_vring * vring_hw);
 
     /**
-     * reg_ipi_after_deinit()
-     * This function register interrupt(IPI) after openamp resource .
-     *
-     * @param vring_hw - pointer to vring control block
-     */
-	void (*reg_ipi_after_deinit) (struct proc_vring * vring_hw);
-
-    /**
      * notify()
      *
      * This function generates IPI to let the other side know that there is

@@ -65,7 +65,6 @@ static void _ipi_handler_deinit(int vect_id, void *data);
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops zynqmp_r5_a53_proc_ops = {
 	.enable_interrupt     = _enable_interrupt,
-	.reg_ipi_after_deinit = _reg_ipi_after_deinit,
 	.notify               = _notify,
 	.boot_cpu             = _boot_cpu,
 	.shutdown_cpu         = _shutdown_cpu,
@@ -203,6 +202,12 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 
 static void _release(struct hil_proc *proc)
 {
+	int i;
+	struct proc_vring *vring_hw;
+	for (i = 0; i < (int)proc->vdev.num_vrings; i++) {
+		vring_hw = &proc->vdev.vring_info[i];
+		_reg_ipi_after_deinit(vring_hw);
+	}
 	env_free_memory(proc);
 }
 

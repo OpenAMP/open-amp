@@ -119,19 +119,8 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 
 int remoteproc_resource_deinit(struct remote_proc *rproc)
 {
-	int i = 0;
-	struct proc_vring *vring_hw = 0;
 	if (rproc) {
 		if (rproc->rdev) {
-			/* disable IPC interrupts */
-			if (rproc->proc->ops->reg_ipi_after_deinit) {
-				for (i = 0; i < 2; i++) {
-					vring_hw =
-					    &rproc->proc->vdev.vring_info[i];
-					rproc->proc->ops->
-					    reg_ipi_after_deinit(vring_hw);
-				}
-			}
 			rpmsg_deinit(rproc->rdev);
 		}
 		if (rproc->proc) {
