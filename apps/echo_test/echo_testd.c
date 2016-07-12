@@ -50,7 +50,7 @@ int main()
 	    remoteproc_resource_init(&rsc_info, &proc_table[0],
 				     rpmsg_channel_created,
 				     rpmsg_channel_deleted, rpmsg_read_cb,
-				     &proc);
+				     &proc, 0);
 
 	if (status < 0) {
 		return -1;
