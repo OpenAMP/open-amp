@@ -103,6 +103,9 @@ struct hil_proc proc_table[] = {
 	 /* CPU ID of master */
 	 MASTER_CPU_ID,
 
+	 /* HIL platform ops table. */
+	 &zynq_a9_proc_ops,
+
 	 /* Shared memory info - Last field is not used currently */
 	 {
 	  SHM_ADDR, SHM_SIZE, 0x00},
@@ -140,9 +143,6 @@ struct hil_proc proc_table[] = {
 	 {
 	  {"rpmsg-openamp-demo-channel"}
 	  },
-
-	 /* HIL platform ops table. */
-	 &zynq_a9_proc_ops,
 
 	 /* Next three fields are for future use only */
 	 0,
