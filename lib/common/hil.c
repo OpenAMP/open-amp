@@ -71,7 +71,8 @@ unsigned long long shutdown_time_stamp;
  */
 struct hil_proc *hil_create_proc(void *pdata, int cpu_id)
 {
-	struct hil_proc *proc = 0, *proc_data;
+	struct hil_proc *proc = 0;
+	struct proc_info_hdr *info_hdr = (struct proc_info_hdr *)pdata;
 	struct metal_list *node;
 
 	/* If proc already exists then return it */
@@ -82,8 +83,7 @@ struct hil_proc *hil_create_proc(void *pdata, int cpu_id)
 		}
 	}
 
-	proc_data = (struct hil_proc *)pdata;
-	proc = proc_data->ops->initialize(pdata, cpu_id);
+	proc = info_hdr->ops->initialize(pdata, cpu_id);
 	if (proc)
 		metal_list_add_tail(&procs, &proc->node);
 

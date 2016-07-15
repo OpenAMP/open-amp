@@ -54,6 +54,19 @@
 #define HIL_RSVD_CPU_ID                 0xffffffff
 
 /**
+ * struct proc_info_hdr
+ *
+ * This structure is maintained by hardware interface layer
+ * for user to pass hardware information to remote processor.
+ */
+struct proc_info_hdr {
+	/* CPU ID as defined by the platform */
+	unsigned long cpu_id;
+	/* HIL platform ops table */
+	struct hil_platform_ops *ops;
+};
+
+/**
  * struct proc_shm
  *
  * This structure is maintained by hardware interface layer for
@@ -151,6 +164,8 @@ struct proc_chnl {
 struct hil_proc {
 	/* CPU ID as defined by the platform */
 	unsigned long cpu_id;
+	/* HIL platform ops table */
+	struct hil_platform_ops *ops;
 	/* Shared memory info */
 	struct proc_shm sh_buff;
 	/* Virtio device hardware info */
@@ -159,8 +174,6 @@ struct hil_proc {
 	unsigned long num_chnls;
 	/* RPMsg channels array */
 	struct proc_chnl chnls[HIL_MAX_NUM_CHANNELS];
-	/* HIL platform ops table */
-	struct hil_platform_ops *ops;
 	/* Attrbites to represent processor role, master or remote . This field is for
 	 * future use. */
 	unsigned long attr;
