@@ -205,7 +205,9 @@ unsigned long platform_vatopa(void *addr)
 
 void *platform_patova(unsigned long addr)
 {
-	return ((void *)addr);
+	unsigned long laddr =
+		((unsigned long)addr & (~(0x0fff << 20))) | (0x08 << 24);
+	return ((void *)laddr);
 
 }
 
