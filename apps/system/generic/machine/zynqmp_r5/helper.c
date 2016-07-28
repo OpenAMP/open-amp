@@ -33,6 +33,8 @@
 #include "xparameters.h"
 #include "xil_exception.h"
 #include "xscugic.h"
+#include "xil_cache.h"
+#include "metal/sys.h"
 
 #define INTC_DEVICE_ID		XPAR_SCUGIC_0_DEVICE_ID
 
@@ -93,4 +95,13 @@ int zynqmp_r5_gic_initialize()
 void init_system()
 {
 	zynqmp_r5_gic_initialize();
+}
+
+void cleanup_system()
+{
+	metal_finish();
+	Xil_DCacheDisable();
+	Xil_ICacheDisable();
+	Xil_DCacheInvalidate();
+	Xil_ICacheInvalidate();
 }
