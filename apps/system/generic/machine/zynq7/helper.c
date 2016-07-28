@@ -30,6 +30,7 @@
  */
 #include <string.h>
 #include "baremetal.h"
+#include "metal/sys.h"
 
 #ifndef BAREMETAL_MASTER
 #define BAREMETAL_MASTER 0
@@ -278,4 +279,13 @@ void init_system()
 
 	/* Initialize GIC */
 	zynq7_gic_initialize();
+}
+
+void cleanup_system()
+{
+	metal_finish();
+	Xil_DCacheInvalidate();
+	Xil_ICacheInvalidate();
+	Xil_DCacheDisable();
+	Xil_ICacheDisable();
 }
