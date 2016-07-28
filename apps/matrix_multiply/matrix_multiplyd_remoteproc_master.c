@@ -57,6 +57,7 @@ static int shutdown_called = 0;
 
 /* External functions */
 extern void init_system();
+extern void cleanup_system();
 
 /* External variables */
 extern struct hil_proc proc_table[];
@@ -145,6 +146,7 @@ int main()
 
 	remoteproc_deinit(proc);
 
+	cleanup_system();
 	return 0;
 }
 

@@ -32,6 +32,7 @@ extern struct hil_proc proc_table[];
 
 /* External functions */
 extern void init_system();
+extern void cleanup_system();
 
 #define REDEF_O_CREAT 100
 #define REDEF_O_EXCL 200
@@ -196,5 +197,6 @@ static void shutdown_cb(struct rpmsg_channel *rp_chnl)
 {
 	rpmsg_retarget_deinit(rp_chnl);
 	remoteproc_resource_deinit(proc);
+	cleanup_system();
 }
 

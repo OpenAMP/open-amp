@@ -43,6 +43,7 @@ extern struct hil_proc proc_table[];
 
 /* External functions */
 extern void init_system();
+extern void cleanup_system();
 
 /* Application entry point */
 int main()
@@ -94,6 +95,7 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 {
 	if ((*(int *)data) == SHUTDOWN_MSG) {
 		remoteproc_resource_deinit(proc);
+		cleanup_system();
 	} else {
 		memcpy(matrix_array, data, len);
 		/* Process received data and multiple matrices. */

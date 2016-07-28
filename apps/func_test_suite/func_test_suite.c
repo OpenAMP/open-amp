@@ -39,6 +39,7 @@ extern struct hil_proc proc_table[];
 
 /* External functions */
 extern void init_system();
+extern void cleanup_system();
 
 int main()
 {
@@ -122,6 +123,7 @@ int main()
 		sleep();
 	}
 
+	cleanup_system();
 	return 0;
 }
 

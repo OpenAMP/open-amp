@@ -51,6 +51,7 @@ struct _payload *r_payload = NULL;
 
 /* External functions */
 extern void init_system();
+extern void cleanup_system();
 
 /* External variables */
 extern struct hil_proc proc_table[];
@@ -73,6 +74,7 @@ int main()
 
 	test_execute_suite(fw_name1);
 
+	cleanup_system();
 	return 0;
 }
 

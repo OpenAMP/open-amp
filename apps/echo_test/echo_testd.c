@@ -29,6 +29,7 @@ extern struct hil_proc proc_table[];
 
 /* External functions */
 extern void init_system();
+extern void cleanup_system();
 
 /* Application entry point */
 int main()
@@ -73,7 +74,6 @@ static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
 
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
 {
-
 }
 
 static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
@@ -81,6 +81,7 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 {
 	if ((*(int *)data) == SHUTDOWN_MSG) {
 		remoteproc_resource_deinit(proc);
+		cleanup_system();
 	} else {
 		/* Send data back to master */
 		rpmsg_send(rp_chnl, data, len);
