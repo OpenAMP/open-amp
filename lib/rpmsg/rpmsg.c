@@ -114,7 +114,6 @@ void rpmsg_deinit(struct remote_device *rdev)
 {
 	if (rdev) {
 		rpmsg_rdev_deinit(rdev);
-		metal_finish();
 	}
 }
 
