@@ -52,7 +52,6 @@ struct ipi_info {
 
 /*--------------------------- Declare Functions ------------------------ */
 static int _enable_interrupt(struct proc_vring *vring_hw);
-static void _reg_ipi_after_deinit(struct proc_vring *vring_hw);
 static void _notify(int cpu_id, struct proc_intr *intr_info);
 static int _boot_cpu(int cpu_id, unsigned int load_addr);
 static void _shutdown_cpu(int cpu_id);
@@ -60,7 +59,6 @@ static struct hil_proc *_initialize(void *pdata, int cpu_id);
 static void _release(struct hil_proc *proc);
 
 static void _ipi_handler(int vect_id, void *data);
-static void _ipi_handler_deinit(int vect_id, void *data);
 
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops zynqmp_r5_a53_proc_ops = {
@@ -75,9 +73,6 @@ struct hil_platform_ops zynqmp_r5_a53_proc_ops = {
 /* Extern functions defined out from OpenAMP lib */
 extern void ipi_enable_interrupt(unsigned int vector);
 extern void ipi_isr(int vect_id, void *data);
-
-/* static variables */
-static struct ipi_info saved_ipi_info;
 
 /*------------------- Extern variable -----------------------------------*/
 extern struct hil_proc proc_table[];
@@ -100,21 +95,6 @@ void _ipi_handler(int vect_id, void *data)
 	}
 }
 
-void _ipi_handler_deinit(int vect_id, void *data)
-{
-	(void) vect_id;
-	struct ipi_info *chn_ipi_info =
-		(struct ipi_info *)(data);
-	unsigned int ipi_base_addr = chn_ipi_info->ipi_base_addr;
-	unsigned int ipi_intr_status =
-	    (unsigned int)HIL_MEM_READ32(ipi_base_addr + IPI_ISR_OFFSET);
-	if (ipi_intr_status & chn_ipi_info->ipi_chn_mask) {
-		HIL_MEM_WRITE32((ipi_base_addr + IPI_ISR_OFFSET),
-				chn_ipi_info->ipi_chn_mask);
-	}
-	return;
-}
-
 static int _enable_interrupt(struct proc_vring *vring_hw)
 {
 	struct ipi_info *chn_ipi_info =
@@ -135,22 +115,6 @@ static int _enable_interrupt(struct proc_vring *vring_hw)
 	HIL_MEM_WRITE32((ipi_base_addr + IPI_IER_OFFSET),
 		chn_ipi_info->ipi_chn_mask);
 	return 0;
-}
-
-/* In case there is an interrupt received after deinit. */
-static void _reg_ipi_after_deinit(struct proc_vring *vring_hw)
-{
-	struct ipi_info *chn_ipi_info =
-	    (struct ipi_info *)(vring_hw->intr_info.data);
-
-	if (vring_hw->intr_info.vect_id == 0xFFFFFFFF)
-		return;
-	saved_ipi_info.ipi_base_addr = chn_ipi_info->ipi_base_addr;
-	saved_ipi_info.ipi_chn_mask = chn_ipi_info->ipi_chn_mask;
-
-	env_update_isr(vring_hw->intr_info.vect_id, &saved_ipi_info,
-                    _ipi_handler_deinit,
-                    "remoteproc_a53", 1);
 }
 
 static void _notify(int cpu_id, struct proc_intr *intr_info)
@@ -185,6 +149,10 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 	(void) cpu_id;
 
 	struct hil_proc *proc;
+	struct ipi_info *chn_ipi_info;
+	unsigned int ipi_base_addr;
+	unsigned int ipi_intr_status;
+
 	/* Allocate memory for proc instance */
 	proc = env_allocate_memory(sizeof(struct hil_proc));
 	if (!proc) {
@@ -192,6 +160,15 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 	}
 
 	memcpy(proc, pdata, sizeof(struct hil_proc));
+	chn_ipi_info =
+		(struct ipi_info *)&proc->vdev.vring_info[1];
+	ipi_base_addr = chn_ipi_info->ipi_base_addr;
+	ipi_intr_status =
+	    (unsigned int)HIL_MEM_READ32(ipi_base_addr + IPI_ISR_OFFSET);
+	if (ipi_intr_status & chn_ipi_info->ipi_chn_mask) {
+		HIL_MEM_WRITE32((ipi_base_addr + IPI_ISR_OFFSET),
+				chn_ipi_info->ipi_chn_mask);
+	}
 	/* Enable mapping for the shared memory region */
 	if (proc->sh_buff.size)
 		env_map_memory((unsigned int)proc->sh_buff.start_addr,
@@ -202,12 +179,6 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 
 static void _release(struct hil_proc *proc)
 {
-	int i;
-	struct proc_vring *vring_hw;
-	for (i = 0; i < (int)proc->vdev.num_vrings; i++) {
-		vring_hw = &proc->vdev.vring_info[i];
-		_reg_ipi_after_deinit(vring_hw);
-	}
 	env_free_memory(proc);
 }
 
