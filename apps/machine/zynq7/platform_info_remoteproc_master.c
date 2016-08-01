@@ -41,6 +41,7 @@
 
 #include <string.h>
 #include "openamp/hil.h"
+#include "openamp/firmware.h"
 
 /* Reference implementation that show cases platform_get_cpu_info and 
  platform_get_for_firmware API implementation for Bare metal environment */
@@ -147,3 +148,32 @@ struct hil_proc proc_table []=
     }
 };
 
+/* Start and end addresses of firmware image for remotes. These are defined in the
+ * object files that are obtained by converting the remote ELF Image into object
+ * files. These symbols are not used for remotes.
+ */
+extern unsigned char _binary_firmware1_start;
+extern unsigned char _binary_firmware1_end;
+
+extern unsigned char _binary_firmware2_start;
+extern unsigned char _binary_firmware2_end;
+
+#define FIRMWARE1_START  (void *)&_binary_firmware1_start
+#define FIRMWARE1_END    (void *)&_binary_firmware1_end
+
+#define FIRMWARE2_START  (void *)&_binary_firmware2_start
+#define FIRMWARE2_END    (void *)&_binary_firmware2_end
+
+/* Init firmware table */
+
+const struct firmware_info fw_table[] =
+{
+	{"firmware1",
+	 (unsigned int)FIRMWARE1_START,
+	 (unsigned int)FIRMWARE1_END},
+	{"firmware2",
+	 (unsigned int)FIRMWARE2_START,
+	 (unsigned int)FIRMWARE2_END}
+};
+
+int fw_table_size = sizeof(fw_table)/sizeof(struct firmware_info);
