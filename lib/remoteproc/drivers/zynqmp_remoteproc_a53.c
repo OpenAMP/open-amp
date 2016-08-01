@@ -41,13 +41,18 @@
  **************************************************************************/
 
 #include <string.h>
+#include "metal/io.h"
+#include "metal/device.h"
+#include "metal/utilities.h"
+#include "metal/atomic.h"
 #include "openamp/hil.h"
+#include "openamp/remoteproc_plat.h"
 #include "machine.h"
 
 /* -- FIX ME: ipi info is to be defined -- */
 struct ipi_info {
-	uint32_t ipi_base_addr;
 	uint32_t ipi_chn_mask;
+	int need_reg;
 };
 
 /*--------------------------- Declare Functions ------------------------ */
@@ -82,26 +87,26 @@ void _ipi_handler(int vect_id, void *data)
 {
 	(void) vect_id;
 	struct proc_vring *vring_hw = (struct proc_vring *)(data);
-	struct ipi_info *chn_ipi_info =
+	struct ipi_info *ipi =
 		(struct ipi_info *)(vring_hw->intr_info.data);
-	unsigned int ipi_base_addr = chn_ipi_info->ipi_base_addr;
+	struct metal_io_region *io = vring_hw->intr_info.io;
 	unsigned int ipi_intr_status =
-	    (unsigned int)HIL_MEM_READ32(ipi_base_addr + IPI_ISR_OFFSET);
-	if (ipi_intr_status & chn_ipi_info->ipi_chn_mask) {
+	    (unsigned int)metal_io_read32(io, IPI_ISR_OFFSET);
+	if (ipi_intr_status & ipi->ipi_chn_mask) {
 		platform_dcache_all_flush();
 		platform_isr(vect_id, data);
-		HIL_MEM_WRITE32((ipi_base_addr + IPI_ISR_OFFSET),
-				chn_ipi_info->ipi_chn_mask);
+		metal_io_write32(io, IPI_ISR_OFFSET,
+				ipi->ipi_chn_mask);
 	}
 }
 
 static int _enable_interrupt(struct proc_vring *vring_hw)
 {
-	struct ipi_info *chn_ipi_info =
+	struct ipi_info *ipi =
 	    (struct ipi_info *)(vring_hw->intr_info.data);
-	unsigned int ipi_base_addr = chn_ipi_info->ipi_base_addr;
+	struct metal_io_region *io = vring_hw->intr_info.io;
 
-	if (vring_hw->intr_info.vect_id == 0xFFFFFFFF) {
+	if (!ipi->need_reg) {
 		return 0;
 	}
 
@@ -112,8 +117,7 @@ static int _enable_interrupt(struct proc_vring *vring_hw)
 	env_enable_interrupt(vring_hw->intr_info.vect_id,
 			     vring_hw->intr_info.priority,
 			     vring_hw->intr_info.trigger_type);
-	HIL_MEM_WRITE32((ipi_base_addr + IPI_IER_OFFSET),
-		chn_ipi_info->ipi_chn_mask);
+	metal_io_write32(io, IPI_IER_OFFSET, ipi->ipi_chn_mask);
 	return 0;
 }
 
@@ -121,14 +125,13 @@ static void _notify(int cpu_id, struct proc_intr *intr_info)
 {
 
 	(void)cpu_id;
-	struct ipi_info *chn_ipi_info = (struct ipi_info *)(intr_info->data);
-	if (chn_ipi_info == NULL)
+	struct ipi_info *ipi = (struct ipi_info *)(intr_info->data);
+	if (ipi == NULL)
 		return;
 	platform_dcache_all_flush();
 
 	/* Trigger IPI */
-	HIL_MEM_WRITE32((chn_ipi_info->ipi_base_addr + IPI_TRIG_OFFSET),
-			chn_ipi_info->ipi_chn_mask);
+	metal_io_write32(intr_info->io, IPI_TRIG_OFFSET, ipi->ipi_chn_mask);
 }
 
 static int _boot_cpu(int cpu_id, unsigned int load_addr)
@@ -149,8 +152,10 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 	(void) cpu_id;
 
 	struct hil_proc *proc;
-	struct ipi_info *chn_ipi_info;
-	unsigned int ipi_base_addr;
+	int ret;
+	struct metal_io_region *io;
+	struct proc_intr *intr_info;
+	struct ipi_info *ipi;
 	unsigned int ipi_intr_status;
 
 	/* Allocate memory for proc instance */
@@ -158,27 +163,44 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 	if (!proc) {
 		return NULL;
 	}
+	memset(proc, 0, sizeof(struct hil_proc));
 
-	memcpy(proc, pdata, sizeof(struct hil_proc));
-	chn_ipi_info =
-		(struct ipi_info *)&proc->vdev.vring_info[1];
-	ipi_base_addr = chn_ipi_info->ipi_base_addr;
+	ret = rproc_init_plat_data(pdata, proc);
+	if (ret)
+		goto error;
+	intr_info = &(proc->vdev.vring_info[1].intr_info);
+	io = intr_info->io;
+	ipi = (struct ipi_info *)(intr_info->data);
 	ipi_intr_status =
-	    (unsigned int)HIL_MEM_READ32(ipi_base_addr + IPI_ISR_OFFSET);
-	if (ipi_intr_status & chn_ipi_info->ipi_chn_mask) {
-		HIL_MEM_WRITE32((ipi_base_addr + IPI_ISR_OFFSET),
-				chn_ipi_info->ipi_chn_mask);
+	    (unsigned int)metal_io_read32(io, IPI_ISR_OFFSET);
+	if (ipi_intr_status & ipi->ipi_chn_mask) {
+		metal_io_write32(io, IPI_ISR_OFFSET, ipi->ipi_chn_mask);
 	}
 	/* Enable mapping for the shared memory region */
 	if (proc->sh_buff.size)
-		env_map_memory((unsigned int)proc->sh_buff.start_addr,
-			    (unsigned int)proc->sh_buff.start_addr,
-			    proc->sh_buff.size, (SHARED_MEM | UNCACHED));
+		metal_io_mem_map((metal_phys_addr_t)proc->sh_buff.start_addr,
+			proc->sh_buff.io,
+			proc->sh_buff.size);
 	return proc;
+error:
+	if (proc) {
+		rproc_close_plat(proc);
+		env_free_memory(proc);
+	}
+	return NULL;
 }
 
 static void _release(struct hil_proc *proc)
 {
-	env_free_memory(proc);
+	if (proc) {
+		struct proc_intr *intr_info =
+			&(proc->vdev.vring_info[1].intr_info);
+		struct metal_io_region *io = intr_info->io;
+		struct ipi_info *ipi = (struct ipi_info *)(intr_info->data);
+		metal_io_write32(io, IPI_IDR_OFFSET, ipi->ipi_chn_mask);
+
+		rproc_close_plat(proc);
+		env_free_memory(proc);
+	}
 }
 
