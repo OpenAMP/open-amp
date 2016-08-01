@@ -45,6 +45,8 @@
 #include "openamp/virtio.h"
 #include "openamp/firmware.h"
 #include "metal/list.h"
+#include "metal/io.h"
+#include "metal/device.h"
 
 /* Configurable parameters */
 #define HIL_MAX_CORES                   2
@@ -77,6 +79,8 @@ struct proc_info_hdr {
 struct proc_shm {
 	/* Start address of shared memory used for buffers. */
 	void *start_addr;
+	/* sharmed memory I/O region */
+	struct metal_io_region *io;
 	/* Size of shared memory. */
 	unsigned long size;
 	/* Attributes for shared memory - cached or uncached. */
@@ -99,6 +103,10 @@ struct proc_intr {
 	unsigned int priority;
 	/* Interrupt trigger type */
 	unsigned int trigger_type;
+	/* IPI metal device */
+	struct metal_device *dev;
+	/* IPI device I/O */
+	struct metal_io_region *io;
 	/* Private data */
 	void *data;
 };
@@ -115,6 +123,10 @@ struct proc_vring {
 	struct virtqueue *vq;
 	/* Vring logical address */
 	void *vaddr;
+	/* Vring metal device */
+	struct metal_device *dev;
+	/* Vring I/O region */
+	struct metal_io_region *io;
 	/* Number of vring descriptors */
 	unsigned short num_descs;
 	/* Vring alignment */
