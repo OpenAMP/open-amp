@@ -49,6 +49,8 @@
 #include <string.h>
 #include "openamp/rpmsg.h"
 #include "metal/utilities.h"
+#include "metal/io.h"
+#include "metal/cache.h"
 
 /* Internal functions */
 static void rpmsg_rx_callback(struct virtqueue *vq);
@@ -341,6 +343,7 @@ int rpmsg_enqueue_buffer(struct remote_device *rdev, void *buffer,
 {
 	struct llist node;
 	int status;
+	struct metal_io_region *io;
 
 	/* Initialize buffer node */
 	node.data = buffer;
@@ -348,6 +351,11 @@ int rpmsg_enqueue_buffer(struct remote_device *rdev, void *buffer,
 	node.next = RPMSG_NULL;
 	node.prev = RPMSG_NULL;
 
+	io = rdev->proc->sh_buff.io;
+	if (io) {
+		if (! (io->mem_flags & METAL_UNCACHED))
+			metal_cache_flush(buffer, (unsigned int)len);
+	}
 	if (rdev->role == RPMSG_REMOTE) {
 		status = virtqueue_add_buffer(rdev->tvq, &node, 0, 1, buffer);
 	} else {
@@ -439,6 +447,15 @@ void *rpmsg_get_rx_buffer(struct remote_device *rdev, unsigned long *len,
 		data =
 		    virtqueue_get_available_buffer(rdev->rvq, idx,
 						   (uint32_t *) len);
+	}
+	if (data) {
+		struct metal_io_region *io;
+		io = rdev->proc->sh_buff.io;
+		if (io) {
+			if (! (io->mem_flags & METAL_UNCACHED))
+				metal_cache_invalidate(data,
+					(unsigned int)(*len));
+		}
 	}
 	return data;
 }
