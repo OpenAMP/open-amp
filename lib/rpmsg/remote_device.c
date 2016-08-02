@@ -384,7 +384,7 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 	struct virtqueue *vqs[RPMSG_MAX_VQ_PER_RDEV];
 	struct proc_vring *vring_table;
 	void *buffer;
-	struct llist node;
+	struct metal_sg sg;
 	int idx, num_vrings, status;
 
 	(void)flags;
@@ -429,6 +429,8 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 	}
 
 	if (rdev->role == RPMSG_REMOTE) {
+		sg.io = rdev->proc->sh_buff.io;
+		sg.len = RPMSG_BUFFER_SIZE;
 		for (idx = 0; ((idx < rdev->rvq->vq_nentries)
 			       && (idx < rdev->mem_pool->total_buffs / 2));
 		     idx++) {
@@ -440,13 +442,11 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 				return RPMSG_ERR_NO_BUFF;
 			}
 
-			node.data = buffer;
-			node.attr = RPMSG_BUFFER_SIZE;
-			node.next = RPMSG_NULL;
+			sg.virt = buffer;
 
 			memset(buffer, 0x00, RPMSG_BUFFER_SIZE);
 			status =
-			    virtqueue_add_buffer(rdev->rvq, &node, 0, 1,
+			    virtqueue_add_buffer(rdev->rvq, &sg, 0, 1,
 						 buffer);
 
 			if (status != RPMSG_SUCCESS) {

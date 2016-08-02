@@ -34,7 +34,7 @@ typedef uint8_t boolean;
 
 #include "openamp/virtio_ring.h"
 #include "openamp/env.h"
-#include "openamp/llist.h"
+#include "metal/dma.h"
 
 /*Error Codes*/
 #define VQ_ERROR_BASE                                 -3000
@@ -197,11 +197,11 @@ int virtqueue_create(struct virtio_device *device, unsigned short id,
 		     void (*notify) (struct virtqueue * vq),
 		     struct virtqueue **v_queue);
 
-int virtqueue_add_buffer(struct virtqueue *vq, struct llist *buffer,
+int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 			 int readable, int writable, void *cookie);
 
 int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
-				void *buffer_addr, uint32_t len, int writable,
+				struct metal_sg *sg, int writable,
 				boolean has_next);
 
 void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len);

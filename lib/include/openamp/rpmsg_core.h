@@ -35,7 +35,6 @@
 #include "openamp/virtio.h"
 #include "openamp/hil.h"
 #include "openamp/sh_mem.h"
-#include "openamp/llist.h"
 #include "openamp/rpmsg.h"
 #include "metal/mutex.h"
 #include "metal/list.h"

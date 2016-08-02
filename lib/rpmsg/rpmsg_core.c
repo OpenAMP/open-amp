@@ -341,15 +341,9 @@ void rpmsg_send_ns_message(struct remote_device *rdev,
 int rpmsg_enqueue_buffer(struct remote_device *rdev, void *buffer,
 			 unsigned long len, unsigned short idx)
 {
-	struct llist node;
 	int status;
+	struct metal_sg sg;
 	struct metal_io_region *io;
-
-	/* Initialize buffer node */
-	node.data = buffer;
-	node.attr = len;
-	node.next = RPMSG_NULL;
-	node.prev = RPMSG_NULL;
 
 	io = rdev->proc->sh_buff.io;
 	if (io) {
@@ -357,8 +351,13 @@ int rpmsg_enqueue_buffer(struct remote_device *rdev, void *buffer,
 			metal_cache_flush(buffer, (unsigned int)len);
 	}
 	if (rdev->role == RPMSG_REMOTE) {
-		status = virtqueue_add_buffer(rdev->tvq, &node, 0, 1, buffer);
+		/* Initialize buffer node */
+		sg.virt = buffer;
+		sg.len = len;
+		sg.io = io;
+		status = virtqueue_add_buffer(rdev->tvq, &sg, 0, 1, buffer);
 	} else {
+		(void)sg;
 		status = virtqueue_add_consumed_buffer(rdev->tvq, idx, len);
 	}
 
@@ -379,17 +378,16 @@ int rpmsg_enqueue_buffer(struct remote_device *rdev, void *buffer,
 void rpmsg_return_buffer(struct remote_device *rdev, void *buffer,
 			 unsigned long len, unsigned short idx)
 {
-	struct llist node;
-
-	/* Initialize buffer node */
-	node.data = buffer;
-	node.attr = len;
-	node.next = RPMSG_NULL;
-	node.prev = RPMSG_NULL;
+	struct metal_sg sg;
 
 	if (rdev->role == RPMSG_REMOTE) {
-		virtqueue_add_buffer(rdev->rvq, &node, 0, 1, buffer);
+		/* Initialize buffer node */
+		sg.virt = buffer;
+		sg.len = len;
+		sg.io = rdev->proc->sh_buff.io;
+		virtqueue_add_buffer(rdev->rvq, &sg, 0, 1, buffer);
 	} else {
+		(void)sg;
 		virtqueue_add_consumed_buffer(rdev->rvq, idx, len);
 	}
 }
