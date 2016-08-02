@@ -35,6 +35,7 @@ typedef uint8_t boolean;
 #include "openamp/virtio_ring.h"
 #include "openamp/env.h"
 #include "metal/dma.h"
+#include "metal/io.h"
 
 /*Error Codes*/
 #define VQ_ERROR_BASE                                 -3000
@@ -104,6 +105,8 @@ struct virtqueue {
 	struct vring vq_ring;
 	uint16_t vq_free_cnt;
 	uint16_t vq_queued_cnt;
+	/** Shared memory I/O region */
+	struct metal_io_region *shm_io;
 
 	/*
 	 * Head of the free chain in the descriptor table. If
@@ -195,6 +198,7 @@ int virtqueue_create(struct virtio_device *device, unsigned short id,
 		     char *name, struct vring_alloc_info *ring,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
+		     struct metal_io_region *shm_io,
 		     struct virtqueue **v_queue);
 
 int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,

@@ -52,6 +52,7 @@ static int virtqueue_nused(struct virtqueue *vq);
  *                    when message is available on VirtIO queue
  * @param notify    - Pointer to notify function, used to notify
  *                    other side that there is job available for it
+ * @param shm_io    - shared memory I/O region of the virtqueue
  * @param v_queue   - Created VirtIO queue.
  *
  * @return          - Function status
@@ -60,6 +61,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     char *name, struct vring_alloc_info *ring,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
+		     struct metal_io_region *shm_io,
 		     struct virtqueue **v_queue)
 {
 
@@ -94,6 +96,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		vq->vq_free_cnt = vq->vq_nentries;
 		vq->callback = callback;
 		vq->notify = notify;
+		vq->shm_io = shm_io;
 
 		//TODO : Whether we want to support indirect addition or not.
 		vq->vq_ring_size = vring_size(ring->num_descs, ring->align);
