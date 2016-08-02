@@ -93,7 +93,6 @@ void _ipi_handler(int vect_id, void *data)
 	unsigned int ipi_intr_status =
 	    (unsigned int)metal_io_read32(io, IPI_ISR_OFFSET);
 	if (ipi_intr_status & ipi->ipi_chn_mask) {
-		platform_dcache_all_flush();
 		platform_isr(vect_id, data);
 		metal_io_write32(io, IPI_ISR_OFFSET,
 				ipi->ipi_chn_mask);
@@ -128,7 +127,6 @@ static void _notify(int cpu_id, struct proc_intr *intr_info)
 	struct ipi_info *ipi = (struct ipi_info *)(intr_info->data);
 	if (ipi == NULL)
 		return;
-	platform_dcache_all_flush();
 
 	/* Trigger IPI */
 	metal_io_write32(intr_info->io, IPI_TRIG_OFFSET, ipi->ipi_chn_mask);
