@@ -353,7 +353,7 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
 
 	atomic_thread_fence(memory_order_seq_cst);
 
-	buffer = env_map_patova(vq->vq_ring.desc[*avail_idx].addr);
+	buffer = metal_io_phys_to_virt(vq->shm_io, vq->vq_ring.desc[*avail_idx].addr);
 	*len = vq->vq_ring.desc[*avail_idx].len;
 
 	VQUEUE_IDLE(vq);
