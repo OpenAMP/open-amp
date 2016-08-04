@@ -42,6 +42,7 @@
 
 #include "openamp/hil.h"
 #include "openamp/remoteproc_plat.h"
+#include "metal/atomic.h"
 #include "platform_info.h"
 
 #define IPI_CHN_BITMASK                   0x01000000 /* IPI channel bit mask APU<->RPU0 */
@@ -51,6 +52,7 @@
 struct ipi_info {
 	uint32_t ipi_chn_mask;
 	int need_reg;
+	atomic_int sync;
 };
 /* Reference implementation that show cases platform_get_cpu_info and 
  platform_get_for_firmware API implementation for Bare metal environment */
@@ -58,8 +60,8 @@ struct ipi_info {
 extern struct hil_platform_ops zynqmp_r5_a53_proc_ops;
 
 static struct ipi_info chn_ipi_info[] = {
-	{ IPI_CHN_BITMASK, 0},
-	{ IPI_CHN_BITMASK, 1},
+	{ IPI_CHN_BITMASK, 0, 0},
+	{ IPI_CHN_BITMASK, 1, 0},
 };
 
 struct rproc_info_plat_local proc_table = {
