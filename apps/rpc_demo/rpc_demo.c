@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "openamp/open_amp.h"
 #include "rsc_table.h"
+#include "platform_info.h"
 #include "openamp/rpmsg_retarget.h"
 
 #ifdef ZYNQ7_BAREMETAL
@@ -28,7 +29,7 @@ volatile int chnl_cb_flag = 0;
 static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
 extern const struct remote_resource_table resources;
-extern struct hil_proc proc_table[];
+extern struct rproc_info_plat_local proc_table;
 
 /* External functions */
 extern void init_system();
@@ -68,7 +69,7 @@ int main()
 	rsc_info.size = sizeof(resources);
 
 	/* Initialize RPMSG framework */
-	status = remoteproc_resource_init(&rsc_info, &proc_table[0],
+	status = remoteproc_resource_init(&rsc_info, &proc_table,
 					  rpmsg_channel_created,
 					  rpmsg_channel_deleted, rpmsg_read_cb,
 					  &proc, 0);
