@@ -40,6 +40,7 @@
  *
  **************************************************************************/
 
+#include <errno.h>
 #include <string.h>
 #include "metal/io.h"
 #include "metal/device.h"
@@ -47,12 +48,16 @@
 #include "metal/atomic.h"
 #include "openamp/hil.h"
 #include "openamp/remoteproc_plat.h"
+#include "openamp/virtqueue.h"
 #include "machine.h"
+
+#define _rproc_wait() asm volatile("wfi")
 
 /* -- FIX ME: ipi info is to be defined -- */
 struct ipi_info {
 	uint32_t ipi_chn_mask;
 	int need_reg;
+	atomic_int sync;
 };
 
 /*--------------------------- Declare Functions ------------------------ */
@@ -60,6 +65,7 @@ static int _enable_interrupt(struct proc_vring *vring_hw);
 static void _notify(int cpu_id, struct proc_intr *intr_info);
 static int _boot_cpu(int cpu_id, unsigned int load_addr);
 static void _shutdown_cpu(int cpu_id);
+static int _poll(struct hil_proc *proc, int nonblock);
 static struct hil_proc *_initialize(void *pdata, int cpu_id);
 static void _release(struct hil_proc *proc);
 
@@ -71,13 +77,10 @@ struct hil_platform_ops zynqmp_r5_a53_proc_ops = {
 	.notify               = _notify,
 	.boot_cpu             = _boot_cpu,
 	.shutdown_cpu         = _shutdown_cpu,
+	.poll                 = _poll,
 	.initialize    = _initialize,
 	.release    = _release,
 };
-
-/* Extern functions defined out from OpenAMP lib */
-extern void ipi_enable_interrupt(unsigned int vector);
-extern void ipi_isr(int vect_id, void *data);
 
 /*------------------- Extern variable -----------------------------------*/
 extern struct hil_proc proc_table[];
@@ -93,7 +96,7 @@ void _ipi_handler(int vect_id, void *data)
 	unsigned int ipi_intr_status =
 	    (unsigned int)metal_io_read32(io, IPI_ISR_OFFSET);
 	if (ipi_intr_status & ipi->ipi_chn_mask) {
-		platform_isr(vect_id, data);
+		atomic_flag_clear(&ipi->sync);
 		metal_io_write32(io, IPI_ISR_OFFSET,
 				ipi->ipi_chn_mask);
 	}
@@ -145,6 +148,29 @@ static void _shutdown_cpu(int cpu_id)
 	return;
 }
 
+static int _poll(struct hil_proc *proc, int nonblock)
+{
+	struct proc_vring *vring;
+	struct ipi_info *ipi;
+
+	vring = &proc->vdev.vring_info[1];
+	ipi = (struct ipi_info *)(vring->intr_info.data);
+	while(1) {
+		env_disable_interrupts();
+		if (!(atomic_flag_test_and_set(&ipi->sync))) {
+			env_restore_interrupts();
+			virtqueue_notification(vring->vq);
+			return 0;
+		}
+		if (nonblock) {
+			env_restore_interrupts();
+			return -EAGAIN;
+		}
+		_rproc_wait();
+		env_restore_interrupts();
+	}
+}
+
 static struct hil_proc * _initialize(void *pdata, int cpu_id)
 {
 	(void) cpu_id;
@@ -174,6 +200,7 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 	if (ipi_intr_status & ipi->ipi_chn_mask) {
 		metal_io_write32(io, IPI_ISR_OFFSET, ipi->ipi_chn_mask);
 	}
+	atomic_store(&ipi->sync, 1);
 	/* Enable mapping for the shared memory region */
 	if (proc->sh_buff.size)
 		metal_io_mem_map((metal_phys_addr_t)proc->sh_buff.start_addr,
