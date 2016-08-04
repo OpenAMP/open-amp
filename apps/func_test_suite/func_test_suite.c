@@ -121,7 +121,7 @@ int main()
 				break;
 		}
 
-		sleep();
+		hil_poll(proc, 0);
 	}
 
 	cleanup_system();

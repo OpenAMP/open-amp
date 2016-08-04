@@ -78,8 +78,7 @@ int main()
 	}
 
 	while (!chnl_cb_flag) {
-		__asm__("\
-			wfi\n\t");
+		hil_poll(proc->proc, 0);
 	}
 
 	chnl_cb_flag = 0;
@@ -171,9 +170,8 @@ int main()
 	printf
 	    ("\r\nRemote> Firmware's rpmsg-openamp-demo-channel going down! \r\n");
 
-	while (1) {
-		__asm__("\
-			wfi\n\t");
+	while (app_rp_chnl) {
+		hil_poll(proc->proc, 0);
 	}
 
 	return 0;
@@ -187,6 +185,7 @@ static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
 
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
 {
+	app_rp_chnl = NULL;
 }
 
 static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
