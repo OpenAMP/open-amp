@@ -396,6 +396,21 @@ int hil_get_firmware(char *fw_name, unsigned int *start_addr,
 		     unsigned int *size);
 
 /**
+ * hil_poll
+ *
+ * This function polls the remote processor.
+ * If it is blocking mode, it will not return until the remoteproc
+ * is signaled. If it is non-blocking mode, it will return 0
+ * if the remoteproc has pending signals, it will return non 0
+ * otherwise.
+ *
+ * @param proc     - hil_proc to poll
+ * @param nonblock - 0 for blocking, non-0 for non-blocking.
+ *
+ * @return - 0 for no errors, non-0 for errors.
+ */
+int hil_poll (struct hil_proc *proc, int nonblock);
+/**
  *
  * This structure is an interface between HIL and platform porting
  * component. It is required for the user to provide definitions of
@@ -472,6 +487,18 @@ struct hil_platform_ops {
      *
      */
 	void (*shutdown_cpu) (int cpu_id);
+
+    /**
+     * poll
+     *
+     * This function polls the remote processor.
+     *
+     * @param proc     - hil_proc to poll
+     * @param nonblock - 0 for blocking, non-0 for non-blocking.
+     *
+     * @return - 0 for no errors, non-0 for errors.
+     */
+	int (*poll) (struct hil_proc *proc, int nonblock);
 
     /**
      * initialize

@@ -369,3 +369,8 @@ int hil_get_firmware(char *fw_name, unsigned int *start_addr,
 {
 	return (config_get_firmware(fw_name, start_addr, size));
 }
+
+int hil_poll (struct hil_proc *proc, int nonblock)
+{
+	return proc->ops->poll(proc, nonblock);
+}
