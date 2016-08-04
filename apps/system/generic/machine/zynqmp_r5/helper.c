@@ -41,6 +41,7 @@
 XScuGic InterruptController;
 
 extern void bm_env_isr(int vector);
+extern int platform_register_metal_device(void);
 
 void zynqmp_r5_irq_isr()
 {
@@ -94,7 +95,11 @@ int zynqmp_r5_gic_initialize()
 
 void init_system()
 {
+	struct metal_init_params metal_param = METAL_INIT_DEFAULTS;
+
+	metal_init(&metal_param);
 	zynqmp_r5_gic_initialize();
+	platform_register_metal_device();
 }
 
 void cleanup_system()

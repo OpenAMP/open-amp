@@ -1,4 +1,5 @@
 collect (APP_COMMON_SOURCES helper.c)
+collect (APP_COMMON_SOURCES sys_init.c)
 
 if (WITH_REMOTEPROC_MASTER)
   message(FATAL_ERROR "Remoteproc master is not currently supported on ${MACHINE}/${SYSTEM}.")
