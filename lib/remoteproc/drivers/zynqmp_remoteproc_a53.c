@@ -46,10 +46,18 @@
 #include "metal/device.h"
 #include "metal/utilities.h"
 #include "metal/atomic.h"
+#include "metal/irq.h"
 #include "openamp/hil.h"
 #include "openamp/remoteproc_plat.h"
 #include "openamp/virtqueue.h"
-#include "machine.h"
+
+/* IPI REGs OFFSET */
+#define IPI_TRIG_OFFSET          0x00000000    /* IPI trigger register offset */
+#define IPI_OBS_OFFSET           0x00000004    /* IPI observation register offset */
+#define IPI_ISR_OFFSET           0x00000010    /* IPI interrupt status register offset */
+#define IPI_IMR_OFFSET           0x00000014    /* IPI interrupt mask register offset */
+#define IPI_IER_OFFSET           0x00000018    /* IPI interrupt enable register offset */
+#define IPI_IDR_OFFSET           0x0000001C    /* IPI interrupt disable register offset */
 
 #define _rproc_wait() asm volatile("wfi")
 
@@ -69,7 +77,7 @@ static int _poll(struct hil_proc *proc, int nonblock);
 static struct hil_proc *_initialize(void *pdata, int cpu_id);
 static void _release(struct hil_proc *proc);
 
-static void _ipi_handler(int vect_id, void *data);
+static int _ipi_handler(int vect_id, void *data);
 
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops zynqmp_r5_a53_proc_ops = {
@@ -82,11 +90,7 @@ struct hil_platform_ops zynqmp_r5_a53_proc_ops = {
 	.release    = _release,
 };
 
-/*------------------- Extern variable -----------------------------------*/
-extern struct hil_proc proc_table[];
-extern const int proc_table_size;
-
-void _ipi_handler(int vect_id, void *data)
+int _ipi_handler(int vect_id, void *data)
 {
 	(void) vect_id;
 	struct proc_vring *vring_hw = (struct proc_vring *)(data);
@@ -99,7 +103,9 @@ void _ipi_handler(int vect_id, void *data)
 		atomic_flag_clear(&ipi->sync);
 		metal_io_write32(io, IPI_ISR_OFFSET,
 				ipi->ipi_chn_mask);
+		return 0;
 	}
+	return -1;
 }
 
 static int _enable_interrupt(struct proc_vring *vring_hw)
@@ -113,12 +119,14 @@ static int _enable_interrupt(struct proc_vring *vring_hw)
 	}
 
 	/* Register ISR */
-	env_register_isr_shared(vring_hw->intr_info.vect_id,
-			 vring_hw, _ipi_handler, "remoteproc_a53", 1);
+	metal_irq_register(vring_hw->intr_info.vect_id, _ipi_handler,
+				vring_hw->intr_info.dev, vring_hw);
 	/* Enable IPI interrupt */
+#if 0
 	env_enable_interrupt(vring_hw->intr_info.vect_id,
 			     vring_hw->intr_info.priority,
 			     vring_hw->intr_info.trigger_type);
+#endif
 	metal_io_write32(io, IPI_IER_OFFSET, ipi->ipi_chn_mask);
 	return 0;
 }
@@ -152,22 +160,23 @@ static int _poll(struct hil_proc *proc, int nonblock)
 {
 	struct proc_vring *vring;
 	struct ipi_info *ipi;
+	unsigned int flags;
 
 	vring = &proc->vdev.vring_info[1];
 	ipi = (struct ipi_info *)(vring->intr_info.data);
 	while(1) {
-		env_disable_interrupts();
+		flags = metal_irq_save_disable();
 		if (!(atomic_flag_test_and_set(&ipi->sync))) {
-			env_restore_interrupts();
+			metal_irq_restore_enable(flags);
 			virtqueue_notification(vring->vq);
 			return 0;
 		}
 		if (nonblock) {
-			env_restore_interrupts();
+			metal_irq_restore_enable(flags);
 			return -EAGAIN;
 		}
 		_rproc_wait();
-		env_restore_interrupts();
+		metal_irq_restore_enable(flags);
 	}
 }
 
@@ -200,6 +209,7 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 	if (ipi_intr_status & ipi->ipi_chn_mask) {
 		metal_io_write32(io, IPI_ISR_OFFSET, ipi->ipi_chn_mask);
 	}
+	metal_io_write32(io, IPI_IDR_OFFSET, ipi->ipi_chn_mask);
 	atomic_store(&ipi->sync, 1);
 	/* Enable mapping for the shared memory region */
 	if (proc->sh_buff.size)
