@@ -122,11 +122,7 @@ static int _enable_interrupt(struct proc_vring *vring_hw)
 	metal_irq_register(vring_hw->intr_info.vect_id, _ipi_handler,
 				vring_hw->intr_info.dev, vring_hw);
 	/* Enable IPI interrupt */
-#if 0
-	env_enable_interrupt(vring_hw->intr_info.vect_id,
-			     vring_hw->intr_info.priority,
-			     vring_hw->intr_info.trigger_type);
-#endif
+	metal_irq_enable(vring_hw->intr_info.vect_id);
 	metal_io_write32(io, IPI_IER_OFFSET, ipi->ipi_chn_mask);
 	return 0;
 }

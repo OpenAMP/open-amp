@@ -37,26 +37,13 @@
 #include "metal/sys.h"
 
 #define INTC_DEVICE_ID		XPAR_SCUGIC_0_DEVICE_ID
+/** IPI IRQ ID */
+#define IPI_IRQ_VECT_ID         65
 
 XScuGic InterruptController;
 
-extern void bm_env_isr(int vector);
+extern void metal_irq_isr(unsigned int irq);
 extern int platform_register_metal_device(void);
-
-void zynqmp_r5_irq_isr()
-{
-
-	unsigned int raw_irq;
-	int irq_vector;
-	raw_irq =
-	    (unsigned int)XScuGic_CPUReadReg(&InterruptController,
-					     XSCUGIC_INT_ACK_OFFSET);
-	irq_vector = (int)(raw_irq & XSCUGIC_ACK_INTID_MASK);
-
-	bm_env_isr(irq_vector);
-
-	XScuGic_CPUWriteReg(&InterruptController, XSCUGIC_EOI_OFFSET, raw_irq);
-}
 
 int zynqmp_r5_gic_initialize()
 {
@@ -85,10 +72,14 @@ int zynqmp_r5_gic_initialize()
 	 * logic in the ARM processor.
 	 */
 	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
-				     (Xil_ExceptionHandler) zynqmp_r5_irq_isr,
-				     &InterruptController);
+			(Xil_ExceptionHandler)XScuGic_InterruptHandler,
+			&InterruptController);
 
 	Xil_ExceptionEnable();
+	/* Connect Interrupt ID with ISR */
+	XScuGic_Connect(&InterruptController, IPI_IRQ_VECT_ID,
+			   (Xil_ExceptionHandler)metal_irq_isr,
+			   (void *)IPI_IRQ_VECT_ID);
 
 	return 0;
 }
