@@ -61,7 +61,7 @@
 extern struct firmware_info fw_table[];
 extern int fw_table_size;
 
-int config_get_firmware(char *fw_name, unsigned int *start_addr,
+int config_get_firmware(char *fw_name, uintptr_t *start_addr,
 			unsigned int *size)
 {
 	int idx;

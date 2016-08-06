@@ -162,7 +162,8 @@ int remoteproc_init(char *fw_name, void *pdata,
 
 	struct remote_proc *rproc;
 	struct resource_table *rsc_table;
-	unsigned int fw_addr, fw_size, rsc_size;
+	unsigned int fw_size, rsc_size;
+	uintptr_t fw_addr;
 	int status;
 
 	if (!fw_name) {
@@ -288,7 +289,7 @@ int remoteproc_boot(struct remote_proc *rproc)
 		if (load_addr != RPROC_ERR_PTR) {
 			/* Start the remote cpu */
 			status = hil_boot_cpu(rproc->proc,
-					      (unsigned int)load_addr);
+					      (uintptr_t)load_addr);
 			if (status == RPROC_SUCCESS) {
 				/* Wait for remote side to come up. This delay is arbitrary and may
 				 * need adjustment for different configuration of remote systems */

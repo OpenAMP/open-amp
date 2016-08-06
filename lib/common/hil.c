@@ -364,7 +364,7 @@ void hil_shutdown_cpu(struct hil_proc *proc)
  * returns -  status of function execution
  *
  */
-int hil_get_firmware(char *fw_name, unsigned int *start_addr,
+int hil_get_firmware(char *fw_name, uintptr_t *start_addr,
 		     unsigned int *size)
 {
 	return (config_get_firmware(fw_name, start_addr, size));

@@ -181,7 +181,7 @@ void *elf_loader_retrieve_resource_section(struct remoteproc_loader *loader,
 		*size = rsc_header->sh_size;
 
 		/* Locate the start of resource section. */
-		resource_section = (void *)((unsigned int)elf_info->firmware
+		resource_section = (void *)((uintptr_t)elf_info->firmware
 					    + rsc_header->sh_offset);
 	}
 
