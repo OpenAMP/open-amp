@@ -195,7 +195,10 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
 	rp_hdr->len = size;
 
 	/* Copy data to rpmsg buffer. */
-	memcpy((void *)RPMSG_LOCATE_DATA(rp_hdr), data, size);
+	if (rdev->proc->sh_buff.io->mem_flags & METAL_IO_MAPPED)
+		metal_memcpy_io((void *)RPMSG_LOCATE_DATA(rp_hdr), data, size);
+	else
+		memcpy((void *)RPMSG_LOCATE_DATA(rp_hdr), data, size);
 
 	metal_mutex_acquire(&rdev->lock);
 
