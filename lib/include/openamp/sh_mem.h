@@ -47,6 +47,7 @@
 #define SH_MEM_H_
 
 #include "openamp/env.h"
+#include "metal/mutex.h"
 
 /* Macros */
 #define BITMAP_WORD_SIZE         (sizeof(unsigned long) << 3)
@@ -72,7 +73,7 @@
 
 struct sh_mem_pool {
 	void *start_addr;
-	LOCK *lock;
+	metal_mutex_t lock;
 	int size;
 	int buff_size;
 	int total_buffs;

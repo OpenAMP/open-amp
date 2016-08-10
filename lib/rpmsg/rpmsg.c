@@ -163,11 +163,11 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
 	}
 
 	/* Lock the device to enable exclusive access to virtqueues */
-	env_lock_mutex(rdev->lock);
+	metal_mutex_acquire(&rdev->lock);
 	/* Get rpmsg buffer for sending message. */
 	buffer = rpmsg_get_tx_buffer(rdev, &buff_len, &idx);
 	/* Unlock the device */
-	env_unlock_mutex(rdev->lock);
+	metal_mutex_release(&rdev->lock);
 
 	if (!buffer && !wait) {
 		return RPMSG_ERR_NO_BUFF;
@@ -179,9 +179,9 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
 		 * 15 secs as defined by the APIs.
 		 */
 		env_sleep_msec(RPMSG_TICKS_PER_INTERVAL);
-		env_lock_mutex(rdev->lock);
+		metal_mutex_acquire(&rdev->lock);
 		buffer = rpmsg_get_tx_buffer(rdev, &buff_len, &idx);
-		env_unlock_mutex(rdev->lock);
+		metal_mutex_release(&rdev->lock);
 		tick_count += RPMSG_TICKS_PER_INTERVAL;
 		if (!buffer && (tick_count >=
 		    (RPMSG_TICK_COUNT / RPMSG_TICKS_PER_INTERVAL))) {
@@ -199,7 +199,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
 	/* Copy data to rpmsg buffer. */
 	env_memcpy((void*)RPMSG_LOCATE_DATA(rp_hdr), data, size);
 
-	env_lock_mutex(rdev->lock);
+	metal_mutex_acquire(&rdev->lock);
 
 	/* Enqueue buffer on virtqueue. */
 	ret = rpmsg_enqueue_buffer(rdev, buffer, buff_len, idx);
@@ -207,7 +207,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
 	/* Let the other side know that there is a job to process. */
 	virtqueue_kick(rdev->tvq);
 
-	env_unlock_mutex(rdev->lock);
+	metal_mutex_release(&rdev->lock);
 
 	return RPMSG_SUCCESS;
 }
@@ -230,7 +230,7 @@ int rpmsg_get_buffer_size(struct rpmsg_channel *rp_chnl)
 	/* Get associated remote device for channel. */
 	rdev = rp_chnl->rdev;
 
-	env_lock_mutex(rdev->lock);
+	metal_mutex_acquire(&rdev->lock);
 
 	if (rdev->role == RPMSG_REMOTE) {
 		/*
@@ -248,7 +248,7 @@ int rpmsg_get_buffer_size(struct rpmsg_channel *rp_chnl)
 		    sizeof(struct rpmsg_hdr);
 	}
 
-	env_unlock_mutex(rdev->lock);
+	metal_mutex_release(&rdev->lock);
 
 	return length;
 }

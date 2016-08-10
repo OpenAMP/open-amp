@@ -37,6 +37,7 @@
 #include "openamp/sh_mem.h"
 #include "openamp/llist.h"
 #include "openamp/rpmsg.h"
+#include "metal/mutex.h"
 
 /* Configurable parameters */
 #define RPMSG_BUFFER_SIZE                       512
@@ -116,7 +117,7 @@ struct remote_device {
 	rpmsg_chnl_cb_t channel_created;
 	rpmsg_chnl_cb_t channel_destroyed;
 	rpmsg_rx_cb_t default_cb;
-	LOCK *lock;
+	metal_mutex_t lock;
 	unsigned int role;
 	unsigned int state;
 	int support_ns;

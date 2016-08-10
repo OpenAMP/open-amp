@@ -114,13 +114,7 @@ int rpmsg_rdev_init(struct remote_device **rdev, int dev_id, int role,
 	}
 
 	env_memset(rdev_loc, 0x00, sizeof(struct remote_device));
-	status = env_create_mutex(&rdev_loc->lock, 1);
-
-	if (status != RPMSG_SUCCESS) {
-
-		/* Cleanup required in case of error is performed by caller */
-		return status;
-	}
+	metal_mutex_init(&rdev_loc->lock);
 
 	rdev_loc->proc = proc;
 	rdev_loc->role = role;
@@ -207,9 +201,9 @@ void rpmsg_rdev_deinit(struct remote_device *rdev)
 
 	/* Delete name service endpoint */
 
-	env_lock_mutex(rdev->lock);
+	metal_mutex_acquire(&rdev->lock);
 	node = rpmsg_rdev_get_endpoint_from_addr(rdev, RPMSG_NS_EPT_ADDR);
-	env_unlock_mutex(rdev->lock);
+	metal_mutex_release(&rdev->lock);
 	if (node) {
 		_destroy_endpoint(rdev, (struct rpmsg_endpoint *)node->data);
 	}
@@ -223,9 +217,7 @@ void rpmsg_rdev_deinit(struct remote_device *rdev)
 	if (rdev->mem_pool) {
 		sh_mem_delete_pool(rdev->mem_pool);
 	}
-	if (rdev->lock) {
-		env_delete_mutex(rdev->lock);
-	}
+	metal_mutex_deinit(&rdev->lock);
 	if (rdev->proc) {
 		hil_delete_proc(rdev->proc);
 		rdev->proc = 0;

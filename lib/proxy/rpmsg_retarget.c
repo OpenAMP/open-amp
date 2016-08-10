@@ -50,7 +50,7 @@ int rpmsg_retarget_init(struct rpmsg_channel *rp_chnl, rpc_shutdown_cb cb)
 	    (struct _rpc_data *)env_allocate_memory(sizeof(struct _rpc_data));
 
 	/* Create a mutex for synchronization */
-	status = env_create_mutex(&rpc_data->rpc_lock, 1);
+	metal_mutex_init(&rpc_data->rpc_lock);
 
 	/* Create a mutex for synchronization */
 	status = env_create_sync_lock(&rpc_data->sync_lock, LOCKED);
@@ -72,7 +72,7 @@ int rpmsg_retarget_deinit(struct rpmsg_channel *rp_chnl)
 
 	env_free_memory(rpc_data->rpc);
 	env_free_memory(rpc_data->rpc_response);
-	env_delete_mutex(rpc_data->rpc_lock);
+	metal_mutex_deinit(&rpc_data->rpc_lock);
 	env_delete_sync_lock(rpc_data->sync_lock);
 	rpmsg_destroy_ept(rpc_data->rp_ept);
 	env_free_memory(rpc_data);
@@ -114,9 +114,9 @@ int _open(const char *filename, int flags, int mode)
 	memcpy(&rpc_data->rpc->sys_call_args.data, filename, filename_len);
 
 	/* Transmit rpc request */
-	env_lock_mutex(rpc_data->rpc_lock);
+	metal_mutex_acquire(&rpc_data->rpc_lock);
 	send_rpc((void *)rpc_data->rpc, payload_size);
-	env_unlock_mutex(rpc_data->rpc_lock);
+	metal_mutex_release(&rpc_data->rpc_lock);
 
 	/* Wait for response from proxy on master */
 	env_acquire_sync_lock(rpc_data->sync_lock);
@@ -155,10 +155,10 @@ int _read(int fd, char *buffer, int buflen)
 	rpc_data->rpc->sys_call_args.data_len = 0;	/*not used */
 
 	/* Transmit rpc request */
-	env_lock_mutex(rpc_data->rpc_lock);
+	metal_mutex_acquire(&rpc_data->rpc_lock);
 	get_response = 0;
 	send_rpc((void *)rpc_data->rpc, payload_size);
-	env_unlock_mutex(rpc_data->rpc_lock);
+	metal_mutex_release(&rpc_data->rpc_lock);
 
 	/* Wait for response from proxy on master */
 	env_acquire_sync_lock(rpc_data->sync_lock);
@@ -208,9 +208,9 @@ int _write(int fd, const char *ptr, int len)
 		    0;
 	}
 
-	env_lock_mutex(rpc_data->rpc_lock);
+	metal_mutex_acquire(&rpc_data->rpc_lock);
 	send_rpc((void *)rpc_data->rpc, payload_size);
-	env_unlock_mutex(rpc_data->rpc_lock);
+	metal_mutex_release(&rpc_data->rpc_lock);
 
 	env_acquire_sync_lock(rpc_data->sync_lock);
 
@@ -243,9 +243,9 @@ int _close(int fd)
 	rpc_data->rpc->sys_call_args.int_field2 = 0;	/*not used */
 	rpc_data->rpc->sys_call_args.data_len = 0;	/*not used */
 
-	env_lock_mutex(rpc_data->rpc_lock);
+	metal_mutex_acquire(&rpc_data->rpc_lock);
 	send_rpc((void *)rpc_data->rpc, payload_size);
-	env_unlock_mutex(rpc_data->rpc_lock);
+	metal_mutex_release(&rpc_data->rpc_lock);
 
 	/* Wait for response from proxy on master */
 	env_acquire_sync_lock(rpc_data->sync_lock);

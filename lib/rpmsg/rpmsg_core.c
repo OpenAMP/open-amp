@@ -167,9 +167,9 @@ struct rpmsg_channel *_rpmsg_create_channel(struct remote_device *rdev,
 			return RPMSG_NULL;
 		}
 		node->data = rp_chnl;
-		env_lock_mutex(rdev->lock);
+		metal_mutex_acquire(&rdev->lock);
 		add_to_list(&rdev->rp_channels, node);
-		env_unlock_mutex(rdev->lock);
+		metal_mutex_release(&rdev->lock);
 	}
 
 	return rp_chnl;
@@ -188,18 +188,18 @@ void _rpmsg_delete_channel(struct rpmsg_channel *rp_chnl)
 {
 	struct llist *node;
 	if (rp_chnl) {
-		env_lock_mutex(rp_chnl->rdev->lock);
+		metal_mutex_acquire(&rp_chnl->rdev->lock);
 		node =
 		    rpmsg_rdev_get_chnl_node_from_id(rp_chnl->rdev,
 						     rp_chnl->name);
 		if (node) {
 			remove_from_list(&rp_chnl->rdev->rp_channels, node);
-			env_unlock_mutex(rp_chnl->rdev->lock);
+			metal_mutex_release(&rp_chnl->rdev->lock);
 			/* free node and rp_chnl */
 			env_free_memory(node);
 			env_free_memory(rp_chnl);
 		} else {
-			env_unlock_mutex(rp_chnl->rdev->lock);
+			metal_mutex_release(&rp_chnl->rdev->lock);
 		}
 	}
 }
@@ -238,7 +238,7 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 		return RPMSG_NULL;
 	}
 
-	env_lock_mutex(rdev->lock);
+	metal_mutex_acquire(&rdev->lock);
 
 	if (addr != RPMSG_ADDR_ANY) {
 		/*
@@ -265,7 +265,7 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 	if (RPMSG_SUCCESS != status) {
 		env_free_memory(node);
 		env_free_memory(rp_ept);
-		env_unlock_mutex(rdev->lock);
+		metal_mutex_release(&rdev->lock);
 		return RPMSG_NULL;
 	}
 
@@ -276,7 +276,7 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 	node->data = rp_ept;
 	add_to_list(&rdev->rp_endpoints, node);
 
-	env_unlock_mutex(rdev->lock);
+	metal_mutex_release(&rdev->lock);
 
 	return rp_ept;
 }
@@ -294,18 +294,18 @@ void _destroy_endpoint(struct remote_device *rdev,
 		       struct rpmsg_endpoint *rp_ept)
 {
 	struct llist *node;
-	env_lock_mutex(rdev->lock);
+	metal_mutex_acquire(&rdev->lock);
 	node = rpmsg_rdev_get_endpoint_from_addr(rdev, rp_ept->addr);
 	if (node) {
 		rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE,
 				      rp_ept->addr);
 		remove_from_list(&rdev->rp_endpoints, node);
-		env_unlock_mutex(rdev->lock);
+		metal_mutex_release(&rdev->lock);
 		/* free node and rp_ept */
 		env_free_memory(node);
 		env_free_memory(rp_ept);
 	} else {
-		env_unlock_mutex(rdev->lock);
+		metal_mutex_release(&rdev->lock);
 	}
 }
 
@@ -328,12 +328,12 @@ void rpmsg_send_ns_message(struct remote_device *rdev,
 	unsigned short idx;
 	unsigned long len;
 
-	env_lock_mutex(rdev->lock);
+	metal_mutex_acquire(&rdev->lock);
 
 	/* Get Tx buffer. */
 	rp_hdr = (struct rpmsg_hdr *)rpmsg_get_tx_buffer(rdev, &len, &idx);
 	if (!rp_hdr) {
-		env_unlock_mutex(rdev->lock);
+		metal_mutex_release(&rdev->lock);
 		return;
 	}
 
@@ -351,7 +351,7 @@ void rpmsg_send_ns_message(struct remote_device *rdev,
 	/* Notify the other side that it has data to process. */
 	virtqueue_kick(rdev->tvq);
 
-	env_unlock_mutex(rdev->lock);
+	metal_mutex_release(&rdev->lock);
 }
 
 /**
@@ -582,19 +582,19 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 		}
 	}
 
-	env_lock_mutex(rdev->lock);
+	metal_mutex_acquire(&rdev->lock);
 
 	/* Process the received data from remote node */
 	rp_hdr = (struct rpmsg_hdr *)rpmsg_get_rx_buffer(rdev, &len, &idx);
 
-	env_unlock_mutex(rdev->lock);
+	metal_mutex_release(&rdev->lock);
 
 	while (rp_hdr) {
 
 		/* Get the channel node from the remote device channels list. */
-		env_lock_mutex(rdev->lock);
+		metal_mutex_acquire(&rdev->lock);
 		node = rpmsg_rdev_get_endpoint_from_addr(rdev, rp_hdr->dst);
-		env_unlock_mutex(rdev->lock);
+		metal_mutex_release(&rdev->lock);
 
 		if (!node)
 			/* Fatal error no endpoint for the given dst addr. */
@@ -619,14 +619,14 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 				   rp_ept->priv, rp_hdr->src);
 		}
 
-		env_lock_mutex(rdev->lock);
+		metal_mutex_acquire(&rdev->lock);
 
 		/* Return used buffers. */
 		rpmsg_return_buffer(rdev, rp_hdr, len, idx);
 
 		rp_hdr =
 		    (struct rpmsg_hdr *)rpmsg_get_rx_buffer(rdev, &len, &idx);
-		env_unlock_mutex(rdev->lock);
+		metal_mutex_release(&rdev->lock);
 	}
 }
 
@@ -665,9 +665,9 @@ void rpmsg_ns_callback(struct rpmsg_channel *server_chnl, void *data, int len,
 	ns_msg->name[len - 1] = '\0';
 
 	if (ns_msg->flags & RPMSG_NS_DESTROY) {
-		env_lock_mutex(rdev->lock);
+		metal_mutex_acquire(&rdev->lock);
 		node = rpmsg_rdev_get_chnl_node_from_id(rdev, ns_msg->name);
-		env_unlock_mutex(rdev->lock);
+		metal_mutex_release(&rdev->lock);
 		if (node) {
 			rp_chnl = (struct rpmsg_channel *)node->data;
 			if (rdev->channel_destroyed) {
