@@ -9,7 +9,7 @@
  *	This files contains rpmsg based redefinitions for C RTL system calls
  *	such as _open, _read, _write, _close.
  *************************************************************************/
-static struct _rpc_data *rpc_data;
+static struct _rpc_data *rpc_data = 0;
 
 int send_rpc(void *data, int len);
 
@@ -70,6 +70,7 @@ int rpmsg_retarget_deinit(struct rpmsg_channel *rp_chnl)
 	metal_mutex_deinit(&rpc_data->rpc_lock);
 	rpmsg_destroy_ept(rpc_data->rp_ept);
 	env_free_memory(rpc_data);
+	rpc_data = NULL;
 
 	return 0;
 }
@@ -107,6 +108,9 @@ int _open(const char *filename, int flags, int mode)
 	if ((!filename) || (filename_len > FILE_NAME_LEN)) {
 		return -1;
 	}
+
+	if (!rpc_data)
+		return retval;
 
 	/* Construct rpc payload */
 	rpc_data->rpc->id = OPEN_SYSCALL_ID;
@@ -148,6 +152,8 @@ int _read(int fd, char *buffer, int buflen)
 	int retval = -1;
 
 	if (!buffer || !buflen)
+		return retval;
+	if (!rpc_data)
 		return retval;
 
 	/* Construct rpc payload */
@@ -198,6 +204,8 @@ int _write(int fd, const char *ptr, int len)
 	if (fd == 1) {
 		null_term = 1;
 	}
+	if (!rpc_data)
+		return retval;
 
 	rpc_data->rpc->id = WRITE_SYSCALL_ID;
 	rpc_data->rpc->sys_call_args.int_field1 = fd;
@@ -240,6 +248,8 @@ int _close(int fd)
 	int payload_size = sizeof(struct _sys_rpc);
 	int retval = -1;
 
+	if (!rpc_data)
+		return retval;
 	rpc_data->rpc->id = CLOSE_SYSCALL_ID;
 	rpc_data->rpc->sys_call_args.int_field1 = fd;
 	rpc_data->rpc->sys_call_args.int_field2 = 0;	/*not used */
