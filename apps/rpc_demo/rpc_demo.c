@@ -159,21 +159,21 @@ int main()
 				printf
 				    ("\r\nRemote>RPC retargetting quitting ...\r\n");
 				sprintf(wbuff, RPC_CHANNEL_READY_TO_CLOSE);
-				rpmsg_retarget_send(wbuff,
-						    sizeof
-						    (RPC_CHANNEL_READY_TO_CLOSE)
-						    + 1);
 				break;
 			}
 		}
 	}
 	printf
 	    ("\r\nRemote> Firmware's rpmsg-openamp-demo-channel going down! \r\n");
+	rpmsg_retarget_send(wbuff,
+			    sizeof (RPC_CHANNEL_READY_TO_CLOSE) + 1);
 
-	while (app_rp_chnl) {
+	while (chnl_cb_flag)
 		hil_poll(proc->proc, 0);
-	}
 
+	rpmsg_retarget_deinit(app_rp_chnl);
+	remoteproc_resource_deinit(proc);
+	cleanup_system();
 	return 0;
 }
 
@@ -195,8 +195,6 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 
 static void shutdown_cb(struct rpmsg_channel *rp_chnl)
 {
-	rpmsg_retarget_deinit(rp_chnl);
-	remoteproc_resource_deinit(proc);
-	cleanup_system();
+	chnl_cb_flag = 0;
 }
 
