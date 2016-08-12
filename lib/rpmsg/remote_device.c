@@ -49,6 +49,7 @@
 #include <string.h>
 #include "openamp/rpmsg.h"
 #include "metal/utilities.h"
+#include "metal/alloc.h"
 
 /* Macro to initialize vring HW info */
 #define INIT_VRING_ALLOC_INFO(ring_info,vring_hw)                             \
@@ -108,9 +109,7 @@ int rpmsg_rdev_init(void *pdata, struct remote_device **rdev, int dev_id, int ro
 	}
 
 	/* Create software representation of remote processor. */
-	rdev_loc =
-	    (struct remote_device *)
-	    env_allocate_memory(sizeof(struct remote_device));
+	rdev_loc = (struct remote_device *)metal_allocate_memory(sizeof(struct remote_device));
 
 	if (!rdev_loc) {
 		return RPMSG_ERR_NO_MEM;
@@ -226,7 +225,7 @@ void rpmsg_rdev_deinit(struct remote_device *rdev)
 		rdev->proc = 0;
 	}
 
-	env_free_memory(rdev);
+	metal_free_memory(rdev);
 }
 
 /**

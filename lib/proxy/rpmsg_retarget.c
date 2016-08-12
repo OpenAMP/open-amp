@@ -1,5 +1,6 @@
 #include "openamp/open_amp.h"
 #include "openamp/rpmsg_retarget.h"
+#include "metal/alloc.h"
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
@@ -41,8 +42,7 @@ int send_rpc(void *data, int len)
 int rpmsg_retarget_init(struct rpmsg_channel *rp_chnl, rpc_shutdown_cb cb)
 {
 	/* Allocate memory for rpc control block */
-	rpc_data =
-	    (struct _rpc_data *)env_allocate_memory(sizeof(struct _rpc_data));
+	rpc_data = (struct _rpc_data *)metal_allocate_memory(sizeof(struct _rpc_data));
 
 	/* Create a mutex for synchronization */
 	metal_mutex_init(&rpc_data->rpc_lock);
@@ -54,8 +54,8 @@ int rpmsg_retarget_init(struct rpmsg_channel *rp_chnl, rpc_shutdown_cb cb)
 	rpc_data->rpmsg_chnl = rp_chnl;
 	rpc_data->rp_ept = rpmsg_create_ept(rpc_data->rpmsg_chnl, rpc_cb,
 					    RPMSG_NULL, PROXY_ENDPOINT);
-	rpc_data->rpc = env_allocate_memory(RPC_BUFF_SIZE);
-	rpc_data->rpc_response = env_allocate_memory(RPC_BUFF_SIZE);
+	rpc_data->rpc = metal_allocate_memory(RPC_BUFF_SIZE);
+	rpc_data->rpc_response = metal_allocate_memory(RPC_BUFF_SIZE);
 	rpc_data->shutdown_cb = cb;
 
 	return 0;
@@ -65,11 +65,11 @@ int rpmsg_retarget_deinit(struct rpmsg_channel *rp_chnl)
 {
 	(void)rp_chnl;
 
-	env_free_memory(rpc_data->rpc);
-	env_free_memory(rpc_data->rpc_response);
+	metal_free_memory(rpc_data->rpc);
+	metal_free_memory(rpc_data->rpc_response);
 	metal_mutex_deinit(&rpc_data->rpc_lock);
 	rpmsg_destroy_ept(rpc_data->rp_ept);
-	env_free_memory(rpc_data);
+	metal_free_memory(rpc_data);
 	rpc_data = NULL;
 
 	return 0;

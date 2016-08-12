@@ -42,6 +42,7 @@
 #include <string.h>
 #include "openamp/hil.h"
 #include "openamp/machine/machine_common.h"
+#include "metal/alloc.h"
 
 /* ------------------------- Macros --------------------------*/
 #define ESAL_DP_SLCR_BASE                  0xF8000000
@@ -183,7 +184,7 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 
 	struct hil_proc *proc;
 	/* Allocate memory for proc instance */
-	proc = env_allocate_memory(sizeof(struct hil_proc));
+	proc = metal_allocate_memory(sizeof(struct hil_proc));
 	if (!proc) {
 		return NULL;
 	}
@@ -199,6 +200,6 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 
 static void _release(struct hil_proc *proc)
 {
-	env_free_memory(proc);
+	metal_free_memory(proc);
 }
 

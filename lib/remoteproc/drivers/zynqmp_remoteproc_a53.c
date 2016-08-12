@@ -47,6 +47,7 @@
 #include "metal/utilities.h"
 #include "metal/atomic.h"
 #include "metal/irq.h"
+#include "metal/alloc.h"
 #include "openamp/hil.h"
 #include "openamp/remoteproc_plat.h"
 #include "openamp/virtqueue.h"
@@ -188,7 +189,7 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 	unsigned int ipi_intr_status;
 
 	/* Allocate memory for proc instance */
-	proc = env_allocate_memory(sizeof(struct hil_proc));
+	proc = metal_allocate_memory(sizeof(struct hil_proc));
 	if (!proc) {
 		return NULL;
 	}
@@ -211,7 +212,7 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 error:
 	if (proc) {
 		rproc_close_plat(proc);
-		env_free_memory(proc);
+		metal_free_memory(proc);
 	}
 	return NULL;
 }
@@ -226,7 +227,7 @@ static void _release(struct hil_proc *proc)
 		metal_io_write32(io, IPI_IDR_OFFSET, ipi->ipi_chn_mask);
 
 		rproc_close_plat(proc);
-		env_free_memory(proc);
+		metal_free_memory(proc);
 	}
 }
 

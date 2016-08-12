@@ -28,6 +28,7 @@
  */
 
 #include <string.h>
+#include "metal/alloc.h"
 #include "openamp/remoteproc_loader.h"
 
 /**
@@ -50,7 +51,7 @@ struct remoteproc_loader *remoteproc_loader_init(enum loader_type type)
 	}
 
 	/* Allocate a loader handle. */
-	loader = env_allocate_memory(sizeof(struct remoteproc_loader));
+	loader = metal_allocate_memory(sizeof(struct remoteproc_loader));
 
 	if (!loader) {
 		return RPROC_NULL;
@@ -70,7 +71,7 @@ struct remoteproc_loader *remoteproc_loader_init(enum loader_type type)
 
 	default:
 		/* Loader not supported. */
-		env_free_memory(loader);
+		metal_free_memory(loader);
 		loader = RPROC_NULL;
 		break;
 	}
@@ -104,7 +105,7 @@ int remoteproc_loader_delete(struct remoteproc_loader *loader)
 	}
 
 	/* Recover the allocated memory. */
-	env_free_memory(loader);
+	metal_free_memory(loader);
 
 	return status;
 }

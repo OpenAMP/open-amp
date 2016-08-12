@@ -51,6 +51,7 @@
 #include "metal/utilities.h"
 #include "metal/io.h"
 #include "metal/cache.h"
+#include "metal/alloc.h"
 
 /* Internal functions */
 static void rpmsg_rx_callback(struct virtqueue *vq);
@@ -156,7 +157,7 @@ struct rpmsg_channel *_rpmsg_create_channel(struct remote_device *rdev,
 {
 	struct rpmsg_channel *rp_chnl;
 
-	rp_chnl = env_allocate_memory(sizeof(struct rpmsg_channel));
+	rp_chnl = metal_allocate_memory(sizeof(struct rpmsg_channel));
 	if (rp_chnl) {
 		memset(rp_chnl, 0x00, sizeof(struct rpmsg_channel));
 		strncpy(rp_chnl->name, name, sizeof(rp_chnl->name));
@@ -187,7 +188,7 @@ void _rpmsg_delete_channel(struct rpmsg_channel *rp_chnl)
 		metal_mutex_acquire(&rp_chnl->rdev->lock);
 		metal_list_del(&rp_chnl->node);
 		metal_mutex_release(&rp_chnl->rdev->lock);
-		env_free_memory(rp_chnl);
+		metal_free_memory(rp_chnl);
 	}
 }
 
@@ -212,7 +213,7 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 	struct rpmsg_endpoint *rp_ept;
 	int status = RPMSG_SUCCESS;
 
-	rp_ept = env_allocate_memory(sizeof(struct rpmsg_endpoint));
+	rp_ept = metal_allocate_memory(sizeof(struct rpmsg_endpoint));
 	if (!rp_ept) {
 		return RPMSG_NULL;
 	}
@@ -243,7 +244,7 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 
 	/* Do cleanup in case of error and return */
 	if (RPMSG_SUCCESS != status) {
-		env_free_memory(rp_ept);
+		metal_free_memory(rp_ept);
 		metal_mutex_release(&rdev->lock);
 		return RPMSG_NULL;
 	}
@@ -277,7 +278,7 @@ void _destroy_endpoint(struct remote_device *rdev,
 	metal_list_del(&rp_ept->node);
 	metal_mutex_release(&rdev->lock);
 	/* free node and rp_ept */
-	env_free_memory(rp_ept);
+	metal_free_memory(rp_ept);
 }
 
 /**

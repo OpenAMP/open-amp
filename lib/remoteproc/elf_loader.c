@@ -28,6 +28,7 @@
  */
 
 #include <string.h>
+#include "metal/alloc.h"
 #include "openamp/elf_loader.h"
 
 /* Local functions. */
@@ -91,7 +92,7 @@ int elf_loader_attach_firmware(struct remoteproc_loader *loader, void *firmware)
 	int status;
 
 	/* Allocate memory for decode info structure. */
-	elf_info = env_allocate_memory(sizeof(struct elf_decode_info));
+	elf_info = metal_allocate_memory(sizeof(struct elf_decode_info));
 
 	if (!elf_info) {
 		return RPROC_ERR_NO_MEM;
@@ -105,7 +106,7 @@ int elf_loader_attach_firmware(struct remoteproc_loader *loader, void *firmware)
 
 	if (status) {
 		/* Free memory. */
-		env_free_memory(elf_info);
+		metal_free_memory(elf_info);
 		return status;
 	}
 
@@ -131,9 +132,9 @@ int elf_loader_detach_firmware(struct remoteproc_loader *loader)
 	    (struct elf_decode_info *)loader->fw_decode_info;
 	if (elf_info) {
 		/* Free memory. */
-		env_free_memory(elf_info->shstrtab);
-		env_free_memory(elf_info->section_headers_start);
-		env_free_memory(elf_info);
+		metal_free_memory(elf_info->shstrtab);
+		metal_free_memory(elf_info->section_headers_start);
+		metal_free_memory(elf_info);
 	}
 
 	return RPROC_SUCCESS;
@@ -488,9 +489,7 @@ static int elf_loader_read_headers(void *firmware,
 		section_count = elf_info->elf_header.e_shnum;
 
 		/* Allocate memory to read in the section headers. */
-		elf_info->section_headers_start =
-		    env_allocate_memory(section_count *
-					elf_info->elf_header.e_shentsize);
+		elf_info->section_headers_start = metal_allocate_memory(section_count * elf_info->elf_header.e_shentsize);
 
 		/* Check if the allocation was successful. */
 		if (elf_info->section_headers_start) {
@@ -516,9 +515,7 @@ static int elf_loader_read_headers(void *firmware,
 						    e_shentsize);
 
 				/* Allocate the memory for section header string table. */
-				elf_info->shstrtab =
-				    env_allocate_memory
-				    (section_header_string_table->sh_size);
+				elf_info->shstrtab = metal_allocate_memory(section_header_string_table->sh_size);
 
 				/* Ensure the allocation was successful. */
 				if (elf_info->shstrtab) {

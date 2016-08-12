@@ -44,6 +44,7 @@
  **************************************************************************/
 #include <string.h>
 #include "openamp/sh_mem.h"
+#include "metal/alloc.h"
 
 /**
  * sh_mem_create_pool
@@ -84,7 +85,7 @@ struct sh_mem_pool *sh_mem_create_pool(void *start_addr, unsigned int size,
 	pool_size = sizeof(struct sh_mem_pool) + BITMAP_WORD_SIZE * bmp_size;
 
 	/* Create pool control block. */
-	mem_pool = env_allocate_memory(pool_size);
+	mem_pool = metal_allocate_memory(pool_size);
 
 	if (mem_pool) {
 		/* Initialize pool parameters */
@@ -201,7 +202,7 @@ void sh_mem_delete_pool(struct sh_mem_pool *pool)
 
 	if (pool) {
 		metal_mutex_deinit(&pool->lock);
-		env_free_memory(pool);
+		metal_free_memory(pool);
 	}
 }
 

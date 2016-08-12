@@ -35,6 +35,7 @@
 #include "openamp/env.h"
 #include "openamp/hil.h"
 #include "metal/sys.h"
+#include "metal/alloc.h"
 
 /**
  * remoteproc_resource_init
@@ -71,7 +72,7 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 		return RPROC_ERR_PARAM;
 	}
 
-	rproc = env_allocate_memory(sizeof(struct remote_proc));
+	rproc = metal_allocate_memory(sizeof(struct remote_proc));
 	if (rproc) {
 		memset(rproc, 0x00, sizeof(struct remote_proc));
 		/* There can be only one master for remote configuration so use the
@@ -128,7 +129,7 @@ int remoteproc_resource_deinit(struct remote_proc *rproc)
 		if (rproc->rdev) {
 			rpmsg_deinit(rproc->rdev);
 		}
-		env_free_memory(rproc);
+		metal_free_memory(rproc);
 	}
 
 	return RPROC_SUCCESS;
@@ -166,7 +167,7 @@ int remoteproc_init(char *fw_name, void *pdata,
 		return RPROC_ERR_PARAM;
 	}
 
-	rproc = env_allocate_memory(sizeof(struct remote_proc));
+	rproc = metal_allocate_memory(sizeof(struct remote_proc));
 	if (rproc) {
 		memset((void *)rproc, 0x00, sizeof(struct remote_proc));
 		/* Create proc instance */
@@ -249,7 +250,7 @@ int remoteproc_deinit(struct remote_proc *rproc)
 			hil_delete_proc(rproc->proc);
 			rproc->proc = RPROC_NULL;
 		}
-		env_free_memory(rproc);
+		metal_free_memory(rproc);
 	}
 
 	return RPROC_SUCCESS;

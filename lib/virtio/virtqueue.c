@@ -29,6 +29,7 @@
 #include "metal/atomic.h"
 #include "metal/dma.h"
 #include "metal/io.h"
+#include "metal/alloc.h"
 
 /* Prototype for internal functions. */
 static void vq_ring_init(struct virtqueue *);
@@ -80,7 +81,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 
 		vq_size = sizeof(struct virtqueue)
 		    + (ring->num_descs) * sizeof(struct vq_desc_extra);
-		vq = (struct virtqueue *)env_allocate_memory(vq_size);
+		vq = (struct virtqueue *)metal_allocate_memory(vq_size);
 
 		if (vq == VQ_NULL) {
 			return (ERROR_NO_MEM);
@@ -321,7 +322,7 @@ void virtqueue_free(struct virtqueue *vq)
 			vq->vq_ring_mem = VQ_NULL;
 		}
 
-		env_free_memory(vq);
+		metal_free_memory(vq);
 	}
 }
 
