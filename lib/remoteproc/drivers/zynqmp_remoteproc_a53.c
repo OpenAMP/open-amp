@@ -207,11 +207,6 @@ static struct hil_proc * _initialize(void *pdata, int cpu_id)
 	}
 	metal_io_write32(io, IPI_IDR_OFFSET, ipi->ipi_chn_mask);
 	atomic_store(&ipi->sync, 1);
-	/* Enable mapping for the shared memory region */
-	if (proc->sh_buff.size)
-		metal_io_mem_map((metal_phys_addr_t)proc->sh_buff.start_addr,
-			proc->sh_buff.io,
-			proc->sh_buff.size);
 	return proc;
 error:
 	if (proc) {
