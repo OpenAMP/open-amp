@@ -127,6 +127,13 @@ int rproc_init_plat_data(void *pdata,
 			if (ret)
 				return ret;
 			proc->sh_buff.io = io;
+			if (io->size != (size_t)(-1)) {
+				metal_io_mem_map(
+					metal_io_virt_to_phys(io, io->virt),
+					io, io->size);
+				proc->sh_buff.start_addr = io->virt;
+				proc->sh_buff.size = io->size;
+			}
 			pdata += sizeof(struct plat_shm);
 		} else if (type == PLAT_RSC_RPMSG_CHANNEL) {
 			struct plat_rpmsg_chnl *pchl =
@@ -152,10 +159,14 @@ void rproc_close_plat(struct hil_proc *proc)
 	for (i = 0; i < num_vrings; i++) {
 		vring = &proc->vdev.vring_info[i];
 		dev = vring->dev;
-		if (dev)
+		if (dev) {
 			metal_device_close(dev);
+			vring->dev = NULL;
+		}
 		dev = vring->intr_info.dev;
-		if (dev)
+		if (dev) {
 			metal_device_close(dev);
+			vring->intr_info.dev = NULL;
+		}
 	}
 }
