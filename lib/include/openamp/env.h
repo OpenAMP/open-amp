@@ -62,6 +62,12 @@
 
 #include <stdio.h>
 
+#ifdef OPENAMP_DEBUG
+#define openamp_dbg(format, ...) printf(format, ##__VA_ARGS__)
+#else
+#define openamp_dbg(...)
+#endif
+
 /**
  * env_sleep_msec
  *
