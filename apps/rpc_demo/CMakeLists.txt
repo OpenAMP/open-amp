@@ -1,5 +1,5 @@
-set (_app "rpc_demo")
 set (_cflags "${CMAKE_C_FLAGS} ${APP_EXTRA_C_FLAGS}")
+set (_fw_dir "${APPS_SHARE_DIR}")
 
 collector_list (_list PROJECT_INC_DIRS)
 collector_list (_app_list APP_INC_DIRS)
@@ -9,16 +9,38 @@ collector_list (_list PROJECT_LIB_DIRS)
 collector_list (_app_list APP_LIB_DIRS)
 link_directories (${_list} ${_app_list})
 
-collector_list (_list APP_COMMON_SOURCES)
-list (APPEND _list "${CMAKE_CURRENT_SOURCE_DIR}/rpc_demo.c")
-add_executable (${_app}.out ${_list})
-
-set_source_files_properties(${_list} PROPERTIES COMPILE_FLAGS "${_cflags}")
-
 get_property (_linker_script GLOBAL PROPERTY APP_LINKER_SCRIPT)
-get_property (_deps GLOBAL PROPERTY APP_LIB_DEPS)
-set (_deps "${_deps} ${PLATFORM_LIB_DEPS}")
-string (STRIP "${_deps}" _deps)
-target_link_libraries(${_app}.out -Wl,-Map=echo_test.map -Wl,--gc-sections -T\"${_linker_script}\" -Wl,--start-group ${_deps} -Wl,--end-group)
+collector_list (_deps PROJECT_LIB_DEPS)
 
-install (TARGETS ${_app}.out RUNTIME DESTINATION bin)
+set (OPENAMP_LIB open_amp)
+
+if (${PROJECT_SYSTEM} STREQUAL "linux")
+  set (app_list rpc_demod)
+else (${PROJECT_SYSTEM})
+  set (app_list rpc_demo)
+endif (${PROJECT_SYSTEM} STREQUAL "linux")
+
+foreach (_app ${app_list})
+  collector_list (_sources APP_COMMON_SOURCES)
+  list (APPEND _sources "${CMAKE_CURRENT_SOURCE_DIR}/${_app}.c")
+  
+  if (WITH_SHARED_LIB)
+    add_executable (${_app}-shared ${_sources})
+    target_link_libraries (${_app}-shared ${OPENAMP_LIB}-shared ${_deps})
+    install (TARGETS ${_app}-shared RUNTIME DESTINATION bin)
+  endif (WITH_SHARED_LIB)
+  
+  if (WITH_STATIC_LIB)
+    if (${PROJECT_SYSTEM} STREQUAL "linux")
+      add_executable (${_app}-static ${_sources})
+      target_link_libraries (${_app}-static ${OPENAMP_LIB}-static ${_deps})
+      install (TARGETS ${_app}-static RUNTIME DESTINATION bin)
+    else (${PROJECT_SYSTEM})
+      add_executable (${_app}.out ${_sources})
+      set_source_files_properties(${_sources} PROPERTIES COMPILE_FLAGS "${_cflags}")
+
+      target_link_libraries(${_app}.out -Wl,-Map=${_app}.map -Wl,--gc-sections -T\"${_linker_script}\" -Wl,--start-group ${OPENAMP_LIB}-static ${_deps} -Wl,--end-group)
+      install (TARGETS ${_app}.out RUNTIME DESTINATION bin)
+    endif (${PROJECT_SYSTEM} STREQUAL "linux" )
+  endif (WITH_STATIC_LIB)
+endforeach(_app)

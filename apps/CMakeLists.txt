@@ -1,9 +1,8 @@
 collector_create (APP_COMMON_SOURCES "")
 collector_create (APP_LIB_DIRS "")
 collector_create (APP_INC_DIRS "")
+collector_create (APP_LIB_DEPS "")
 
-set_property (GLOBAL PROPERTY APP_LIB_DEPS "-lopen_amp")
-set_property (GLOBAL APPEND PROPERTY APP_LIB_DEPS "-lmetal")
 set (APPS_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set (APPS_SHARE_DIR "${CMAKE_CURRENT_BINARY_DIR}/share")
@@ -18,11 +17,11 @@ endif (WITH_LINUXREMOTE)
 
 add_subdirectory (echo_test)
 add_subdirectory (matrix_multiply)
-if (WITH_PROXY)
+if (WITH_PROXY_APPS)
 if (NOT WITH_REMOTEPROC_MASTER)
 add_subdirectory (rpc_demo)
 endif (NOT WITH_REMOTEPROC_MASTER)
-endif (WITH_PROXY)
+endif (WITH_PROXY_APPS)
 
 if (WITH_FUNCTION_TEST_SUITE)
   add_subdirectory (func_test_suite)
