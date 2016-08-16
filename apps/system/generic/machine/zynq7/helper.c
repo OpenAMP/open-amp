@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2014, Mentor Graphics Corporation
  * All rights reserved.
@@ -29,263 +30,79 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include <string.h>
-#include "baremetal.h"
+#include "xparameters.h"
+#include "xil_exception.h"
+#include "xscugic.h"
+#include "xil_cache.h"
 #include "metal/sys.h"
 
-#ifndef BAREMETAL_MASTER
-#define BAREMETAL_MASTER 0
-#endif
+#define INTC_DEVICE_ID		XPAR_SCUGIC_0_DEVICE_ID
+/** IPI IRQ ID */
+#define VRING0_IPI_VECT         15
+#define VRING1_IPI_VECT         14
 
-/* Memory Regions for MMU Mapping */
-#if (BAREMETAL_MASTER == 1)
+XScuGic InterruptController;
 
-#define ELF_START       0x10000000	/* Image entry point address */
-#define ELF_END         0x0FE00000	/* size of code,data,heap and stack sections */
+extern void metal_irq_isr(unsigned int irq);
+extern int platform_register_metal_device(void);
 
-#define TLB_MEM_START   0x1FE00000	/* Address of TLB memory */
-
-#else
-
-#define ELF_START       0x00000000	/* Image entry point address */
-#define ELF_END         0x08000000	/* size of code,data,heap and stack sections */
-
-#define TLB_MEM_START   0x0FE00000	/* Address of TLB memory */
-
-#endif
-
-/* The vector table address is the same as image entry point */
-#define RAM_VECTOR_TABLE_ADDR           ELF_START
-
-unsigned char ARM_AR_ISR_IRQ_Data[ARM_AR_ISR_STACK_SIZE];
-unsigned char ARM_AR_ISR_FIQ_Data[ARM_AR_ISR_STACK_SIZE];
-unsigned char ARM_AR_ISR_SUP_Stack[ARM_AR_ISR_STACK_SIZE];
-unsigned char ARM_AR_ISR_SYS_Stack[ARM_AR_ISR_STACK_SIZE];
-
-extern void bm_env_isr(int vector);
-
-/* IRQ handler */
-void __attribute__ ((interrupt("IRQ"))) __cs3_isr_irq()
+int zynq_a9_gic_initialize()
 {
-	unsigned long raw_irq;
-	int irq_vector;
+	u32 Status;
 
-	/* Read the Interrupt ACK register */
-	raw_irq = MEM_READ32(INT_GIC_CPU_BASE + INT_GIC_CPU_ACK);
+	Xil_ExceptionDisable();
 
-	/* mask interrupt to get vector */
-	irq_vector = raw_irq & INT_ACK_MASK;
+	XScuGic_Config *IntcConfig;	/* The configuration parameters of the interrupt controller */
 
-	bm_env_isr(irq_vector);
-
-	/* Clear the interrupt */
-	MEM_WRITE32(INT_GIC_CPU_BASE + INT_GIC_CPU_ENDINT, raw_irq);
-}
-
-/* Only applicable for remote/slave node */
-void zynq7_gic_pr_int_initialize(void)
-{
-
-	/* Disable the GIC controller */
-	MEM_WRITE32(INT_GIC_DIST_BASE + INT_GIC_DIST_CTRL, 0x00000000);
-
-	/* Enable the interrupt distributor controller */
-	MEM_WRITE32(INT_GIC_DIST_BASE + INT_GIC_DIST_CTRL, INT_DIST_ENABLE);
-
-	/* Secondary cores  just need to disable their private interrupts */
-	MEM_WRITE32(INT_GIC_DIST_BASE + INT_GIC_DIST_ENABLE_CLEAR + 0x00,
-		    0xffffffff);
-	/* 0  - 31 */
-
-	MEM_WRITE32(INT_GIC_DIST_BASE + INT_GIC_DIST_CONFIG + 0x00, 0xAAAAAAAA);
-	/* 0  - 15 */
-	MEM_WRITE32(INT_GIC_DIST_BASE + INT_GIC_DIST_CONFIG + 0x04, 0xAAAAAAAA);
-
-	/* Disable the CPU Interface */
-	MEM_WRITE32(INT_GIC_CPU_BASE + INT_GIC_CPU_CTRL, 0x00000000);
-
-	/* Allow interrupts with more priority (i.e. lower number) than FF */
-	MEM_WRITE32(INT_GIC_CPU_BASE + INT_GIC_CPU_PRIORITY, 0x000000FF);
-
-	/* No binary point */
-	MEM_WRITE32(INT_GIC_CPU_BASE + INT_GIC_CPU_POINT, 0x00000000);
-
-	/* Enable the CPU Interface */
-	MEM_WRITE32(INT_GIC_CPU_BASE + INT_GIC_CPU_CTRL, INT_CPU_ENABLE);
-}
-
-int zynq7_gic_initialize()
-{
-
-	unsigned long reg_val;
-
-	/* Disable architecture interrupts (IRQ and FIQ)
-	 * before initialization */
-	ARM_AR_CPSR_CXSF_READ(&reg_val);
-	reg_val |= (0x02 << 6);
-	ARM_AR_CPSR_CXSF_WRITE(reg_val);
-
-	zynq7_gic_pr_int_initialize();
-
-	/* Enable architecture Interrupts */
-	ARM_AR_CPSR_CXSF_READ(&reg_val);
-	reg_val &= ~(0x02 << 6);
-	ARM_AR_CPSR_CXSF_WRITE(reg_val);
-
-	return 0;
-}
-
-void arm_arch_install_isr_vector_table(unsigned long addr)
-{
-	unsigned long arch = 0;
-	void *dst_addr;
-
-	/* Assign destination address of vector table to RAM address */
-	dst_addr = (void *)addr;
-	/* Read Main ID Register (MIRD) */
-	ARM_AR_CP_READ(p15, 0, &arch, c0, c0, 0);
-
-	/* Check if Cortex-A series of ARMv7 architecture. */
-	if (((arch & MIDR_ARCH_MASK) >> 16) == MIDR_ARCH_ARMV7
-	    && ((arch & MIDR_PART_NO_MASK) >> 4)
-	    == MIDR_PART_NO_CORTEX_A) {
-		/* Set vector base address */
-		ARM_AR_CP_WRITE(p15, 0, dst_addr, c12, c0, 0);
-		ARM_AR_NOP_EXECUTE();
-		ARM_AR_NOP_EXECUTE();
-		ARM_AR_NOP_EXECUTE();
-	}
-}
-
-void init_arm_stacks(void)
-{
-
-	/* Switch to IRQ mode (keeping interrupts disabled) */
-	ARM_AR_CPSR_C_WRITE(ARM_AR_INT_CPSR_IRQ_MODE |
-			    ARM_AR_INTERRUPTS_DISABLE_BITS);
-
-	/* Set IRQ stack pointer */
-	ARM_AR_SP_WRITE(ARM_GE_STK_ALIGN
-			(&ARM_AR_ISR_IRQ_Data[ARM_AR_ISR_STACK_SIZE - 1]));
-
-	/* Switch to FIQ mode (keeping interrupts disabled) */
-	ARM_AR_CPSR_C_WRITE(ARM_AR_INT_CPSR_FIQ_MODE |
-			    ARM_AR_INTERRUPTS_DISABLE_BITS);
-
-	/* Set FIQ stack pointer */
-	ARM_AR_SP_WRITE(ARM_GE_STK_ALIGN
-			(ARM_AR_ISR_FIQ_Data[ARM_AR_ISR_STACK_SIZE - 1]));
-
-	/* Switch to Supervisor mode (keeping interrupts disabled) */
-	ARM_AR_CPSR_C_WRITE(ARM_AR_INT_CPSR_SUP_MODE |
-			    ARM_AR_INTERRUPTS_DISABLE_BITS);
-
-	/* Set Supervisor stack pointer */
-	ARM_AR_SP_WRITE(ARM_GE_STK_ALIGN
-			(&ARM_AR_ISR_SUP_Stack[ARM_AR_ISR_STACK_SIZE - 1]));
-
-	/* Switch to System mode (keeping interrupts disabled) */
-	ARM_AR_CPSR_C_WRITE(ARM_AR_INT_CPSR_SYS_DISABLED);
-}
-
-/***********************************************************************
- *
- *  arm_ar_mem_enable_mmu
- *
- *  Enables MMU and MAP the required memory regions.
- *
- ***********************************************************************/
-int arm_ar_mem_enable_mmu()
-{
-	unsigned int cp15_ctrl_val;
-	void *tlb_mem = (void *)TLB_MEM_START;
-
-	ARM_AR_MEM_CACHE_ALL_INVALIDATE();
-
-	/* Read current CP15 control register value */
-	ARM_AR_CP_READ(ARM_AR_CP15, 0, &cp15_ctrl_val, ARM_AR_C1, ARM_AR_C0, 0);
-
-	/* Clear the V bit(13) to set Normal exception vectors range. */
-	cp15_ctrl_val &= ~(ARM_AR_MEM_CP15_CTRL_V);
-
-	/* Clear the alignment bit(1) to enable unaligned memory accesses */
-	cp15_ctrl_val &= ~(ARM_AR_MEM_CP15_CTRL_A);
-
-	/* Write updated CP15 control register value */
-	ARM_AR_CP_WRITE(ARM_AR_CP15, 0, cp15_ctrl_val, ARM_AR_C1, ARM_AR_C0, 0);
-
-	ARM_AR_NOP_EXECUTE();
-	ARM_AR_NOP_EXECUTE();
-	ARM_AR_NOP_EXECUTE();
-
-	/* Check alignment of available memory pointer */
-	if (!(MEM_ALIGNED_CHECK(tlb_mem, ARM_AR_MEM_TTB_SIZE))) {
-		/* Align the pointer to the required boundary */
-		tlb_mem = MEM_PTR_ALIGN(tlb_mem, ARM_AR_MEM_TTB_SIZE);
+	/*
+	 * Initialize the interrupt controller driver
+	 */
+	IntcConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
+	if (NULL == IntcConfig) {
+		return XST_FAILURE;
 	}
 
-	/* Clear the entire translation table */
-	memset(tlb_mem, 0x00, ARM_AR_MEM_TTB_SIZE);
+	Status = XScuGic_CfgInitialize(&InterruptController, IntcConfig,
+				       IntcConfig->CpuBaseAddress);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
 
-	/* Set translation table base address */
-	ARM_AR_CP_WRITE(ARM_AR_CP15, 0, tlb_mem, ARM_AR_C2, ARM_AR_C0, 0);
+	/*
+	 * Register the interrupt handler to the hardware interrupt handling
+	 * logic in the ARM processor.
+	 */
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
+			(Xil_ExceptionHandler)XScuGic_InterruptHandler,
+			&InterruptController);
 
-	ARM_AR_CP_READ(ARM_AR_CP15, 0, &cp15_ctrl_val, ARM_AR_C2, ARM_AR_C0, 0);
+	Xil_ExceptionEnable();
+	/* Connect IPI0 Interrupt ID with ISR */
+	XScuGic_Connect(&InterruptController, VRING0_IPI_VECT,
+			   (Xil_ExceptionHandler)metal_irq_isr,
+			   (void *)VRING0_IPI_VECT);
 
-	/* Map the given memory regions here */
-	arm_ar_map_mem_region(ELF_START, ELF_START, ELF_END, 0, WRITEBACK);
-	arm_ar_map_mem_region((unsigned int)tlb_mem, (unsigned int)tlb_mem,
-			      TLB_SIZE, 0, NOCACHE);
-	arm_ar_map_mem_region(PERIPH_BASE, PERIPH_BASE,
-			      PERIPH_SIZE, 1, NOCACHE);
-	arm_ar_map_mem_region(SLCR_BASE, SLCR_BASE, SLCR_SIZE, 1, NOCACHE);
-	arm_ar_map_mem_region(CPU_BASE, CPU_BASE, CPU_SIZE, 1, NOCACHE);
-
-	/* Set the domain access for domain D0 */
-	ARM_AR_CP_WRITE(ARM_AR_CP15, 0, ARM_AR_MEM_DOMAIN_D0_MANAGER_ACCESS,
-			ARM_AR_C3, ARM_AR_C0, 0);
-
-	ARM_AR_CP_READ(ARM_AR_CP15, 0, &cp15_ctrl_val, ARM_AR_C3, ARM_AR_C0, 0);
-
-	/* Invalidate all TLB entries before enabling the MMU */
-	ARM_AR_CP_WRITE(ARM_AR_CP15, 0, 0, ARM_AR_C8, ARM_AR_C7, 0);
-
-	/* Read current CP15 control register value */
-	ARM_AR_CP_READ(ARM_AR_CP15, 0, &cp15_ctrl_val, ARM_AR_C1, ARM_AR_C0, 0);
-
-	/* Set instruction cache enable / data cache enable / MMU enable bits */
-	cp15_ctrl_val |= (ARM_AR_MEM_CP15_CTRL_I | ARM_AR_MEM_CP15_CTRL_C
-			  | ARM_AR_MEM_CP15_CTRL_M | ARM_AR_MEM_CP15_CTRL_Z);
-
-	/* Write updated CP15 control register value */
-	ARM_AR_CP_WRITE(ARM_AR_CP15, 0, cp15_ctrl_val, ARM_AR_C1, ARM_AR_C0, 0);
-
-	ARM_AR_NOP_EXECUTE();
-	ARM_AR_NOP_EXECUTE();
-	ARM_AR_NOP_EXECUTE();
-
+	/* Connect IPI1 Interrupt ID with ISR */
+	XScuGic_Connect(&InterruptController, VRING1_IPI_VECT,
+			   (Xil_ExceptionHandler)metal_irq_isr,
+			   (void *)VRING1_IPI_VECT);
 	return 0;
 }
 
 void init_system()
 {
-	/* Place the vector table at the image entry point */
-	arm_arch_install_isr_vector_table(RAM_VECTOR_TABLE_ADDR);
+	struct metal_init_params metal_param = METAL_INIT_DEFAULTS;
 
-	/* Enable MMU */
-	arm_ar_mem_enable_mmu();
-
-	/* Initialize ARM stacks */
-	init_arm_stacks();
-
-	/* Initialize GIC */
-	zynq7_gic_initialize();
+	metal_init(&metal_param);
+	zynq_a9_gic_initialize();
+	platform_register_metal_device();
 }
 
 void cleanup_system()
 {
 	metal_finish();
-	Xil_DCacheInvalidate();
-	Xil_ICacheInvalidate();
 	Xil_DCacheDisable();
 	Xil_ICacheDisable();
+	Xil_DCacheInvalidate();
+	Xil_ICacheInvalidate();
 }

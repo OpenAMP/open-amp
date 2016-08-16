@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2014, Mentor Graphics Corporation
- * All rights reserved.
- * Copyright (c) 2015 Xilinx, Inc.
+ * Copyright (c) 2016 Xilinx, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,76 +26,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**************************************************************************
- * FILE NAME
- *
- *       platform_info.c
- *
- * DESCRIPTION
- *
- *       This file implements APIs to get platform specific
- *       information for OpenAMP.
- *
- **************************************************************************/
+/* This file populates resource table for BM remote
+ * for use by the Linux Master */
 
 #include "openamp/hil.h"
 #include "openamp/remoteproc_plat.h"
-#include "metal/atomic.h"
-#include "platform_info.h"
 
-#define REMOTE_CPU_ID                     0
-
-/* Reference implementation that show cases platform_get_cpu_info and 
- platform_get_for_firmware API implementation for Bare metal environment */
-
-extern struct hil_platform_ops zynq_a9_proc_ops;
-
-
-struct rproc_info_plat_local proc_table = {
-	{
-		/* CPU ID of master */
-		REMOTE_CPU_ID,
-
-		/* HIL platform ops table. */
-		&zynq_a9_proc_ops,
-	},
-	/* vring0 ipi device and vring descriptors memory device */
-	{
-		PLAT_RSC_VRING,
-		"generic",
-		"ipi0",
-		NULL,
-		"generic",
-		"vrings",
-	},
-	/* vring1 ipi device and vring descriptors memory device */
-	{
-		PLAT_RSC_VRING,
-		"generic",
-		"ipi1",
-		NULL,
-		"generic",
-		"vrings",
-	},
-	/* Shared memory device */
-	{
-		PLAT_RSC_SHM,
-		"shm",
-		0,  /* UNDEFINED */
-	},
-	/* Shared memory device */
-	{
-		PLAT_RSC_RPMSG_CHANNEL,
-		"rpmsg-openamp-demo-channel",
-	},
-	PLAT_RSC_LAST,
+/* remoteproc platform data structure */
+struct rproc_info_plat_local {
+	struct proc_info_hdr proc_hdr; /**< hil proc header */
+	struct plat_vring vring0; /**< vring0 data */
+	struct plat_vring vring1; /**< vring1 data */
+	struct plat_shm shm; /**< shared memory data */
+	struct plat_rpmsg_chnl rpmsg_chnl; /**< RPMSG channel data */
+	unsigned int last_type;
 };
-
-const struct firmware_info fw_table[] =
-{
-	{"unknown",
-	 0,
-	 0}
-};
-
-int fw_table_size = sizeof(fw_table)/sizeof(struct firmware_info);
