@@ -10,10 +10,6 @@ multiplies them and returns the result to the master core. */
 #include "rsc_table.h"
 #include "platform_info.h"
 
-#ifdef ZYNQ7_BAREMETAL
-#include "baremetal.h"
-#endif
-
 #define	MAX_SIZE                6
 #define NUM_MATRIX              2
 #define SHUTDOWN_MSG            0xEF56A55A
@@ -51,10 +47,6 @@ int main()
 {
 
 	int status = 0;
-
-#ifdef ZYNQ7_BAREMETAL
-	SWITCH_TO_SYS_MODE();
-#endif
 
 	/* Initialize HW system components */
 	init_system();

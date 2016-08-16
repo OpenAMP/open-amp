@@ -72,12 +72,8 @@ int main()
 		return -1;
 	}
 
-	while (1) {
-
-		if (shutdown_called == 1) {
-			break;
-		}
-		sleep();
+	while (!shutdown_called) {
+		hil_poll(proc->proc, 0);
 	}
 
 	/* Send shutdown message to remote */

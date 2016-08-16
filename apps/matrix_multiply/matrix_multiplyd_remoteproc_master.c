@@ -16,13 +16,6 @@ Linux to gracefully shutdown. */
 #include <string.h>
 #include "openamp/open_amp.h"
 
-#define BAREMETAL_MASTER 1
-
-#ifdef ZYNQ7_BAREMETAL
-#include "baremetal.h"
-#endif
-
-
 #define MAX_SIZE        6
 #define NUM_MATRIX      2
 
@@ -93,11 +86,6 @@ int main()
 	int i;
 	int shutdown_msg = SHUTDOWN_MSG;
 
-#ifdef ZYNQ7_BAREMETAL
-	/* Switch to System Mode */
-	SWITCH_TO_SYS_MODE();
-#endif
-
 	/* Initialize HW system components */
 	init_system();
 
@@ -126,13 +114,10 @@ int main()
 
 			/* Send the result of matrix multiplication back to master. */
 			rpmsg_send(app_rp_chnl, &matrix_result, sizeof(matrix));
-
 			int_flag = 0;
-
-			sleep();
 		}
 
-		sleep();
+		hil_poll(proc->proc, 0);
 	}
 
 	/* Send shutdown message to remote */

@@ -9,10 +9,6 @@ This application echoes back data that was sent to it by the master core. */
 #include "rsc_table.h"
 #include "platform_info.h"
 
-#ifdef ZYNQ7_BAREMETAL
-#include "baremetal.h"
-#endif
-
 #define SHUTDOWN_MSG	0xEF56A55A
 
 /* Internal functions */
@@ -36,10 +32,6 @@ extern void cleanup_system();
 int main()
 {
 	int status = 0;
-
-#ifdef ZYNQ7_BAREMETAL
-	SWITCH_TO_SYS_MODE();
-#endif
 
 	/* Initialize HW system components */
 	init_system();

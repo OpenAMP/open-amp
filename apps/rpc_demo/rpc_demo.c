@@ -12,10 +12,6 @@
 #include "platform_info.h"
 #include "openamp/rpmsg_retarget.h"
 
-#ifdef ZYNQ7_BAREMETAL
-#include "baremetal.h"
-#endif
-
 /* Internal functions */
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
@@ -57,10 +53,6 @@ int main()
 	int idata;
 	int ret;
 	int status;
-
-#ifdef ZYNQ7_BAREMETAL
-	SWITCH_TO_SYS_MODE();
-#endif
 
 	/* Initialize HW system components */
 	init_system();

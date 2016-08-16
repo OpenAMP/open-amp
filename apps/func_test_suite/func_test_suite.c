@@ -10,10 +10,6 @@
 #include "test_suite.h"
 #include "platform_info.h"
 
-#ifdef ZYNQ7_BAREMETAL
-#include "baremetal.h"
-#endif
-
 #define EPT_ADDR        59
 
 /* Application provided callbacks */
@@ -47,11 +43,6 @@ int main()
 	struct remote_proc *proc;
 	int uninit = 0;
 	struct ept_cmd_data *ept_data;
-
-#ifdef ZYNQ7_BAREMETAL
-	/* Switch to System Mode */
-	SWITCH_TO_SYS_MODE();
-#endif
 
 	/* Initialize HW system components */
 	init_system();

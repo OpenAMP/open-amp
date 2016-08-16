@@ -11,10 +11,7 @@ the rpmsg APIs and shutsdown the core once the test has been completed.*/
 #include <stdlib.h>
 #include "openamp/open_amp.h"
 #include "test_suite.h"
-
-#ifdef ZYNQ7_BAREMETAL
-#include "baremetal.h"
-#endif
+#include "platform_info.h"
 
 
 /* Application provided callbacks */
@@ -64,10 +61,6 @@ void sleep()
 
 int main()
 {
-#ifdef ZYNQ7_BAREMETAL
-	/* Switch to System Mode */
-	SWITCH_TO_SYS_MODE();
-#endif
 
 	/* Initialize HW system components */
 	init_system();
