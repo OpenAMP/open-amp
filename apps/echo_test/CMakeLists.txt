@@ -10,7 +10,7 @@ collector_list (_list PROJECT_LIB_DIRS)
 collector_list (_app_list APP_LIB_DIRS)
 link_directories (${_list} ${_app_list})
 
-get_property (_linker_script GLOBAL PROPERTY APP_LINKER_SCRIPT)
+get_property (_linker_opt GLOBAL PROPERTY APP_LINKER_OPT)
 collector_list (_deps PROJECT_LIB_DEPS)
 
 set (OPENAMP_LIB open_amp)
@@ -46,7 +46,7 @@ foreach (_app echo_test echo_testd)
         set_source_files_properties(${_sources} PROPERTIES COMPILE_FLAGS "${_cflags}")
   
         if (WITH_REMOTEPROC_MASTER)
-          target_link_libraries(${_app}.out -Wl,-Map=${_app}.map -Wl,--gc-sections -T\"${_linker_script}\" -Wl,--start-group ${_fw_dir}/firmware1.o ${_fw_dir}/firmware2.o ${OPENAM__LIB}-static ${_deps} -Wl,--end-group)
+          target_link_libraries(${_app}.out -Wl,-Map=${_app}.map -Wl,--gc-sections ${_linker_opt} -Wl,--start-group ${_fw_dir}/firmware1.o ${_fw_dir}/firmware2.o ${OPENAM__LIB}-static ${_deps} -Wl,--end-group)
           add_custom_target (${_app}.bin ALL
           ${CROSS_PREFIX}objcopy -O binary ${_app}.out ${_app}.bin
           DEPENDS ${_app}.out)
@@ -57,7 +57,7 @@ foreach (_app echo_test echo_testd)
   
         else (WITH_REMOTEPROC_MASTER)
   
-          target_link_libraries(${_app}.out -Wl,-Map=${_app}.map -Wl,--gc-sections -T\"${_linker_script}\" -Wl,--start-group ${OPENAMP_LIB}-static ${_deps} -Wl,--end-group)
+          target_link_libraries(${_app}.out -Wl,-Map=${_app}.map -Wl,--gc-sections ${_linker_opt} -Wl,--start-group ${OPENAMP_LIB}-static ${_deps} -Wl,--end-group)
   
           install (TARGETS ${_app}.out RUNTIME DESTINATION bin)
         endif (WITH_REMOTEPROC_MASTER)
