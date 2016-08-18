@@ -29,10 +29,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <string.h>
-#include "xparameters.h"
-#include "xil_exception.h"
-#include "xscugic.h"
+
 #include "metal/sys.h"
 #include "metal/device.h"
 #include "metal/io.h"
@@ -113,10 +110,12 @@ struct metal_generic_shmem shm = {
 	{NULL, NULL},
 };
 
+const int metal_dev_table_sz = sizeof (metal_dev_table)/sizeof(struct metal_device);
+
+
 /**
  * This funciton is to install baremeta/RTOS libmetal devices.
  */
-extern char RPROC_DEBUG[];
 int platform_register_metal_device(void)
 {
 	int i;
@@ -125,9 +124,7 @@ int platform_register_metal_device(void)
 
 	/* Register device */
 	metal_bus_register(&metal_generic_bus);
-	for (i = 0;
-	     i < (int)(sizeof(metal_dev_table)/sizeof(struct metal_device));
-	     i++) {
+        for (i = 0; i < metal_dev_table_sz; i++) {
 		dev = &metal_dev_table[i];
 		ret = metal_register_generic_device(dev);
 		if (ret)

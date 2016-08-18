@@ -29,29 +29,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <string.h>
+
 #include "xparameters.h"
 #include "xil_exception.h"
 #include "xscugic.h"
 #include "xil_cache.h"
 #include "metal/sys.h"
+#include "metal/irq.h"
+#include "metal/system/generic/irq.h"
+
 
 #define INTC_DEVICE_ID		XPAR_SCUGIC_0_DEVICE_ID
 /** IPI IRQ ID */
 #define IPI_IRQ_VECT_ID         65
 
-XScuGic InterruptController;
-
-extern void metal_irq_isr(unsigned int irq);
 extern int platform_register_metal_device(void);
 
-int zynqmp_r5_gic_initialize()
+static XScuGic InterruptController;
+
+
+static int zynqmp_r5_gic_initialize(void)
 {
 	u32 Status;
+	XScuGic_Config *IntcConfig;	/* The configuration parameters of the interrupt controller */
 
 	Xil_ExceptionDisable();
-
-	XScuGic_Config *IntcConfig;	/* The configuration parameters of the interrupt controller */
 
 	/*
 	 * Initialize the interrupt controller driver
@@ -76,6 +78,7 @@ int zynqmp_r5_gic_initialize()
 			&InterruptController);
 
 	Xil_ExceptionEnable();
+
 	/* Connect Interrupt ID with ISR */
 	XScuGic_Connect(&InterruptController, IPI_IRQ_VECT_ID,
 			   (Xil_ExceptionHandler)metal_irq_isr,
@@ -84,7 +87,7 @@ int zynqmp_r5_gic_initialize()
 	return 0;
 }
 
-void init_system()
+void init_system(void)
 {
 	struct metal_init_params metal_param = METAL_INIT_DEFAULTS;
 
@@ -96,6 +99,7 @@ void init_system()
 void cleanup_system()
 {
 	metal_finish();
+
 	Xil_DCacheDisable();
 	Xil_ICacheDisable();
 	Xil_DCacheInvalidate();

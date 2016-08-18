@@ -111,4 +111,4 @@ const struct firmware_info fw_table[] =
 	 0}
 };
 
-int fw_table_size = sizeof(fw_table)/sizeof(struct firmware_info);
+const int fw_table_size = sizeof(fw_table)/sizeof(struct firmware_info);
