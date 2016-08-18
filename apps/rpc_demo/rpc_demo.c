@@ -21,7 +21,7 @@ static void shutdown_cb(struct rpmsg_channel *rp_chnl);
 
 /* Globals */
 static struct rpmsg_channel *app_rp_chnl;
-volatile int chnl_cb_flag = 0;
+static volatile int chnl_is_alive = 0;
 static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
 extern const struct remote_resource_table resources;
@@ -57,6 +57,7 @@ int main()
 	/* Initialize HW system components */
 	init_system();
 
+	/* Resource table needs to be provided to remoteproc_resource_init() */
 	rsc_info.rsc_tab = (struct resource_table *)&resources;
 	rsc_info.size = sizeof(resources);
 
@@ -65,24 +66,21 @@ int main()
 					  rpmsg_channel_created,
 					  rpmsg_channel_deleted, rpmsg_read_cb,
 					  &proc, 0);
-	if (status < 0) {
+	if (RPROC_SUCCESS != status) {
 		return -1;
 	}
 
-	while (!chnl_cb_flag) {
+	while (!chnl_is_alive) {
 		hil_poll(proc->proc, 0);
 	}
 
-	chnl_cb_flag = 0;
-
+	/* redirect I/Os */
 	rpmsg_retarget_init(app_rp_chnl, shutdown_cb);
 
-	printf
-	    ("\r\nRemote>Baremetal Remote Procedure Call (RPC) Demonstration\r\n");
-	printf
-	    ("\r\nRemote>***************************************************\r\n");
-	printf
-	    ("\r\nRemote>Rpmsg based retargetting to proxy initialized..\r\n");
+	printf("\r\nRemote>Baremetal Remote Procedure Call (RPC) Demonstration\r\n");
+	printf("\r\nRemote>***************************************************\r\n");
+
+	printf("\r\nRemote>Rpmsg based retargetting to proxy initialized..\r\n");
 
 	/* Remote performing file IO on Master */
 	printf("\r\nRemote>FileIO demo ..\r\n");
@@ -100,22 +98,19 @@ int main()
 	printf("\r\nRemote>Closed fd = %d\r\n", fd);
 
 	/* Remote performing file IO on Master */
-	printf
-	    ("\r\nRemote>Reading a file on master and displaying its contents..\r\n");
+	printf("\r\nRemote>Reading a file on master and displaying its contents..\r\n");
 	fd = open(fname, REDEF_O_RDONLY, S_IRUSR | S_IWUSR);
 	printf("\r\nRemote>Opened file '%s' with fd = %d\r\n", fname, fd);
 	bytes_read = read(fd, rbuff, 1024);
 	*(char *)(&rbuff[0] + bytes_read + 1) = 0;
-	printf
-	    ("\r\nRemote>Read from fd = %d, size = %d, printing contents below .. %s\r\n",
+	printf("\r\nRemote>Read from fd = %d, size = %d, printing contents below .. %s\r\n",
 	     fd, bytes_read, rbuff);
 	close(fd);
 	printf("\r\nRemote>Closed fd = %d\r\n", fd);
 
 	while (1) {
 		/* Remote performing STDIO on Master */
-		printf
-		    ("\r\nRemote>Remote firmware using scanf and printf ..\r\n");
+		printf("\r\nRemote>Remote firmware using scanf and printf ..\r\n");
 		printf("\r\nRemote>Scanning user input from master..\r\n");
 		printf("\r\nRemote>Enter name\r\n");
 		ret = scanf("%s", ubuff);
@@ -126,14 +121,9 @@ int main()
 				printf("\r\nRemote>Enter value for pi\r\n");
 				ret = scanf("%f", &fdata);
 				if (ret) {
-					printf
-					    ("\r\nRemote>User name = '%s'\r\n",
-					     ubuff);
-					printf("\r\nRemote>User age = '%d'\r\n",
-					       idata);
-					printf
-					    ("\r\nRemote>User entered value of pi = '%f'\r\n",
-					     fdata);
+					printf("\r\nRemote>User name = '%s'\r\n", ubuff);
+					printf("\r\nRemote>User age = '%d'\r\n", idata);
+					printf("\r\nRemote>User entered value of pi = '%f'\r\n", fdata);
 				}
 			}
 		}
@@ -141,26 +131,23 @@ int main()
 			scanf("%s", ubuff);
 			printf("Remote> Invalid value. Starting again....");
 		} else {
-			printf
-			    ("\r\nRemote>Repeat demo ? (enter yes or no) \r\n");
+			printf("\r\nRemote>Repeat demo ? (enter yes or no) \r\n");
 			scanf("%s", ubuff);
 			if ((strcmp(ubuff, "no")) && (strcmp(ubuff, "yes"))) {
-				printf
-				    ("\r\nRemote>Invalid option. Starting again....\r\n");
+				printf("\r\nRemote>Invalid option. Starting again....\r\n");
 			} else if ((!strcmp(ubuff, "no"))) {
-				printf
-				    ("\r\nRemote>RPC retargetting quitting ...\r\n");
+				printf("\r\nRemote>RPC retargetting quitting ...\r\n");
 				sprintf(wbuff, RPC_CHANNEL_READY_TO_CLOSE);
 				break;
 			}
 		}
 	}
-	printf
-	    ("\r\nRemote> Firmware's rpmsg-openamp-demo-channel going down! \r\n");
-	rpmsg_retarget_send(wbuff,
-			    sizeof (RPC_CHANNEL_READY_TO_CLOSE) + 1);
 
-	while (chnl_cb_flag)
+	printf("\r\nRemote> Firmware's rpmsg-openamp-demo-channel going down! \r\n");
+
+	rpmsg_retarget_send(wbuff, sizeof (RPC_CHANNEL_READY_TO_CLOSE) + 1);
+
+	while (chnl_is_alive)
 		hil_poll(proc->proc, 0);
 
 	rpmsg_retarget_deinit(app_rp_chnl);
@@ -172,21 +159,28 @@ int main()
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
 {
 	app_rp_chnl = rp_chnl;
-	chnl_cb_flag = 1;
+	chnl_is_alive = 1;
 }
 
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
 {
+	(void)rp_chnl;
 	app_rp_chnl = NULL;
 }
 
 static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 			  void *priv, unsigned long src)
 {
+	(void)rp_chnl;
+	(void)data;
+	(void)len;
+	(void)priv;
+	(void)src;
 }
 
 static void shutdown_cb(struct rpmsg_channel *rp_chnl)
 {
-	chnl_cb_flag = 0;
+	(void)rp_chnl;
+	chnl_is_alive = 0;
 }
 
