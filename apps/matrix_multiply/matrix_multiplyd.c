@@ -28,13 +28,13 @@ static void Matrix_Multiply(const matrix * m, const matrix * n, matrix * r);
 
 /* Globals */
 static struct rpmsg_channel *app_rp_chnl;
-void *mat_mul_lock;
-int need_to_cal = 0;
 static struct rpmsg_endpoint *rp_ept;
 static matrix matrix_array[NUM_MATRIX];
 static matrix matrix_result;
 static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
+static int evt_chnl_deleted = 0;
+
 extern const struct remote_resource_table resources;
 extern struct rproc_info_plat_local proc_table;
 
@@ -43,7 +43,7 @@ extern void init_system();
 extern void cleanup_system();
 
 /* Application entry point */
-int main()
+int main(void)
 {
 
 	int status = 0;
@@ -60,20 +60,20 @@ int main()
 				     rpmsg_channel_created,
 				     rpmsg_channel_deleted, rpmsg_read_cb,
 				     &proc, 0);
-	if (status < 0) {
+	if (RPROC_SUCCESS != status) {
 		return -1;
 	}
 
 	do {
 		hil_poll(proc->proc, 0);
-	} while (!app_rp_chnl);
+	} while (!evt_chnl_deleted);
 
-	while(app_rp_chnl) {
-		hil_poll(proc->proc, 0);
-	}
+	remoteproc_resource_deinit(proc);
+	cleanup_system();
 
 	return 0;
 }
+
 
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
 {
@@ -84,6 +84,8 @@ static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
 
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
 {
+	(void)rp_chnl;
+
 	rpmsg_destroy_ept(rp_ept);
 	rp_ept = NULL;
 	app_rp_chnl = NULL;
@@ -92,9 +94,12 @@ static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
 static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 			  void *priv, unsigned long src)
 {
-	if ((*(int *)data) == SHUTDOWN_MSG) {
-		remoteproc_resource_deinit(proc);
-		cleanup_system();
+	(void)rp_chnl;
+	(void)priv;
+	(void)src;
+
+	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
+		evt_chnl_deleted = 1;
 	} else {
 		memcpy(matrix_array, data, len);
 		/* Process received data and multiple matrices. */
@@ -108,7 +113,7 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 
 static void Matrix_Multiply(const matrix * m, const matrix * n, matrix * r)
 {
-	int i, j, k;
+	unsigned int i, j, k;
 
 	memset(r, 0x0, sizeof(matrix));
 	r->size = m->size;
