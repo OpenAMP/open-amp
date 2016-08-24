@@ -208,7 +208,7 @@ int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
 				struct metal_sg *sg, int writable,
 				boolean has_next);
 
-void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len);
+void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len, uint16_t *idx);
 
 void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
 				     uint32_t * len);
@@ -229,5 +229,7 @@ void virtqueue_dump(struct virtqueue *vq);
 void virtqueue_notification(struct virtqueue *vq);
 
 uint32_t virtqueue_get_desc_size(struct virtqueue *vq);
+
+uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx);
 
 #endif				/* VIRTQUEUE_H_ */

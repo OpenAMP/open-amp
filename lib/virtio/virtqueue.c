@@ -266,10 +266,11 @@ int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
  *
  * @param vq            - Pointer to VirtIO queue control block
  * @param len           - Length of conumed buffer
+ * @param idx           - index of the buffer
  *
  * @return              - Pointer to used buffer
  */
-void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len)
+void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len, uint16_t * idx)
 {
 	struct vring_used_elem *uep;
 	void *cookie;
@@ -294,9 +295,16 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len)
 	cookie = vq->vq_descx[desc_idx].cookie;
 	vq->vq_descx[desc_idx].cookie = VQ_NULL;
 
+	if (idx != VQ_NULL)
+		*idx = used_idx;
 	VQUEUE_IDLE(vq);
 
 	return (cookie);
+}
+
+uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx)
+{
+	return vq->vq_ring.desc[idx].len;
 }
 
 /**

@@ -79,6 +79,10 @@
 #define RPMSG_ERR_DEV_INIT                      (RPMSG_ERROR_BASE - 7)
 #define RPMSG_ERR_DEV_ADDR                      (RPMSG_ERROR_BASE - 8)
 
+/* Zero-Copy extension macros */
+#define RPMSG_HDR_FROM_BUF(buf)             (struct rpmsg_hdr *)((char*)buf - \
+                                            sizeof(struct rpmsg_hdr))
+
 #if (RPMSG_DEBUG == true)
 #define RPMSG_ASSERT(_exp, _msg) do{ \
     if (!(_exp)){ openamp_print("%s - "_msg, __func__); while(1);} \
