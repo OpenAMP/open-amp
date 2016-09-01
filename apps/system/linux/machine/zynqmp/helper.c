@@ -36,7 +36,7 @@
 #include "metal/device.h"
 #include "metal/io.h"
 
-#define SHM_DEV_NAME "3ed10000.shm"
+#define SHM_DEV_NAME "3ed80000.shm"
 #define SHM_BUS_NAME "platform"
 
 static struct metal_device *shm_dev;
