@@ -48,8 +48,8 @@
 
 #define NUM_VRINGS                  0x02
 #define VRING_ALIGN                 0x1000
-#define RING_TX                     0x3ED00000
-#define RING_RX                     0x3ED04000
+#define RING_TX                     0x3ED40000
+#define RING_RX                     0x3ED44000
 #define VRING_SIZE                  256
 
 #define NUM_TABLE_ENTRIES           1

@@ -79,7 +79,7 @@ struct rproc_info_plat_local proc_table = {
 		"ff340000.ipi",
 		&chn_ipi_info[0],
 		"platform",
-		"3ed00000.vring",
+		"3ed40000.vring",
 	},
 	/* vring0 ipi device and vring descriptors memory device */
 	{
@@ -88,7 +88,7 @@ struct rproc_info_plat_local proc_table = {
 		"ff340000.ipi",
 		&chn_ipi_info[1],
 		"platform",
-		"3ed00000.vring",
+		"3ed40000.vring",
 	},
 	/* Shared memory device */
 	{
