@@ -157,7 +157,7 @@ typedef void vq_notify(struct virtqueue *);
 #if (VQUEUE_DEBUG == true)
 
 #define VQASSERT(_vq, _exp, _msg) do{ \
-    if (!(_exp)){ printf("%s: %s - "_msg, __func__, (_vq)->vq_name); while(1);} \
+    if (!(_exp)){ openamp_print("%s: %s - "_msg, __func__, (_vq)->vq_name); while(1);} \
     } while(0)
 
 #define VQ_RING_ASSERT_VALID_IDX(_vq, _idx)            \

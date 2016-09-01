@@ -81,7 +81,7 @@
 
 #if (RPMSG_DEBUG == true)
 #define RPMSG_ASSERT(_exp, _msg) do{ \
-    if (!(_exp)){ printf("%s - "_msg, __func__); while(1);} \
+    if (!(_exp)){ openamp_print("%s - "_msg, __func__); while(1);} \
     } while(0)
 #else
 #define RPMSG_ASSERT(_exp, _msg) if (!(_exp)) while(1)
