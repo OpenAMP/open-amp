@@ -39,12 +39,12 @@ static int err_cnt = 0;;
 static struct rpmsg_endpoint *rp_ept;
 static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
-extern const struct remote_resource_table resources;
 
 /* External functions */
 extern void init_system();
 extern void cleanup_system();
 extern struct hil_proc *platform_create_proc(int proc_index);
+extern void *get_resource_table (int rsc_id, int *len);
 
 int __attribute__((weak)) _gettimeofday(struct timeval *tv,
 					void *tz)
@@ -114,30 +114,17 @@ static void matrix_multiply(const matrix * m, const matrix * n, matrix * r)
 }
 
 /* Application entry point */
-int main()
+int app (struct hil_proc *hproc)
 {
 	int shutdown_msg = SHUTDOWN_MSG;
 	int c;
 	int status = 0;
-	struct hil_proc *hproc;
-
-	/* Initialize HW system components */
-	init_system();
-
-	rsc_info.rsc_tab = (struct resource_table *)&resources;
-	rsc_info.size = sizeof(resources);
 
 	LPRINTF("Compute thread unblocked ..\n");
 	LPRINTF("It will generate two random matrices.\n");
 	LPRINTF("Send to the remote and get the computation result back.\n");
 	LPRINTF("It will then check if the result is expected.\n");
 
-	/* Create HIL proc */
-	hproc = platform_create_proc(0);
-	if (!hproc) {
-		LPERROR("Failed to create hil proc.\n");
-		return -1;
-	}
 	/* Initialize RPMSG framework */
 	status =
 	    remoteproc_resource_init(&rsc_info, hproc,
@@ -242,5 +229,37 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 	} else {
 		result_returned = 1;
 	}
+}
+
+int main(int argc, char *argv[])
+{
+	unsigned long proc_id = 0;
+	unsigned long rsc_id = 0;
+	struct hil_proc *hproc;
+
+	/* Initialize HW system components */
+	init_system();
+
+	if (argc >= 2) {
+		proc_id = strtoul(argv[1], NULL, 0);
+	}
+
+	if (argc >= 3) {
+		rsc_id = strtoul(argv[2], NULL, 0);
+	}
+
+	/* Create HIL proc */
+	hproc = platform_create_proc(proc_id);
+	if (!hproc) {
+		LPERROR("Failed to create hil proc.\n");
+		return -1;
+	}
+	rsc_info.rsc_tab = get_resource_table(
+		(int)rsc_id, &rsc_info.size);
+	if (!rsc_info.rsc_tab) {
+		LPRINTF("Failed to get resource table data.\n");
+		return -1;
+	}
+	return app(hproc);
 }
 

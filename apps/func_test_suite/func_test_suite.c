@@ -11,6 +11,9 @@
 
 #define EPT_ADDR        59
 
+#define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
+#define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
+
 /* Application provided callbacks */
 void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
 void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
@@ -30,30 +33,18 @@ static unsigned int Len;
 static char firmware_name[] = "baremetal-fn-test-suite-remote-firmware";
 static char r_buffer[512];
 static struct rsc_table_info rsc_info;
-extern const struct remote_resource_table resources;
 
 /* External functions */
 extern void init_system();
 extern void cleanup_system();
 extern struct hil_proc *platform_create_proc(int proc_index);
+extern void *get_resource_table (int rsc_id, int *len);
 
-int main()
+int app (struct hil_proc *hproc)
 {
-	struct hil_proc *proc;
 	struct remote_proc *proc;
 	int uninit = 0;
 	struct ept_cmd_data *ept_data;
-
-	/* Initialize HW system components */
-	init_system();
-
-	rsc_info.rsc_tab = (struct resource_table *)&resources;
-	rsc_info.size = sizeof(resources);
-
-	/* Create HIL proc */
-	hproc = platform_create_proc(0);
-	if (!hproc)
-		return -1;
 
 	/* This API creates the virtio devices for this remote node and initializes
 	   other relevant resources defined in the resource table */
@@ -155,5 +146,37 @@ void sleep()
 {
 	int i;
 	for (i = 0; i < 1000; i++) ;
+}
+
+int main(int argc, char *argv[])
+{
+	unsigned long proc_id = 0;
+	unsigned long rsc_id = 0;
+	struct hil_proc *hproc;
+
+	/* Initialize HW system components */
+	init_system();
+
+	if (argc >= 2) {
+		proc_id = strtoul(argv[1], NULL, 0);
+	}
+
+	if (argc >= 3) {
+		rsc_id = strtoul(argv[2], NULL, 0);
+	}
+
+	/* Create HIL proc */
+	hproc = platform_create_proc(proc_id);
+	if (!hproc) {
+		LPERROR("Failed to create hil proc.\n");
+		return -1;
+	}
+	rsc_info.rsc_tab = get_resource_table(
+		(int)rsc_id, &rsc_info.size);
+	if (!rsc_info.rsc_tab) {
+		LPRINTF("Failed to get resource table data.\n");
+		return -1;
+	}
+	return app(hproc);
 }
 

@@ -1,6 +1,6 @@
 /* This is a sample demonstration application that showcases usage of remoteproc
-and rpmsg APIs on the remote core. This application is meant to run on the remote CPU 
-running baremetal code. This applicationr receives two matrices from the master, 
+and rpmsg APIs on the remote core. This application is meant to run on the remote CPU
+running baremetal code. This applicationr receives two matrices from the master,
 multiplies them and returns the result to the master core. */
 
 #include <stdio.h>
@@ -12,6 +12,10 @@ multiplies them and returns the result to the master core. */
 #define	MAX_SIZE                6
 #define NUM_MATRIX              2
 #define SHUTDOWN_MSG            0xEF56A55A
+
+//#define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
+#define LPRINTF(format, ...)
+#define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
 typedef struct _matrix {
 	unsigned int size;
@@ -34,30 +38,18 @@ static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
 static int evt_chnl_deleted = 0;
 
-extern const struct remote_resource_table resources;
 extern struct hil_proc *platform_create_proc(int proc_index);
+extern void *get_resource_table (int rsc_id, int *len);
 
 /* External functions */
 extern void init_system();
 extern void cleanup_system();
 
 /* Application entry point */
-int main(void)
+int app (struct hil_proc *hproc)
 {
 
 	int status = 0;
-	struct hil_proc *hproc;
-
-	/* Initialize HW system components */
-	init_system();
-
-	rsc_info.rsc_tab = (struct resource_table *)&resources;
-	rsc_info.size = sizeof(resources);
-
-	/* Create HIL proc */
-	hproc = platform_create_proc(0);
-	if (!hproc)
-		return -1;
 
 	/* Initialize RPMSG framework */
 	status =
@@ -131,5 +123,37 @@ static void Matrix_Multiply(const matrix * m, const matrix * n, matrix * r)
 			}
 		}
 	}
+}
+
+int main(int argc, char *argv[])
+{
+	unsigned long proc_id = 0;
+	unsigned long rsc_id = 0;
+	struct hil_proc *hproc;
+
+	/* Initialize HW system components */
+	init_system();
+
+	if (argc >= 2) {
+		proc_id = strtoul(argv[1], NULL, 0);
+	}
+
+	if (argc >= 3) {
+		rsc_id = strtoul(argv[2], NULL, 0);
+	}
+
+	/* Create HIL proc */
+	hproc = platform_create_proc(proc_id);
+	if (!hproc) {
+		LPERROR("Failed to create hil proc.\n");
+		return -1;
+	}
+	rsc_info.rsc_tab = get_resource_table(
+		(int)rsc_id, &rsc_info.size);
+	if (!rsc_info.rsc_tab) {
+		LPRINTF("Failed to get resource table data.\n");
+		return -1;
+	}
+	return app(hproc);
 }
 
