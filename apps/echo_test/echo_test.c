@@ -9,7 +9,6 @@ This application echoes back data that was sent to it by the master core. */
 #include "openamp/open_amp.h"
 #include "metal/alloc.h"
 #include "rsc_table.h"
-#include "platform_info.h"
 
 #define SHUTDOWN_MSG	0xEF56A55A
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
@@ -47,11 +46,11 @@ static struct _payload *i_payload;
 static int rnum = 0;
 static int err_cnt = 0;
 extern const struct remote_resource_table resources;
-extern struct rproc_info_plat_local proc_table;
 
 /* External functions */
 extern void init_system();
 extern void cleanup_system();
+extern struct hil_proc *platform_create_proc(int proc_index);
 
 /* Application entry point */
 int main()
@@ -61,6 +60,7 @@ int main()
 	int i;
 	int size;
 	int expect_rnum = 0;
+	struct hil_proc *hproc;
 
 	LPRINTF(" 1 - Send data to remote core, retrieve the echo");
 	LPRINTF(" and validate its integrity ..\n");
@@ -79,15 +79,21 @@ int main()
 		return -1;
 	}
 
+	/* Create HIL proc */
+	hproc = platform_create_proc(0);
+	if (!hproc) {
+		LPERROR("Failed to create hil proc.\n");
+		return -1;
+	}
 	/* Initialize RPMSG framework */
 	status =
-	    remoteproc_resource_init(&rsc_info, &proc_table,
+	    remoteproc_resource_init(&rsc_info, hproc,
 				     rpmsg_channel_created,
 				     rpmsg_channel_deleted, rpmsg_read_cb,
 				     &proc, 1);
 
 	if (status) {
-		LPERROR("Failed  to initialize remoteproc resource.\n");
+		LPERROR("Failed to initialize remoteproc resource.\n");
 		return -1;
 	}
 

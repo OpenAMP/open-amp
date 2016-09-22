@@ -11,7 +11,6 @@
 #include "openamp/rpmsg_retarget.h"
 #include "metal/alloc.h"
 #include "rsc_table.h"
-#include "platform_info.h"
 
 #define PROXY_ENDPOINT			127
 
@@ -55,11 +54,11 @@ static struct _proxy_data *proxy;
 static int err_cnt = 0;
 
 extern const struct remote_resource_table resources;
-extern struct rproc_info_plat_local proc_table;
 
 /* External functions */
 extern void init_system();
 extern void cleanup_system();
+extern struct hil_proc *platform_create_proc(int proc_index);
 
 #define REDEF_O_CREAT 100
 #define REDEF_O_EXCL 200
@@ -257,6 +256,7 @@ int main()
 	int ret = 0;
 	struct sigaction exit_action;
 	struct sigaction kill_action;
+	struct hil_proc *hproc;
 
 	/* Initialize HW system components */
 	init_system();
@@ -291,9 +291,16 @@ int main()
 	rsc_info.rsc_tab = (struct resource_table *)&resources;
 	rsc_info.size = sizeof(resources);
 
+	/* Create HIL proc */
+	hproc = platform_create_proc(0);
+	if (!hproc) {
+		LPERROR("Failed to create hil proc.\n");
+		return -1;
+	}
+
 	/* Initialize RPMSG framework */
 	status =
-	    remoteproc_resource_init(&rsc_info, &proc_table,
+	    remoteproc_resource_init(&rsc_info, hproc,
 				     rpmsg_channel_created,
 				     rpmsg_channel_deleted, rpmsg_read_cb,
 				     &proc, 1);

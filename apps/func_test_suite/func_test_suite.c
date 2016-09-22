@@ -8,7 +8,6 @@
 #include "openamp/open_amp.h"
 #include "rsc_table.h"
 #include "test_suite.h"
-#include "platform_info.h"
 
 #define EPT_ADDR        59
 
@@ -32,14 +31,15 @@ static char firmware_name[] = "baremetal-fn-test-suite-remote-firmware";
 static char r_buffer[512];
 static struct rsc_table_info rsc_info;
 extern const struct remote_resource_table resources;
-extern struct rproc_info_plat_local proc_table;
 
 /* External functions */
 extern void init_system();
 extern void cleanup_system();
+extern struct hil_proc *platform_create_proc(int proc_index);
 
 int main()
 {
+	struct hil_proc *proc;
 	struct remote_proc *proc;
 	int uninit = 0;
 	struct ept_cmd_data *ept_data;
@@ -50,9 +50,14 @@ int main()
 	rsc_info.rsc_tab = (struct resource_table *)&resources;
 	rsc_info.size = sizeof(resources);
 
+	/* Create HIL proc */
+	hproc = platform_create_proc(0);
+	if (!hproc)
+		return -1;
+
 	/* This API creates the virtio devices for this remote node and initializes
 	   other relevant resources defined in the resource table */
-	remoteproc_resource_init(&rsc_info, &proc_table,
+	remoteproc_resource_init(&rsc_info, hproc,
 				 rpmsg_channel_created,
 				 rpmsg_channel_deleted, rpmsg_read_default_cb,
 				 &proc, 0);

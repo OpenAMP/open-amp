@@ -3,7 +3,6 @@ This application is meant to run on the remote CPU running baremetal code.
 This application echoes back data that was sent to it by the master core. */
 
 #include "rsc_table.h"
-#include "platform_info.h"
 
 #define SHUTDOWN_MSG	0xEF56A55A
 
@@ -19,16 +18,17 @@ static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
 static int evt_chnl_deleted = 0;
 extern const struct remote_resource_table resources;
-extern struct rproc_info_plat_local proc_table;
 
 /* External functions */
 extern void init_system(void);
 extern void cleanup_system(void);
+extern struct hil_proc *platform_create_proc(int proc_index);
 
 /* Application entry point */
 int main(void)
 {
 	int status = 0;
+	struct hil_proc *hproc;
 
 	/* Initialize HW system components */
 	init_system();
@@ -36,9 +36,14 @@ int main(void)
 	rsc_info.rsc_tab = (struct resource_table *)&resources;
 	rsc_info.size = sizeof(resources);
 
+	/* Create HIL proc */
+	hproc = platform_create_proc(0);
+	if (!hproc)
+		return -1;
+
 	/* Initialize RPMSG framework */
 	status =
-	    remoteproc_resource_init(&rsc_info, &proc_table,
+	    remoteproc_resource_init(&rsc_info, hproc,
 				     rpmsg_channel_created,
 				     rpmsg_channel_deleted, rpmsg_read_cb,
 				     &proc, 0);

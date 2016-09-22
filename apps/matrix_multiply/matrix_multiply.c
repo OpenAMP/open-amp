@@ -10,7 +10,6 @@ multiplies them and returns the result to the master core. */
 #include <unistd.h>
 #include "openamp/open_amp.h"
 #include "rsc_table.h"
-#include "platform_info.h"
 
 #define	MAX_SIZE                6
 #define NUM_MATRIX              2
@@ -41,11 +40,11 @@ static struct rpmsg_endpoint *rp_ept;
 static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
 extern const struct remote_resource_table resources;
-extern struct rproc_info_plat_local proc_table;
 
 /* External functions */
 extern void init_system();
 extern void cleanup_system();
+extern struct hil_proc *platform_create_proc(int proc_index);
 
 int __attribute__((weak)) _gettimeofday(struct timeval *tv,
 					void *tz)
@@ -120,6 +119,7 @@ int main()
 	int shutdown_msg = SHUTDOWN_MSG;
 	int c;
 	int status = 0;
+	struct hil_proc *hproc;
 
 	/* Initialize HW system components */
 	init_system();
@@ -132,9 +132,15 @@ int main()
 	LPRINTF("Send to the remote and get the computation result back.\n");
 	LPRINTF("It will then check if the result is expected.\n");
 
+	/* Create HIL proc */
+	hproc = platform_create_proc(0);
+	if (!hproc) {
+		LPERROR("Failed to create hil proc.\n");
+		return -1;
+	}
 	/* Initialize RPMSG framework */
 	status =
-	    remoteproc_resource_init(&rsc_info, &proc_table,
+	    remoteproc_resource_init(&rsc_info, hproc,
 				     rpmsg_channel_created,
 				     rpmsg_channel_deleted, rpmsg_read_cb,
 				     &proc, 1);

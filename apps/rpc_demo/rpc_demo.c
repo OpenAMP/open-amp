@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include "openamp/open_amp.h"
 #include "rsc_table.h"
-#include "platform_info.h"
 #include "openamp/rpmsg_retarget.h"
 
 /* Internal functions */
@@ -25,11 +24,11 @@ static volatile int chnl_is_alive = 0;
 static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
 extern const struct remote_resource_table resources;
-extern struct rproc_info_plat_local proc_table;
 
 /* External functions */
 extern void init_system();
 extern void cleanup_system();
+extern struct hil_proc *platform_create_proc(int proc_index);
 
 #define REDEF_O_CREAT 100
 #define REDEF_O_EXCL 200
@@ -53,6 +52,7 @@ int main()
 	int idata;
 	int ret;
 	int status;
+	struct hil_proc *hproc;
 
 	/* Initialize HW system components */
 	init_system();
@@ -61,8 +61,13 @@ int main()
 	rsc_info.rsc_tab = (struct resource_table *)&resources;
 	rsc_info.size = sizeof(resources);
 
+	/* Create HIL proc */
+	hproc = platform_create_proc(0);
+	if (!hproc)
+		return -1;
+
 	/* Initialize RPMSG framework */
-	status = remoteproc_resource_init(&rsc_info, &proc_table,
+	status = remoteproc_resource_init(&rsc_info, hproc,
 					  rpmsg_channel_created,
 					  rpmsg_channel_deleted, rpmsg_read_cb,
 					  &proc, 0);
