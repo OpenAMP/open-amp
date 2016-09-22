@@ -41,68 +41,35 @@
  **************************************************************************/
 
 #include "openamp/hil.h"
-#include "openamp/remoteproc_plat.h"
 #include "metal/atomic.h"
-#include "platform_info.h"
 
-#define IPI_CHN_BITMASK                   0x00000100 /* IPI channel bit mask APU<->RPU0 */
-#define REMOTE_CPU_ID                     0
+#define RPU_CPU_ID             0 /* RPU ID */
+#define IPI_CHN_BITMASK        0x00000100 /* IPI channel bit mask APU<->RPU0 */
+#define RPMSG_CHAN_NAME        "rpmsg-openamp-demo-channel"
+#define DEV_BUS_NAME           "platform"
+#define IPI_DEV_NAME           "ff340000.ipi"
+#define VRING_DEV_NAME         "3ed40000.vring"
+#define SHM_DEV_NAME           "3ed80000.shm"
 
 /* -- FIX ME: ipi info is to be defined -- */
 struct ipi_info {
-	uint32_t ipi_chn_mask;
-	int need_reg;
-	atomic_int sync;
+        const char *name;
+        const char *bus_name;
+        struct meta_device *dev;
+        struct metal_io_region *io;
+	metal_phys_addr_t paddr;
+        uint32_t ipi_chn_mask;
+        int need_reg;
+        atomic_int sync;
 };
-/* Reference implementation that show cases platform_get_cpu_info and 
- platform_get_for_firmware API implementation for Bare metal environment */
 
 extern struct hil_platform_ops zynqmp_a53_r5_proc_ops;
 
 static struct ipi_info chn_ipi_info[] = {
-	{ IPI_CHN_BITMASK, 1, 0},
-	{ IPI_CHN_BITMASK, 0, 0},
+	{IPI_DEV_NAME, DEV_BUS_NAME, NULL, NULL, 0, IPI_CHN_BITMASK, 1, 0},
+	{IPI_DEV_NAME, DEV_BUS_NAME, NULL, NULL, 0, IPI_CHN_BITMASK, 0, 0},
 };
 
-struct rproc_info_plat_local proc_table = {
-	{
-		/* CPU ID of master */
-		REMOTE_CPU_ID,
-
-		/* HIL platform ops table. */
-		&zynqmp_a53_r5_proc_ops,
-	},
-	/* vring0 ipi device and vring descriptors memory device */
-	{
-		PLAT_RSC_VRING,
-		"platform",
-		"ff340000.ipi",
-		&chn_ipi_info[0],
-		"platform",
-		"3ed40000.vring",
-	},
-	/* vring0 ipi device and vring descriptors memory device */
-	{
-		PLAT_RSC_VRING,
-		"platform",
-		"ff340000.ipi",
-		&chn_ipi_info[1],
-		"platform",
-		"3ed40000.vring",
-	},
-	/* Shared memory device */
-	{
-		PLAT_RSC_SHM,
-		"shm",
-		0, /* UNDEFINED, up to the I/O region size */
-	},
-	/* Shared memory device */
-	{
-		PLAT_RSC_RPMSG_CHANNEL,
-		"rpmsg-openamp-demo-channel",
-	},
-	PLAT_RSC_LAST,
-};
 
 const struct firmware_info fw_table[] =
 {
@@ -111,4 +78,25 @@ const struct firmware_info fw_table[] =
 	 0}
 };
 
-int fw_table_size = sizeof(fw_table)/sizeof(struct firmware_info);
+const int fw_table_size = sizeof(fw_table)/sizeof(struct firmware_info);
+
+struct hil_proc *platform_create_proc(int proc_index)
+{
+	(void) proc_index;
+	struct hil_proc *proc;
+	proc = hil_create_proc(&zynqmp_a53_r5_proc_ops, RPU_CPU_ID, NULL);
+	if (!proc)
+		return NULL;
+
+	/* Setup IPI info */
+	hil_set_ipi(proc, 0, (unsigned int)(-1), (void *)&chn_ipi_info[0]);
+	hil_set_ipi(proc, 1, (unsigned int)(-1), (void *)&chn_ipi_info[1]);
+	/* Setup vring info */
+	hil_set_vring(proc, 0, DEV_BUS_NAME, VRING_DEV_NAME);
+	hil_set_vring(proc, 1, DEV_BUS_NAME, VRING_DEV_NAME);
+	/* Setup shared memory info */
+	hil_set_shm (proc, DEV_BUS_NAME, SHM_DEV_NAME, 0, 0x40000);
+	/* Setup RPMSG channel info */
+	hil_set_rpmsg_channel(proc, 0, RPMSG_CHAN_NAME);
+	return proc;
+}

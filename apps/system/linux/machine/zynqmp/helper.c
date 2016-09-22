@@ -32,53 +32,17 @@
 #include <string.h>
 #include <stdio.h>
 #include "metal/sys.h"
-#include "metal/shmem.h"
-#include "metal/device.h"
-#include "metal/io.h"
-
-#define SHM_DEV_NAME "3ed80000.shm"
-#define SHM_BUS_NAME "platform"
-
-static struct metal_device *shm_dev;
-static struct metal_generic_shmem shm;
 
 void init_system()
 {
-	int ret;
-	struct metal_io_region *io;
 	struct metal_init_params metal_param = METAL_INIT_DEFAULTS;
 
 	metal_init(&metal_param);
 
-	/* Register the UIO shared memory */
-	/* This will be a temporary solution, we should
-	 * use DMA memory in fugure.
-	 */
-	ret = metal_device_open(SHM_BUS_NAME, SHM_DEV_NAME, &shm_dev);
-	if (ret) {
-		fprintf(stderr, "ERROR: Failed to open shared memory device.\n");
-		return;
-	}
-	io = metal_device_io_region(shm_dev, 0);
-	if (!io) {
-		fprintf(stderr, "ERROR: Failed to get the I/O region of shared memory.\n");
-		return;
-	}
-
-	memset(&shm, 0, sizeof(struct metal_generic_shmem));
-	shm.name = "shm";
-	memcpy((void *)&shm.io, io, sizeof(struct metal_io_region));
-	ret = metal_shmem_register_generic(&shm);
-	if (ret) {
-		fprintf(stderr, "ERROR: Failed to registered shared memory.\n");
-		return;
-	}
 	return;
 }
 
 void cleanup_system()
 {
-	if (shm_dev)
-		metal_device_close(shm_dev);
 	metal_finish();
 }
