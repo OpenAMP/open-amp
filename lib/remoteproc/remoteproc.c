@@ -45,7 +45,7 @@
  *
  * @param rsc_info          - pointer to resource table info control
  * 							  block
- * @param pdata             - platform data for remote processor
+ * @param proc              - pointer to the hil_proc
  * @param channel_created   - callback function for channel creation
  * @param channel_destroyed - callback function for channel deletion
  * @param default_cb        - default callback for channel I/O
@@ -56,7 +56,7 @@
  *
  */
 int remoteproc_resource_init(struct rsc_table_info *rsc_info,
-			     void *pdata,
+			     struct hil_proc *proc,
 			     rpmsg_chnl_cb_t channel_created,
 			     rpmsg_chnl_cb_t channel_destroyed,
 			     rpmsg_rx_cb_t default_cb,
@@ -68,7 +68,7 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 	int status;
 	int remote_rpmsg_role;
 
-	if (!rsc_info) {
+	if (!rsc_info || !proc) {
 		return RPROC_ERR_PARAM;
 	}
 
@@ -77,8 +77,9 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 		memset(rproc, 0x00, sizeof(struct remote_proc));
 		/* There can be only one master for remote configuration so use the
 		 * rsvd cpu id for creating hil proc */
-		rproc->proc = hil_create_proc(pdata, HIL_RSVD_CPU_ID);
-		if (rproc->proc) {
+		rproc->proc = proc;
+		status = hil_init_proc(proc);
+		if (!status) {
 			/* Parse resource table */
 			status =
 			    handle_rsc_table(rproc, rsc_info->rsc_tab,
@@ -89,7 +90,7 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 				remote_rpmsg_role = (rpmsg_role == RPMSG_MASTER?
 						RPMSG_REMOTE : RPMSG_MASTER);
 				status =
-				    rpmsg_init(NULL, rproc->proc->cpu_id,
+				    rpmsg_init(proc,
 					       &rproc->rdev, channel_created,
 					       channel_destroyed, default_cb,
 					       remote_rpmsg_role);
@@ -97,7 +98,7 @@ int remoteproc_resource_init(struct rsc_table_info *rsc_info,
 				status = RPROC_ERR_NO_RSC_TABLE;
 			}
 		} else {
-			status = RPROC_ERR_CPU_ID;
+			status = RPROC_ERR_CPU_INIT;
 		}
 	} else {
 		status = RPROC_ERR_NO_MEM;
@@ -142,7 +143,7 @@ int remoteproc_resource_deinit(struct remote_proc *rproc)
  * remoteproc master applications are allowed to call this function.
  *
  * @param fw_name           - name of frimware
- * @param pdata             - platform data for remote processor
+ * @param proc              - pointer to hil_proc
  * @param channel_created   - callback function for channel creation
  * @param channel_destroyed - callback function for channel deletion
  * @param default_cb        - default callback for channel I/O
@@ -151,7 +152,7 @@ int remoteproc_resource_deinit(struct remote_proc *rproc)
  * @param returns - status of function execution
  *
  */
-int remoteproc_init(char *fw_name, void *pdata,
+int remoteproc_init(char *fw_name, struct hil_proc *proc,
 		    rpmsg_chnl_cb_t channel_created,
 		    rpmsg_chnl_cb_t channel_destroyed, rpmsg_rx_cb_t default_cb,
 		    struct remote_proc **rproc_handle)
@@ -171,8 +172,8 @@ int remoteproc_init(char *fw_name, void *pdata,
 	if (rproc) {
 		memset((void *)rproc, 0x00, sizeof(struct remote_proc));
 		/* Create proc instance */
-		rproc->proc = hil_create_proc(pdata, HIL_RSVD_CPU_ID);
-		if (rproc->proc) {
+		status = hil_init_proc(proc);
+		if (!status) {
 			/* Retrieve firmware attributes */
 			status =
 			    hil_get_firmware(fw_name, &fw_addr,
@@ -192,7 +193,7 @@ int remoteproc_init(char *fw_name, void *pdata,
 				}
 			}
 		} else {
-			status = RPROC_ERR_NO_MEM;
+			status = RPROC_ERR_CPU_INIT;
 		}
 	} else {
 		status = RPROC_ERR_NO_MEM;
@@ -301,14 +302,14 @@ int remoteproc_boot(struct remote_proc *rproc)
 				   configuration only. */
 #if defined (OPENAMP_REMOTE_LINUX_ENABLE)
 				status =
-				    rpmsg_init(NULL, rproc->proc->cpu_id,
+				    rpmsg_init(rproc->proc,
 					       &rproc->rdev,
 					       rproc->channel_created,
 					       rproc->channel_destroyed,
 					       rproc->default_cb, RPMSG_MASTER);
 #else
 				status =
-				    rpmsg_init(NULL, rproc->proc->cpu_id,
+				    rpmsg_init(rproc->proc,
 					       &rproc->rdev,
 					       rproc->channel_created,
 					       rproc->channel_destroyed,

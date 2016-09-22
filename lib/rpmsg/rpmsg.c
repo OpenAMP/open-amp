@@ -62,12 +62,10 @@
  * rpmsg_init
  *
  * Thus function allocates and initializes the rpmsg driver resources for
- * given device ID(cpu id). The successful return from this function leaves
+ * given hil_proc. The successful return from this function leaves
  * fully enabled IPC link.
  *
- * @param pdata             - platform data for remote processor
- * @param dev_id            - remote device for which driver is to
- *                            be initialized
+ * @param proc              - pointer to hil_proc
  * @param rdev              - pointer to newly created remote device
  * @param channel_created   - callback function for channel creation
  * @param channel_destroyed - callback function for channel deletion
@@ -78,7 +76,8 @@
  *
  */
 
-int rpmsg_init(void *pdata, int dev_id, struct remote_device **rdev,
+int rpmsg_init(struct hil_proc *proc,
+	       struct remote_device **rdev,
 	       rpmsg_chnl_cb_t channel_created,
 	       rpmsg_chnl_cb_t channel_destroyed,
 	       rpmsg_rx_cb_t default_cb, int role)
@@ -86,7 +85,8 @@ int rpmsg_init(void *pdata, int dev_id, struct remote_device **rdev,
 	int status;
 
 	/* Initialize the remote device for given cpu id */
-	status = rpmsg_rdev_init(pdata, rdev, dev_id, role, channel_created,
+	status = rpmsg_rdev_init(proc, rdev, role,
+				 channel_created,
 				 channel_destroyed, default_cb);
 	if (status == RPMSG_SUCCESS) {
 		/* Kick off IPC with the remote device */

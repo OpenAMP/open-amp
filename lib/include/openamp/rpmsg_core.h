@@ -76,7 +76,7 @@
 #define RPMSG_ERR_PARAM                         (RPMSG_ERROR_BASE - 4)
 #define RPMSG_ERR_DEV_STATE                     (RPMSG_ERROR_BASE - 5)
 #define RPMSG_ERR_BUFF_SIZE                     (RPMSG_ERROR_BASE - 6)
-#define RPMSG_ERR_DEV_ID                        (RPMSG_ERROR_BASE - 7)
+#define RPMSG_ERR_DEV_INIT                      (RPMSG_ERROR_BASE - 7)
 #define RPMSG_ERR_DEV_ADDR                      (RPMSG_ERROR_BASE - 8)
 
 #if (RPMSG_DEBUG == true)
@@ -162,7 +162,8 @@ void rpmsg_ns_callback(struct rpmsg_channel *server_chnl,
 		       void *data, int len, void *priv, unsigned long src);
 
 /* Remote device functions */
-int rpmsg_rdev_init(void *pdata, struct remote_device **rdev, int dev_id, int role,
+int rpmsg_rdev_init(struct hil_proc *proc,
+		    struct remote_device **rdev, int role,
 		    rpmsg_chnl_cb_t channel_created,
 		    rpmsg_chnl_cb_t channel_destroyed,
 		    rpmsg_rx_cb_t default_cb);

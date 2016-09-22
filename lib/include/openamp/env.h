@@ -65,7 +65,7 @@
 #define openamp_print(format, ...) printf(format, ##__VA_ARGS__)
 
 #ifdef OPENAMP_DEBUG
-#define openamp_dbg(format, ...) openamp_print(i"DEBUG: " format, ##__VA_ARGS__)
+#define openamp_dbg(format, ...) openamp_print("DEBUG: " format, ##__VA_ARGS__)
 #else
 #define openamp_dbg(...)
 #endif
