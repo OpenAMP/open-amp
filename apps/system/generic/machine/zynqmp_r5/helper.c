@@ -43,8 +43,6 @@
 /** IPI IRQ ID */
 #define IPI_IRQ_VECT_ID         65
 
-extern int platform_register_metal_device(void);
-
 static XScuGic InterruptController;
 
 
@@ -93,7 +91,6 @@ void init_system(void)
 
 	metal_init(&metal_param);
 	zynqmp_r5_gic_initialize();
-	platform_register_metal_device();
 }
 
 void cleanup_system()
