@@ -1,5 +1,4 @@
 collect (APP_COMMON_SOURCES helper.c)
-collect (APP_COMMON_SOURCES sys_init.c)
 
 if (WITH_REMOTEPROC_MASTER)
   set (_linker_script "${CMAKE_CURRENT_SOURCE_DIR}/linker_master.ld")

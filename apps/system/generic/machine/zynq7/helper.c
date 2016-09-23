@@ -44,7 +44,6 @@
 XScuGic InterruptController;
 
 extern void metal_irq_isr(unsigned int irq);
-extern int platform_register_metal_device(void);
 
 int zynq_a9_gic_initialize()
 {
@@ -95,7 +94,6 @@ void init_system()
 
 	metal_init(&metal_param);
 	zynq_a9_gic_initialize();
-	platform_register_metal_device();
 }
 
 void cleanup_system()
