@@ -61,7 +61,7 @@
 #define CARVEOUT_SRC                { RSC_CARVEOUT, ELF_START, ELF_START, ELF_END, 0, 0, "ELF_COUT", },
 
 
-const struct remote_resource_table __resource resources = {
+struct remote_resource_table __resource resources = {
 	/* Version */
 	1,
 
@@ -89,3 +89,11 @@ const struct remote_resource_table __resource resources = {
 	{
 	 RING_RX, VRING_ALIGN, VRING_SIZE, 2, 0},
 };
+
+void *get_resource_table (int rsc_id, int *len)
+{
+	(void) rsc_id;
+	*len = sizeof(resources);
+	return &resources;
+}
+
