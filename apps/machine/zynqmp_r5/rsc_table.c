@@ -69,7 +69,7 @@
 #define CARVEOUT_SRC                {RSC_CARVEOUT, TCM_0_START_DA, TCM_0_START_PA, TCM_0_LEN, 0, 0, "TCM0_COUT",}, \
 				{RSC_CARVEOUT, TCM_1_START_DA, TCM_1_START_PA, TCM_1_LEN, 0, 0, "TCM1_COUT",},
 
-const struct remote_resource_table __resource resources = {
+struct remote_resource_table __resource resources = {
 	/* Version */
 	1,
 
@@ -97,3 +97,11 @@ const struct remote_resource_table __resource resources = {
 	{
 	 RING_RX, VRING_ALIGN, VRING_SIZE, 2, 0},
 };
+
+void *get_resource_table (int rsc_id, int *len)
+{
+	(void) rsc_id;
+	*len = sizeof(resources);
+	return &resources;
+}
+
