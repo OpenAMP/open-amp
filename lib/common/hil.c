@@ -50,6 +50,7 @@
 #include <metal/device.h>
 #include <metal/shmem.h>
 #include <metal/utilities.h>
+#include <metal/time.h>
 
 #define DEFAULT_VRING_MEM_SIZE 0x10000
 
@@ -360,7 +361,7 @@ int hil_boot_cpu(struct hil_proc *proc, unsigned int start_addr)
 		proc->ops->boot_cpu(proc, start_addr);
 	}
 #if defined (OPENAMP_BENCHMARK_ENABLE)
-	boot_time_stamp = env_get_timestamp();
+	boot_time_stamp = metal_get_timestamp();
 #endif
 
 	return 0;
@@ -380,7 +381,7 @@ void hil_shutdown_cpu(struct hil_proc *proc)
 		proc->ops->shutdown_cpu(proc);
 	}
 #if defined (OPENAMP_BENCHMARK_ENABLE)
-	shutdown_time_stamp = env_get_timestamp();
+	shutdown_time_stamp = metal_get_timestamp();
 #endif
 }
 

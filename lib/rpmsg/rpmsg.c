@@ -58,6 +58,7 @@
 #include "openamp/rpmsg.h"
 #include "metal/sys.h"
 #include "metal/cache.h"
+#include "metal/sleep.h"
 
 /**
  * rpmsg_init
@@ -177,7 +178,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
 		 * Wait parameter is true - pool the buffer for
 		 * 15 secs as defined by the APIs.
 		 */
-		env_sleep_msec(RPMSG_TICKS_PER_INTERVAL);
+		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
 		metal_mutex_acquire(&rdev->lock);
 		buffer = rpmsg_get_tx_buffer(rdev, &buff_len, &idx);
 		metal_mutex_release(&rdev->lock);
@@ -333,7 +334,7 @@ void *rpmsg_get_tx_payload_buffer(struct rpmsg_channel *rpdev, uint32_t *size,
 			 * Wait parameter is true - pool the buffer for
 			 * 15 secs as defined by the APIs.
 			 */
-			env_sleep_msec(RPMSG_TICKS_PER_INTERVAL);
+			metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
 			metal_mutex_acquire(&rdev->lock);
 			hdr = (struct rpmsg_hdr *) rpmsg_get_tx_buffer(rdev, &buff_len, &idx);
 			metal_mutex_release(&rdev->lock);

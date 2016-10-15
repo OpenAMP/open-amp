@@ -36,6 +36,7 @@
 #include "openamp/hil.h"
 #include "metal/sys.h"
 #include "metal/alloc.h"
+#include "metal/sleep.h"
 
 /**
  * remoteproc_resource_init
@@ -291,7 +292,7 @@ int remoteproc_boot(struct remote_proc *rproc)
 			if (status == RPROC_SUCCESS) {
 				/* Wait for remote side to come up. This delay is arbitrary and may
 				 * need adjustment for different configuration of remote systems */
-				env_sleep_msec(RPROC_BOOT_DELAY);
+				metal_sleep_usec(RPROC_BOOT_DELAY);
 
 				/* Initialize RPMSG "messaging" component */
 

@@ -70,22 +70,4 @@
 #define openamp_dbg(...)
 #endif
 
-/**
- * env_sleep_msec
- *
- * Suspends the calling thread for given time in msecs.
- *
- * @param num_msec -  delay in msecs
- */
-void env_sleep_msec(int num_msec);
-
-/**
- * env_get_timestamp
- *
- * Returns a 64 bit time stamp.
- *
- *
- */
-unsigned long long env_get_timestamp(void);
-
 #endif				/* _ENV_H_ */
