@@ -277,8 +277,6 @@ static int _initialize(struct hil_proc *proc)
 
 static void _release(struct hil_proc *proc)
 {
-	if (proc) {
-		metal_free_memory(proc);
-	}
+	return;
 }
 
