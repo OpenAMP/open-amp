@@ -277,6 +277,7 @@ static int _initialize(struct hil_proc *proc)
 
 static void _release(struct hil_proc *proc)
 {
+	(void)proc;
 	return;
 }
 
