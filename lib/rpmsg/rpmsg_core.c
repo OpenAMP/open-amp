@@ -291,7 +291,7 @@ void _destroy_endpoint(struct remote_device *rdev,
  * @param flags   - Channel creation/deletion flags
  *
  */
-void rpmsg_send_ns_message(struct remote_device *rdev,
+int rpmsg_send_ns_message(struct remote_device *rdev,
 			   struct rpmsg_channel *rp_chnl, unsigned long flags)
 {
 
@@ -306,7 +306,7 @@ void rpmsg_send_ns_message(struct remote_device *rdev,
 	rp_hdr = (struct rpmsg_hdr *)rpmsg_get_tx_buffer(rdev, &len, &idx);
 	if (!rp_hdr) {
 		metal_mutex_release(&rdev->lock);
-		return;
+		return -RPMSG_ERR_NO_BUFF;
 	}
 
 	/* Fill out name service data. */
@@ -324,6 +324,7 @@ void rpmsg_send_ns_message(struct remote_device *rdev,
 	virtqueue_kick(rdev->tvq);
 
 	metal_mutex_release(&rdev->lock);
+	return RPMSG_SUCCESS;
 }
 
 /**
@@ -513,16 +514,16 @@ static void rpmsg_tx_callback(struct virtqueue *vq)
 			if (rp_chnl->state == RPMSG_CHNL_STATE_IDLE) {
 
 				if (rdev->support_ns) {
-					rp_chnl->state = RPMSG_CHNL_STATE_NS;
+					if (rpmsg_send_ns_message(rdev, rp_chnl,
+						      RPMSG_NS_CREATE) ==
+						RPMSG_SUCCESS)
+						rp_chnl->state =
+							RPMSG_CHNL_STATE_NS;
 				} else {
 					rp_chnl->state =
 					    RPMSG_CHNL_STATE_ACTIVE;
 				}
 
-				if (rp_chnl->state == RPMSG_CHNL_STATE_NS) {
-					rpmsg_send_ns_message(rdev, rp_chnl,
-							      RPMSG_NS_CREATE);
-				}
 			}
 
 		}
@@ -558,9 +559,11 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 				struct rpmsg_channel, node);
 			if (rp_chnl->state == RPMSG_CHNL_STATE_IDLE) {
 				if (rdev->support_ns) {
-					rp_chnl->state = RPMSG_CHNL_STATE_NS;
-					rpmsg_send_ns_message(rdev, rp_chnl,
-						      RPMSG_NS_CREATE);
+					if (rpmsg_send_ns_message(rdev, rp_chnl,
+						      RPMSG_NS_CREATE) ==
+						RPMSG_SUCCESS)
+						rp_chnl->state =
+							RPMSG_CHNL_STATE_NS;
 				} else {
 					rp_chnl->state = RPMSG_CHNL_STATE_ACTIVE;
 				}

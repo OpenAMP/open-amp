@@ -146,7 +146,7 @@ struct rpmsg_endpoint *_create_endpoint(struct remote_device *rdev,
 					unsigned long addr);
 void _destroy_endpoint(struct remote_device *rdev,
 		       struct rpmsg_endpoint *rp_ept);
-void rpmsg_send_ns_message(struct remote_device *rdev,
+int rpmsg_send_ns_message(struct remote_device *rdev,
 			   struct rpmsg_channel *rp_chnl, unsigned long flags);
 int rpmsg_enqueue_buffer(struct remote_device *rdev, void *buffer,
 			 unsigned long len, unsigned short idx);
