@@ -37,6 +37,7 @@ rsc_handler rsc_handler_table[] = {
 	handle_trace_rsc,
 	handle_vdev_rsc,
 	handle_rproc_mem_rsc,
+	handle_fw_chksum_rsc,
 	handle_mmu_rsc
 };
 
@@ -245,6 +246,27 @@ int handle_vdev_rsc(struct remote_proc *rproc, void *rsc)
  *
  */
 int handle_rproc_mem_rsc(struct remote_proc *rproc, void *rsc)
+{
+	(void)rproc;
+	(void)rsc;
+
+	/* TODO: the firmware side should handle this resource properly
+	 * when it is the master or when it is the remote. */
+	return RPROC_SUCCESS;
+}
+
+/*
+ * handle_fw_chksum_rsc
+ *
+ * This function parses firmware checksum resource.
+ *
+ * @param rproc - pointer to remote remote_proc
+ * @param rsc   - pointer to mmu resource
+ *
+ * @returns - execution status
+ *
+ */
+int handle_fw_chksum_rsc(struct remote_proc *rproc, void *rsc)
 {
 	(void)rproc;
 	(void)rsc;

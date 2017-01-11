@@ -113,7 +113,8 @@ enum fw_resource_type {
 	RSC_TRACE = 2,
 	RSC_VDEV = 3,
 	RSC_RPROC_MEM = 4,
-	RSC_LAST = 5,
+	RSC_FW_CHKSUM = 5,
+	RSC_LAST = 6,
 };
 
 #define FW_RSC_ADDR_ANY (0xFFFFFFFFFFFFFFFF)
@@ -332,6 +333,22 @@ struct fw_rsc_rproc_mem {
 	uint32_t pa;
 	uint32_t len;
 	uint32_t reserved;
+} OPENAMP_PACKED_END;
+
+/*
+ * struct fw_rsc_fw_chksum - firmware checksum
+ * @algo: algorithm to generate the cheksum
+ * @chksum: checksum of the firmware loadable sections.
+ *
+ * This resource entry provides checksum for the firmware loadable sections.
+ * It is used to check if the remote already runs with the expected firmware to
+ * decide if it needs to start the remote if the remote is already running.
+ */
+OPENAMP_PACKED_BEGIN
+struct fw_rsc_fw_chksum {
+	uint32_t type;
+	uint8_t algo[16];
+	uint8_t chksum[64];
 } OPENAMP_PACKED_END;
 
 /**
