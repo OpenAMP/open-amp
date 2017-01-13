@@ -45,6 +45,7 @@
  **************************************************************************/
 
 #include "openamp/hil.h"
+#include "openamp/remoteproc.h"
 #include <metal/io.h>
 #include <metal/alloc.h>
 #include <metal/device.h>
@@ -236,7 +237,28 @@ struct proc_vdev *hil_get_vdev_info(struct hil_proc *proc)
  */
 struct proc_vring *hil_get_vring_info(struct proc_vdev *vdev, int *num_vrings)
 {
+	struct fw_rsc_vdev *vdev_rsc;
+	struct fw_rsc_vdev_vring *vring_rsc;
+	struct proc_vring *vring;
+	int i;
 
+	vdev_rsc = vdev->vdev_info;
+	if (vdev_rsc) {
+		vring = &vdev->vring_info[0];
+		for (i = 0; i < vdev_rsc->num_of_vrings; i++) {
+			/* Initialize vring with vring resource */
+			vring_rsc = &vdev_rsc->vring[i];
+			vring[i].num_descs = vring_rsc->num;
+			vring[i].align = vring_rsc->align;
+			/* Enable acccess to vring memory region */
+			vring[i].vaddr =
+				metal_io_mem_map(
+					(metal_phys_addr_t)vring_rsc->da,
+					vring[i].io,
+					vring_size(vring_rsc->num,
+					vring_rsc->align));
+		}
+	}
 	*num_vrings = vdev->num_vrings;
 	return (vdev->vring_info);
 

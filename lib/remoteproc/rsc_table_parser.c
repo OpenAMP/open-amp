@@ -201,10 +201,7 @@ int handle_vdev_rsc(struct remote_proc *rproc, void *rsc)
 {
 
 	struct fw_rsc_vdev *vdev_rsc = (struct fw_rsc_vdev *)rsc;
-	struct fw_rsc_vdev_vring *vring;
 	struct proc_vdev *vdev;
-	struct proc_vring *vring_table;
-	int idx;
 
 	if (!vdev_rsc) {
 		return RPROC_ERR_RSC_TAB_NP;
@@ -228,21 +225,6 @@ int handle_vdev_rsc(struct remote_proc *rproc, void *rsc)
 	vdev->dfeatures = vdev_rsc->dfeatures;
 	vdev->gfeatures = vdev_rsc->gfeatures;
 	vdev->vdev_info = vdev_rsc;
-	vring_table = &vdev->vring_info[0];
-
-	for (idx = 0; idx < vdev_rsc->num_of_vrings; idx++) {
-		vring = &vdev_rsc->vring[idx];
-
-		/* Initialize HIL vring resources */
-		vring_table[idx].num_descs = vring->num;
-		vring_table[idx].align = vring->align;
-
-		/* Enable access to vring memory regions */
-		vring_table[idx].vaddr =
-			metal_io_mem_map((metal_phys_addr_t)vring->da,
-				vring_table->io,
-				vring_size(vring->num, vring->align));
-	}
 
 	return RPROC_SUCCESS;
 }
