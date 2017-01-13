@@ -186,7 +186,6 @@ static int _initialize(struct hil_proc *proc)
 	int ret;
 	struct proc_intr *intr_info;
 	struct ipi_info *ipi;
-	unsigned int ipi_intr_status;
 	int i;
 
 	if (!proc)
@@ -215,11 +214,6 @@ static int _initialize(struct hil_proc *proc)
 		}
 
 		if (ipi->io) {
-			ipi_intr_status = (unsigned int)metal_io_read32(
-				ipi->io, IPI_ISR_OFFSET);
-			if (ipi_intr_status & ipi->ipi_chn_mask)
-				metal_io_write32(ipi->io, IPI_ISR_OFFSET,
-					ipi->ipi_chn_mask);
 			metal_io_write32(ipi->io, IPI_IDR_OFFSET,
 				ipi->ipi_chn_mask);
 			atomic_store(&ipi->sync, 1);
