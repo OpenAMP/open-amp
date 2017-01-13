@@ -227,6 +227,7 @@ int handle_vdev_rsc(struct remote_proc *rproc, void *rsc)
 	vdev->num_vrings = vdev_rsc->num_of_vrings;
 	vdev->dfeatures = vdev_rsc->dfeatures;
 	vdev->gfeatures = vdev_rsc->gfeatures;
+	vdev->vdev_info = vdev_rsc;
 	vring_table = &vdev->vring_info[0];
 
 	for (idx = 0; idx < vdev_rsc->num_of_vrings; idx++) {
