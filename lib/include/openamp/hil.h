@@ -134,6 +134,8 @@ struct proc_vring {
  *
  */
 struct proc_vdev {
+	/* Address for the vdev info */
+	void *vdev_info;
 	/* Number of vrings */
 	unsigned int num_vrings;
 	/* Virtio device features */
