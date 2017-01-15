@@ -48,8 +48,10 @@
 
 #include <string.h>
 #include "openamp/rpmsg.h"
+#include "openamp/remoteproc.h"
 #include "metal/utilities.h"
 #include "metal/alloc.h"
+#include "metal/atomic.h"
 
 /* Macro to initialize vring HW info */
 #define INIT_VRING_ALLOC_INFO(ring_info,vring_hw)                             \
@@ -467,14 +469,28 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 
 unsigned char rpmsg_rdev_get_status(struct virtio_device *dev)
 {
-	(void)dev;
-	return 0;
+	struct hil_proc *proc = dev->device;
+	struct proc_vdev *pvdev = &proc->vdev;
+	struct fw_rsc_vdev *vdev_rsc = pvdev->vdev_info;
+
+	if (!vdev_rsc)
+		return -1;
+
+	return vdev_rsc->status;
 }
 
 void rpmsg_rdev_set_status(struct virtio_device *dev, unsigned char status)
 {
-	(void)dev;
-	(void)status;
+	struct hil_proc *proc = dev->device;
+	struct proc_vdev *pvdev = &proc->vdev;
+	struct fw_rsc_vdev *vdev_rsc = pvdev->vdev_info;
+
+	if (!vdev_rsc)
+		return;
+
+	vdev_rsc->status = status;
+
+	atomic_thread_fence(memory_order_seq_cst);
 }
 
 uint32_t rpmsg_rdev_get_feature(struct virtio_device *dev)
