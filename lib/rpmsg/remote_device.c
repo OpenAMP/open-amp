@@ -151,6 +151,9 @@ int rpmsg_rdev_init(struct hil_proc *proc,
 		}
 	}
 
+	if (!rpmsg_rdev_remote_ready(rdev_loc))
+		return RPMSG_ERR_DEV_INIT;
+
 	/* Initialize endpoints list */
 	metal_list_init(&rdev_loc->rp_endpoints);
 

@@ -52,6 +52,7 @@
 #include "metal/io.h"
 #include "metal/cache.h"
 #include "metal/alloc.h"
+#include "metal/cpu.h"
 
 /* Internal functions */
 static void rpmsg_rx_callback(struct virtqueue *vq);
