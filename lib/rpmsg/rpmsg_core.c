@@ -134,7 +134,11 @@ int rpmsg_start_ipc(struct remote_device *rdev)
 		}
 	}
 
-	status = rpmsg_rdev_notify(rdev);
+	if (rdev->role == RPMSG_MASTER) {
+		virt_dev->func->set_status(virt_dev,
+			VIRTIO_CONFIG_STATUS_DRIVER_OK);
+		status = rpmsg_rdev_notify(rdev);
+	}
 
 	return status;
 }
