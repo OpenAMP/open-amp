@@ -304,27 +304,9 @@ struct rpmsg_endpoint *rpmsg_rdev_get_endpoint_from_addr(struct remote_device *r
  */
 int rpmsg_rdev_notify(struct remote_device *rdev)
 {
-	int status = RPMSG_SUCCESS;
+	virtqueue_kick(rdev->rvq);
 
-	if (rdev->role == RPMSG_REMOTE) {
-		status = hil_get_status(rdev->proc);
-
-		/*
-		 * Let the remote device know that Master is ready for
-		 * communication.
-		 */
-		if (!status)
-			virtqueue_kick(rdev->rvq);
-
-	} else {
-		status = hil_set_status(rdev->proc);
-	}
-
-	if (status == RPMSG_SUCCESS) {
-		rdev->state = RPMSG_DEV_STATE_ACTIVE;
-	}
-
-	return status;
+	return RPMSG_SUCCESS;
 }
 
 /**
