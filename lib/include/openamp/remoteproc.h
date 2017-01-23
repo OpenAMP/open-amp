@@ -112,7 +112,8 @@ enum fw_resource_type {
 	RSC_DEVMEM = 1,
 	RSC_TRACE = 2,
 	RSC_VDEV = 3,
-	RSC_LAST = 4,
+	RSC_RPROC_MEM = 4,
+	RSC_LAST = 5,
 };
 
 #define FW_RSC_ADDR_ANY (0xFFFFFFFFFFFFFFFF)
@@ -309,6 +310,28 @@ struct fw_rsc_vdev {
 	uint8_t num_of_vrings;
 	uint8_t reserved[2];
 	struct fw_rsc_vdev_vring vring[0];
+} OPENAMP_PACKED_END;
+
+/**
+ * struct fw_rsc_rproc_mem - remote processor memory
+ * @da: device address
+ * @pa: physical address
+ * @len: length (in bytes)
+ * @reserved: reserved (must be zero)
+ *
+ * This resource entry tells the host to the remote processor
+ * memory that the host can be used as shared memory.
+ *
+ * These request entries should precede other shared resource entries
+ * such as vdevs, vrings.
+ */
+OPENAMP_PACKED_BEGIN
+struct fw_rsc_rproc_mem {
+	uint32_t type;
+	uint32_t da;
+	uint32_t pa;
+	uint32_t len;
+	uint32_t reserved;
 } OPENAMP_PACKED_END;
 
 /**

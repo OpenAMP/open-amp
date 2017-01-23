@@ -36,6 +36,7 @@ rsc_handler rsc_handler_table[] = {
 	handle_dev_mem_rsc,
 	handle_trace_rsc,
 	handle_vdev_rsc,
+	handle_rproc_mem_rsc,
 	handle_mmu_rsc
 };
 
@@ -226,6 +227,30 @@ int handle_vdev_rsc(struct remote_proc *rproc, void *rsc)
 	vdev->gfeatures = vdev_rsc->gfeatures;
 	vdev->vdev_info = vdev_rsc;
 
+	return RPROC_SUCCESS;
+}
+
+/**
+ * handle_rproc_mem_rsc
+ *
+ * This function parses rproc_mem resource.
+ * This is the resource for the remote processor
+ * to tell the host the memory can be used as
+ * shared memory.
+ *
+ * @param rproc - pointer to remote remote_proc
+ * @param rsc   - pointer to mmu resource
+ *
+ * @returns - execution status
+ *
+ */
+int handle_rproc_mem_rsc(struct remote_proc *rproc, void *rsc)
+{
+	(void)rproc;
+	(void)rsc;
+
+	/* TODO: the firmware side should handle this resource properly
+	 * when it is the master or when it is the remote. */
 	return RPROC_SUCCESS;
 }
 
