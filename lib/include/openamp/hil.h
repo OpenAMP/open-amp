@@ -181,16 +181,6 @@ struct hil_proc {
 	struct proc_chnl chnls[HIL_MAX_NUM_CHANNELS];
 	/* Initialized status */
 	int is_initialized;
-	/* Attrbites to represent processor role, master or remote . This field is for
-	 * future use. */
-	unsigned long attr;
-	/*
-	 * CPU bitmask - shared variable updated by each core
-	 * after it has been initialized. This field is for future use.
-	 */
-	unsigned long cpu_bitmask;
-	/* Spin lock - This field is for future use. */
-	volatile unsigned int *slock;
 	/* private data */
 	void *pdata;
 	/* List node */
