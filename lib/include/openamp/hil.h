@@ -494,82 +494,82 @@ int hil_set_rpmsg_channel (struct hil_proc *proc, int index,
  *
  */
 struct hil_platform_ops {
-    /**
-     * enable_interrupt()
-     *
-     * This function enables interrupt(IPI) for given vring.
-     *
-     * @param vring_hw - pointer to vring control block
-     *
-     * @return  - execution status
-     */
+	/**
+	 * enable_interrupt()
+	 *
+	 * This function enables interrupt(IPI) for given vring.
+	 *
+	 * @param vring_hw - pointer to vring control block
+	 *
+	 * @return  - execution status
+	 */
 	int (*enable_interrupt) (struct proc_vring * vring_hw);
 
-    /**
-     * notify()
-     *
-     * This function generates IPI to let the other side know that there is
-     * job available for it.
-     *
-     * @param proc - pointer to the hil_proc
-     * @param intr_info - pointer to interrupt info control block
-     */
+	/**
+	 * notify()
+	 *
+	 * This function generates IPI to let the other side know that there is
+	 * job available for it.
+	 *
+	 * @param proc - pointer to the hil_proc
+	 * @param intr_info - pointer to interrupt info control block
+	 */
 	void (*notify) (struct hil_proc *proc, struct proc_intr * intr_info);
 
-    /**
-     * boot_cpu
-     *
-     * This unction boots the remote processor.
-     *
-     * @param proc - pointer to the hil_proc
-     * @param start_addr - start address of remote cpu
-     *
-     * @return - execution status
-     */
+	/**
+	 * boot_cpu
+	 *
+	 * This unction boots the remote processor.
+	 *
+	 * @param proc - pointer to the hil_proc
+	 * @param start_addr - start address of remote cpu
+	 *
+	 * @return - execution status
+	 */
 	int (*boot_cpu) (struct hil_proc *proc, unsigned int start_addr);
 
-    /**
-     * shutdown_cpu
-     *
-     *  This function shutdowns the remote processor.
-     *
-     * @param proc - pointer to the hil_proc
-     *
-     */
+	/**
+	 * shutdown_cpu
+	 *
+	 *  This function shutdowns the remote processor.
+	 *
+	 * @param proc - pointer to the hil_proc
+	 *
+	 */
 	void (*shutdown_cpu) (struct hil_proc *proc);
 
-    /**
-     * poll
-     *
-     * This function polls the remote processor.
-     *
-     * @param proc     - hil_proc to poll
-     * @param nonblock - 0 for blocking, non-0 for non-blocking.
-     *
-     * @return - 0 for no errors, non-0 for errors.
-     */
+	/**
+	 * poll
+	 *
+	 * This function polls the remote processor.
+	 *
+	 * @param proc	 - hil_proc to poll
+	 * @param nonblock - 0 for blocking, non-0 for non-blocking.
+	 *
+	 * @return - 0 for no errors, non-0 for errors.
+	 */
 	int (*poll) (struct hil_proc *proc, int nonblock);
 
-    /**
-     * initialize
-     *
-     *  This function initialize remote processor with platform data.
-     *
-     * @param proc     - hil_proc to poll
-     *
-     * @return NULL on failure, hil_proc pointer otherwise
-     *
-     */
+	/**
+	 * initialize
+	 *
+	 *  This function initialize remote processor with platform data.
+	 *
+	 * @param proc	 - hil_proc to poll
+	 *
+	 * @return NULL on failure, hil_proc pointer otherwise
+	 *
+	 */
 	int (*initialize) (struct hil_proc *proc);
 
-    /**
-     * release
-     *
-     *  This function is to release remote processor resource
-     *
-     * @param[in] proc - pointer to the remote processor
-     *
-     */
+	/**
+	 * release
+	 *
+	 *  This function is to release remote processor resource
+	 *
+	 * @param[in] proc - pointer to the remote processor
+	 *
+	 */
 	void (*release) (struct hil_proc *proc);
 };
 
