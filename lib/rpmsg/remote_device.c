@@ -52,6 +52,7 @@
 #include "metal/utilities.h"
 #include "metal/alloc.h"
 #include "metal/atomic.h"
+#include "metal/cpu.h"
 
 /* Macro to initialize vring HW info */
 #define INIT_VRING_ALLOC_INFO(ring_info,vring_hw)                             \
@@ -366,6 +367,28 @@ int rpmsg_rdev_init_channels(struct remote_device *rdev)
 	}
 
 	return RPMSG_SUCCESS;
+}
+
+/**
+ * check if the remote is ready to start RPMsg communication
+ */
+int rpmsg_rdev_remote_ready(struct remote_device *rdev)
+{
+	struct virtio_device *vdev = &rdev->virt_dev;
+	uint8_t status;
+	if (rdev->role == RPMSG_MASTER) {
+		while (1) {
+			/* Busy wait until the remote is ready */
+			status = vdev->func->get_status(vdev);
+			if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK)
+				return true;
+			metal_cpu_yield();
+		}
+	} else {
+		return true;
+	}
+	/* Never come here */
+	return false;
 }
 
 static void rpmsg_memset_io(struct metal_io_region *io, void *dst, int c, size_t count)

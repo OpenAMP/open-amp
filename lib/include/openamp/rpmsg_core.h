@@ -172,6 +172,7 @@ int rpmsg_rdev_init(struct hil_proc *proc,
 		    rpmsg_chnl_cb_t channel_destroyed,
 		    rpmsg_rx_cb_t default_cb);
 void rpmsg_rdev_deinit(struct remote_device *rdev);
+int rpmsg_rdev_remote_ready(struct remote_device *rdev);
 struct rpmsg_channel *rpmsg_rdev_get_chnl_from_id(struct remote_device *rdev,
 					       char *rp_chnl_id);
 struct rpmsg_endpoint *rpmsg_rdev_get_endpoint_from_addr(
