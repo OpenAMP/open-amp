@@ -309,6 +309,25 @@ int hil_enable_vring_notifications(int vring_index, struct virtqueue *vq)
 }
 
 /**
+ * hil_vdev_notify()
+ *
+ * This function generates IPI to let the other side know that there is
+ * update in the vritio dev configs
+ *
+ * @param vdev - pointer to the viritio device
+ *
+ */
+void hil_vdev_notify(struct virtio_device *vdev)
+{
+	struct hil_proc *proc = vdev->device;
+	struct proc_vdev *pvdev = &proc->vdev;
+
+	if (proc->ops->notify) {
+		proc->ops->notify(proc, &pvdev->intr_info);
+	}
+}
+
+/**
  * hil_vring_notify()
  *
  * This function generates IPI to let the other side know that there is

@@ -309,6 +309,17 @@ struct proc_shm *hil_get_shm_info(struct hil_proc *proc);
 int hil_enable_vring_notifications(int vring_index, struct virtqueue *vq);
 
 /**
+ * hil_vdev_notify()
+ *
+ * This function generates IPI to let the other side know that there is
+ * change to virtio device configs.
+ *
+ * @param vdev - pointer to virtio device
+ *
+ */
+void hil_vdev_notify(struct virtio_device *vdev);
+
+/**
  * hil_vring_notify()
  *
  * This function generates IPI to let the other side know that there is
