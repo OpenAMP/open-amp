@@ -62,7 +62,7 @@
 #define RING_RX                     0x3ED44000
 #define VRING_SIZE                  256
 
-#define NUM_TABLE_ENTRIES           4
+#define NUM_TABLE_ENTRIES           5
 #define CARVEOUT_SRC_OFFSETS        offsetof(struct remote_resource_table, tcm_0_cout), \
 				offsetof(struct remote_resource_table, tcm_1_cout),
 
@@ -82,13 +82,18 @@ struct remote_resource_table __resource resources = {
 	{
 	 offsetof(struct remote_resource_table, rproc_mem),
 	 CARVEOUT_SRC_OFFSETS
+	 offsetof(struct remote_resource_table, fw_chksum),
 	 offsetof(struct remote_resource_table, rpmsg_vdev),
 	 },
 
 	{RSC_RPROC_MEM, 0x3ed40000, 0x3ed40000, 0x100000, 0},
 	/* End of ELF file */
 	CARVEOUT_SRC
-	    /* Virtio device entry */
+
+	/* firmware checksum */
+	{RSC_FW_CHKSUM, "sha256", {0}},
+
+	/* Virtio device entry */
 	{RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,
 	 NUM_VRINGS, {0, 0},
 	 },

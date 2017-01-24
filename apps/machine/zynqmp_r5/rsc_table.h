@@ -47,6 +47,8 @@ struct remote_resource_table {
 	/* text carveout entry */
 	struct fw_rsc_carveout tcm_0_cout;
 	struct fw_rsc_carveout tcm_1_cout;
+	/* firmware checksum */
+	struct fw_rsc_fw_chksum fw_chksum;
 	/* rpmsg vdev entry */
 	struct fw_rsc_vdev rpmsg_vdev;
 	struct fw_rsc_vdev_vring rpmsg_vring0;
