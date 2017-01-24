@@ -42,6 +42,8 @@ struct remote_resource_table {
 	unsigned int num;
 	unsigned int reserved[2];
 	unsigned int offset[NO_RESOURCE_ENTRIES];
+	/* rproc memory entry */
+	struct fw_rsc_rproc_mem rproc_mem;
 	/* text carveout entry */
 	struct fw_rsc_carveout tcm_0_cout;
 	struct fw_rsc_carveout tcm_1_cout;

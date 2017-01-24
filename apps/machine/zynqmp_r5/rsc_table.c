@@ -62,7 +62,7 @@
 #define RING_RX                     0x3ED44000
 #define VRING_SIZE                  256
 
-#define NUM_TABLE_ENTRIES           3
+#define NUM_TABLE_ENTRIES           4
 #define CARVEOUT_SRC_OFFSETS        offsetof(struct remote_resource_table, tcm_0_cout), \
 				offsetof(struct remote_resource_table, tcm_1_cout),
 
@@ -80,10 +80,12 @@ struct remote_resource_table __resource resources = {
 
 	/* Offsets of rsc entries */
 	{
+	 offsetof(struct remote_resource_table, rproc_mem),
 	 CARVEOUT_SRC_OFFSETS
 	 offsetof(struct remote_resource_table, rpmsg_vdev),
 	 },
 
+	{RSC_RPROC_MEM, 0x3ed40000, 0x3ed40000, 0x100000, 0},
 	/* End of ELF file */
 	CARVEOUT_SRC
 	    /* Virtio device entry */
