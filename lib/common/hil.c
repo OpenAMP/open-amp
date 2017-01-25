@@ -551,7 +551,7 @@ int hil_set_vring (struct hil_proc *proc, int index,
 	return 0;
 }
 
-int hil_set_ipi (struct hil_proc *proc, int index,
+int hil_set_vring_ipi (struct hil_proc *proc, int index,
 		 unsigned int irq, void *data)
 {
 	struct proc_intr *vring_intr;

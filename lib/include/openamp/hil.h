@@ -477,9 +477,9 @@ int hil_set_vring (struct hil_proc *proc, int index,
 		   const char *bus_name, const char *name);
 
 /**
- * hil_set_ipi
+ * hil_set_vring_ipi
  *
- * This function set HIL proc IPI
+ * This function set HIL proc vring IPI
  *
  * @param proc     - hil_proc to set
  * @param index    - vring index for the IPI
@@ -488,7 +488,7 @@ int hil_set_vring (struct hil_proc *proc, int index,
  *
  * @return - 0 for no errors, non-0 for errors.
  */
-int hil_set_ipi (struct hil_proc *proc, int index,
+int hil_set_vring_ipi (struct hil_proc *proc, int index,
 		 unsigned int irq, void *data);
 
 /**
