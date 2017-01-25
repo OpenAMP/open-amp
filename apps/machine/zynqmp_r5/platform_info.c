@@ -85,8 +85,10 @@ struct hil_proc *platform_create_proc(int proc_index)
 	if (!proc)
 		return NULL;
 
-	hil_set_ipi(proc, 0, (unsigned int)(-1), (void *)&chn_ipi_info[0]);
-	hil_set_ipi(proc, 1, IPI_VECT_ID, (void *)&chn_ipi_info[1]);
+	hil_set_vring_ipi(proc, 0,
+		(unsigned int)(-1), (void *)&chn_ipi_info[0]);
+	hil_set_vring_ipi(proc, 1,
+		IPI_VECT_ID, (void *)&chn_ipi_info[1]);
 
 	hil_set_rpmsg_channel(proc, 0, RPMSG_CHAN_NAME);
 	return proc;

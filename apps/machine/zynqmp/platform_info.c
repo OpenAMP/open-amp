@@ -89,8 +89,10 @@ struct hil_proc *platform_create_proc(int proc_index)
 		return NULL;
 
 	/* Setup IPI info */
-	hil_set_ipi(proc, 0, (unsigned int)(-1), (void *)&chn_ipi_info[0]);
-	hil_set_ipi(proc, 1, (unsigned int)(-1), (void *)&chn_ipi_info[1]);
+	hil_set_vring_ipi(proc, 0,
+		(unsigned int)(-1), (void *)&chn_ipi_info[0]);
+	hil_set_vring_ipi(proc, 1,
+		(unsigned int)(-1), (void *)&chn_ipi_info[1]);
 	/* Setup vring info */
 	hil_set_vring(proc, 0, DEV_BUS_NAME, VRING_DEV_NAME);
 	hil_set_vring(proc, 1, DEV_BUS_NAME, VRING_DEV_NAME);
