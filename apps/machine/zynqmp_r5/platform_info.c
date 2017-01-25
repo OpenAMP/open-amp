@@ -51,14 +51,14 @@
 
 /* -- FIX ME: ipi info is to be defined -- */
 struct ipi_info {
-        const char *name;
-        const char *bus_name;
-        struct meta_device *dev;
-        struct metal_io_region *io;
+	const char *name;
+	const char *bus_name;
+	struct meta_device *dev;
+	struct metal_io_region *io;
 	metal_phys_addr_t paddr;
-        uint32_t ipi_chn_mask;
-        int need_reg;
-        atomic_int sync;
+	uint32_t ipi_chn_mask;
+	int need_reg;
+	atomic_int sync;
 };
 
 extern struct hil_platform_ops zynqmp_r5_a53_proc_ops;
