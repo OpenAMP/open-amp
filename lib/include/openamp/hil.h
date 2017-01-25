@@ -531,13 +531,13 @@ struct hil_platform_ops {
 	/**
 	 * enable_interrupt()
 	 *
-	 * This function enables interrupt(IPI) for given vring.
+	 * This function enables interrupt(IPI)
 	 *
-	 * @param vring_hw - pointer to vring control block
+	 * @param intr - pointer to intr information
 	 *
 	 * @return  - execution status
 	 */
-	int (*enable_interrupt) (struct proc_vring * vring_hw);
+	int (*enable_interrupt) (struct proc_intr *intr);
 
 	/**
 	 * notify()
