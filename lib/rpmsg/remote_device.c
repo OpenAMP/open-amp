@@ -305,7 +305,9 @@ struct rpmsg_endpoint *rpmsg_rdev_get_endpoint_from_addr(struct remote_device *r
  */
 int rpmsg_rdev_notify(struct remote_device *rdev)
 {
-	virtqueue_kick(rdev->rvq);
+	struct virtio_device *vdev = &rdev->virt_dev;
+
+	hil_vdev_notify(vdev);
 
 	return RPMSG_SUCCESS;
 }
