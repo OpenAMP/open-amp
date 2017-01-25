@@ -69,7 +69,7 @@ struct ipi_info {
 	struct metal_io_region *io;
 	metal_phys_addr_t paddr;
 	uint32_t ipi_chn_mask;
-	int need_reg;
+	int registered;
 	atomic_int sync;
 };
 
@@ -120,7 +120,7 @@ static int _enable_interrupt(struct proc_intr *intr)
 	    (struct ipi_info *)(intr->data);
 	struct metal_io_region *io = ipi->io;
 
-	if (!ipi->need_reg) {
+	if (ipi->registered) {
 		return 0;
 	}
 
@@ -130,6 +130,7 @@ static int _enable_interrupt(struct proc_intr *intr)
 	/* Enable IPI interrupt */
 	metal_irq_enable(intr->vect_id);
 	metal_io_write32(io, IPI_IER_OFFSET, ipi->ipi_chn_mask);
+	ipi->registered = 1;
 	return 0;
 }
 
@@ -187,39 +188,37 @@ static int _initialize(struct hil_proc *proc)
 	int ret;
 	struct proc_intr *intr_info;
 	struct ipi_info *ipi;
-	int i;
 
 	if (!proc)
 		return -1;
 
-	for (i = 0; i < HIL_MAX_NUM_VRINGS; i++) {
-		intr_info = &(proc->vdev.vring_info[i].intr_info);
-		ipi = intr_info->data;
+	intr_info = &(proc->vdev.intr_info);
+	ipi = intr_info->data;
 
-		if (ipi && ipi->name && ipi->bus_name) {
-			ret = metal_device_open(ipi->bus_name, ipi->name,
-						     &ipi->dev);
-			if (ret)
-				return -ENODEV;
-			ipi->io = metal_device_io_region(ipi->dev, 0);
-		} else if (ipi->paddr) {
-			ipi->io = metal_allocate_memory(
-				sizeof(struct metal_io_region));
-			if (!ipi->io)
-				goto error;
-			metal_io_init(ipi->io, (void *)ipi->paddr,
-				&ipi->paddr, 0x1000,
-				(unsigned)(-1),
-				METAL_UNCACHED | METAL_IO_MAPPED,
-				NULL);
-		}
-
-		if (ipi->io) {
-			metal_io_write32(ipi->io, IPI_IDR_OFFSET,
-				ipi->ipi_chn_mask);
-			atomic_store(&ipi->sync, 1);
-		}
+	if (ipi && ipi->name && ipi->bus_name) {
+		ret = metal_device_open(ipi->bus_name, ipi->name,
+					     &ipi->dev);
+		if (ret)
+			return -ENODEV;
+		ipi->io = metal_device_io_region(ipi->dev, 0);
+	} else if (ipi->paddr) {
+		ipi->io = metal_allocate_memory(
+			sizeof(struct metal_io_region));
+		if (!ipi->io)
+			goto error;
+		metal_io_init(ipi->io, (void *)ipi->paddr,
+			&ipi->paddr, 0x1000,
+			(unsigned)(-1),
+			METAL_UNCACHED | METAL_IO_MAPPED,
+			NULL);
 	}
+
+	if (ipi->io) {
+		metal_io_write32(ipi->io, IPI_IDR_OFFSET,
+			ipi->ipi_chn_mask);
+		atomic_store(&ipi->sync, 1);
+	}
+	ipi->registered = 0;
 	return 0;
 
 error:
@@ -229,29 +228,26 @@ error:
 
 static void _release(struct hil_proc *proc)
 {
-	int i;
 	struct proc_intr *intr_info;
 	struct ipi_info *ipi;
 
 	if (!proc)
 		return;
-	for (i = 0; i < HIL_MAX_NUM_VRINGS; i++) {
-		intr_info = &(proc->vdev.vring_info[1].intr_info);
-		ipi = (struct ipi_info *)(intr_info->data);
-		if (ipi) {
-			if (ipi->io) {
-				metal_io_write32(ipi->io, IPI_IDR_OFFSET,
-					ipi->ipi_chn_mask);
-				if (ipi->dev) {
-					metal_device_close(ipi->dev);
-					ipi->dev = NULL;
-				} else {
-					metal_free_memory(ipi->io);
-				}
-				ipi->io = NULL;
+	intr_info = &(proc->vdev.intr_info);
+	ipi = (struct ipi_info *)(intr_info->data);
+	if (ipi) {
+		if (ipi->io) {
+			metal_io_write32(ipi->io, IPI_IDR_OFFSET,
+				ipi->ipi_chn_mask);
+			if (ipi->dev) {
+				metal_device_close(ipi->dev);
+				ipi->dev = NULL;
+			} else {
+				metal_free_memory(ipi->io);
 			}
+			ipi->io = NULL;
 		}
-
 	}
+
 }
 
