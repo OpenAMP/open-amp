@@ -553,31 +553,11 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 	struct rpmsg_endpoint *rp_ept;
 	struct rpmsg_hdr *rp_hdr;
 	struct rpmsg_hdr_reserved *reserved;
-	struct metal_list *node;
 	unsigned long len;
 	unsigned short idx;
 
 	vdev = (struct virtio_device *)vq->vq_dev;
 	rdev = (struct remote_device *)vdev;
-
-	if (rdev->role == RPMSG_MASTER) {
-		metal_list_for_each(&rdev->rp_channels, node) {
-			rp_chnl = metal_container_of(node,
-				struct rpmsg_channel, node);
-			if (rp_chnl->state == RPMSG_CHNL_STATE_IDLE) {
-				if (rdev->support_ns) {
-					if (rpmsg_send_ns_message(rdev, rp_chnl,
-						      RPMSG_NS_CREATE) ==
-						RPMSG_SUCCESS)
-						rp_chnl->state =
-							RPMSG_CHNL_STATE_NS;
-				} else {
-					rp_chnl->state = RPMSG_CHNL_STATE_ACTIVE;
-				}
-				return;
-			}
-		}
-	}
 
 	metal_mutex_acquire(&rdev->lock);
 
