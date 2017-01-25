@@ -161,17 +161,17 @@ static void _shutdown_cpu(struct hil_proc *proc)
 
 static int _poll(struct hil_proc *proc, int nonblock)
 {
-	struct proc_vring *vring;
+	struct proc_vdev *vdev;
 	struct ipi_info *ipi;
 	unsigned int flags;
 
-	vring = &proc->vdev.vring_info[1];
-	ipi = (struct ipi_info *)(vring->intr_info.data);
+	vdev = &proc->vdev;
+	ipi = (struct ipi_info *)(vdev->intr_info.data);
 	while(1) {
 		flags = metal_irq_save_disable();
 		if (!(atomic_flag_test_and_set(&ipi->sync))) {
 			metal_irq_restore_enable(flags);
-			virtqueue_notification(vring->vq);
+			hil_notified(proc, (uint32_t)(-1));
 			return 0;
 		}
 		if (nonblock) {
