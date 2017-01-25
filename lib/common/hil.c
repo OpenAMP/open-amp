@@ -108,6 +108,7 @@ struct hil_proc *hil_create_proc(struct hil_platform_ops *ops,
 	for (i = 0; i < HIL_MAX_NUM_VRINGS; i++)
 		proc->vdev.vring_info[i].io = &hil_devmem_generic_io;
 
+	metal_mutex_init(&proc->lock);
 	metal_list_add_tail(&procs, &proc->node);
 
 	return proc;
@@ -133,6 +134,7 @@ void hil_delete_proc(struct hil_proc *proc)
 		if (proc ==
 			metal_container_of(node, struct hil_proc, node)) {
 			metal_list_del(&proc->node);
+			metal_mutex_acquire(&proc->lock);
 			proc->ops->release(proc);
 			/* Close shmem device */
 			dev = proc->sh_buff.dev;
@@ -155,6 +157,8 @@ void hil_delete_proc(struct hil_proc *proc)
 				}
 			}
 
+			metal_mutex_release(&proc->lock);
+			metal_mutex_deinit(&proc->lock);
 			metal_free_memory(proc);
 			return;
 		}

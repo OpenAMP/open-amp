@@ -47,6 +47,7 @@
 #include "metal/list.h"
 #include "metal/io.h"
 #include "metal/device.h"
+#include "metal/mutex.h"
 
 /* Configurable parameters */
 #define HIL_MAX_CORES                   2
@@ -183,6 +184,8 @@ struct hil_proc {
 	struct proc_chnl chnls[HIL_MAX_NUM_CHANNELS];
 	/* Initialized status */
 	int is_initialized;
+	/* hil_proc lock */
+	metal_mutex_t lock;
 	/* private data */
 	void *pdata;
 	/* List node */
