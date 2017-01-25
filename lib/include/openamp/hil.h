@@ -533,6 +533,20 @@ int hil_set_rpmsg_channel (struct hil_proc *proc, int index,
 		char *name);
 
 /**
+ * hil_set_vdev_rst_cb
+ *
+ * This function set HIL proc vdev reset callback
+ *
+ * @param proc     - hil_proc to set
+ * @param index    - vdev index
+ * @param cb       - reset callback
+ *
+ * @return - 0 for no errors, non-0 for errors.
+ */
+int hil_set_vdev_rst_cb (struct hil_proc *proc, int index,
+		hil_proc_vdev_rst_cb_t cb);
+
+/**
  *
  * This structure is an interface between HIL and platform porting
  * component. It is required for the user to provide definitions of

@@ -602,3 +602,11 @@ int hil_set_rpmsg_channel (struct hil_proc *proc, int index,
 	return 0;
 }
 
+int hil_set_vdev_rst_cb (struct hil_proc *proc, int index,
+		hil_proc_vdev_rst_cb_t cb)
+{
+	(void)index;
+	proc->vdev.rst_cb = cb;
+	return 0;
+}
+
