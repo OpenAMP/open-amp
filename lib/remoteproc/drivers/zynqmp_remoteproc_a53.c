@@ -74,7 +74,7 @@ struct ipi_info {
 };
 
 /*--------------------------- Declare Functions ------------------------ */
-static int _enable_interrupt(struct proc_vring *vring_hw);
+static int _enable_interrupt(struct proc_intr *intr);
 static void _notify(struct hil_proc *proc, struct proc_intr *intr_info);
 static int _boot_cpu(struct hil_proc *proc, unsigned int load_addr);
 static void _shutdown_cpu(struct hil_proc *proc);
@@ -97,13 +97,14 @@ struct hil_platform_ops zynqmp_r5_a53_proc_ops = {
 
 int _ipi_handler(int vect_id, void *data)
 {
-	(void) vect_id;
-	struct proc_vring *vring_hw = (struct proc_vring *)(data);
-	struct ipi_info *ipi =
-		(struct ipi_info *)(vring_hw->intr_info.data);
+	struct proc_intr *intr = data;
+	struct ipi_info *ipi = intr->data;
 	struct metal_io_region *io = ipi->io;
 	unsigned int ipi_intr_status =
 	    (unsigned int)metal_io_read32(io, IPI_ISR_OFFSET);
+
+	(void) vect_id;
+
 	if (ipi_intr_status & ipi->ipi_chn_mask) {
 		atomic_flag_clear(&ipi->sync);
 		metal_io_write32(io, IPI_ISR_OFFSET,
@@ -113,10 +114,10 @@ int _ipi_handler(int vect_id, void *data)
 	return -1;
 }
 
-static int _enable_interrupt(struct proc_vring *vring_hw)
+static int _enable_interrupt(struct proc_intr *intr)
 {
 	struct ipi_info *ipi =
-	    (struct ipi_info *)(vring_hw->intr_info.data);
+	    (struct ipi_info *)(intr->data);
 	struct metal_io_region *io = ipi->io;
 
 	if (!ipi->need_reg) {
@@ -124,10 +125,10 @@ static int _enable_interrupt(struct proc_vring *vring_hw)
 	}
 
 	/* Register ISR */
-	metal_irq_register(vring_hw->intr_info.vect_id, _ipi_handler,
-				vring_hw->intr_info.dev, vring_hw);
+	metal_irq_register(intr->vect_id, _ipi_handler,
+				intr->dev, intr);
 	/* Enable IPI interrupt */
-	metal_irq_enable(vring_hw->intr_info.vect_id);
+	metal_irq_enable(intr->vect_id);
 	metal_io_write32(io, IPI_IER_OFFSET, ipi->ipi_chn_mask);
 	return 0;
 }
