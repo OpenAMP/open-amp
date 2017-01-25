@@ -56,6 +56,10 @@
 /* Reserved CPU id */
 #define HIL_RSVD_CPU_ID                 0xffffffff
 
+struct hil_proc;
+
+typedef void (*hil_proc_vdev_rst_cb_t)(struct hil_proc *proc, int id);
+
 /**
  * struct proc_shm
  *
@@ -139,6 +143,8 @@ struct proc_vdev {
 	void *vdev_info;
 	/* Vdev interrupt control block */
 	struct proc_intr intr_info;
+	/* Vdev reset callback */
+	hil_proc_vdev_rst_cb_t rst_cb;
 	/* Number of vrings */
 	unsigned int num_vrings;
 	/* Virtio device features */
