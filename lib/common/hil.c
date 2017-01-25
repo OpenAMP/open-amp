@@ -285,6 +285,25 @@ struct proc_shm *hil_get_shm_info(struct hil_proc *proc)
 	return (&proc->sh_buff);
 }
 
+void hil_free_vqs(struct virtio_device *vdev)
+{
+	struct hil_proc *proc = vdev->device;
+	struct proc_vdev *pvdev = &proc->vdev;
+	int num_vrings = (int)pvdev->num_vrings;
+	int i;
+
+	metal_mutex_acquire(&proc->lock);
+	for(i = 0; i < num_vrings; i++) {
+		struct proc_vring *pvring = &pvdev->vring_info[i];
+		struct virtqueue *vq = pvring->vq;
+		if (vq) {
+			virtqueue_free(vq);
+			pvring->vq = 0;
+		}
+	}
+	metal_mutex_release(&proc->lock);
+}
+
 /**
  * hil_enable_vring_notifications()
  *

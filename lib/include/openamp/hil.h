@@ -297,6 +297,15 @@ struct proc_vring *hil_get_vring_info(struct proc_vdev *vdev, int *num_vrings);
 struct proc_shm *hil_get_shm_info(struct hil_proc *proc);
 
 /**
+ * hil_free_virtqueues
+ *
+ * This function remove virt queues of the vdev.
+
+ * @param vdev - pointer to the vdev which needs to remove vqs
+ */
+void hil_free_vqs(struct virtio_device *vdev);
+
+/**
  * hil_enable_vring_notifications()
  *
  * This function is called after successful creation of virtqueues.
