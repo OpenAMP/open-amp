@@ -177,20 +177,6 @@ int hil_init_proc(struct hil_proc *proc)
 	}
 	return 0;
 }
-/**
- * hil_isr()
- *
- * This function is called when interrupt is received for the vring.
- * This function gets the corresponding virtqueue and generates
- * call back for it.
- *
- * @param vring_hw   - pointer to vring control block
- *
- */
-void hil_isr(struct proc_vring *vring_hw)
-{
-	virtqueue_notification(vring_hw->vq);
-}
 
 /**
  * hil_get_chnl_info
@@ -208,6 +194,26 @@ struct proc_chnl *hil_get_chnl_info(struct hil_proc *proc, int *num_chnls)
 {
 	*num_chnls = proc->num_chnls;
 	return (proc->chnls);
+}
+
+void hil_notified(struct hil_proc *proc, uint32_t notifyid)
+{
+	struct proc_vdev *pvdev = &proc->vdev;
+	struct fw_rsc_vdev *vdev_rsc = pvdev->vdev_info;
+	int i;
+	if (vdev_rsc->status & VIRTIO_CONFIG_STATUS_NEEDS_RESET) {
+		if (pvdev->rst_cb)
+			pvdev->rst_cb(proc, 0);
+	} else {
+		for(i = 0; i < (int)pvdev->num_vrings; i++) {
+			struct fw_rsc_vdev_vring *vring_rsc;
+			vring_rsc = &vdev_rsc->vring[i];
+			if (notifyid == (uint32_t)(-1) ||
+				notifyid == vring_rsc->notifyid)
+				virtqueue_notification(
+					pvdev->vring_info[i].vq);
+		}
+	}
 }
 
 /**

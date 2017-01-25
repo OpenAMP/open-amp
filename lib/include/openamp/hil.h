@@ -237,16 +237,17 @@ void hil_delete_proc(struct hil_proc *proc);
 int hil_init_proc(struct hil_proc *proc);
 
 /**
- * hil_isr()
+ * hil_notified()
  *
- * This function is called when interrupt is received for the vring.
+ * This function is called when notification is received.
  * This function gets the corresponding virtqueue and generates
  * call back for it.
  *
- * @param vring_hw   - pointer to vring control block
+ * @param proc   - pointer to hil_proc
+ * @param notifyid - notifyid
  *
  */
-void hil_isr(struct proc_vring *vring_hw);
+void hil_notified(struct hil_proc *proc, uint32_t notifyid);
 
 /**
  * hil_get_vdev_info
