@@ -313,6 +313,18 @@ struct proc_shm *hil_get_shm_info(struct hil_proc *proc);
 void hil_free_vqs(struct virtio_device *vdev);
 
 /**
+ * hil_enable_vdev_notification()
+ *
+ * This function enable handler for vdev notification.
+ *
+ * @param proc - pointer to hil_proc
+ * @param id   - vdev index
+ *
+ * @return - execution status
+ */
+int hil_enable_vdev_notification(struct hil_proc *proc, int id);
+
+/**
  * hil_enable_vring_notifications()
  *
  * This function is called after successful creation of virtqueues.

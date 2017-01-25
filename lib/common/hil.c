@@ -310,6 +310,17 @@ void hil_free_vqs(struct virtio_device *vdev)
 	metal_mutex_release(&proc->lock);
 }
 
+int hil_enable_vdev_notification(struct hil_proc *proc, int id)
+{
+	/* We only support single vdev in hil_proc */
+	(void)id;
+	if (!proc)
+		return -1;
+	if (proc->ops->enable_interrupt)
+		proc->ops->enable_interrupt(&proc->vdev.intr_info);
+	return 0;
+}
+
 /**
  * hil_enable_vring_notifications()
  *
