@@ -551,6 +551,22 @@ int hil_set_vring (struct hil_proc *proc, int index,
 	return 0;
 }
 
+int hil_set_vdev_ipi (struct hil_proc *proc, int index,
+		 unsigned int irq, void *data)
+{
+	struct proc_intr *vring_intr;
+
+	/* As we support only one vdev for now */
+	(void)index;
+
+	if (!proc)
+		return -1;
+	vring_intr = &proc->vdev.intr_info;
+	vring_intr->vect_id = irq;
+	vring_intr->data = data;
+	return 0;
+}
+
 int hil_set_vring_ipi (struct hil_proc *proc, int index,
 		 unsigned int irq, void *data)
 {

@@ -477,6 +477,21 @@ int hil_set_vring (struct hil_proc *proc, int index,
 		   const char *bus_name, const char *name);
 
 /**
+ * hil_set_vdev_ipi
+ *
+ * This function set HIL proc vdev IPI
+ *
+ * @param proc     - hil_proc to set
+ * @param index    - vring index for the IPI
+ * @param irq      - IPI irq vector ID
+ * @param data     - IPI data
+ *
+ * @return - 0 for no errors, non-0 for errors.
+ */
+int hil_set_vdev_ipi (struct hil_proc *proc, int index,
+		 unsigned int irq, void *data);
+
+/**
  * hil_set_vring_ipi
  *
  * This function set HIL proc vring IPI
