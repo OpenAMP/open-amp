@@ -11,24 +11,48 @@ This application echoes back data that was sent to it by the master core. */
 #define LPRINTF(format, ...)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
+#define REMOTE_ACTIVE 0
+#define REMOTE_RESETTING 1
+#define REMOTE_RESETTED 2
 
 /* Internal functions */
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
 static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
 static void rpmsg_read_cb(struct rpmsg_channel *, void *, int, void *,
 			  unsigned long);
+static void virtio_rst_cb(struct hil_proc *hproc, int id);
 
 /* Globals */
 static struct rpmsg_endpoint *rp_ept;
 static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
 static int evt_chnl_deleted = 0;
+static int remote_proc_state;
 
 /* External functions */
 extern void init_system(void);
 extern void cleanup_system(void);
 extern struct hil_proc *platform_create_proc(int proc_index);
 extern void *get_resource_table (int rsc_id, int *len);
+
+static void virtio_rst_cb(struct hil_proc *hproc, int id)
+{
+	/* hil_proc only supports single virtio device */
+	(void)id;
+
+	if (!proc || proc->proc != hproc || !proc->rdev)
+		return;
+	LPRINTF("Resetting RPMsg\n");
+	atomic_thread_fence(memory_order_seq_cst);
+	remote_proc_state = REMOTE_RESETTING;
+
+	rpmsg_deinit(proc->rdev);
+	proc->rdev = NULL;
+
+	atomic_thread_fence(memory_order_seq_cst);
+	remote_proc_state = REMOTE_RESETTED;
+	LPRINTF("RPMsg resetted\n");
+}
 
 /* Application entry point */
 int app(struct hil_proc *hproc)
@@ -48,13 +72,39 @@ int app(struct hil_proc *hproc)
 	LPRINTF("init remoteproc resource done\n");
 
 	if (RPROC_SUCCESS != status) {
+		LPERROR("init remoteproc resource failed\n");
 		return -1;
 	}
+	LPRINTF("init remoteproc resource succeeded\n");
+
+	hil_set_vdev_rst_cb(hproc, 0, virtio_rst_cb);
 
 	do {
-		hil_poll(proc->proc, 0);
-	} while (!evt_chnl_deleted);
+		do {
+			hil_poll(proc->proc, 0);
+		} while (!evt_chnl_deleted);
 
+		while (remote_proc_state == REMOTE_RESETTING);
+
+		if (remote_proc_state == REMOTE_RESETTED) {
+			LPRINTF("Reinitializing RPMsg\n");
+			status = rpmsg_init(hproc, &proc->rdev,
+					rpmsg_channel_created,
+					rpmsg_channel_deleted, rpmsg_read_cb,
+					1);
+			if (status != RPROC_SUCCESS) {
+				LPERROR("Reinit RPMsg failed\n");
+				goto out;
+			} else {
+				LPRINTF("Reinit RPMsg succeeded\n");
+				evt_chnl_deleted=0;
+			}
+		} else {
+			break;
+		}
+	} while(1);
+
+out:
 	/* disable interrupts and free resources */
 	remoteproc_resource_deinit(proc);
 
@@ -75,6 +125,7 @@ static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
 
 	rpmsg_destroy_ept(rp_ept);
 	rp_ept = NULL;
+	evt_chnl_deleted = 1;
 }
 
 static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
