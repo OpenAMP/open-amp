@@ -224,10 +224,6 @@ void rpmsg_rdev_deinit(struct remote_device *rdev)
 	metal_mutex_release(&rdev->lock);
 	hil_free_vqs(&rdev->virt_dev);
 
-	if (rdev->proc) {
-		hil_delete_proc(rdev->proc);
-		rdev->proc = 0;
-	}
 	metal_mutex_deinit(&rdev->lock);
 
 	metal_free_memory(rdev);
