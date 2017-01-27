@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2014, Mentor Graphics Corporation
  * All rights reserved.
@@ -36,17 +35,14 @@
 #include "xil_cache.h"
 #include "metal/sys.h"
 #include "metal/irq.h"
-#include "metal/system/generic/irq.h"
-
+#include "platform_info.h"
 
 #define INTC_DEVICE_ID		XPAR_SCUGIC_0_DEVICE_ID
-/** IPI IRQ ID */
-#define IPI_IRQ_VECT_ID         65
 
-static XScuGic InterruptController;
+static XScuGic xInterruptController;
 
-
-static int zynqmp_r5_gic_initialize(void)
+/* Interrupt Controller setup */
+static int app_gic_initialize(void)
 {
 	u32 Status;
 	XScuGic_Config *IntcConfig;	/* The configuration parameters of the interrupt controller */
@@ -61,7 +57,7 @@ static int zynqmp_r5_gic_initialize(void)
 		return XST_FAILURE;
 	}
 
-	Status = XScuGic_CfgInitialize(&InterruptController, IntcConfig,
+	Status = XScuGic_CfgInitialize(&xInterruptController, IntcConfig,
 				       IntcConfig->CpuBaseAddress);
 	if (Status != XST_SUCCESS) {
 		return XST_FAILURE;
@@ -73,24 +69,31 @@ static int zynqmp_r5_gic_initialize(void)
 	 */
 	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
 			(Xil_ExceptionHandler)XScuGic_InterruptHandler,
-			&InterruptController);
+			&xInterruptController);
 
 	Xil_ExceptionEnable();
 
 	/* Connect Interrupt ID with ISR */
-	XScuGic_Connect(&InterruptController, IPI_IRQ_VECT_ID,
-			   (Xil_ExceptionHandler)metal_irq_isr,
-			   (void *)IPI_IRQ_VECT_ID);
+	XScuGic_Connect(&xInterruptController, IPI_IRQ_VECT_ID,
+			(Xil_ExceptionHandler)metal_irq_isr,
+			(void *)IPI_IRQ_VECT_ID);
 
 	return 0;
 }
 
-void init_system(void)
+/* Main hw machinery initialization entry point, called from main()*/
+/* return 0 on success */
+int init_system(void)
 {
 	struct metal_init_params metal_param = METAL_INIT_DEFAULTS;
 
+	/* Low level abstraction layer for openamp initialization */
 	metal_init(&metal_param);
-	zynqmp_r5_gic_initialize();
+
+	/* configure the global interrupt controller */
+	app_gic_initialize();
+
+	return 0;
 }
 
 void cleanup_system()
