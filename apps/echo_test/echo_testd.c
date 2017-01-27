@@ -2,8 +2,10 @@
 This application is meant to run on the remote CPU running baremetal code.
 This application echoes back data that was sent to it by the master core. */
 
-#include "rsc_table.h"
 #include <stdio.h>
+#include "openamp/open_amp.h"
+#include "rsc_table.h"
+#include "platform_info.h"
 
 #define SHUTDOWN_MSG	0xEF56A55A
 
@@ -15,12 +17,9 @@ This application echoes back data that was sent to it by the master core. */
 #define REMOTE_RESETTING 1
 #define REMOTE_RESETTED 2
 
-/* Internal functions */
-static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
-static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
-static void rpmsg_read_cb(struct rpmsg_channel *, void *, int, void *,
-			  unsigned long);
-static void virtio_rst_cb(struct hil_proc *hproc, int id);
+/* External functions */
+extern int init_system(void);
+extern void cleanup_system(void);
 
 /* Globals */
 static struct rpmsg_endpoint *rp_ept;
@@ -28,12 +27,6 @@ static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
 static int evt_chnl_deleted = 0;
 static int remote_proc_state;
-
-/* External functions */
-extern void init_system(void);
-extern void cleanup_system(void);
-extern struct hil_proc *platform_create_proc(int proc_index);
-extern void *get_resource_table (int rsc_id, int *len);
 
 static void virtio_rst_cb(struct hil_proc *hproc, int id)
 {
@@ -54,13 +47,40 @@ static void virtio_rst_cb(struct hil_proc *hproc, int id)
 	LPRINTF("RPMsg resetted\n");
 }
 
+static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
+			  void *priv, unsigned long src)
+{
+	(void)priv;
+	(void)src;
+
+	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
+		evt_chnl_deleted = 1;
+		return;
+	}
+
+	/* Send data back to master */
+	rpmsg_send(rp_chnl, data, len);
+}
+
+static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
+{
+	rp_ept = rpmsg_create_ept(rp_chnl, rpmsg_read_cb, RPMSG_NULL,
+				  RPMSG_ADDR_ANY);
+}
+
+static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
+{
+	(void)rp_chnl;
+
+	rpmsg_destroy_ept(rp_ept);
+	rp_ept = NULL;
+	evt_chnl_deleted = 1;
+}
+
 /* Application entry point */
 int app(struct hil_proc *hproc)
 {
 	int status = 0;
-
-	//rsc_info.rsc_tab = (struct resource_table *)&resources;
-	//rsc_info.size = sizeof(resources);
 
 	/* Initialize RPMSG framework */
 	LPRINTF("Try to init remoteproc resource\n");
@@ -106,6 +126,7 @@ int app(struct hil_proc *hproc)
 
 out:
 	/* disable interrupts and free resources */
+	LPRINTF("De-initializating remoteproc resource\n");
 	remoteproc_resource_deinit(proc);
 
 	cleanup_system();
@@ -113,41 +134,14 @@ out:
 	return 0;
 }
 
-static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
-{
-	rp_ept = rpmsg_create_ept(rp_chnl, rpmsg_read_cb, RPMSG_NULL,
-				  RPMSG_ADDR_ANY);
-}
-
-static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
-{
-	(void)rp_chnl;
-
-	rpmsg_destroy_ept(rp_ept);
-	rp_ept = NULL;
-	evt_chnl_deleted = 1;
-}
-
-static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
-			  void *priv, unsigned long src)
-{
-	(void)priv;
-	(void)src;
-
-	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
-		evt_chnl_deleted = 1;
-		return;
-	}
-
-	/* Send data back to master */
-	rpmsg_send(rp_chnl, data, len);
-}
-
 int main(int argc, char *argv[])
 {
 	unsigned long proc_id = 0;
 	unsigned long rsc_id = 0;
 	struct hil_proc *hproc;
+	int status = -1;
+
+	LPRINTF("Starting application...\n");
 
 	/* Initialize HW system components */
 	init_system();
@@ -162,16 +156,17 @@ int main(int argc, char *argv[])
 
 	hproc = platform_create_proc(proc_id);
 	if (!hproc) {
-		LPRINTF("Failed to create proc platform data.\n");
-		return -1;
-	}
-	rsc_info.rsc_tab = get_resource_table(
-		(int)rsc_id, &rsc_info.size);
-	if (!rsc_info.rsc_tab) {
-		LPRINTF("Failed to get resource table data.\n");
-		return -1;
+		LPERROR("Failed to create proc platform data.\n");
+	} else {
+		rsc_info.rsc_tab = get_resource_table(
+			(int)rsc_id, &rsc_info.size);
+		if (!rsc_info.rsc_tab) {
+			LPERROR("Failed to get resource table data.\n");
+		} else {
+			status = app(hproc);
+		}
 	}
 
-	return app(hproc);
+	return status;
 }
 
