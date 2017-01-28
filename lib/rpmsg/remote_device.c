@@ -366,10 +366,14 @@ int rpmsg_rdev_remote_ready(struct remote_device *rdev)
 	uint8_t status;
 	if (rdev->role == RPMSG_MASTER) {
 		while (1) {
-			/* Busy wait until the remote is ready */
 			status = vdev->func->get_status(vdev);
-			if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK)
+			/* Busy wait until the remote is ready */
+			if (status & VIRTIO_CONFIG_STATUS_NEEDS_RESET) {
+				rpmsg_rdev_set_status(vdev, 0);
+				hil_vdev_notify(vdev);
+			} else if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK) {
 				return true;
+			}
 			metal_cpu_yield();
 		}
 	} else {
@@ -556,3 +560,4 @@ void rpmsg_rdev_reset(struct virtio_device *dev)
 
 	return;
 }
+
