@@ -31,14 +31,14 @@ foreach (_app matrix_multiply matrix_multiplyd)
     if (WITH_SHARED_LIB)
       add_executable (${_app}-shared ${_sources})
       target_link_libraries (${_app}-shared ${OPENAMP_LIB}-shared ${_deps})
-      install (TARGETS ${_app}-shared RUNTIME DESTINATION bin)
+      install (TARGETS ${_app}-shared RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     endif (WITH_SHARED_LIB)
   
     if (WITH_STATIC_LIB)
       if (${PROJECT_SYSTEM} STREQUAL "linux")
         add_executable (${_app}-static ${_sources})
         target_link_libraries (${_app}-static ${OPENAMP_LIB}-static ${_deps})
-        install (TARGETS ${_app}-static RUNTIME DESTINATION bin)
+        install (TARGETS ${_app}-static RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
       else (${PROJECT_SYSTEM})
         add_executable (${_app}.out ${_sources})
         set_source_files_properties(${_sources} PROPERTIES COMPILE_FLAGS "${_cflags}")
@@ -51,13 +51,13 @@ foreach (_app matrix_multiply matrix_multiplyd)
   
           add_dependencies (${_app}.out ${_fw_dir}/firmware1.o ${_fw_dir}/firmware2.o)
   
-          install (FILES "${CMAKE_CURRENT_BINARY_DIR}/${_app}.bin" DESTINATION bin)
+          install (FILES "${CMAKE_CURRENT_BINARY_DIR}/${_app}.bin" DESTINATION ${CMAKE_INSTALL_BINDIR})
   
         else (WITH_REMOTEPROC_MASTER)
   
           target_link_libraries(${_app}.out -Wl,-Map=${_app}.map -Wl,--gc-sections ${_linker_opt} -Wl,--start-group ${OPENAMP_LIB}-static ${_deps} -Wl,--end-group)
   
-          install (TARGETS ${_app}.out RUNTIME DESTINATION bin)
+          install (TARGETS ${_app}.out RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
         endif (WITH_REMOTEPROC_MASTER)
       endif (${PROJECT_SYSTEM} STREQUAL "linux" )
     endif (WITH_STATIC_LIB)
