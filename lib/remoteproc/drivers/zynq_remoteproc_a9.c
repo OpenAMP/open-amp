@@ -138,6 +138,10 @@ static int _enable_interrupt(struct proc_intr *intr)
 	/* Enable the interrupts */
 	metal_irq_enable(intr->vect_id);
 
+	/* FIXME: This is a workaround for Zynq. As Linux is possible
+	 * to have already generate the soft IRQ
+	 */
+	atomic_flag_clear((atomic_uint *)&(intr->data));
 	return 0;
 }
 
