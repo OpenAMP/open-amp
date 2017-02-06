@@ -48,8 +48,6 @@
 #define VIRTIO_RPMSG_F_NS           0
 
 /* Resource table entries */
-#define ELF_START                   0x00000000
-#define ELF_END                     0x08000000
 #define NUM_VRINGS                  0x02
 #define VRING_ALIGN                 0x1000
 #define RING_TX                     0x08000000
@@ -57,8 +55,6 @@
 #define VRING_SIZE                  256
 
 #define NUM_TABLE_ENTRIES           2
-#define CARVEOUT_SRC_OFFSETS        offsetof(struct remote_resource_table, elf_cout),
-#define CARVEOUT_SRC                { RSC_CARVEOUT, ELF_START, ELF_START, ELF_END, 0, 0, "ELF_COUT", },
 
 
 struct remote_resource_table __resource resources = {
@@ -72,13 +68,12 @@ struct remote_resource_table __resource resources = {
 
 	/* Offsets of rsc entries */
 	{
-	 CARVEOUT_SRC_OFFSETS
+	 offsetof(struct remote_resource_table, rproc_mem),
 	 offsetof(struct remote_resource_table, rpmsg_vdev),
 	 },
 
-	/* End of ELF file */
-	CARVEOUT_SRC
-	    /* Virtio device entry */
+	{RSC_RPROC_MEM, 0x200000, 0x200000, 0x100000, 0},
+	 /* Virtio device entry */
 	{RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,
 	 NUM_VRINGS, {0, 0},
 	 },
