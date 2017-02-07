@@ -42,12 +42,12 @@
 
 #include "openamp/hil.h"
 #include "metal/atomic.h"
+#include "platform_info.h"
 
 #define IPI_BASE_ADDR                     0xFF310000 /* IPI base address */
 #define IPI_CHN_BITMASK                   0x01000000 /* IPI channel bit mask APU<->RPU0 */
-#define IPI_VECT_ID                       65
+
 #define APU_CPU_ID                        0
-#define RPMSG_CHAN_NAME                   "rpmsg-openamp-demo-channel"
 
 /* -- FIX ME: ipi info is to be defined -- */
 struct ipi_info {
@@ -64,7 +64,7 @@ struct ipi_info {
 extern struct hil_platform_ops zynqmp_r5_a53_proc_ops;
 
 static struct ipi_info chn_ipi_info[] = {
-	{NULL, NULL, NULL, NULL, 0xFF310000, IPI_CHN_BITMASK, 0, 0},
+	{NULL, NULL, NULL, NULL, IPI_BASE_ADDR, IPI_CHN_BITMASK, 0, 0},
 };
 
 const struct firmware_info fw_table[] =
@@ -84,13 +84,15 @@ struct hil_proc *platform_create_proc(int proc_index)
 	if (!proc)
 		return NULL;
 
+	/* Setup IPI info */
 	hil_set_vdev_ipi(proc, 0,
-		IPI_VECT_ID, (void *)&chn_ipi_info[0]);
+		IPI_IRQ_VECT_ID, (void *)&chn_ipi_info[0]);
 	hil_set_vring_ipi(proc, 0,
-		IPI_VECT_ID, (void *)&chn_ipi_info[0]);
+		IPI_IRQ_VECT_ID, (void *)&chn_ipi_info[0]);
 	hil_set_vring_ipi(proc, 1,
-		IPI_VECT_ID, (void *)&chn_ipi_info[1]);
+		IPI_IRQ_VECT_ID, (void *)&chn_ipi_info[1]);
 
 	hil_set_rpmsg_channel(proc, 0, RPMSG_CHAN_NAME);
 	return proc;
 }
+
