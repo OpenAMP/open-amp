@@ -31,6 +31,9 @@
 /* This file populates resource table for BM remote
  * for use by the Linux Master */
 
+#ifndef RSC_TABLE_H_
+#define RSC_TABLE_H_
+
 #include <stddef.h>
 #include "openamp/open_amp.h"
 
@@ -47,3 +50,5 @@ struct remote_resource_table {
 	struct fw_rsc_vdev_vring rpmsg_vring0;
 	struct fw_rsc_vdev_vring rpmsg_vring1;
 };
+
+#endif /* RSC_TABLE_H_ */
