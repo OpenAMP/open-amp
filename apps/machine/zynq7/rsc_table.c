@@ -91,4 +91,3 @@ void *get_resource_table (int rsc_id, int *len)
 	*len = sizeof(resources);
 	return &resources;
 }
-

@@ -95,4 +95,3 @@ struct hil_proc *platform_create_proc(int proc_index)
 	hil_set_rpmsg_channel(proc, 0, RPMSG_CHAN_NAME);
 	return proc;
 }
-

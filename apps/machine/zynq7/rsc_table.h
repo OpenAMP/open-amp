@@ -56,4 +56,3 @@ struct remote_resource_table {
 void *get_resource_table (int rsc_id, int *len);
 
 #endif /* RSC_TABLE_H_ */
-

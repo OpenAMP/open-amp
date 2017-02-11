@@ -11,4 +11,3 @@
 struct hil_proc *platform_create_proc(int proc_index);
 
 #endif /* PLATFORM_INFO_H_ */
-
