@@ -47,7 +47,7 @@ struct _payload *p_payload = NULL;
 struct _payload *r_payload = NULL;
 
 /* External functions */
-extern void init_system();
+extern int init_system();
 extern void cleanup_system();
 
 /* External variables */

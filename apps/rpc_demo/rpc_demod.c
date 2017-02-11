@@ -54,7 +54,7 @@ static struct _proxy_data *proxy;
 static int err_cnt = 0;
 
 /* External functions */
-extern void init_system();
+extern int init_system();
 extern void cleanup_system();
 extern struct hil_proc *platform_create_proc(int proc_index);
 extern void *get_resource_table (int rsc_id, int *len);

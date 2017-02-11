@@ -37,7 +37,7 @@ char fw_name[] = "firmware1";
 static int shutdown_called = 0;
 
 /* External functions */
-extern void init_system();
+extern int init_system();
 extern void cleanup_system();
 
 /* External variables */

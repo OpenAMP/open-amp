@@ -37,14 +37,14 @@
 #include "metal/io.h"
 
 
-void init_system()
+int init_system()
 {
 	struct metal_init_params metal_param = METAL_INIT_DEFAULTS;
 
 	metal_param.log_level = LOG_DEBUG;
 	metal_init(&metal_param);
 
-	return;
+	return 0;
 }
 
 void cleanup_system()
