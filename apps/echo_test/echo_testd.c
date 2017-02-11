@@ -21,12 +21,12 @@ This application echoes back data that was sent to it by the master core. */
 extern int init_system(void);
 extern void cleanup_system(void);
 
-/* Globals */
+/* Local variables */
 static struct rpmsg_endpoint *rp_ept;
 static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
-static int evt_chnl_deleted = 0;
 static int remote_proc_state;
+static int evt_chnl_deleted = 0;
 
 static void virtio_rst_cb(struct hil_proc *hproc, int id)
 {
@@ -92,13 +92,14 @@ int app(struct hil_proc *hproc)
 	LPRINTF("init remoteproc resource done\n");
 
 	if (RPROC_SUCCESS != status) {
-		LPERROR("init remoteproc resource failed\n");
+		LPERROR("Failed  to initialize remoteproc resource.\n");
 		return -1;
 	}
 	LPRINTF("init remoteproc resource succeeded\n");
 
 	hil_set_vdev_rst_cb(hproc, 0, virtio_rst_cb);
 
+	LPRINTF("Waiting for events...\n");
 	do {
 		do {
 			hil_poll(proc->proc, 0);
@@ -128,8 +129,6 @@ out:
 	/* disable interrupts and free resources */
 	LPRINTF("De-initializating remoteproc resource\n");
 	remoteproc_resource_deinit(proc);
-
-	cleanup_system();
 
 	return 0;
 }
@@ -166,6 +165,8 @@ int main(int argc, char *argv[])
 			status = app(hproc);
 		}
 	}
+
+	cleanup_system();
 
 	return status;
 }
