@@ -148,8 +148,7 @@ int app (struct hil_proc *hproc)
 				ret = scanf("%f", &fdata);
 				if (ret) {
 					printf("\r\nRemote>User name = '%s'\r\n", ubuff);
-					printf("\r\nRemote>User age = '%d'\r\n",
-					       idata);
+					printf("\r\nRemote>User age = '%d'\r\n", idata);
 					printf("\r\nRemote>User entered value of pi = '%f'\r\n", fdata);
 				}
 			}
