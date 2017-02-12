@@ -53,13 +53,16 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 	(void)priv;
 	(void)src;
 
+	/* On reception of a shutdown we signal the application to terminate */
 	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
 		evt_chnl_deleted = 1;
 		return;
 	}
 
 	/* Send data back to master */
-	rpmsg_send(rp_chnl, data, len);
+	if (RPMSG_SUCCESS != rpmsg_send(rp_chnl, data, len)) {
+		LPERROR("rpmsg_send failed\n");
+	}
 }
 
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
@@ -77,15 +80,13 @@ static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
 	evt_chnl_deleted = 1;
 }
 
-/* Application entry point */
 int app(struct hil_proc *hproc)
 {
 	int status = 0;
 
 	/* Initialize RPMSG framework */
 	LPRINTF("Try to init remoteproc resource\n");
-	status =
-	    remoteproc_resource_init(&rsc_info, hproc,
+	status = remoteproc_resource_init(&rsc_info, hproc,
 				     rpmsg_channel_created,
 				     rpmsg_channel_deleted, rpmsg_read_cb,
 				     &proc, 0);
@@ -133,6 +134,7 @@ out:
 	return 0;
 }
 
+/* Application entry point */
 int main(int argc, char *argv[])
 {
 	unsigned long proc_id = 0;
