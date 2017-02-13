@@ -13,10 +13,6 @@ This application echoes back data that was sent to it by the master core. */
 #define LPRINTF(format, ...)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
-#define REMOTE_ACTIVE 0
-#define REMOTE_RESETTING 1
-#define REMOTE_RESETTED 2
-
 /* External functions */
 extern int init_system(void);
 extern void cleanup_system(void);
@@ -25,8 +21,8 @@ extern void cleanup_system(void);
 static struct rpmsg_endpoint *rp_ept;
 static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
-static int remote_proc_state;
 static int evt_chnl_deleted = 0;
+static int evt_virtio_rst = 0;
 
 static void virtio_rst_cb(struct hil_proc *hproc, int id)
 {
@@ -35,18 +31,14 @@ static void virtio_rst_cb(struct hil_proc *hproc, int id)
 
 	if (!proc || proc->proc != hproc || !proc->rdev)
 		return;
+
 	LPRINTF("Resetting RPMsg\n");
-	atomic_thread_fence(memory_order_seq_cst);
-	remote_proc_state = REMOTE_RESETTING;
-
-	rpmsg_deinit(proc->rdev);
-	proc->rdev = NULL;
-
-	atomic_thread_fence(memory_order_seq_cst);
-	remote_proc_state = REMOTE_RESETTED;
-	LPRINTF("RPMsg resetted\n");
+	evt_virtio_rst = 1;
 }
 
+/*-----------------------------------------------------------------------------*
+ *  RPMSG callbacks setup by remoteproc_resource_init()
+ *-----------------------------------------------------------------------------*/
 static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 			  void *priv, unsigned long src)
 {
@@ -80,6 +72,9 @@ static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
 	evt_chnl_deleted = 1;
 }
 
+/*-----------------------------------------------------------------------------*
+ *  Application
+ *-----------------------------------------------------------------------------*/
 int app(struct hil_proc *hproc)
 {
 	int status = 0;
@@ -90,43 +85,46 @@ int app(struct hil_proc *hproc)
 				     rpmsg_channel_created,
 				     rpmsg_channel_deleted, rpmsg_read_cb,
 				     &proc, 0);
-	LPRINTF("init remoteproc resource done\n");
 
 	if (RPROC_SUCCESS != status) {
 		LPERROR("Failed  to initialize remoteproc resource.\n");
 		return -1;
 	}
-	LPRINTF("init remoteproc resource succeeded\n");
+	LPRINTF("Init remoteproc resource succeeded\n");
 
 	hil_set_vdev_rst_cb(hproc, 0, virtio_rst_cb);
 
 	LPRINTF("Waiting for events...\n");
-	do {
-		do {
-			hil_poll(proc->proc, 0);
-		} while (!evt_chnl_deleted);
+	while(1) {
+		hil_poll(proc->proc, 0);
 
-		while (remote_proc_state == REMOTE_RESETTING);
-
-		if (remote_proc_state == REMOTE_RESETTED) {
-			LPRINTF("Reinitializing RPMsg\n");
-			status = rpmsg_init(hproc, &proc->rdev,
-					rpmsg_channel_created,
-					rpmsg_channel_deleted, rpmsg_read_cb,
-					1);
-			if (status != RPROC_SUCCESS) {
-				LPERROR("Reinit RPMsg failed\n");
-				goto out;
-			} else {
-				LPRINTF("Reinit RPMsg succeeded\n");
-				evt_chnl_deleted=0;
-			}
-		} else {
+		/* we got a shutdown request, exit */
+		if (evt_chnl_deleted) {
 			break;
 		}
-	} while(1);
 
-out:
+		if (evt_virtio_rst) {
+			/* vring rst callback, reset rpmsg */
+			LPRINTF("De-initializing RPMsg\n");
+			rpmsg_deinit(proc->rdev);
+			proc->rdev = NULL;
+
+			LPRINTF("Reinitializing RPMsg\n");
+			status = rpmsg_init(hproc, &proc->rdev,
+					    rpmsg_channel_created,
+					    rpmsg_channel_deleted, 
+					    rpmsg_read_cb,
+					    1);
+			if (status != RPROC_SUCCESS) {
+				LPERROR("Reinit RPMsg failed\n");
+				break;
+			} 
+			LPRINTF("Reinit RPMsg succeeded\n");
+			evt_chnl_deleted=0;
+			evt_virtio_rst = 0;
+		}
+	}
+
 	/* disable interrupts and free resources */
 	LPRINTF("De-initializating remoteproc resource\n");
 	remoteproc_resource_deinit(proc);
@@ -134,7 +132,9 @@ out:
 	return 0;
 }
 
-/* Application entry point */
+/*-----------------------------------------------------------------------------*
+ *  Application entry point
+ *-----------------------------------------------------------------------------*/
 int main(int argc, char *argv[])
 {
 	unsigned long proc_id = 0;
@@ -168,6 +168,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	LPRINTF("Stopping application...\n");
 	cleanup_system();
 
 	return status;
