@@ -90,7 +90,7 @@ struct hil_proc *platform_create_proc(int proc_index)
 	hil_set_vring_ipi(proc, 0,
 		IPI_IRQ_VECT_ID, (void *)&chn_ipi_info[0]);
 	hil_set_vring_ipi(proc, 1,
-		IPI_IRQ_VECT_ID, (void *)&chn_ipi_info[1]);
+		IPI_IRQ_VECT_ID, (void *)&chn_ipi_info[0]);
 
 	hil_set_rpmsg_channel(proc, 0, RPMSG_CHAN_NAME);
 	return proc;
