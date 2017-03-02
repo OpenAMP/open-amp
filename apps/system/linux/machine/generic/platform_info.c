@@ -131,6 +131,8 @@ struct hil_proc *platform_create_proc(int proc_index)
 	if (!proc)
 		return NULL;
 
+	/* Setup vdev */
+	hil_set_vdev(proc, NULL, NULL);
 	/* Setup IPI info */
 	hil_set_vring_ipi(proc, 0, (unsigned int)(-1), proc_data->ipi0);
 	hil_set_vring_ipi(proc, 1, (unsigned int)(-1), proc_data->ipi1);
