@@ -42,10 +42,10 @@
 
 #include "openamp/hil.h"
 #include "metal/atomic.h"
+#include "platform_info.h"
 
 #define RPU_CPU_ID             0 /* RPU ID */
 #define IPI_CHN_BITMASK        0x00000100 /* IPI channel bit mask APU<->RPU0 */
-#define RPMSG_CHAN_NAME        "rpmsg-openamp-demo-channel"
 #define DEV_BUS_NAME           "platform"
 #define IPI_DEV_NAME           "ff340000.ipi"
 #define VRING_DEV_NAME         "3ed40000.vring"
