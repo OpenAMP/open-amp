@@ -59,15 +59,13 @@ struct ipi_info {
         struct metal_io_region *io;
 	metal_phys_addr_t paddr;
         uint32_t ipi_chn_mask;
-        int need_reg;
         atomic_int sync;
 };
 
 extern struct hil_platform_ops zynqmp_a53_r5_proc_ops;
 
 static struct ipi_info chn_ipi_info[] = {
-	{IPI_DEV_NAME, DEV_BUS_NAME, NULL, NULL, 0, IPI_CHN_BITMASK, 1, 0},
-	{IPI_DEV_NAME, DEV_BUS_NAME, NULL, NULL, 0, IPI_CHN_BITMASK, 0, 0},
+	{IPI_DEV_NAME, DEV_BUS_NAME, NULL, NULL, 0, IPI_CHN_BITMASK, 0},
 };
 
 
@@ -91,10 +89,12 @@ struct hil_proc *platform_create_proc(int proc_index)
 	/* Setup vring info */
 	hil_set_vdev(proc, NULL, NULL);
 	/* Setup IPI info */
+	hil_set_vdev_ipi(proc, 0,
+		(unsigned int)(-1), (void *)&chn_ipi_info[0]);
 	hil_set_vring_ipi(proc, 0,
 		(unsigned int)(-1), (void *)&chn_ipi_info[0]);
 	hil_set_vring_ipi(proc, 1,
-		(unsigned int)(-1), (void *)&chn_ipi_info[1]);
+		(unsigned int)(-1), (void *)&chn_ipi_info[0]);
 	/* Setup vring info */
 	hil_set_vring(proc, 0, DEV_BUS_NAME, VRING_DEV_NAME);
 	hil_set_vring(proc, 1, DEV_BUS_NAME, VRING_DEV_NAME);
