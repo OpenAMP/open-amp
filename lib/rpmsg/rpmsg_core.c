@@ -167,7 +167,12 @@ struct rpmsg_channel *_rpmsg_create_channel(struct remote_device *rdev,
 	rp_chnl = metal_allocate_memory(sizeof(struct rpmsg_channel));
 	if (rp_chnl) {
 		memset(rp_chnl, 0x00, sizeof(struct rpmsg_channel));
-		strncpy(rp_chnl->name, name, sizeof(rp_chnl->name));
+		if (rdev->proc->sh_buff.io->mem_flags & METAL_IO_MAPPED)
+			metal_memcpy_io(rp_chnl->name, name,
+				sizeof(rp_chnl->name)-1);
+		else
+			strncpy(rp_chnl->name, name,
+				sizeof(rp_chnl->name)-1);
 		rp_chnl->src = src;
 		rp_chnl->dst = dst;
 		rp_chnl->rdev = rdev;
@@ -320,7 +325,12 @@ int rpmsg_send_ns_message(struct remote_device *rdev,
 	rp_hdr->dst = RPMSG_NS_EPT_ADDR;
 	rp_hdr->len = sizeof(struct rpmsg_ns_msg);
 	ns_msg = (struct rpmsg_ns_msg *) RPMSG_LOCATE_DATA(rp_hdr);
-	strncpy(ns_msg->name, rp_chnl->name, sizeof(rp_chnl->name));
+	if (rdev->proc->sh_buff.io->mem_flags & METAL_IO_MAPPED)
+		metal_memcpy_io(ns_msg->name, rp_chnl->name,
+			sizeof(rp_chnl->name)-1);
+	else
+		strncpy(ns_msg->name, rp_chnl->name,
+			sizeof(rp_chnl->name));
 	ns_msg->flags = flags;
 	ns_msg->addr = rp_chnl->src;
 
