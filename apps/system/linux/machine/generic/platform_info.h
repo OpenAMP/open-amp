@@ -30,14 +30,6 @@
  * for use by the Linux Master */
 
 #include "openamp/hil.h"
-#include "openamp/remoteproc_plat.h"
 
-/* remoteproc platform data structure */
-struct rproc_info_plat_local {
-	struct proc_info_hdr proc_hdr; /**< hil proc header */
-	struct plat_vring vring0; /**< vring0 data */
-	struct plat_vring vring1; /**< vring1 data */
-	struct plat_shm shm; /**< shared memory data */
-	struct plat_rpmsg_chnl rpmsg_chnl; /**< RPMSG channel data */
-	unsigned int last_type;
-};
+struct hil_proc *platform_create_proc(int proc_index);
+
