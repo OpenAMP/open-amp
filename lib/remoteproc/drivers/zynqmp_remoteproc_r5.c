@@ -63,8 +63,6 @@
 
 #define _rproc_wait() metal_cpu_yield()
 
-#define DEBUG 1
-
 /* -- FIX ME: ipi info is to be defined -- */
 struct ipi_info {
 	const char *name;
@@ -84,6 +82,13 @@ static void _shutdown_cpu(struct hil_proc *proc);
 static int _poll(struct hil_proc *proc, int nonblock);
 static int _initialize(struct hil_proc *proc);
 static void _release(struct hil_proc *proc);
+static struct metal_io_region* _alloc_shm(struct hil_proc *proc,
+			metal_phys_addr_t pa,
+			size_t size,
+			struct metal_device **dev);
+static void _release_shm(struct hil_proc *proc,
+			struct metal_device *dev,
+			struct metal_io_region *io);
 
 /*--------------------------- Globals ---------------------------------- */
 struct hil_platform_ops zynqmp_a53_r5_proc_ops = {
@@ -92,6 +97,8 @@ struct hil_platform_ops zynqmp_a53_r5_proc_ops = {
 	.boot_cpu             = _boot_cpu,
 	.shutdown_cpu         = _shutdown_cpu,
 	.poll                 = _poll,
+	.alloc_shm = _alloc_shm,
+	.release_shm = _release_shm,
 	.initialize    = _initialize,
 	.release    = _release,
 };
@@ -151,6 +158,29 @@ static int _poll(struct hil_proc *proc, int nonblock)
 	}
 }
 
+static struct metal_io_region* _alloc_shm(struct hil_proc *proc,
+			metal_phys_addr_t pa,
+			size_t size,
+			struct metal_device **dev)
+{
+	(void)proc;
+	(void)pa;
+	(void)size;
+
+	*dev = NULL;
+	return NULL;
+
+}
+
+static void _release_shm(struct hil_proc *proc,
+			struct metal_device *dev,
+			struct metal_io_region *io)
+{
+	(void)proc;
+	(void)io;
+	hil_close_generic_mem_dev(dev);
+}
+
 static int _initialize(struct hil_proc *proc)
 {
 	int ret;
@@ -180,7 +210,7 @@ static int _initialize(struct hil_proc *proc)
 		metal_io_init(ipi->io, (void *)ipi->paddr,
 			&ipi->paddr, 0x1000,
 			(unsigned)(-1),
-			METAL_UNCACHED | METAL_IO_MAPPED,
+			0,
 			NULL);
 	}
 
