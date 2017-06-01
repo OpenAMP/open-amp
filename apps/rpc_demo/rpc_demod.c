@@ -336,6 +336,31 @@ error1:
 	return ret;
 }
 
+static void *copy_from_shbuf(void *dst, void *shbuf, int len)
+{
+	void *retdst = dst;
+
+	while (len && ((uintptr_t)shbuf % sizeof(int))) {
+		*(uint8_t *)dst = *(uint8_t *)shbuf;
+		dst++;
+		shbuf++;
+		len--;
+	}
+	while (len >= (int)sizeof(int)) {
+		*(unsigned int *)dst = *(unsigned int *)shbuf;
+		dst += sizeof(int);
+		shbuf += sizeof(int);
+		len -= sizeof(int);
+	}
+	while (len > 0) {
+		*(uint8_t *)dst = *(uint8_t *)shbuf;
+		dst++;
+		shbuf++;
+		len--;
+	}
+	return retdst;
+}
+
 static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
 {
 	proxy_ept = rpmsg_create_ept(rp_chnl, rpmsg_proxy_cb, RPMSG_NULL,
@@ -377,7 +402,7 @@ static void rpmsg_proxy_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 	/* In case the shared memory is device memory
 	 * E.g. For now, we only use UIO device memory in Linux.
 	 */
-	metal_memcpy_io(proxy->rpc, data, len);
+	copy_from_shbuf(proxy->rpc, data, len);
 	if (handle_rpc(proxy->rpc)) {
 		LPRINTF("\nHandling remote procedure call errors:\n");
 		raw_printf("rpc id %d\n", proxy->rpc->id);
