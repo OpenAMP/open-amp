@@ -86,8 +86,6 @@ struct hil_proc *platform_create_proc(int proc_index)
 	if (!proc)
 		return NULL;
 
-	/* Setup vring info */
-	hil_set_vdev(proc, NULL, NULL);
 	/* Setup IPI info */
 	hil_set_vdev_ipi(proc, 0,
 		(unsigned int)(-1), (void *)&chn_ipi_info[0]);
@@ -96,8 +94,8 @@ struct hil_proc *platform_create_proc(int proc_index)
 	hil_set_vring_ipi(proc, 1,
 		(unsigned int)(-1), (void *)&chn_ipi_info[0]);
 	/* Setup vring info */
-	hil_set_vring(proc, 0, DEV_BUS_NAME, VRING_DEV_NAME);
-	hil_set_vring(proc, 1, DEV_BUS_NAME, VRING_DEV_NAME);
+	hil_set_vring(proc, 0, DEV_BUS_NAME, VRING_DEV_NAME, 0, 0);
+	hil_set_vring(proc, 1, DEV_BUS_NAME, VRING_DEV_NAME, 0, 0);
 	/* Setup shared memory info */
 	hil_set_shm (proc, DEV_BUS_NAME, SHM_DEV_NAME, 0, 0x40000);
 	/* Setup RPMSG channel info */
