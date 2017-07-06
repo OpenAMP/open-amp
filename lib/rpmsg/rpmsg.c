@@ -135,7 +135,8 @@ void rpmsg_deinit(struct remote_device *rdev)
  */
 
 int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
-			      uint32_t dst, char *data, int size, int wait)
+			      uint32_t dst, const void *data,
+			      int size, int wait)
 {
 	struct remote_device *rdev;
 	struct rpmsg_hdr rp_hdr;
