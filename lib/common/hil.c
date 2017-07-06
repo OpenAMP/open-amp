@@ -77,7 +77,7 @@ metal_phys_addr_t hil_generic_start_paddr = 0;
 
 static int hil_shm_block_write(struct metal_io_region *io,
 		unsigned long offset,
-		void *restrict src,
+		const void *restrict src,
 		memory_order order,
 		int len)
 {
