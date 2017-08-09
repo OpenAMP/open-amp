@@ -196,7 +196,7 @@ int test_execute_suite(char *firmware_name)
 	/* Test rpmsg_send API */
 	status = test_rpmsg_send(app_rp_chnl);
 
-	if (!status) {
+	if (status > 0) {
 		send_test_case_report("\r\nRPMSG Send Test: Passed\r\n");
 	} else {
 		send_test_case_report("\r\nRPMSG Send Test: Failed\r\n");
@@ -207,7 +207,7 @@ int test_execute_suite(char *firmware_name)
 	    test_rpmsg_send_offchannel(app_rp_chnl, rp_ept1->addr,
 				       app_rp_chnl->dst);
 
-	if (!status) {
+	if (status > 0) {
 		send_test_case_report
 		    ("\r\nRPMSG Send Offchannel Test: Passed\r\n");
 	} else {
@@ -324,7 +324,7 @@ int test_rpmsg_remote_channel_deletion(struct rpmsg_channel *rpmsg_chnl,
 	status =
 	    rpmsg_send(rpmsg_chnl, cmd,
 		       sizeof(struct command) + sizeof(struct chnl_cmd_data));
-	if (status) {
+	if (status < 0) {
 		return status;
 	}
 
@@ -365,12 +365,12 @@ int test_rpmsg_create_ept(struct rpmsg_channel *rpmsg_chnl)
 			       sizeof(struct command) +
 			       sizeof(struct ept_cmd_data));
 
-		if (!status) {
+		if (status > 0) {
 			/* Wait for ack */
 			wait_for_event();
 		}
 
-		if (!status) {
+		if (status > 0) {
 			test_ept[i] =
 			    rpmsg_create_ept(rpmsg_chnl, rpmsg_read_ept2_cb,
 					     RPMSG_NULL, EPT_TEST_ADDR + i);
@@ -380,14 +380,14 @@ int test_rpmsg_create_ept(struct rpmsg_channel *rpmsg_chnl)
 			}
 
 		}
-		if (!status) {
+		if (status > 0) {
 			status =
 			    test_rpmsg_send_offchannel_impl(rpmsg_chnl,
 							    test_ept[i]->addr,
 							    test_ept[i]->addr);
 		}
 
-		if (!status) {
+		if (status > 0) {
 			/* Tell the remote to delete the endpoint. */
 			cmd->comm_code = DELETE_EPT;
 			cmd->comm_start = CMD_START;
@@ -403,19 +403,19 @@ int test_rpmsg_create_ept(struct rpmsg_channel *rpmsg_chnl)
 				       sizeof(struct ept_cmd_data));
 		}
 
-		if (!status) {
+		if (status > 0) {
 			/* Wait for ack */
 			wait_for_event();
 		}
 
-		if (!status) {
+		if (status > 0) {
 			rpmsg_destroy_ept(test_ept[i]);
 		}
 	}
 
 	free(cmd);
 
-	if (status) {
+	if (status < 0) {
 		return -1;
 	}
 
@@ -455,7 +455,7 @@ int test_rpmsg_send_impl(struct rpmsg_channel *rpmsg_chnl)
 			    rpmsg_send(rpmsg_chnl, p_payload,
 				       sizeof(struct _payload) + size);
 
-			if (status != 0) {
+			if (status < 0) {
 				break;
 			}
 
@@ -471,24 +471,22 @@ int test_rpmsg_send_impl(struct rpmsg_channel *rpmsg_chnl)
 				}
 			}
 
-			if (status != 0) {
+			if (status < 0) {
 				break;
 			}
 
 			free(p_payload);
 
 		}
-		if (status) {
+		if (status < 0) {
 			return -1;
 		}
 		cmd.comm_start = CMD_START;
 		cmd.comm_code = STOP_ECHO;
 
 		status = rpmsg_send(rpmsg_chnl, &cmd, sizeof(struct command));
-		if (status)
-			if (status) {
-				return -1;
-			}
+		if (status < 0)
+			return -1;
 
 		/* Wait for echo. */
 		wait_for_event();
@@ -515,7 +513,7 @@ int test_rpmsg_send_offchannel_impl(struct rpmsg_channel *rpmsg_chnl,
 	cmd.comm_start = CMD_START;
 	status = rpmsg_send(rpmsg_chnl, &cmd, sizeof(struct command));
 
-	if (!status) {
+	if (status > 0) {
 		/* Wait for cmd ack. */
 		wait_for_event();
 
@@ -536,7 +534,7 @@ int test_rpmsg_send_offchannel_impl(struct rpmsg_channel *rpmsg_chnl,
 						  sizeof(struct _payload) +
 						  size);
 
-			if (status) {
+			if (status < 0) {
 				break;
 			}
 
@@ -552,7 +550,7 @@ int test_rpmsg_send_offchannel_impl(struct rpmsg_channel *rpmsg_chnl,
 				}
 			}
 
-			if (status) {
+			if (status < 0) {
 				break;
 			}
 

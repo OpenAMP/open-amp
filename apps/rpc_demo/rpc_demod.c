@@ -87,7 +87,7 @@ int handle_open(struct _sys_rpc *rpc)
 	ret = rpmsg_sendto(app_rp_chnl, proxy->rpc_response,
 			sizeof(struct _sys_rpc), PROXY_ENDPOINT);
 
-	return ret;
+	return ret > 0 ?  0 : ret;
 }
 
 int handle_close(struct _sys_rpc *rpc)
@@ -107,7 +107,7 @@ int handle_close(struct _sys_rpc *rpc)
 	ret = rpmsg_sendto(app_rp_chnl, proxy->rpc_response,
 			sizeof(struct _sys_rpc), PROXY_ENDPOINT);
 
-	return ret;
+	return ret > 0 ?  0 : ret;
 }
 
 int handle_read(struct _sys_rpc *rpc)
@@ -144,7 +144,7 @@ int handle_read(struct _sys_rpc *rpc)
 	ret = rpmsg_sendto(app_rp_chnl, proxy->rpc_response,
 			payload_size, PROXY_ENDPOINT);
 
-	return ret;
+	return ret > 0 ?  0 : ret;
 }
 
 int handle_write(struct _sys_rpc *rpc)
@@ -167,7 +167,7 @@ int handle_write(struct _sys_rpc *rpc)
 	ret = rpmsg_sendto(app_rp_chnl, proxy->rpc_response,
 			sizeof(struct _sys_rpc), PROXY_ENDPOINT);
 
-	return ret;
+	return ret > 0 ?  0 : ret;
 }
 
 int handle_rpc(struct _sys_rpc *rpc)

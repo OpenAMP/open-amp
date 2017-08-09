@@ -104,7 +104,7 @@ int app (struct hil_proc *hproc)
 		status = rpmsg_send(app_rp_chnl, i_payload,
 			(2 * sizeof(unsigned long)) + size);
 
-		if (status) {
+		if (status < 0) {
 			LPRINTF("Error sending data...\n");
 			break;
 		}

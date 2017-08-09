@@ -151,7 +151,7 @@ int app (struct hil_proc *hproc)
 		result_returned = 0;
 		status = rpmsg_send(app_rp_chnl, i_matrix, sizeof(i_matrix));
 
-		if (status) {
+		if (status < 0) {
 			LPRINTF("Error sending data...\n");
 			break;
 		}
