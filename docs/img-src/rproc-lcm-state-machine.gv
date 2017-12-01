@@ -1,0 +1,27 @@
+// Remoteproc Life Cycle Management State Machine
+
+digraph G {
+  rankdir="LR"
+  st_offline [label="Offline"]
+  st_ready [label="Ready"]
+  st_running [label="Running"]
+  st_suspended [label="Suspended"]
+  st_error [label="Error"]
+  st_stopped [label="Stopped"]
+
+  st_offline -> st_ready
+  st_ready -> st_running
+  st_ready -> st_stopped
+  st_running -> st_suspended
+  st_suspended -> st_running
+  st_suspended -> st_stopped
+  st_stopped -> st_offline
+  st_running -> st_error
+  st_running -> st_stopped
+  st_suspended -> st_error
+  st_error -> st_stopped
+  st_suspended -> st_stopped
+
+  {rank=same; st_ready; st_running}
+  {rank=same; st_suspended; st_error}
+}
