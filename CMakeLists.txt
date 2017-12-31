@@ -10,8 +10,7 @@ list (APPEND CMAKE_MODULE_PATH
   "${CMAKE_SOURCE_DIR}/cmake/modules"
   "${CMAKE_SOURCE_DIR}/cmake/platforms")
 
-project (open_amp)
-enable_language(C ASM)
+project (open_amp C)
 
 include (CheckIncludeFiles)
 include (CheckCSourceCompiles)
