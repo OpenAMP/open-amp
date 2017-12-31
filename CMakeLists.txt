@@ -10,6 +10,7 @@ list (APPEND CMAKE_MODULE_PATH
   "${CMAKE_SOURCE_DIR}/cmake/modules"
   "${CMAKE_SOURCE_DIR}/cmake/platforms")
 
+include (syscheck)
 project (open_amp C)
 
 include (CheckIncludeFiles)
