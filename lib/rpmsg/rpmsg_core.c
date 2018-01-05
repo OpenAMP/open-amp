@@ -584,12 +584,19 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 		if ((rp_chnl) && (rp_chnl->state == RPMSG_CHNL_STATE_NS)) {
 			/* First message from RPMSG Master, update channel
 			 * destination address and state */
-			rp_chnl->dst = rp_hdr->src;
-			rp_chnl->state = RPMSG_CHNL_STATE_ACTIVE;
+			if (rp_ept->addr == RPMSG_NS_EPT_ADDR) {
+				rp_ept->cb(rp_chnl,
+						  (void *)RPMSG_LOCATE_DATA(rp_hdr),
+						  rp_hdr->len, rdev,
+						  rp_hdr->src);
+			} else {
+				rp_chnl->dst = rp_hdr->src;
+				rp_chnl->state = RPMSG_CHNL_STATE_ACTIVE;
 
-			/* Notify channel creation to application */
-			if (rdev->channel_created) {
-				rdev->channel_created(rp_chnl);
+				/* Notify channel creation to application */
+				if (rdev->channel_created) {
+					rdev->channel_created(rp_chnl);
+				}
 			}
 		} else {
 			rp_ept->cb(rp_chnl, (void *)RPMSG_LOCATE_DATA(rp_hdr), rp_hdr->len,
@@ -667,29 +674,34 @@ void rpmsg_ns_callback(struct rpmsg_channel *server_chnl, void *data, int len,
 		metal_io_block_read(io,
 				metal_io_virt_to_offset(io, ns_msg->name),
 				name, len);
-		rp_chnl =
-		    _rpmsg_create_channel(rdev, name, 0x00, ns_msg->addr);
+		metal_mutex_acquire(&rdev->lock);
+		rp_chnl = rpmsg_rdev_get_chnl_from_id(rdev, ns_msg->name);
+		metal_mutex_release(&rdev->lock);
+		if (!rp_chnl) {
+			rp_chnl = _rpmsg_create_channel(rdev, name, 0x00,
+				  ns_msg->addr);
+		}
 		metal_free_memory(name);
 		if (rp_chnl) {
+			metal_mutex_acquire(&rdev->lock);
 			rp_chnl->state = RPMSG_CHNL_STATE_ACTIVE;
+			rp_chnl->dst = ns_msg->addr;
+			metal_mutex_release(&rdev->lock);
 			/* Create default endpoint for channel */
-			rp_chnl->rp_ept =
-			    rpmsg_create_ept(rp_chnl, rdev->default_cb, rdev,
-					     RPMSG_ADDR_ANY);
-			if (rp_chnl->rp_ept) {
-				rp_chnl->src = rp_chnl->rp_ept->addr;
-				/*
-				 * Echo back the NS message to remote in order to
-				 * complete the connection stage. Remote will know the endpoint
-				 * address from this point onward which will enable it to send
-				 * message without waiting for any application level message from
-				 * master.
-				 */
-				rpmsg_send(rp_chnl, data, len);
-				if (rdev->channel_created) {
-					rdev->channel_created(rp_chnl);
+			if (!rp_chnl->rp_ept) {
+				rp_chnl->rp_ept =
+					rpmsg_create_ept(rp_chnl,
+							 rdev->default_cb, rdev,
+							 RPMSG_ADDR_ANY);
+				if (rp_chnl->rp_ept) {
+					rp_chnl->src = rp_chnl->rp_ept->addr;
+					rpmsg_send_ns_message(rdev,
+							      rp_chnl,
+							      RPMSG_NS_CREATE);
 				}
 			}
+			if (rdev->channel_created)
+				rdev->channel_created(rp_chnl);
 		}
 	}
 }
