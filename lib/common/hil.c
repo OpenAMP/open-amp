@@ -360,24 +360,34 @@ struct proc_vring *hil_get_vring_info(struct proc_vdev *vdev, int *num_vrings)
 		for (i = 0; i < vdev_rsc->num_of_vrings; i++) {
 			struct hil_proc *proc = metal_container_of(
 					vdev, struct hil_proc, vdev);
+			void *vaddr = METAL_BAD_VA;
 
 			/* Initialize vring with vring resource */
 			vring_rsc = &vdev_rsc->vring[i];
 			vring[i].num_descs = vring_rsc->num;
 			vring[i].align = vring_rsc->align;
-			ret = hil_set_vring(proc, i, NULL, NULL,
-					(metal_phys_addr_t)vring_rsc->da,
-					vring_size(vring_rsc->num,
-					vring_rsc->align));
-			if (ret)
-				return NULL;
-			vring[i].vaddr = metal_io_phys_to_virt(
-					vring[i].io,
-					(metal_phys_addr_t)vring_rsc->da);
+			/* Check if vring needs to reinitialize.
+			 * Vring needs reinitialization if the vdev
+			 * master restarts.
+			 */
+			if (vring[i].io) {
+			    vaddr = metal_io_phys_to_virt(vring[i].io,
+							 (metal_phys_addr_t)vring_rsc->da);
+			}
+			if (vaddr == (void *)METAL_BAD_VA) {
+				ret = hil_set_vring(proc, i, NULL, NULL,
+						    (metal_phys_addr_t)vring_rsc->da,
+						    vring_size(vring_rsc->num,
+						    vring_rsc->align));
+				if (ret)
+					return NULL;
+				vaddr = metal_io_phys_to_virt(vring[i].io,
+							      (metal_phys_addr_t)vring_rsc->da);
+			}
+			vring[i].vaddr = vaddr;
 		}
 	}
 	return (vdev->vring_info);
-
 }
 
 /**
