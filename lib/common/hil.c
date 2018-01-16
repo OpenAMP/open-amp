@@ -744,7 +744,7 @@ int hil_set_vring (struct hil_proc *proc, int index,
 			return ret;
 		vring->dev = dev;
 	} else if (name) {
-		ret = metal_shmem_open(name, DEFAULT_VRING_MEM_SIZE, &io);
+		ret = metal_shmem_open(name, size, &io);
 		if (ret)
 			return ret;
 		vring->io = io;
@@ -765,8 +765,8 @@ int hil_set_vring (struct hil_proc *proc, int index,
 				return 0;
 		}
 		io = proc->ops->alloc_shm(proc, paddr, size, &dev);
-		openamp_assert(dev);
-		vring->dev = dev;
+		if (!io)
+			return -1;
 		vring->io = io;;
 	}
 
