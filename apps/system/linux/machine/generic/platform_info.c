@@ -131,6 +131,11 @@ struct hil_proc *platform_create_proc(int proc_index)
 	if (!proc)
 		return NULL;
 
+	/* Set VirtIO device nofication private data.
+	 * At the moment, the resource table is local, it will need to be
+	 * changed to stay in shared memory.
+	 */
+	hil_set_vdev_ipi(proc, 0, (-1U), proc_data->ipi0);
 	/* Setup IPI info */
 	hil_set_vring_ipi(proc, 0, (unsigned int)(-1), proc_data->ipi0);
 	hil_set_vring_ipi(proc, 1, (unsigned int)(-1), proc_data->ipi1);
