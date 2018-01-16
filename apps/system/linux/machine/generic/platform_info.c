@@ -136,9 +136,9 @@ struct hil_proc *platform_create_proc(int proc_index)
 	hil_set_vring_ipi(proc, 1, (unsigned int)(-1), proc_data->ipi1);
 	/* Setup vring info */
 	hil_set_vring(proc, 0, proc_data->vring0_bus, proc_data->vring0_path,
-			0, 0);
+			0, 0x8000);
 	hil_set_vring(proc, 1, proc_data->vring1_bus, proc_data->vring1_path,
-			0, 0);
+			0, 0x8000);
 	/* Setup shared memory info */
 	hil_set_shm (proc, proc_data->shm_bus, proc_data->shm_path,
 		0, proc_data->shm_size);
