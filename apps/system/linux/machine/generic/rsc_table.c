@@ -70,7 +70,7 @@ struct remote_resource_table __resource resources = {
 
 	/* Virtio device entry */
 	{
-	 RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,
+	 RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, VIRTIO_CONFIG_STATUS_DRIVER_OK,
 	 NUM_VRINGS, {0, 0},
 	 },
 
