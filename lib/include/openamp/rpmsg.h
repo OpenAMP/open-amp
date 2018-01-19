@@ -388,7 +388,9 @@ void *rpmsg_get_tx_payload_buffer(struct rpmsg_channel *rpdev, uint32_t *size,
 			    int wait);
 
 /**
- * @brief Sends a message in tx buffer allocated by rpmsg_alloc_tx_buffer()
+ * @brief Sends a message in tx buffer allocated by
+ *  rpmsg_get_tx_payload_buffer()
+ *
  * using explicit src/dst addresses.
  *
  * This function sends txbuf of length len to the remote dst address,
@@ -396,7 +398,7 @@ void *rpmsg_get_tx_payload_buffer(struct rpmsg_channel *rpdev, uint32_t *size,
  * The message will be sent to the remote processor which the rpdev
  * channel belongs to.
  * The application has to take the responsibility for:
- *  1. tx buffer allocation (rpmsg_alloc_tx_buffer() )
+ *  1. tx buffer allocation (rpmsg_get_tx_payload_buffer() )
  *  2. filling the data to be sent into the pre-allocated tx buffer
  *  3. not exceeding the buffer size when filling the data
  *  4. data cache coherency
@@ -418,7 +420,7 @@ void *rpmsg_get_tx_payload_buffer(struct rpmsg_channel *rpdev, uint32_t *size,
  *
  * @return number of bytes it has sent or negative error value on failure.
  *
- * @see rpmsg_alloc_tx_buffer
+ * @see rpmsg_get_tx_payload_buffer 
  * @see rpmsg_sendto_nocopy
  * @see rpmsg_send_nocopy
  */
@@ -426,14 +428,16 @@ int rpmsg_send_offchannel_nocopy(struct rpmsg_channel *rpdev, uint32_t src,
 				 uint32_t dst, void *txbuf, int len);
 
 /**
- * @brief Sends a message in tx buffer allocated by rpmsg_alloc_tx_buffer()
+ * @brief Sends a message in tx buffer allocated by
+ * rpmsg_get_tx_payload_buffer()
+ *
  * across to the remote processor, specify dst.
  *
  * This function sends txbuf of length len to the remote dst address.
  * The message will be sent to the remote processor which the rpdev
  * channel belongs to, using rpdev's source address.
  * The application has to take the responsibility for:
- *  1. tx buffer allocation (rpmsg_alloc_tx_buffer() )
+ *  1. tx buffer allocation (rpmsg_get_tx_payload_buffer() )
  *  2. filling the data to be sent into the pre-allocated tx buffer
  *  3. not exceeding the buffer size when filling the data
  *  4. data cache coherency
@@ -454,7 +458,7 @@ int rpmsg_send_offchannel_nocopy(struct rpmsg_channel *rpdev, uint32_t src,
  *
  * @return number of bytes it has sent or negative error value on failure.
  *
- * @see rpmsg_alloc_tx_buffer
+ * @see rpmsg_get_tx_payload_buffer 
  * @see rpmsg_send_offchannel_nocopy
  * @see rpmsg_send_nocopy
  */
@@ -471,13 +475,13 @@ int rpmsg_sendto_nocopy(struct rpmsg_channel *rpdev, void *txbuf, int len,
 
 /**
  * @brief Sends a message in tx buffer allocated by
- * rpmsg_alloc_tx_buffer() across to the remote processor.
+ * rpmsg_get_tx_payload_buffer() across to the remote processor.
  *
  * This function sends txbuf of length len on the rpdev channel.
  * The message will be sent to the remote processor which the rpdev
  * channel belongs to, using rpdev's source and destination addresses.
  * The application has to take the responsibility for:
- *  1. tx buffer allocation (rpmsg_alloc_tx_buffer() )
+ *  1. tx buffer allocation (rpmsg_get_tx_payload_buffer() )
  *  2. filling the data to be sent into the pre-allocated tx buffer
  *  3. not exceeding the buffer size when filling the data
  *  4. data cache coherency
@@ -497,7 +501,7 @@ int rpmsg_sendto_nocopy(struct rpmsg_channel *rpdev, void *txbuf, int len,
  *
  * @return 0 on success and an appropriate error value on failure
  *
- * @see rpmsg_alloc_tx_buffer
+ * @see rpmsg_get_tx_payload_buffer 
  * @see rpmsg_send_offchannel_nocopy
  * @see rpmsg_sendto_nocopy
  */
@@ -522,7 +526,7 @@ int rpmsg_send_nocopy(struct rpmsg_channel *rpdev, void *txbuf, int len)
  * @param rdev              - pointer to newly created remote device
  * @param channel_created   - callback function for channel creation
  * @param channel_destroyed - callback function for channel deletion
- * @default_cb              - default callback for channel
+ * @param default_cb        - default callback for channel
  * @param role              - role of the other device, Master or Remote
  * @return - status of function execution
  *
