@@ -6,330 +6,424 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <string.h>
+#include <metal/alloc.h>
+#include <metal/log.h>
+#include <metal/utilities.h>
+#include <openamp/elf_loader.h>
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
 #include <openamp/rsc_table_parser.h>
-#include <openamp/hil.h>
-#include <metal/sys.h>
-#include <metal/alloc.h>
-#include <metal/sleep.h>
+#include <openamp/sh_mem.h>
+
+/******************************************************************************
+ *  static functions
+ *****************************************************************************/
+static struct loader_ops *
+remoteproc_check_fw_format(void *fw, struct image_store_ops *store_ops)
+{
+	unsigned char header[64];
+	long lsize;
+
+	lsize = store_ops->load(fw, 0, header, sizeof(header), NULL,
+				SYNC_LOAD);
+	if (lsize <= 0)
+		return NULL;
+	else if (elf_identify(header))
+		return &elf_ops;
+	else
+		return NULL;
+}
+
+static void *remoteproc_datova_from_mems(struct remoteproc *rproc,
+					 metal_phys_addr_t da, size_t size,
+					 struct metal_io_region **io)
+{
+	struct metal_list *node;
+
+	metal_list_for_each(&rproc->mems, node) {
+		metal_phys_addr_t da_start, da_end, pa;
+		struct remoteproc_mem *mem;
+		struct metal_io_region *tmpio;
+
+		mem = metal_container_of(node, struct remoteproc_mem, node);
+		tmpio = mem->io;
+		da_start = mem->da;
+		da_end = da_start + mem->size;
+		if (da >= da_start && (da + size) <= da_end) {
+			pa = mem->pa + (da - da_start);
+			*io = tmpio;
+			return metal_io_phys_to_virt(mem->io, pa);
+		}
+	}
+	return NULL;
+}
+
+static void *remoteproc_patova_from_mems(struct remoteproc *rproc,
+					 metal_phys_addr_t pa, size_t size,
+					 struct metal_io_region **io)
+{
+	struct metal_list *node;
+
+	metal_list_for_each(&rproc->mems, node) {
+		metal_phys_addr_t pa_start, pa_end;
+		struct remoteproc_mem *mem;
+		struct metal_io_region *tmpio;
+
+		mem = metal_container_of(node, struct remoteproc_mem, node);
+		tmpio = mem->io;
+		pa_start = mem->pa;
+		pa_end = pa_start + mem->size;
+		if (pa >= pa_start && (pa + size) <= pa_end) {
+			*io = tmpio;
+			return metal_io_phys_to_virt(mem->io, pa);
+		}
+	}
+	return NULL;
+}
 
 /**
- * remoteproc_resource_init
+ * remoteproc_remove_mems
  *
- * Initializes resources for remoteproc remote configuration. Only
- * remoteproc remote applications are allowed to call this function.
+ * Remove memory resources from remote processor mems list.
+ * This function expect the caller have mutex protection.
  *
- * @param rsc_info          - pointer to resource table info control
- * 							  block
- * @param proc              - pointer to the hil_proc
- * @param channel_created   - callback function for channel creation
- * @param channel_destroyed - callback function for channel deletion
- * @param default_cb        - default callback for channel I/O
- * @param rproc_handle      - pointer to new remoteproc instance
- * @param rpmsg_role        - 1 for rpmsg master, or 0 for rpmsg slave
- *
- * @param returns - status of function execution
+ * @rproc - pointer to the remote processor instance
  *
  */
-int remoteproc_resource_init(struct rsc_table_info *rsc_info,
-			     struct hil_proc *proc,
-			     rpmsg_chnl_cb_t channel_created,
-			     rpmsg_chnl_cb_t channel_destroyed,
-			     rpmsg_rx_cb_t default_cb,
-			     struct remote_proc **rproc_handle,
-			     int rpmsg_role)
+static void remoteproc_remove_mems(struct remoteproc *rproc)
 {
+	struct metal_list *node;
 
-	struct remote_proc *rproc;
-	int status;
-	int remote_rpmsg_role;
+	metal_list_for_each(&rproc->mems, node) {
+		struct remoteproc_mem *mem;
+		struct metal_list *tmpnode;
 
-	if (!rsc_info || !proc) {
-		return RPROC_ERR_PARAM;
+		mem = metal_container_of(node, struct remoteproc_mem, node);
+		tmpnode = node->next;
+		metal_list_del(node);
+		metal_free_memory(mem);
+		node = tmpnode;
+	}
+}
+
+static void *remoteproc_get_rsc_table(struct remoteproc *rproc,
+				      void *store, void *loader_info,
+				      struct loader_ops *loader_ops,
+				      struct image_store_ops *store_ops,
+				      size_t *rsc_len_ptr,
+				      metal_phys_addr_t *rsc_da_ptr)
+{
+	long rsc_len;
+	int ret;
+	void *rsc_table = NULL;
+
+	/* no resource table is found */
+	rsc_len = loader_ops->get_rsc_table(loader_info, rsc_da_ptr);
+	if (rsc_len <= 0) {
+		*rsc_len_ptr = 0;
+		return NULL;
+	}
+	*rsc_len_ptr = (size_t)rsc_len;
+
+	/* Copy the resource table to local memory,
+	 * the caller should be responsible to release the memory
+	 */
+	rsc_table = metal_allocate_memory(rsc_len);
+	if (!rsc_table) {
+		return RPROC_ERR_PTR(-RPROC_ENOMEM);
+	}
+	if (!loader_ops->copy_rsc_table(store, loader_info, store_ops,
+					rsc_table)) {
+		rsc_table = RPROC_ERR_PTR(-RPROC_EINVAL);
+		goto error;
 	}
 
-	rproc = metal_allocate_memory(sizeof(struct remote_proc));
+	ret = handle_rsc_table(rproc, rsc_table, rsc_len);
+	if (ret < 0) {
+		rsc_table = RPROC_ERR_PTR(ret);
+		goto error;
+	}
+	return rsc_table;
+
+error:
+	metal_free_memory(rsc_table);
+	return rsc_table;
+}
+
+struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv)
+{
+	struct remoteproc *rproc;
+
+	rproc = ops->init(ops, priv);
 	if (rproc) {
-		memset(rproc, 0x00, sizeof(struct remote_proc));
-		/* There can be only one master for remote configuration so use the
-		 * rsvd cpu id for creating hil proc */
-		rproc->proc = proc;
-		status = hil_init_proc(proc);
-		if (!status) {
-			/* Parse resource table */
-			status =
-			    handle_rsc_table(rproc, rsc_info->rsc_tab,
-					     rsc_info->size);
-			if (status == RPROC_SUCCESS) {
-				/* Initialize RPMSG "messaging" component */
-				*rproc_handle = rproc;
-				remote_rpmsg_role = (rpmsg_role == RPMSG_MASTER?
-						RPMSG_REMOTE : RPMSG_MASTER);
-				status =
-				    rpmsg_init(proc,
-					       &rproc->rdev, channel_created,
-					       channel_destroyed, default_cb,
-					       remote_rpmsg_role);
-			} else {
-				status = RPROC_ERR_NO_RSC_TABLE;
+		rproc->state = RPROC_OFFLINE;
+		metal_mutex_init(&rproc->lock);
+	}
+	return rproc;
+}
+
+void remoteproc_remove(struct remoteproc *rproc)
+{
+	if (rproc) {
+		metal_mutex_acquire(&rproc->lock);
+		if (rproc->state != RPROC_OFFLINE) {
+			metal_mutex_release(&rproc->lock);
+			(void)remoteproc_shutdown(rproc);
+			metal_mutex_acquire(&rproc->lock);
+			rproc->state = RPROC_OFFLINE;
+		}
+		metal_mutex_release(&rproc->lock);
+
+		/* After this call, the rproc pointer is suposed to be
+		 * already freed.
+		 */
+		rproc->ops->remove(rproc);
+	}
+}
+
+int remoteproc_set_bootaddr(struct remoteproc *rproc,
+			    metal_phys_addr_t bootaddr)
+{
+	if (rproc) {
+		metal_mutex_acquire(&rproc->lock);
+		rproc->bootaddr = bootaddr;
+		metal_mutex_release(&rproc->lock);
+	}
+	return 0;
+}
+
+int remoteproc_start(struct remoteproc *rproc)
+{
+	int ret = -RPROC_ENODEV;
+
+	if (rproc) {
+		metal_mutex_acquire(&rproc->lock);
+		if (rproc->state == RPROC_READY) {
+			ret = rproc->ops->start(rproc);
+			rproc->state = RPROC_RUNNING;
+		} else {
+			ret = -RPROC_EINVAL;
+		}
+		metal_mutex_release(&rproc->lock);
+	}
+	return ret;
+}
+
+int remoteproc_stop(struct remoteproc *rproc)
+{
+	int ret = -RPROC_ENODEV;
+
+	if (rproc) {
+		metal_mutex_acquire(&rproc->lock);
+		if (rproc->state != RPROC_STOPPED &&
+		    rproc->state != RPROC_OFFLINE) {
+			ret = rproc->ops->stop(rproc);
+			rproc->state = RPROC_STOPPED;
+		} else {
+			ret = 0;
+		}
+		metal_mutex_release(&rproc->lock);
+	}
+	return ret;
+}
+
+int remoteproc_shutdown(struct remoteproc *rproc)
+{
+	int ret = -RPROC_ENODEV;
+
+	if (rproc) {
+		ret = 0;
+		metal_mutex_acquire(&rproc->lock);
+		if (rproc->state != RPROC_OFFLINE) {
+			if (rproc->state != RPROC_STOPPED) {
+				ret = rproc->ops->stop(rproc);
+				rproc->state = RPROC_STOPPED;
 			}
-		} else {
-			status = RPROC_ERR_CPU_INIT;
-		}
-	} else {
-		status = RPROC_ERR_NO_MEM;
-	}
-
-	/* Cleanup in case of error */
-	if (status != RPROC_SUCCESS) {
-		*rproc_handle = 0;
-		(void)remoteproc_resource_deinit(rproc);
-		return status;
-	}
-	return status;
-}
-
-/**
- * remoteproc_resource_deinit
- *
- * Uninitializes resources for remoteproc "remote" configuration.
- *
- * @param rproc - pointer to rproc instance
- *
- * @param returns - status of function execution
- *
- */
-
-int remoteproc_resource_deinit(struct remote_proc *rproc)
-{
-	if (rproc) {
-		if (rproc->rdev) {
-			rpmsg_deinit(rproc->rdev);
-		}
-		if (rproc->proc) {
-			hil_delete_proc(rproc->proc);
-			rproc->proc = NULL;
-		}
-		metal_free_memory(rproc);
-	}
-
-	return RPROC_SUCCESS;
-}
-
-/**
- * remoteproc_init
- *
- * Initializes resources for remoteproc master configuration. Only
- * remoteproc master applications are allowed to call this function.
- *
- * @param fw_name           - name of frimware
- * @param proc              - pointer to hil_proc
- * @param channel_created   - callback function for channel creation
- * @param channel_destroyed - callback function for channel deletion
- * @param default_cb        - default callback for channel I/O
- * @param rproc_handle      - pointer to new remoteproc instance
- *
- * @param returns - status of function execution
- *
- */
-int remoteproc_init(char *fw_name, struct hil_proc *proc,
-		    rpmsg_chnl_cb_t channel_created,
-		    rpmsg_chnl_cb_t channel_destroyed, rpmsg_rx_cb_t default_cb,
-		    struct remote_proc **rproc_handle)
-{
-
-	struct remote_proc *rproc;
-	struct resource_table *rsc_table;
-	unsigned int fw_size, rsc_size;
-	uintptr_t fw_addr;
-	int status;
-
-	if (!fw_name) {
-		return RPROC_ERR_PARAM;
-	}
-
-	rproc = metal_allocate_memory(sizeof(struct remote_proc));
-	if (rproc) {
-		memset((void *)rproc, 0x00, sizeof(struct remote_proc));
-		/* Create proc instance */
-		rproc->proc = proc;
-		status = hil_init_proc(proc);
-		if (!status) {
-			/* Retrieve firmware attributes */
-			status =
-			    hil_get_firmware(fw_name, &fw_addr,
-					     &fw_size);
-			if (!status) {
-				/* Initialize ELF loader - currently only ELF format is supported */
-				rproc->loader =
-				    remoteproc_loader_init(ELF_LOADER);
-				if (rproc->loader) {
-					/* Attach the given firmware with the ELF parser/loader */
-					status =
-					    remoteproc_loader_attach_firmware
-					    (rproc->loader,
-					     (void *)fw_addr);
-				} else {
-					status = RPROC_ERR_LOADER;
-				}
+			if (!ret) {
+				ret = rproc->ops->shutdown(rproc);
+				rproc->state = RPROC_OFFLINE;
+				remoteproc_remove_mems(rproc);
 			}
-		} else {
-			status = RPROC_ERR_CPU_INIT;
 		}
-	} else {
-		status = RPROC_ERR_NO_MEM;
+		metal_mutex_release(&rproc->lock);
 	}
-
-	if (!status) {
-		rproc->role = RPROC_MASTER;
-
-		/* Get resource table from firmware */
-		rsc_table =
-		    remoteproc_loader_retrieve_resource_section(rproc->loader,
-								&rsc_size);
-		if (rsc_table) {
-			/* Parse resource table */
-			status = handle_rsc_table(rproc, rsc_table, rsc_size);
-		} else {
-			status = RPROC_ERR_NO_RSC_TABLE;
-		}
-	}
-
-	/* Cleanup in case of error */
-	if (status != RPROC_SUCCESS) {
-		(void)remoteproc_deinit(rproc);
-		return status;
-	}
-
-	rproc->channel_created = channel_created;
-	rproc->channel_destroyed = channel_destroyed;
-	rproc->default_cb = default_cb;
-
-	*rproc_handle = rproc;
-
-	return status;
+	return ret;
 }
 
-/**
- * remoteproc_deinit
- *
- * Uninitializes resources for remoteproc "master" configuration.
- *
- * @param rproc - pointer to remote proc instance
- *
- * @param returns - status of function execution
- *
- */
-int remoteproc_deinit(struct remote_proc *rproc)
+void *remoteproc_datova(struct remoteproc *rproc,
+			metal_phys_addr_t da, size_t size,
+			struct metal_io_region **io)
 {
+	void *va;
 
-	if (rproc) {
-		if (rproc->loader) {
-			(void)remoteproc_loader_delete(rproc->loader);
-			rproc->loader = RPROC_NULL;
-		}
-		if (rproc->proc) {
-			hil_delete_proc(rproc->proc);
-			rproc->proc = RPROC_NULL;
-		}
-		metal_free_memory(rproc);
+	va = remoteproc_datova_from_mems(rproc, da, size, io);
+	if (va)
+		return va;
+	if (rproc->ops->mmap) {
+		metal_phys_addr_t pa = METAL_BAD_PHYS;
+		va = rproc->ops->mmap(rproc, &pa, &da, size,
+				      0, io);
+		return va;
 	}
-
-	return RPROC_SUCCESS;
+	return NULL;
 }
 
-/**
- * remoteproc_boot
- *
- * This function loads the image on the remote processor and starts
- * its execution from image load address.
- *
- * @param rproc - pointer to remoteproc instance to boot
- *
- * @param returns - status of function execution
- */
-int remoteproc_boot(struct remote_proc *rproc)
+void *remoteproc_mmap(struct remoteproc *rproc,
+		      metal_phys_addr_t *pa, metal_phys_addr_t *da,
+		      size_t size, unsigned int attribute,
+		      struct metal_io_region **io)
 {
+	void *va = NULL;
+	metal_phys_addr_t lpa, lda;
 
-	void *load_addr;
-	int status;
+	if (!rproc)
+		return NULL;
+	else if (!pa && !da)
+		return NULL;
+	if (pa)
+		lpa = *pa;
+	else
+		lpa = METAL_BAD_PHYS;
+	if (da)
+		lda =  *da;
+	else
+		lda = METAL_BAD_PHYS;
+	if (lpa != METAL_BAD_PHYS && lda == METAL_BAD_PHYS)
+		va = remoteproc_patova_from_mems(rproc, lpa, size, io);
+	else if (lda != METAL_BAD_PHYS && lpa == METAL_BAD_PHYS)
+		va = remoteproc_datova_from_mems(rproc, lda, size, io);
 
-	if (!rproc) {
-		return RPROC_ERR_PARAM;
+	if (va == NULL && rproc->ops->mmap) {
+		va = rproc->ops->mmap(rproc, &lpa, &lda, size, attribute, io);
+		if (pa)
+			*pa  = lpa;
+		if (da)
+			*da = lda;
+
+	}
+	return va;
+}
+
+int remoteproc_load(struct remoteproc *rproc, void *store, void **loader_data,
+		    struct image_store_ops *store_ops)
+{
+	int ret;
+	struct loader_ops *loader_ops;
+	void *ldata;
+	metal_phys_addr_t entry;
+	metal_phys_addr_t rsc_da;
+	size_t rsc_len;
+	void *rsc_table;
+
+	if (!rproc)
+		return -RPROC_ENODEV;
+
+	metal_mutex_acquire(&rproc->lock);
+	metal_log(METAL_LOG_DEBUG, "%s: check remoteproc status\n\r", __func__);
+	/* If remoteproc is running, cannot load firmware */
+	if (rproc->state == RPROC_RUNNING || rproc->state == RPROC_ERROR) {
+		metal_log(METAL_LOG_ERROR, "load store failure: invalid rproc state %d.\n",
+			      rproc->state);
+		return -RPROC_EINVAL;
 	}
 
-	/* Stop the remote CPU */
-	hil_shutdown_cpu(rproc->proc);
+	if (!store_ops) {
+		metal_log(METAL_LOG_ERROR, "load store failure: loader ops is not set.\n");
+		return -RPROC_EINVAL;
+	}
 
-	/* Load the firmware */
-	status = remoteproc_loader_load_remote_firmware(rproc->loader);
-	if (status == RPROC_SUCCESS) {
-		load_addr = remoteproc_get_load_address(rproc->loader);
-		if (load_addr != RPROC_ERR_PTR) {
-			/* Start the remote cpu */
-			status = hil_boot_cpu(rproc->proc,
-					      (uintptr_t)load_addr);
-			if (status == RPROC_SUCCESS) {
-				/* Wait for remote side to come up. This delay is arbitrary and may
-				 * need adjustment for different configuration of remote systems */
-				metal_sleep_usec(RPROC_BOOT_DELAY);
+	/* Open firmware to get ready to parse */
+	metal_log(METAL_LOG_DEBUG, "%s: open firmware image\n\r", __func__);
+	ret = store_ops->open(store);
+	if (ret) {
+		metal_log(METAL_LOG_ERROR, "load store failure: failed to open firmware.\n");
+		return ret;
+	}
 
-				/* Initialize RPMSG "messaging" component */
+	/* Check firmware format to select a parser */
+	loader_ops = rproc->loader_ops;
+	if (!loader_ops) {
+		metal_log(METAL_LOG_DEBUG, "%s: check loader \n\r", __func__);
+		loader_ops = remoteproc_check_fw_format(store, store_ops);
+		if (!loader_ops) {
+			metal_log(METAL_LOG_ERROR, "load store failure: failed to get store ops.\n");
+			ret = -RPROC_EINVAL;
+			goto error1;
+		}
+		rproc->loader_ops = loader_ops;
+	}
 
-				/* It is a work-around to work with remote Linux context. 
-				   Since the upstream Linux rpmsg implementation always 
-				   assumes itself to be an rpmsg master, we initialize
-				   the remote device as an rpmsg master for remote Linux
-				   configuration only. */
-#if defined (OPENAMP_REMOTE_LINUX_ENABLE)
-				status =
-				    rpmsg_init(rproc->proc,
-					       &rproc->rdev,
-					       rproc->channel_created,
-					       rproc->channel_destroyed,
-					       rproc->default_cb, RPMSG_MASTER);
-#else
-				status =
-				    rpmsg_init(rproc->proc,
-					       &rproc->rdev,
-					       rproc->channel_created,
-					       rproc->channel_destroyed,
-					       rproc->default_cb, RPMSG_REMOTE);
-#endif
-			}
+	/* parse the firmware, get the headers */
+	metal_log(METAL_LOG_DEBUG, "%s: parse firmware\n\r", __func__);
+	ldata = loader_ops->parse(store, store_ops);
+	if (!ldata) {
+		metal_log(METAL_LOG_ERROR, "load store failure: failed to parse firmware.\n");
+		ret = -RPROC_EINVAL;
+		goto error2;
+	}
+
+	/* Try to get the resource table */
+	metal_log(METAL_LOG_DEBUG, "%s: get resource table\n\r", __func__);
+	rsc_table = remoteproc_get_rsc_table(rproc, store, ldata,
+					     loader_ops, store_ops,
+					     &rsc_len, &rsc_da);
+	if (RPROC_IS_ERR(rsc_table)) {
+		ret = RPROC_PTR_ERR(rsc_table);
+		rsc_table = NULL;
+		goto error2;
+	}
+
+	/* load firmware */
+	metal_log(METAL_LOG_DEBUG, "%s: load firmware data\n\r", __func__);
+	ret = loader_ops->load(store, ldata, rproc, store_ops);
+	if (ret) {
+		metal_log(METAL_LOG_ERROR, "load store failure: failed to load firmware.\n");
+		goto error3;
+	}
+
+	/* Update resource table */
+	if (rsc_len && rsc_da != METAL_BAD_PHYS) {
+		void *rsc_table_cp = rsc_table;
+		struct metal_io_region *io;
+
+		metal_log(METAL_LOG_DEBUG, "%s: update resource table\n\r", __func__);
+		rsc_table = remoteproc_mmap(rproc, NULL, &rsc_da,
+					    rsc_len, 0, &io);
+		if (!rsc_table) {
+			/* FIX me: Should use metal_io_block_write */
+			memcpy(rsc_table, rsc_table_cp, rsc_len);
+			rproc->rsc_table = rsc_table;
+			rproc->rsc_len = rsc_len;
 		} else {
-			status = RPROC_ERR_LOADER;
+			metal_log(METAL_LOG_WARNING, "load store: not able to update rsc table.\n");
 		}
-	} else {
-		status = RPROC_ERR_LOADER;
+		metal_free_memory(rsc_table_cp);
+		/* So that the rsc_table will not get released */
+		rsc_table = NULL;
 	}
 
-	return status;
-}
+	metal_log(METAL_LOG_DEBUG, "%s: successfully load firmware\n\r", __func__);
+	/* get entry point from the firmware */
+	entry = loader_ops->get_entry(ldata);
+	rproc->bootaddr = entry;
+	rproc->state = RPROC_READY;
 
-/**
- * remoteproc_shutdown
- *
- * This function shutdowns the remote execution context
- *
- * @param rproc - pointer to remote proc instance to shutdown
- *
- * @param returns - status of function execution
- */
-int remoteproc_shutdown(struct remote_proc *rproc)
-{
+	metal_mutex_release(&rproc->lock);
+	if (loader_data)
+		*loader_data = ldata;
+	else
+		loader_ops->close(store, ldata, store_ops);
+	store_ops->close(store);
+	return ret;
 
-	if (rproc) {
-		if (rproc->proc) {
-			hil_shutdown_cpu(rproc->proc);
-		}
-		if (rproc->rdev) {
-			rpmsg_deinit(rproc->rdev);
-			rproc->rdev = RPROC_NULL;
-		}
-	}
-
-	return RPROC_SUCCESS;
+error3:
+	if (rsc_table)
+		metal_free_memory(rsc_table);
+error2:
+	loader_ops->close(store, ldata, store_ops);
+error1:
+	store_ops->close(store);
+	rproc->ops->shutdown(rproc);
+	metal_mutex_release(&rproc->lock);
+	return ret;
 }
