@@ -203,3 +203,80 @@ int get_first_zero_bit(unsigned long value)
 	}
 	return ((int)idx-1);
 }
+
+void *openamp_get_shmem_datova(struct metal_list *shmems,
+			       metal_phys_addr_t da, size_t size,
+			       struct metal_io_region **io)
+{
+	struct metal_list *node;
+	struct openamp_shmem *shmem;
+
+	if (!shmems)
+		return NULL;
+
+	metal_list_for_each(shmems, node) {
+		metal_phys_addr_t da_start;
+		metal_phys_addr_t da_end;
+
+		shmem = metal_container_of(node, struct openamp_shmem, node);
+		da_start = shmem->da;
+		da_end = shmem->da + shmem->size;
+		if (da >= da_start && (da + size) <= da_end) {
+			if (io)
+				*io = shmem->io;
+			return shmem->va + (da - da_start);
+		}
+
+	}
+	return NULL;
+}
+
+void *openamp_get_shmem_patova(struct metal_list *shmems,
+			       metal_phys_addr_t pa, size_t size,
+			       struct metal_io_region **io)
+{
+	struct metal_list *node;
+	struct openamp_shmem *shmem;
+
+	if (!shmems)
+		return NULL;
+
+	metal_list_for_each(shmems, node) {
+		metal_phys_addr_t pa_start;
+		metal_phys_addr_t pa_end;
+
+		shmem = metal_container_of(node, struct openamp_shmem, node);
+		pa_start = shmem->pa;
+		pa_end = shmem->pa + shmem->size;
+		if (pa >= pa_start && (pa + size) <= pa_end) {
+			if (io)
+				*io = shmem->io;
+			return shmem->va + (pa - pa_start);
+		}
+	}
+	return NULL;
+}
+
+metal_phys_addr_t openamp_get_shmem_vatopa(struct metal_list *shmems,
+					   void *va, size_t size)
+{
+	struct metal_list *node;
+	struct openamp_shmem *shmem;
+
+	if (!shmems)
+		return NULL;
+
+	metal_list_for_each(shmems, node) {
+		void *va_start;
+		void *va_end;
+
+		shmem = metal_container_of(node, struct openamp_shmem, node);
+		va_start = shmem->va;
+		va_end = shmem->va + shmem->size;
+		if (va >= va_start && (va + size) <= va_end)
+			return shmem->pa + (va - va_start);
+
+	}
+	return NULL;
+}
+

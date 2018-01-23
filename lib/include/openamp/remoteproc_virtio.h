@@ -72,7 +72,7 @@ struct rproc_vring {
 struct rproc_vshm_pool {
 	void *va;
 	metal_phys_addr_t pa;
-	ssize_t size;
+	int size;
 	struct metal_io_region *io;
 };
 

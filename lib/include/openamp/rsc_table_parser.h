@@ -9,7 +9,6 @@
 #define RSC_TABLE_PARSER_H
 
 #include <openamp/remoteproc.h>
-#include <openamp/hil.h>
 
 #if defined __cplusplus
 extern "C" {
@@ -20,18 +19,19 @@ extern "C" {
 #define RSC_TAB_MAX_VRINGS                  2
 
 /* Standard control request handling. */
-typedef int (*rsc_handler) (struct remote_proc * rproc, void *rsc);
+typedef int (*rsc_handler) (struct remoteproc * rproc, void *rsc);
 
 /* Function prototypes */
-int handle_rsc_table(struct remote_proc *rproc,
+int handle_rsc_table(struct remoteproc *rproc,
 		     struct resource_table *rsc_table, int len);
-int handle_carve_out_rsc(struct remote_proc *rproc, void *rsc);
-int handle_trace_rsc(struct remote_proc *rproc, void *rsc);
-int handle_dev_mem_rsc(struct remote_proc *rproc, void *rsc);
-int handle_vdev_rsc(struct remote_proc *rproc, void *rsc);
-int handle_rproc_mem_rsc(struct remote_proc *rproc, void *rsc);
-int handle_fw_chksum_rsc(struct remote_proc *rproc, void *rsc);
-int handle_mmu_rsc(struct remote_proc *rproc, void *rsc);
+int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc);
+int handle_trace_rsc(struct remoteproc *rproc, void *rsc);
+int handle_dev_mem_rsc(struct remoteproc *rproc, void *rsc);
+int handle_vdev_rsc(struct remoteproc *rproc, void *rsc);
+int handle_rproc_mem_rsc(struct remoteproc *rproc, void *rsc);
+int handle_fw_chksum_rsc(struct remoteproc *rproc, void *rsc);
+int handle_mmu_rsc(struct remoteproc *rproc, void *rsc);
+int handle_vendor_rsc(struct remoteproc *rproc, void *rsc);
 
 #if defined __cplusplus
 }

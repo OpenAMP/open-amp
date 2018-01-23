@@ -11,5 +11,7 @@
 #include <openamp/rpmsg.h>
 #include <openamp/remoteproc.h>
 
-
+struct openamp_shmem {
+	void *va;
+	metal_phys_addr_t pa;
 #endif				/* OPEN_AMP_H_ */
