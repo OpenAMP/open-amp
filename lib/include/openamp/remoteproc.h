@@ -1,6 +1,7 @@
 /*
- * Remote remote_proc Framework
+ * Remoteproc Framework
  *
+ * Copyright(c) 2018 Xilinx Ltd.
  * Copyright(c) 2011 Texas Instruments, Inc.
  * Copyright(c) 2011 Google, Inc.
  * All rights reserved.
@@ -11,8 +12,9 @@
 #ifndef REMOTEPROC_H
 #define REMOTEPROC_H
 
-#include <openamp/rpmsg.h>
-#include <openamp/firmware.h>
+#include <metal/io.h>
+#include <metal/mutex.h>
+#include <openamp/compiler.h>
 
 #if defined __cplusplus
 extern "C" {
@@ -78,6 +80,8 @@ struct fw_rsc_hdr {
  *          the remote remote_proc will be writing logs.
  * @RSC_VDEV:       declare support for a virtio device, and serve as its
  *          virtio header.
+ * @RSC_VENDOR_START: start of the vendor specific resource types range
+ * @RSC_VENDOR_END  : end of the vendor specific resource types range
  * @RSC_LAST:       just keep this one at the end
  *
  * For more details regarding a specific resource type, please see its
@@ -96,6 +100,8 @@ enum fw_resource_type {
 	RSC_RPROC_MEM = 4,
 	RSC_FW_CHKSUM = 5,
 	RSC_LAST = 6,
+	RSC_VENDOR_START = 128,
+	RSC_VENDOR_END = 512,
 };
 
 #define FW_RSC_ADDR_ANY (0xFFFFFFFFFFFFFFFF)
@@ -295,6 +301,22 @@ struct fw_rsc_vdev {
 } OPENAMP_PACKED_END;
 
 /**
+ * struct fw_rsc_vendor - remote processor vendor specific resource
+ * @len: length of the resource
+ *
+ * This resource entry tells the host the vendor specific resource
+ * required by the remote.
+ *
+ * These request entries should precede other shared resource entries
+ * such as vdevs, vrings.
+ */
+OPENAMP_PACKED_BEGIN
+struct fw_rsc_vendor {
+	uint32_t type;
+	uint32_t len;
+} OPENAMP_PACKED_END;
+
+/**
  * struct fw_rsc_rproc_mem - remote processor memory
  * @da: device address
  * @pa: physical address
@@ -332,172 +354,364 @@ struct fw_rsc_fw_chksum {
 	uint8_t chksum[64];
 } OPENAMP_PACKED_END;
 
+struct loader_ops;
+struct image_store_ops;
+struct remoteproc_ops;
+
 /**
- * struct remote_proc
+ * struct remoteproc_mem
+ *
+ * This structure presents the memory used by the remote processor
+ *
+ * @da: device memory
+ * @pa: physical memory
+ * @size: size of the memory
+ * @io: pointer to the I/O region
+ * @node: list node
+ */
+struct remoteproc_mem {
+	metal_phys_addr_t da;
+	metal_phys_addr_t pa;
+	size_t size;
+	char name[32];
+	struct metal_io_region *io;
+	struct metal_list node;
+};
+
+/**
+ * struct remoteproc
  *
  * This structure is maintained by the remoteproc to represent the remote
  * processor instance. This structure acts as a prime parameter to use
  * the remoteproc APIs.
  *
- * @proc                : hardware interface layer processor control
- * @rdev                : remote device , used by RPMSG "messaging" framework.
- * @loader              : pointer remoteproc loader
- * @channel_created     : create channel callback
- * @channel_destroyed   : delete channel callback
- * @default_cb          : default callback for channel
- * @role                : remote proc role , RPROC_MASTER/RPROC_REMOTE
- *
+ * @bootadd: boot address
+ * @lock: mutext lock
+ * @ops: remoteproc operations
+ * @rsc_table: pointer to resource table
+ * @rsc_len: length of resource table
+ * @rsc_io: metal I/O region of resource table
+ * @mems: remoteproc memories
+ * @state: remote processor state
+ * @priv: private data
  */
-struct remote_proc {
-	struct hil_proc *proc;
-	struct remote_device *rdev;
-	struct remoteproc_loader *loader;
-	rpmsg_chnl_cb_t channel_created;
-	rpmsg_chnl_cb_t channel_destroyed;
-	rpmsg_rx_cb_t default_cb;
-	int role;
+struct remoteproc {
+	metal_mutex_t lock;
+	void *rsc_table;
+	size_t rsc_len;
+	struct metal_io_region *rsc_io;
+	struct metal_list mems;
+	struct remoteproc_ops *ops;
+	metal_phys_addr_t bootaddr;
+	struct loader_ops *loader_ops;
+	unsigned int state;
+	void *priv;
 };
 
 /**
- * struct resc_table_info
+ * struct remoteproc_ops
  *
- * This structure is maintained by the remoteproc to allow applications
- * to pass resource table info during remote initialization.
+ * remoteproc operations needs to be implemented by each remoteproc driver
  *
- * @rsc_tab : pointer to resource table control block
- * @size    : size of resource table.
- *
+ * @init: initialize the remoteproc instance
+ * @remove: remove the remoteproc instance
+ * @mmap: memory mapped the mempory with physical address or destination
+ *        adress as input.
+ * @handle_rsc: handle the vendor specific resource
+ * @start: kick the remoteproc to run application
+ * @stop: stop the remoteproc from running application, the resource such as
+ *        memory may not be off.
+ * @shutdown: shutdown the remoteproc and release its resources.
+ * @kick: notify the remote
  */
-struct rsc_table_info {
-	struct resource_table *rsc_tab;
-	int size;
+struct remoteproc_ops {
+	struct remoteproc *(*init)(struct remoteproc_ops *ops, void *arg);
+	void (*remove)(struct remoteproc *rproc);
+	void *(*mmap)(struct remoteproc *rproc,
+		      metal_phys_addr_t *pa, metal_phys_addr_t *da,
+		      size_t size, unsigned int attribute,
+		      struct metal_io_region **io);
+	int (*handle_rsc)(struct remoteproc *rproc, void *rsc, size_t len);
+	int (*start)(struct remoteproc *rproc);
+	int (*stop)(struct remoteproc *rproc);
+	int (*shutdown)(struct remoteproc *rproc);
+	int (*kick)(struct remoteproc *rproc, int id);
 };
-
-/* Definitions for device types , null pointer, etc.*/
-#define RPROC_SUCCESS                           0
-#define RPROC_NULL                              (void *)0
-#define RPROC_TRUE                              1
-#define RPROC_FALSE                             0
-#define RPROC_MASTER                            1
-#define RPROC_REMOTE                            0
-/* Number of msecs to wait for remote context to come up */
-#define RPROC_BOOT_DELAY                        500
 
 /* Remoteproc error codes */
-#define RPROC_ERR_BASE                          -4000
-#define RPROC_ERR_CPU_INIT                      (RPROC_ERR_BASE -1)
-#define RPROC_ERR_NO_RSC_TABLE                  (RPROC_ERR_BASE -2)
-#define RPROC_ERR_NO_MEM                        (RPROC_ERR_BASE -3)
-#define RPROC_ERR_RSC_TAB_TRUNC                 (RPROC_ERR_BASE -4)
-#define RPROC_ERR_RSC_TAB_VER                   (RPROC_ERR_BASE -5)
-#define RPROC_ERR_RSC_TAB_RSVD                  (RPROC_ERR_BASE -6)
-#define RPROC_ERR_RSC_TAB_VDEV_NRINGS           (RPROC_ERR_BASE -7)
-#define RPROC_ERR_RSC_TAB_NP                    (RPROC_ERR_BASE -8)
-#define RPROC_ERR_RSC_TAB_NS                    (RPROC_ERR_BASE -9)
-#define RPROC_ERR_INVLD_FW                      (RPROC_ERR_BASE -10)
-#define RPROC_ERR_LOADER                        (RPROC_ERR_BASE -11)
-#define RPROC_ERR_PARAM                         (RPROC_ERR_BASE -12)
-#define RPROC_ERR_PTR                           (void*)0xDEADBEAF
+#define RPROC_EBASE	0
+#define RPROC_ENOMEM	(RPROC_EBASE + 1)
+#define RPROC_EINVAL	(RPROC_EBASE + 2)
+#define RPROC_ENODEV	(RPROC_EBASE + 3)
+#define RPROC_EAGAIN	(RPROC_EBASE + 4)
+#define RPROC_ERR_RSC_TAB_TRUNC (RPROC_EBASE + 5)
+#define RPROC_ERR_RSC_TAB_VER   (RPROC_EBASE + 6)
+#define RPROC_ERR_RSC_TAB_RSVD  (RPROC_EBASE + 7)
+#define RPROC_ERR_RSC_TAB_VDEV_NRINGS (RPROC_EBASE + 9)
+#define RPROC_ERR_RSC_TAB_NP          (RPROC_EBASE + 10)
+#define RPROC_ERR_RSC_TAB_NS          (RPROC_EBASE + 11)
+#define RPROC_EMAX	(RPROC_EBASE + 16)
+#define RPROC_EPTR	(void*)(-1)
+#define RPROC_EOF	(void*)(-1)
+
+static inline long RPROC_PTR_ERR(const void *ptr)
+{
+	return (long)ptr;
+}
+
+static inline int RPROC_IS_ERR(const void *ptr)
+{
+	if ((unsigned long)ptr >= (unsigned long)(-RPROC_EMAX))
+		return 1;
+	else
+		return 0;
+}
+
+static inline void * RPROC_ERR_PTR(long error)
+{
+	return (void *)error;
+}
 
 /**
- * remoteproc_resource_init
- *
- * Initializes resources for remoteproc remote configuration.Only
- * remoteproc remote applications are allowed to call this function.
- *
- * @param rsc_info          - pointer to resource table info control
- *                            block
- * @param proc              - pointer to the hil_proc
- * @param channel_created   - callback function for channel creation
- * @param channel_destroyed - callback function for channel deletion
- * @param default_cb        - default callback for channel I/O
- * @param rproc_handle      - pointer to new remoteproc instance
- * @param init_env          - 1 to initialize environment, 0 not to
- * @param rpmsg_role        - 1 for rpmsg master,  or 0 for rpmsg slave
- *
- * @param returns - status of execution
- *
+ * enum rproc_state - remote processor states
+ * @RPROC_OFFLINE:	remote is offline
+ * @RPROC_READY:	remote is ready to start
+ * @RPROC_RUNNING:	remote is up and running
+ * @RPROC_SUSPENDED:	remote is suspended
+ * @RPROC_ERROR:	remote has error; need to recover
+ * @RPROC_STOPPED:	remote is stopped
+ * @RPROC_LAST:		just keep this one at the end
  */
-int remoteproc_resource_init(struct rsc_table_info *rsc_info,
-			    struct hil_proc *proc,
-			     rpmsg_chnl_cb_t channel_created,
-			     rpmsg_chnl_cb_t channel_destroyed,
-			     rpmsg_rx_cb_t default_cb,
-			     struct remote_proc **rproc_handle,
-			     int rpmsg_role);
-
-/**
- * remoteproc_resource_deinit
- *
- * Uninitializes resources for remoteproc remote configuration.
- *
- * @param rproc - pointer to remoteproc instance
- *
- * @param returns - status of execution
- *
- */
-
-int remoteproc_resource_deinit(struct remote_proc *rproc);
+enum remoteproc_state {
+	RPROC_OFFLINE		= 0,
+	RPROC_READY		= 1,
+	RPROC_RUNNING		= 2,
+	RPROC_SUSPENDED		= 3,
+	RPROC_ERROR		= 4,
+	RPROC_STOPPED		= 5,
+	RPROC_LAST		= 6,
+};
 
 /**
  * remoteproc_init
  *
- * Initializes resources for remoteproc master configuration. Only
- * remoteproc master applications are allowed to call this function.
+ * Initializes remoteproc resource.
  *
- * @param fw_name           - name of firmware
- * @param proc              - pointer to hil_proc
- * @param channel_created   - callback function for channel creation
- * @param channel_destroyed - callback function for channel deletion
- * @param default_cb        - default callback for channel I/O
- * @param rproc_handle      - pointer to new remoteproc instance
+ * @ops - pointer to remoteproc operations
+ * @priv - pointer to private data
  *
- * @param returns - status of function execution
- *
+ * @returns created remoteproc pointer
  */
-int remoteproc_init(char *fw_name, struct hil_proc *proc,
-		    rpmsg_chnl_cb_t channel_created,
-		    rpmsg_chnl_cb_t channel_destroyed,
-		    rpmsg_rx_cb_t default_cb,
-		    struct remote_proc **rproc_handle);
+struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv);
 
 /**
- * remoteproc_deinit
+ * remoteproc_remove
  *
- * Uninitializes resources for remoteproc "master" configuration.
+ * Remove remoteproc resource
  *
- * @param rproc - pointer to remoteproc instance
- *
- * @param returns - status of function execution
+ * @rproc - pointer to remoteproc instance
  *
  */
-int remoteproc_deinit(struct remote_proc *rproc);
+void remoteproc_remove(struct remoteproc *rproc);
 
 /**
- * remoteproc_boot
+ * remoteproc_datova
  *
- * This function loads the image on the remote processor and starts
- * its execution from image load address.
+ * remoteproc convert device address to virtual address
  *
- * @param rproc - pointer to remoteproc instance to boot
+ * @rproc - pointer to the remote processor
+ * @da - device address
+ * @size - size of the memory
+ * @io - pointer to the pointer of the I/O region
  *
- * @param returns - status of function execution
+ * returns pointer to the memory
  */
-int remoteproc_boot(struct remote_proc *rproc);
+void *remoteproc_datova(struct remoteproc *rproc, metal_phys_addr_t da,
+			size_t size, struct metal_io_region **io);
+
+/**
+ * remoteproc_get_mem_with_name
+ *
+ * get remoteproc memory with name
+ *
+ * @rproc - pointer to the remote processor
+ * @name - name of the shared memory
+ * @va - pointer to hold the virtual address
+ * @io - pointer to the pointer of the I/O region
+ *
+ * returns size of the memory, negative value for failure
+ */
+int remoteproc_get_mem_with_name(struct remoteproc *rproc,
+				 const char *name, void **va,
+				 struct metal_io_region **io);
+
+/**
+ * remoteproc_get_mem_with_pa
+ *
+ * get remoteproc memory with physical address
+ *
+ * @rproc - pointer to the remote processor
+ * @pa - physical address
+ *
+ * returns metal I/O region pointer, NULL for failure
+ */
+struct metal_io_region *
+remoteproc_get_mem_with_pa(struct remoteproc *rproc,
+			   metal_phys_addr_t pa);
+
+/**
+ * remoteproc_get_mem_with_va
+ *
+ * get remoteproc memory with virtual address
+ *
+ * @rproc - pointer to the remote processor
+ * @va - virtual address
+ *
+ * returns metal I/O region pointer, NULL for failure
+ */
+struct metal_io_region *
+remoteproc_get_mem_with_va(struct remoteproc *rproc, void *va);
+
+/**
+ * remoteproc_mmap
+ *
+ * remoteproc mmap memory
+ *
+ * @rproc - pointer to the remote processor
+ * @pa - physical address pointer
+ * @da - device address pointer
+ * @size - size of the memory
+ * @attribute - memory attribute
+ * @io - pointer to the I/O region
+ *
+ * returns pointer to the memory
+ */
+void *remoteproc_mmap(struct remoteproc *rproc,
+		    metal_phys_addr_t *pa, metal_phys_addr_t *da,
+		    size_t size, unsigned int attribute,
+		    struct metal_io_region **io);
+
+/**
+ * remoteproc_set_rsc_table
+ *
+ * Set resource table of remoteproc
+ *
+ * @rproc - pointer to remoteproc instance
+ * @rsc_table - pointer to resource table
+ * @rsc_size - resource table size
+ *
+ * returns 0 for success and negative value for errors
+ */
+int remoteproc_set_rsc_table(struct remoteproc *rproc,
+			     struct resource_table *rsc_table,
+			     size_t rsc_size);
+
+/**
+ * remoteproc_get_ready
+ *
+ * Get remoteproc ready to load and execute application
+ *
+ * @rproc - pointer to remoteproc instance
+ * @priv - pointer to private data
+ * @plen - length of private data
+ *
+ * returns 0 for success and negative value for errors
+ */
+int remoteproc_get_ready(struct remoteproc *rproc, void *priv, size_t plen);
+
+/**
+ * remoteproc_set_bootaddr
+ *
+ * Set bootaddr of remoteproc
+ *
+ * @rproc - pointer to remoteproc instance
+ * @bootaddr - boot address
+ *
+ * returns 0 for success and negative value for errors
+ */
+int remoteproc_set_bootaddr(struct remoteproc *rproc,
+			    metal_phys_addr_t bootaddr);
+
+/**
+ * remoteproc_start
+ *
+ * This function starts the remote processor.
+ * It assumes the firmware is already loaded,
+ *
+ * @rproc - pointer to remoteproc instance to start
+ *
+ * returns 0 for success and negative value for errors
+ */
+int remoteproc_start(struct remoteproc *rproc);
+
+/**
+ * remoteproc_stop
+ *
+ * This function stops the remote processor but it
+ * will not release its resource.
+ *
+ * @rproc - pointer to remoteproc instance
+ *
+ * returns 0 for success and negative value for errors
+ */
+int remoteproc_stop(struct remoteproc *rproc);
 
 /**
  * remoteproc_shutdown
  *
- * This function shutdowns the remote execution context.
+ * This function shutdown the remote processor and
+ * release its resources.
  *
- * @param rproc - pointer to remoteproc instance to shutdown
+ * @rproc - pointer to remoteproc instance
  *
- * @param returns - status of function execution
+ * returns 0 for success and negative value for errors
  */
-int remoteproc_shutdown(struct remote_proc *rproc);
+int remoteproc_shutdown(struct remoteproc *rproc);
 
+/* remoteproc_load
+ *
+ * load firmware, it expects firmware loader has been
+ * set to the specified remoteproc.
+ *
+ * @rproc: pointer to the remoteproc instance
+ * @fw: pointer to user defined private data
+ * @loader_data: pointer to the data used by remoteproc loader
+ * @store_ops: user defined image store operations
+ *
+ * return 0 for success and negative value for failure
+ */
+int remoteproc_load(struct remoteproc *rproc,
+		    void *store, void **loader_data,
+		    struct image_store_ops *store_ops);
+
+/* remoteproc_create_virtio
+ *
+ * create virtio device, it returns pointer to the created virtio device.
+ *
+ * @rproc: pointer to the remoteproc instance
+ * @vdev_id: virtio device ID
+ * @role: virtio device role
+ * @rst_cb: virtio device reset callback
+ *
+ * return pointer to the created virtio device, NULL for failure.
+ */
+struct virtio_device *
+remoteproc_create_virtio(struct remoteproc *rproc,
+			 int vdev_id, unsigned int role,
+			 int (*rst_cb)(struct virtio_device *vdev));
+
+/* remoteproc_remove_virtio
+ *
+ * Remove virtio device
+ *
+ * @rproc: pointer to the remoteproc instance
+ * @vdev: pointer to the virtio device
+ *
+ */
+void remoteproc_remote_virtio(struct remoteproc *rproc,
+			      struct virtio_device *vdev);
 #if defined __cplusplus
 }
 #endif
 
-#endif				/* REMOTEPROC_H_ */
+#endif /* REMOTEPROC_H_ */
