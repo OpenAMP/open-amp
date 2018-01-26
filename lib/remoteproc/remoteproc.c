@@ -351,7 +351,6 @@ int remoteproc_shutdown(struct remote_proc *rproc)
 		if (rproc->rdev) {
 			rpmsg_deinit(rproc->rdev);
 			rproc->rdev = RPROC_NULL;
-			rproc->proc = RPROC_NULL;
 		}
 	}
 
