@@ -33,6 +33,10 @@
 #ifndef VIRTIO_RING_H
 #define	VIRTIO_RING_H
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 /* This marks a buffer as continuing via the next field. */
 #define VRING_DESC_F_NEXT       1
 /* This marks a buffer as write-only (otherwise read-only). */
@@ -160,4 +164,9 @@ vring_need_event(uint16_t event_idx, uint16_t new_idx, uint16_t old)
 	return (uint16_t) (new_idx - event_idx - 1) <
 	    (uint16_t) (new_idx - old);
 }
+
+#if defined __cplusplus
+}
+#endif
+
 #endif				/* VIRTIO_RING_H */

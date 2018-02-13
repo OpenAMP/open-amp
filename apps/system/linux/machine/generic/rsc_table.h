@@ -37,6 +37,10 @@
 #include <stddef.h>
 #include "openamp/open_amp.h"
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 #define NO_RESOURCE_ENTRIES         1
 
 /* Resource table for the given remote */
@@ -52,4 +56,9 @@ struct remote_resource_table {
 };
 
 void *get_resource_table (int rsc_id, int *len);
+
+#if defined __cplusplus
+}
+#endif
+
 #endif /* RSC_TABLE_H_ */

@@ -33,6 +33,10 @@
 #include "openamp/env.h"
 #include <stdint.h>
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 /* Max supported firmwares */
 #define FW_COUNT 4
 
@@ -45,4 +49,8 @@ struct firmware_info {
 int config_get_firmware(char *fw_name, uintptr_t *start_addr,
 			unsigned int *size);
 
+#if defined __cplusplus
+}
 #endif
+
+#endif /* FIRMWARE_H */

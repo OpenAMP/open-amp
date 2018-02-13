@@ -8,6 +8,10 @@
 #ifndef M_EPT_FUNC_TEST_H_
 #define M_EPT_FUNC_TEST_H_
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 OPENAMP_PACKED_BEGIN
 struct command {
 	unsigned int comm_start;
@@ -61,5 +65,9 @@ struct _payload {
 	unsigned long size;
 	char data[0];
 } OPENAMP_PACKED_END;
+
+#if defined __cplusplus
+}
+#endif
 
 #endif				/* M_EPT_FUNC_TEST_H_ */

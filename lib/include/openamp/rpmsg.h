@@ -38,6 +38,10 @@
 
 #include "openamp/rpmsg_core.h"
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 /* The feature bitmap for virtio rpmsg */
 #define VIRTIO_RPMSG_F_NS	0	/* RP supports name service notifications */
 #define RPMSG_NAME_SIZE     32
@@ -587,5 +591,9 @@ struct rpmsg_channel *rpmsg_create_channel(struct remote_device *rdev,
  *
  */
 void rpmsg_delete_channel(struct rpmsg_channel *rp_chnl);
+
+#if defined __cplusplus
+}
+#endif
 
 #endif				/* _RPMSG_H_ */

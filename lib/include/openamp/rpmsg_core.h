@@ -39,6 +39,10 @@
 #include "metal/mutex.h"
 #include "metal/list.h"
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 /* Configurable parameters */
 #define RPMSG_BUFFER_SIZE                       512
 #define RPMSG_MAX_VQ_PER_RDEV                   2
@@ -206,5 +210,9 @@ void rpmsg_rdev_read_config(struct virtio_device *dev, uint32_t offset,
 void rpmsg_rdev_write_config(struct virtio_device *dev, uint32_t offset,
 			     void *src, int length);
 void rpmsg_rdev_reset(struct virtio_device *dev);
+
+#if defined __cplusplus
+}
+#endif
 
 #endif				/* _RPMSG_CORE_H_ */

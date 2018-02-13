@@ -33,6 +33,10 @@
 
 #include "openamp/virtqueue.h"
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 /* VirtIO device IDs. */
 #define VIRTIO_ID_NETWORK    0x01
 #define VIRTIO_ID_BLOCK      0x02
@@ -150,5 +154,9 @@ struct _virtio_dispatch_ {
 	void (*reset_device) (struct virtio_device * dev);
 
 };
+
+#if defined __cplusplus
+}
+#endif
 
 #endif				/* _VIRTIO_H_ */

@@ -49,6 +49,10 @@
 #include "openamp/env.h"
 #include "metal/mutex.h"
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 /* Macros */
 #define BITMAP_WORD_SIZE         (sizeof(unsigned long) << 3)
 #define WORD_SIZE                sizeof(unsigned long)
@@ -88,5 +92,9 @@ void sh_mem_delete_pool(struct sh_mem_pool *pool);
 void *sh_mem_get_buffer(struct sh_mem_pool *pool);
 void sh_mem_free_buffer(void *ptr, struct sh_mem_pool *pool);
 int get_first_zero_bit(unsigned long value);
+
+#if defined __cplusplus
+}
+#endif
 
 #endif				/* SH_MEM_H_ */

@@ -37,6 +37,11 @@
 
 #include "openamp/rpmsg.h"
 #include "openamp/firmware.h"
+
+#if defined __cplusplus
+extern "C" {
+#endif
+
 /**
  * struct resource_table - firmware resource table header
  * @ver: version number
@@ -514,5 +519,9 @@ int remoteproc_boot(struct remote_proc *rproc);
  * @param returns - status of function execution
  */
 int remoteproc_shutdown(struct remote_proc *rproc);
+
+#if defined __cplusplus
+}
+#endif
 
 #endif				/* REMOTEPROC_H_ */

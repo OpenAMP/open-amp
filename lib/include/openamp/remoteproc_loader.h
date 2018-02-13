@@ -47,6 +47,10 @@
 
 #include "openamp/remoteproc.h"
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 /**
  * enum loader_type - dynamic name service announcement flags
  *
@@ -90,5 +94,9 @@ void *remoteproc_get_load_address(struct remoteproc_loader *loader);
 
 /* Supported loaders */
 extern int elf_loader_init(struct remoteproc_loader *loader);
+
+#if defined __cplusplus
+}
+#endif
 
 #endif				/* REMOTEPROC_LOADER_H_ */

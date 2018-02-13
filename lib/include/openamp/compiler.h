@@ -41,6 +41,9 @@
  *       This file defines compiler-specific macros.
  *
  ***************************************************************************/
+#if defined __cplusplus
+extern "C" {
+#endif
 
 /* IAR ARM build tools */
 #if defined(__ICCARM__)
@@ -78,6 +81,10 @@
 #else
 /* There is no default definition here to avoid wrong structures packing in case of not supported compiler */
 #error Please implement the structure packing macros for your compiler here!
+#endif
+
+#if defined __cplusplus
+}
 #endif
 
 #endif /* _COMPILER_H_ */

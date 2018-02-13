@@ -34,9 +34,17 @@
 
 #include "openamp/hil.h"
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 #define RPMSG_CHAN_NAME              "rpmsg-openamp-demo-channel"
 
 struct hil_proc *platform_create_proc(int proc_index);
+
+#if defined __cplusplus
+}
+#endif
 
 #endif /* PLATFORM_INFO_H_ */
 

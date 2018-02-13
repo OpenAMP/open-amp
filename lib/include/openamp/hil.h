@@ -49,6 +49,10 @@
 #include "metal/device.h"
 #include "metal/mutex.h"
 
+#if defined __cplusplus
+extern "C" {
+#endif
+
 /* Configurable parameters */
 #define HIL_MAX_CORES                   2
 #define HIL_MAX_NUM_VRINGS              2
@@ -722,5 +726,9 @@ struct hil_platform_ops {
 #define         HIL_MEM_WRITE8(addr,data)   *(volatile unsigned char *)(addr) = (unsigned char)(data)
 #define         HIL_MEM_WRITE16(addr,data)  *(volatile unsigned short *)(addr) = (unsigned short)(data)
 #define         HIL_MEM_WRITE32(addr,data)  *(volatile unsigned long *)(addr) = (unsigned long)(data)
+
+#if defined __cplusplus
+}
+#endif
 
 #endif				/* _HIL_H_ */

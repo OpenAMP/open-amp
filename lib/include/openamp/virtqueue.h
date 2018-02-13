@@ -30,6 +30,11 @@
  */
 
 #include <stdint.h>
+
+#if defined __cplusplus
+extern "C" {
+#endif
+
 typedef uint8_t boolean;
 
 #include "openamp/virtio_ring.h"
@@ -231,5 +236,9 @@ void virtqueue_notification(struct virtqueue *vq);
 uint32_t virtqueue_get_desc_size(struct virtqueue *vq);
 
 uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx);
+
+#if defined __cplusplus
+}
+#endif
 
 #endif				/* VIRTQUEUE_H_ */
