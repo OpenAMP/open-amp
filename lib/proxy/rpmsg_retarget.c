@@ -1,6 +1,6 @@
-#include "openamp/open_amp.h"
-#include "openamp/rpmsg_retarget.h"
-#include "metal/alloc.h"
+#include <openamp/open_amp.h>
+#include <openamp/rpmsg_retarget.h>
+#include <metal/alloc.h>
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>

@@ -27,9 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "openamp/env.h"
-#include "openamp/rsc_table_parser.h"
-#include "metal/io.h"
+#include <openamp/env.h>
+#include <openamp/rsc_table_parser.h>
+#include <metal/io.h>
 
 /* Resources handler */
 rsc_handler rsc_handler_table[] = {

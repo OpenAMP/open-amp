@@ -43,8 +43,8 @@
  *
  **************************************************************************/
 #include <string.h>
-#include "openamp/sh_mem.h"
-#include "metal/alloc.h"
+#include <openamp/sh_mem.h>
+#include <metal/alloc.h>
 
 /**
  * sh_mem_create_pool

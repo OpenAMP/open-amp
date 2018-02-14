@@ -31,7 +31,7 @@
  */
 #include <string.h>
 #include <stdio.h>
-#include "metal/sys.h"
+#include <metal/sys.h>
 
 int init_system()
 {

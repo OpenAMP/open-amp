@@ -42,7 +42,7 @@
  **************************************************************************/
 
 #include <string.h>
-#include "openamp/firmware.h"
+#include <openamp/firmware.h>
 
 /**
  * config_get_firmware

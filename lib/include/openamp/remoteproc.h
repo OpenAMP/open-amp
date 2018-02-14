@@ -35,8 +35,8 @@
 #ifndef REMOTEPROC_H
 #define REMOTEPROC_H
 
-#include "openamp/rpmsg.h"
-#include "openamp/firmware.h"
+#include <openamp/rpmsg.h>
+#include <openamp/firmware.h>
 
 #if defined __cplusplus
 extern "C" {

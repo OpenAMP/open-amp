@@ -28,8 +28,8 @@
  */
 
 #include <string.h>
-#include "metal/alloc.h"
-#include "openamp/remoteproc_loader.h"
+#include <metal/alloc.h>
+#include <openamp/remoteproc_loader.h>
 
 /**
  * remoteproc_loader_init

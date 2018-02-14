@@ -47,12 +47,12 @@
  **************************************************************************/
 
 #include <string.h>
-#include "openamp/rpmsg.h"
-#include "openamp/remoteproc.h"
-#include "metal/utilities.h"
-#include "metal/alloc.h"
-#include "metal/atomic.h"
-#include "metal/cpu.h"
+#include <openamp/rpmsg.h>
+#include <openamp/remoteproc.h>
+#include <metal/utilities.h>
+#include <metal/alloc.h>
+#include <metal/atomic.h>
+#include <metal/cpu.h>
 
 /* Macro to initialize vring HW info */
 #define INIT_VRING_ALLOC_INFO(ring_info,vring_hw)                             \

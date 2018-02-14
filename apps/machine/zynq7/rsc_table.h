@@ -35,7 +35,7 @@
 #define RSC_TABLE_H_
 
 #include <stddef.h>
-#include "openamp/open_amp.h"
+#include <openamp/open_amp.h>
 
 #if defined __cplusplus
 extern "C" {

@@ -28,8 +28,8 @@
  */
 
 #include <string.h>
-#include "metal/alloc.h"
-#include "openamp/elf_loader.h"
+#include <metal/alloc.h>
+#include <openamp/elf_loader.h>
 
 /* Local functions. */
 

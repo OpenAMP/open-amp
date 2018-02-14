@@ -42,12 +42,12 @@
  *
  ***************************************************************************/
 
-#include "openamp/virtio.h"
-#include "openamp/firmware.h"
-#include "metal/list.h"
-#include "metal/io.h"
-#include "metal/device.h"
-#include "metal/mutex.h"
+#include <openamp/virtio.h>
+#include <openamp/firmware.h>
+#include <metal/list.h>
+#include <metal/io.h>
+#include <metal/device.h>
+#include <metal/mutex.h>
 
 #if defined __cplusplus
 extern "C" {

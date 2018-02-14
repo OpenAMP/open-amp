@@ -36,7 +36,7 @@
 #ifndef _RPMSG_H_
 #define _RPMSG_H_
 
-#include "openamp/rpmsg_core.h"
+#include <openamp/rpmsg_core.h>
 
 #if defined __cplusplus
 extern "C" {

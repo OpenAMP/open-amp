@@ -30,7 +30,7 @@
 /* This file populates resource table for BM remotes
  * for use by the Linux Master */
 
-#include "openamp/open_amp.h"
+#include <openamp/open_amp.h>
 #include "rsc_table.h"
 
 /* Place resource table in special ELF section */

@@ -54,8 +54,8 @@
 #include <metal/shmem.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include "openamp/hil.h"
-#include "openamp/virtqueue.h"
+#include <openamp/hil.h>
+#include <openamp/virtqueue.h>
 
 #define MAX_VRING_MEM_SIZE 0x20000
 #define _rproc_wait() metal_cpu_yield()

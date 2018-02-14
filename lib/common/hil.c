@@ -44,8 +44,8 @@
  *
  **************************************************************************/
 
-#include "openamp/hil.h"
-#include "openamp/remoteproc.h"
+#include <openamp/hil.h>
+#include <openamp/remoteproc.h>
 #include <metal/io.h>
 #include <metal/alloc.h>
 #include <metal/device.h>

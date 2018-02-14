@@ -1,6 +1,6 @@
-#include "openamp/open_amp.h"
-#include "metal/mutex.h"
-#include "metal/atomic.h"
+#include <openamp/open_amp.h>
+#include <metal/mutex.h>
+#include <metal/atomic.h>
 
 #ifndef RPMSG_RETARGET_H
 #define RPMSG_RETARGET_H

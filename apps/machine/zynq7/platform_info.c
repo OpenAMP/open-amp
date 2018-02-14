@@ -40,8 +40,8 @@
  *
  **************************************************************************/
 
-#include "openamp/hil.h"
-#include "metal/atomic.h"
+#include <openamp/hil.h>
+#include <metal/atomic.h>
 #include "platform_info.h"
 
 #define APU_CPU_ID     0 /* another APU core CPU index. We only talk

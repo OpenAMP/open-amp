@@ -33,8 +33,8 @@
 #include "xil_exception.h"
 #include "xscugic.h"
 #include "xil_cache.h"
-#include "metal/sys.h"
-#include "metal/irq.h"
+#include <metal/sys.h>
+#include <metal/irq.h>
 #include "platform_info.h"
 
 #define INTC_DEVICE_ID		XPAR_SCUGIC_0_DEVICE_ID

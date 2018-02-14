@@ -31,10 +31,10 @@
  */
 #include <string.h>
 #include <stdio.h>
-#include "metal/sys.h"
-#include "metal/shmem.h"
-#include "metal/device.h"
-#include "metal/io.h"
+#include <metal/sys.h>
+#include <metal/shmem.h>
+#include <metal/device.h>
+#include <metal/io.h>
 
 
 int init_system()

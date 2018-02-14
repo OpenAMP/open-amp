@@ -14,7 +14,7 @@ Linux to gracefully shutdown. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "openamp/open_amp.h"
+#include <openamp/open_amp.h>
 
 #define MAX_SIZE        6
 #define NUM_MATRIX      2

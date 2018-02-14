@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "openamp/open_amp.h"
-#include "openamp/rpmsg_retarget.h"
+#include <openamp/open_amp.h>
+#include <openamp/rpmsg_retarget.h>
 #include "rsc_table.h"
 #include "platform_info.h"
 

@@ -5,7 +5,7 @@
 #include  <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "openamp/open_amp.h"
+#include <openamp/open_amp.h>
 #include "rsc_table.h"
 #include "test_suite.h"
 

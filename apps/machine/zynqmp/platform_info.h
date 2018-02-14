@@ -32,7 +32,7 @@
 #ifndef PLATFORM_INFO_H_
 #define PLATFORM_INFO_H_
 
-#include "openamp/hil.h"
+#include <openamp/hil.h>
 
 #if defined __cplusplus
 extern "C" {

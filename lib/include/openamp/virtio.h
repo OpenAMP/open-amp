@@ -31,7 +31,7 @@
 #ifndef _VIRTIO_H_
 #define _VIRTIO_H_
 
-#include "openamp/virtqueue.h"
+#include <openamp/virtqueue.h>
 
 #if defined __cplusplus
 extern "C" {

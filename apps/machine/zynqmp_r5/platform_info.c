@@ -40,8 +40,8 @@
  *
  **************************************************************************/
 
-#include "openamp/hil.h"
-#include "metal/atomic.h"
+#include <openamp/hil.h>
+#include <metal/atomic.h>
 #include "platform_info.h"
 
 #define IPI_BASE_ADDR        XPAR_XIPIPSU_0_BASE_ADDRESS /* IPI base address*/

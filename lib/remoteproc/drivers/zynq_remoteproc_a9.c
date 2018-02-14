@@ -41,10 +41,10 @@
 
 #include <string.h>
 #include <errno.h>
-#include "openamp/hil.h"
-#include "metal/alloc.h"
-#include "metal/irq.h"
-#include "metal/atomic.h"
+#include <openamp/hil.h>
+#include <metal/alloc.h>
+#include <metal/irq.h>
+#include <metal/atomic.h>
 
 /* ------------------------- Macros --------------------------*/
 #define SCUGIC_PERIPH_BASE      	   0xF8F00000

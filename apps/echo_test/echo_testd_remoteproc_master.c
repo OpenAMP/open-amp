@@ -13,7 +13,7 @@ Linux to gracefully shutdown. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "openamp/open_amp.h"
+#include <openamp/open_amp.h>
 
 #ifdef ZYNQ7_BAREMETAL
 #include "baremetal.h"

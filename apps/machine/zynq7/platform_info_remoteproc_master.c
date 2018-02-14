@@ -40,8 +40,8 @@
  **************************************************************************/
 
 #include <string.h>
-#include "openamp/hil.h"
-#include "openamp/firmware.h"
+#include <openamp/hil.h>
+#include <openamp/firmware.h>
 
 /* Reference implementation that show cases platform_get_cpu_info and 
  platform_get_for_firmware API implementation for Bare metal environment */

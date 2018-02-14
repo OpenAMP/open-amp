@@ -45,7 +45,7 @@
 #ifndef REMOTEPROC_LOADER_H_
 #define REMOTEPROC_LOADER_H_
 
-#include "openamp/remoteproc.h"
+#include <openamp/remoteproc.h>
 
 #if defined __cplusplus
 extern "C" {

@@ -8,8 +8,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include"openamp/open_amp.h"
-#include "openamp/rpmsg_retarget.h"
-#include "metal/alloc.h"
+#include <openamp/rpmsg_retarget.h>
+#include <metal/alloc.h>
 #include "rsc_table.h"
 
 #define PROXY_ENDPOINT			127

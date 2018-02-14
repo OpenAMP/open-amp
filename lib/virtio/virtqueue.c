@@ -25,11 +25,11 @@
  */
 
 #include <string.h>
-#include "openamp/virtqueue.h"
-#include "metal/atomic.h"
-#include "metal/dma.h"
-#include "metal/io.h"
-#include "metal/alloc.h"
+#include <openamp/virtqueue.h>
+#include <metal/atomic.h>
+#include <metal/dma.h>
+#include <metal/io.h>
+#include <metal/alloc.h>
 
 /* Prototype for internal functions. */
 static void vq_ring_init(struct virtqueue *);

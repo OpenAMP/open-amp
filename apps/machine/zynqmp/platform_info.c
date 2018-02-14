@@ -40,8 +40,8 @@
  *
  **************************************************************************/
 
-#include "openamp/hil.h"
-#include "metal/atomic.h"
+#include <openamp/hil.h>
+#include <metal/atomic.h>
 #include "platform_info.h"
 
 #define RPU_CPU_ID          0 /* RPU remote CPU Index. We only talk to

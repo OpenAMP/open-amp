@@ -42,14 +42,14 @@
 
 #include <errno.h>
 #include <string.h>
-#include "metal/io.h"
-#include "metal/device.h"
-#include "metal/utilities.h"
-#include "metal/atomic.h"
-#include "metal/irq.h"
-#include "metal/alloc.h"
-#include "openamp/hil.h"
-#include "openamp/virtqueue.h"
+#include <metal/io.h>
+#include <metal/device.h>
+#include <metal/utilities.h>
+#include <metal/atomic.h>
+#include <metal/irq.h>
+#include <metal/alloc.h>
+#include <openamp/hil.h>
+#include <openamp/virtqueue.h>
 
 /* IPI REGs OFFSET */
 #define IPI_TRIG_OFFSET          0x00000000    /* IPI trigger register offset */

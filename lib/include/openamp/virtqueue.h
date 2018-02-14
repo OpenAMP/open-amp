@@ -37,10 +37,10 @@ extern "C" {
 
 typedef uint8_t boolean;
 
-#include "openamp/virtio_ring.h"
-#include "openamp/env.h"
-#include "metal/dma.h"
-#include "metal/io.h"
+#include <openamp/virtio_ring.h>
+#include <openamp/env.h>
+#include <metal/dma.h>
+#include <metal/io.h>
 
 /*Error Codes*/
 #define VQ_ERROR_BASE                                 -3000

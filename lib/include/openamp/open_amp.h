@@ -30,8 +30,8 @@
 #ifndef OPEN_AMP_H_
 #define OPEN_AMP_H_
 
-#include "openamp/rpmsg.h"
-#include "openamp/remoteproc.h"
+#include <openamp/rpmsg.h>
+#include <openamp/remoteproc.h>
 
 
 #endif				/* OPEN_AMP_H_ */

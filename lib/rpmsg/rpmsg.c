@@ -55,10 +55,10 @@
  *
  **************************************************************************/
 #include <string.h>
-#include "openamp/rpmsg.h"
-#include "metal/sys.h"
-#include "metal/cache.h"
-#include "metal/sleep.h"
+#include <openamp/rpmsg.h>
+#include <metal/sys.h>
+#include <metal/cache.h>
+#include <metal/sleep.h>
 
 /**
  * rpmsg_init
