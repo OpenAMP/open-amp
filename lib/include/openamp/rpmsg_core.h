@@ -10,7 +10,6 @@
 
 #include <openamp/compiler.h>
 #include <openamp/virtio.h>
-#include <openamp/hil.h>
 #include <openamp/sh_mem.h>
 #include <openamp/rpmsg.h>
 #include <metal/mutex.h>
