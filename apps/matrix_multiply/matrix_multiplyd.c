@@ -25,9 +25,6 @@ typedef struct _matrix {
 } matrix;
 
 /* Local variables */
-static matrix matrix_array[NUM_MATRIX];
-static matrix matrix_result;
-
 static struct remote_proc *proc = NULL;
 static struct rsc_table_info rsc_info;
 
@@ -63,6 +60,9 @@ static void Matrix_Multiply(const matrix *m, const matrix *n, matrix *r)
 static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 			  void *priv, unsigned long src)
 {
+	matrix matrix_array[NUM_MATRIX];
+	matrix matrix_result;
+
 	(void)priv;
 	(void)src;
 
