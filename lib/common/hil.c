@@ -657,7 +657,7 @@ int hil_set_shm (struct hil_proc *proc,
 	} else {
 		if (proc->sh_buff.io) {
 			io = proc->sh_buff.io;
-			if (io->size > size)
+			if (size > io->size)
 				return -1;
 			if (metal_io_phys_to_offset(io, paddr) ==
 					METAL_BAD_OFFSET)
