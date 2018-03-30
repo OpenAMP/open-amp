@@ -8,9 +8,15 @@
 #define _VIRTIO_H_
 
 #include <openamp/virtqueue.h>
+#include <metal/spinlock.h>
 
 #if defined __cplusplus
 extern "C" {
+#endif
+
+/* TODO: define this as compiler flags */
+#ifndef VIRTIO_MAX_NUM_VRINGS
+#define VIRTIO_MAX_NUM_VRINGS 2
 #endif
 
 /* VirtIO device IDs. */
@@ -20,7 +26,7 @@ extern "C" {
 #define VIRTIO_ID_ENTROPY    0x04
 #define VIRTIO_ID_BALLOON    0x05
 #define VIRTIO_ID_IOMEMORY   0x06
-#define VIRTIO_ID_RPMSG      0x07 /* virtio remote remote_proc messaging */
+#define VIRTIO_ID_RPMSG	     0x07 /* virtio remote remote_proc messaging */
 #define VIRTIO_ID_SCSI       0x08
 #define VIRTIO_ID_9P         0x09
 
@@ -30,6 +36,12 @@ extern "C" {
 #define VIRTIO_CONFIG_STATUS_DRIVER_OK 0x04
 #define VIRTIO_CONFIG_STATUS_NEEDS_RESET 0x40
 #define VIRTIO_CONFIG_STATUS_FAILED    0x80
+
+struct virtio_device_id {
+	uint32_t device;
+	uint32_t vendor;
+};
+#define VIRTIO_DEV_ANY_ID	((unsigned int)-1)
 
 /*
  * Generate interrupt when the virtqueue ring is
@@ -58,41 +70,65 @@ struct virtio_feature_desc {
 	const char *vfd_str;
 };
 
+/**
+* struct proc_vring
+*
+* This structure is maintained by hardware interface layer to keep
+* vring physical memory and notification info.
+*
+*/
+struct virtio_vring_info {
+	/* Vring logical address */
+	void *vaddr;
+	/* Vring I/O region */
+	struct metal_io_region *io;
+	/* Number of vring descriptors */
+	unsigned short num_descs;
+	/* Vring alignment */
+	unsigned long align;
+};
+
+/**
+ * struct proc_shm
+ *
+ * This structure is maintained by hardware interface layer for
+ * shared memory information. The shared memory provides buffers
+ * for use by the vring to exchange messages between the cores.
+ *
+ */
+struct virtio_buffer_info {
+	/* Start address of shared memory used for buffers. */
+	void *vaddr;
+	/* Start physical address of shared memory used for buffers. */
+	metal_phys_addr_t paddr;
+	/* sharmed memory I/O region */
+	struct metal_io_region *io;
+	/* Size of shared memory. */
+	unsigned long size;
+};
+
 /*
  * Structure definition for virtio devices for use by the
  * applications/drivers
- *
  */
 
 struct virtio_device {
-	/*
-	 * Since there is no generic device structure so
-	 * keep its type as void. The driver layer will take
-	 * care of it.
-	 */
-	void *device;
-
-	/* Device name */
-	char *name;
-
-	/* List of virtqueues encapsulated by virtio device. */
-	//TODO : Need to implement a list service for ipc stack.
-	void *vq_list;
-
-	/* Virtio device specific features */
-	uint32_t features;
-
-	/* Virtio dispatch table */
-	virtio_dispatch *func;
-
-	/*
-	 * Pointer to hold some private data, useful
-	 * in callbacks.
-	 */
-	void *data;
+	int index; /**< unique position on the virtio bus */
+	struct virtio_device_id id; /**< the device type identification
+				         (used to match it with a driver). */
+	struct metal_spinlock lock; /**< spin lock */
+	uint64_t features; /**< the features supported by both ends. */
+	unsigned int role; /**< if it is virtio backend or front end. */
+	void (*rst_cb)(struct virtio_device *vdev); /**< user registered virtio
+						         device callback */
+	virtio_dispatch *func;/**< Virtio dispatch table */
+	void *priv; /**< TODO: should remove pointer to virtio_device private
+		         data */
+	int vrings_num; /**< number of vrings */
+	struct virtqueue vqs[1]; /**< array of virtqueues */
 };
 
-/* 
+/*
  * Helper functions.
  */
 const char *virtio_dev_name(uint16_t devid);
@@ -101,14 +137,14 @@ void virtio_describe(struct virtio_device *dev, const char *msg,
 		     struct virtio_feature_desc *feature_desc);
 
 /*
- * Functions for virtio device configuration as defined in Rusty Russell's paper.
+ * Functions for virtio device configuration as defined in Rusty Russell's
+ * paper.
  * Drivers are expected to implement these functions in their respective codes.
- * 
  */
 
 struct _virtio_dispatch_ {
 	int (*create_virtqueues) (struct virtio_device * dev, int flags,
-				  int nvqs, const char *names[],
+				  unsigned int nvqs, const char *names[],
 				  vq_callback * callbacks[],
 				  struct virtqueue * vqs[]);
 	uint8_t(*get_status) (struct virtio_device * dev);
