@@ -13,6 +13,11 @@
 extern "C" {
 #endif
 
+/* TODO: define this as compiler flags */
+#ifndef VIRTIO_MAX_NUM_VRINGS
+#define VIRTIO_MAX_NUM_VRINGS 2
+#endif
+
 /* VirtIO device IDs. */
 #define VIRTIO_ID_NETWORK    0x01
 #define VIRTIO_ID_BLOCK      0x02
@@ -20,7 +25,7 @@ extern "C" {
 #define VIRTIO_ID_ENTROPY    0x04
 #define VIRTIO_ID_BALLOON    0x05
 #define VIRTIO_ID_IOMEMORY   0x06
-#define VIRTIO_ID_RPMSG      0x07 /* virtio remote remote_proc messaging */
+#define VIRTIO_ID_RPMSG	     0x07 /* virtio remote remote_proc messaging */
 #define VIRTIO_ID_SCSI       0x08
 #define VIRTIO_ID_9P         0x09
 
@@ -58,6 +63,44 @@ struct virtio_feature_desc {
 	const char *vfd_str;
 };
 
+
+/**
+* struct proc_vring
+*
+* This structure is maintained by hardware interface layer to keep
+* vring physical memory and notification info.
+*
+*/
+struct virtio_vring_info {
+	/* Vring logical address */
+	void *vaddr;
+	/* Vring I/O region */
+	struct metal_io_region *io;
+	/* Number of vring descriptors */
+	unsigned short num_descs;
+	/* Vring alignment */
+	unsigned long align;
+};
+
+/**
+ * struct proc_shm
+ *
+ * This structure is maintained by hardware interface layer for
+ * shared memory information. The shared memory provides buffers
+ * for use by the vring to exchange messages between the cores.
+ *
+ */
+struct virtio_buffer_info {
+	/* Start address of shared memory used for buffers. */
+	void *vaddr;
+	/* Start physical address of shared memory used for buffers. */
+	metal_phys_addr_t paddr;
+	/* sharmed memory I/O region */
+	struct metal_io_region *io;
+	/* Size of shared memory. */
+	unsigned long size;
+};
+
 /*
  * Structure definition for virtio devices for use by the
  * applications/drivers
@@ -70,15 +113,23 @@ struct virtio_device {
 	 * keep its type as void. The driver layer will take
 	 * care of it.
 	 */
-	void *device;
+	void *client_dev;
+	void *rproc_dev;
+
+	/* Address for the vdev info */
+	void *vdev_info;
 
 	/* Device name */
 	char *name;
 
-	/* List of virtqueues encapsulated by virtio device. */
-	//TODO : Need to implement a list service for ipc stack.
-	void *vq_list;
+	/* Number of vrings */
+	unsigned int num_vrings;
 
+	/* Vring info control blocks */
+	struct virtio_vring_info vring_info[VIRTIO_MAX_NUM_VRINGS];
+
+	/* buffer */
+	struct virtio_buffer_info sh_buff;
 	/* Virtio device specific features */
 	uint32_t features;
 
@@ -108,7 +159,7 @@ void virtio_describe(struct virtio_device *dev, const char *msg,
 
 struct _virtio_dispatch_ {
 	int (*create_virtqueues) (struct virtio_device * dev, int flags,
-				  int nvqs, const char *names[],
+				  unsigned int nvqs, const char *names[],
 				  vq_callback * callbacks[],
 				  struct virtqueue * vqs[]);
 	uint8_t(*get_status) (struct virtio_device * dev);
