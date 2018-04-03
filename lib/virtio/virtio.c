@@ -7,10 +7,10 @@
 #include <openamp/virtio.h>
 
 static const char *virtio_feature_name(unsigned long feature,
-				       struct virtio_feature_desc *);
+				       const struct virtio_feature_desc *);
 
 //TODO : This structure may change depending on the types of devices we support.
-static struct virtio_ident {
+static const struct virtio_ident {
 	unsigned short devid;
 	const char *name;
 } virtio_ident_table[] = {
@@ -27,7 +27,7 @@ static struct virtio_ident {
 };
 
 /* Device independent features. */
-static struct virtio_feature_desc virtio_common_feature_desc[] = {
+static const struct virtio_feature_desc virtio_common_feature_desc[] = {
 	{VIRTIO_F_NOTIFY_ON_EMPTY, "NotifyOnEmpty"},
 	{VIRTIO_RING_F_INDIRECT_DESC, "RingIndirect"},
 	{VIRTIO_RING_F_EVENT_IDX, "EventIdx"},
@@ -38,7 +38,7 @@ static struct virtio_feature_desc virtio_common_feature_desc[] = {
 
 const char *virtio_dev_name(unsigned short devid)
 {
-	struct virtio_ident *ident;
+	const struct virtio_ident *ident;
 
 	for (ident = virtio_ident_table; ident->name != NULL; ident++) {
 		if (ident->devid == devid)
@@ -49,10 +49,10 @@ const char *virtio_dev_name(unsigned short devid)
 }
 
 static const char *virtio_feature_name(unsigned long val,
-				       struct virtio_feature_desc *desc)
+				       const struct virtio_feature_desc *desc)
 {
 	int i, j;
-	struct virtio_feature_desc *descs[2] = { desc,
+	const struct virtio_feature_desc *descs[2] = { desc,
 		virtio_common_feature_desc
 	};
 
