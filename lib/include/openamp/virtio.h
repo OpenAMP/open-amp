@@ -44,7 +44,7 @@ extern "C" {
 #define VIRTIO_ID_ENTROPY    0x04
 #define VIRTIO_ID_BALLOON    0x05
 #define VIRTIO_ID_IOMEMORY   0x06
-#define VIRTIO_ID_RPMSG		 0x07	/* virtio remote remote_proc messaging */
+#define VIRTIO_ID_RPMSG      0x07 /* virtio remote remote_proc messaging */
 #define VIRTIO_ID_SCSI       0x08
 #define VIRTIO_ID_9P         0x09
 
@@ -135,12 +135,12 @@ struct _virtio_dispatch_ {
 				  int nvqs, const char *names[],
 				  vq_callback * callbacks[],
 				  struct virtqueue * vqs[]);
-	 uint8_t(*get_status) (struct virtio_device * dev);
+	uint8_t(*get_status) (struct virtio_device * dev);
 	void (*set_status) (struct virtio_device * dev, uint8_t status);
-	 uint32_t(*get_features) (struct virtio_device * dev);
+	uint32_t(*get_features) (struct virtio_device * dev);
 	void (*set_features) (struct virtio_device * dev, uint32_t feature);
-	 uint32_t(*negotiate_features) (struct virtio_device * dev,
-					uint32_t features);
+	uint32_t(*negotiate_features) (struct virtio_device * dev,
+				       uint32_t features);
 
 	/*
 	 * Read/write a variable amount from the device specific (ie, network)
