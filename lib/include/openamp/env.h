@@ -38,21 +38,13 @@
 #ifndef _ENV_H_
 #define _ENV_H_
 
-#include <stdio.h>
 #include <assert.h>
 
 #if defined __cplusplus
 extern "C" {
 #endif
 
-#define openamp_print(format, ...) printf(format, ##__VA_ARGS__)
 #define openamp_assert(...) assert(__VA_ARGS__)
-
-#ifdef OPENAMP_DEBUG
-#define openamp_dbg(format, ...) openamp_print("DEBUG: " format, ##__VA_ARGS__)
-#else
-#define openamp_dbg(...)
-#endif
 
 #if defined __cplusplus
 }

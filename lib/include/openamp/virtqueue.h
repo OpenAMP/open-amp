@@ -141,10 +141,18 @@ typedef void vq_callback(struct virtqueue *);
 typedef void vq_notify(struct virtqueue *);
 
 #if (VQUEUE_DEBUG == true)
+#include <metal/log.h>
 
-#define VQASSERT(_vq, _exp, _msg) do{ \
-    if (!(_exp)){ openamp_print("%s: %s - "_msg, __func__, (_vq)->vq_name); while(1);} \
-    } while(0)
+#define VQASSERT(_vq, _exp, _msg) \
+	do{ \
+		if (!(_exp)){ \
+			metal_log(METAL_LOG_EMERGENCY, \
+				  "%s: %s - "_msg, \
+				  __func__, \
+				  (_vq)->vq_name); \
+			while(1); \
+		} \
+	} while(0)
 
 #define VQ_RING_ASSERT_VALID_IDX(_vq, _idx)            \
     VQASSERT((_vq), (_idx) < (_vq)->vq_nentries,        \

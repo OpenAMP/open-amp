@@ -66,9 +66,17 @@ extern "C" {
                                             sizeof(struct rpmsg_hdr))
 
 #if (RPMSG_DEBUG == true)
-#define RPMSG_ASSERT(_exp, _msg) do{ \
-    if (!(_exp)){ openamp_print("%s - "_msg, __func__); while(1);} \
-    } while(0)
+#include <metal/log.h>
+
+#define RPMSG_ASSERT(_exp, _msg) \
+	do{ \
+		if (!(_exp)) { \
+			metal_log(METAL_LOG_EMERGENCY, \
+				  "%s - "_msg, \
+				  __func__); \
+			while(1);\
+		} \
+	} while(0)
 #else
 #define RPMSG_ASSERT(_exp, _msg) if (!(_exp)) while(1)
 #endif

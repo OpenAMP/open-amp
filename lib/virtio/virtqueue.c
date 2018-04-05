@@ -10,6 +10,7 @@
 #include <metal/atomic.h>
 #include <metal/dma.h>
 #include <metal/io.h>
+#include <metal/log.h>
 #include <metal/alloc.h>
 
 /* Prototype for internal functions. */
@@ -300,9 +301,9 @@ void virtqueue_free(struct virtqueue *vq)
 	if (vq != VQ_NULL) {
 
 		if (vq->vq_free_cnt != vq->vq_nentries) {
-			openamp_print
-			    ("\r\nWARNING %s: freeing non-empty virtqueue\r\n",
-			     vq->vq_name);
+			metal_log(METAL_LOG_WARNING,
+				  "%s: freeing non-empty virtqueue\r\n",
+				  vq->vq_name);
 		}
 		//TODO : Need to free indirect buffers here
 
@@ -452,7 +453,8 @@ void virtqueue_dump(struct virtqueue *vq)
 	if (vq == VQ_NULL)
 		return;
 
-	openamp_print("VQ: %s - size=%d; free=%d; used=%d; queued=%d; "
+	metal_log(METAL_LOG_DEBUG,
+		  "VQ: %s - size=%d; free=%d; used=%d; queued=%d; "
 		  "desc_head_idx=%d; avail.idx=%d; used_cons_idx=%d; "
 		  "used.idx=%d; avail.flags=0x%x; used.flags=0x%x\r\n",
 		  vq->vq_name, vq->vq_nentries, vq->vq_free_cnt,
