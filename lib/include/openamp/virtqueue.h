@@ -29,6 +29,7 @@
  * $FreeBSD$
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #if defined __cplusplus
@@ -53,8 +54,6 @@ typedef uint8_t boolean;
 #define ERROR_VRING_NO_BUFF                           (VQ_ERROR_BASE - 7)
 #define ERROR_VQUEUE_INVLD_PARAM                      (VQ_ERROR_BASE - 8)
 
-#define true                                          1
-#define false                                         0
 #define VQUEUE_SUCCESS                                0
 #define VQUEUE_DEBUG                                  false
 
