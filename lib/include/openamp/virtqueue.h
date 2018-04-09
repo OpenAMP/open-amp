@@ -37,12 +37,6 @@ typedef uint8_t boolean;
 #define VQUEUE_SUCCESS                                0
 #define VQUEUE_DEBUG                                  false
 
-//TODO:
-/* This is temporary macro to replace C NULL support.
- * At the moment all the RTL specific functions are present in env.
- * */
-#define VQ_NULL                                       0
-
 /* The maximum virtqueue size is 2^15. Use that value as the end of
  * descriptor chain terminator since it will never be a valid index
  * in the descriptor table. This is used to verify we are correctly
