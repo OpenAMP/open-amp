@@ -66,11 +66,11 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     struct virtqueue **v_queue)
 {
 
-	struct virtqueue *vq = VQ_NULL;
+	struct virtqueue *vq = NULL;
 	int status = VQUEUE_SUCCESS;
 	uint32_t vq_size = 0;
 
-	VQ_PARAM_CHK(ring == VQ_NULL, status, ERROR_VQUEUE_INVLD_PARAM);
+	VQ_PARAM_CHK(ring == NULL, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(ring->num_descs == 0, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(ring->num_descs & (ring->num_descs - 1), status,
 		     ERROR_VRING_ALIGN);
@@ -83,7 +83,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		    + (ring->num_descs) * sizeof(struct vq_desc_extra);
 		vq = (struct virtqueue *)metal_allocate_memory(vq_size);
 
-		if (vq == VQ_NULL) {
+		if (vq == NULL) {
 			return (ERROR_NO_MEM);
 		}
 
@@ -137,7 +137,7 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 			 int readable, int writable, void *cookie)
 {
 
-	struct vq_desc_extra *dxp = VQ_NULL;
+	struct vq_desc_extra *dxp = NULL;
 	int status = VQUEUE_SUCCESS;
 	uint16_t head_idx;
 	uint16_t idx;
@@ -145,7 +145,7 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 
 	needed = readable + writable;
 
-	VQ_PARAM_CHK(vq == VQ_NULL, status, ERROR_VQUEUE_INVLD_PARAM);
+	VQ_PARAM_CHK(vq == NULL, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(needed < 1, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(vq->vq_free_cnt == 0, status, ERROR_VRING_FULL);
 
@@ -157,13 +157,13 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 
 		//TODO : Indirect buffer addition support
 
-		VQASSERT(vq, cookie != VQ_NULL, "enqueuing with no cookie");
+		VQASSERT(vq, cookie != NULL, "enqueuing with no cookie");
 
 		head_idx = vq->vq_desc_head_idx;
 		VQ_RING_ASSERT_VALID_IDX(vq, head_idx);
 		dxp = &vq->vq_descx[head_idx];
 
-		VQASSERT(vq, (dxp->cookie == VQ_NULL),
+		VQASSERT(vq, (dxp->cookie == NULL),
 			 "cookie already exists for index");
 
 		dxp->cookie = cookie;
@@ -217,14 +217,14 @@ int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
 	uint16_t idx;
 	int status = VQUEUE_SUCCESS;
 
-	VQ_PARAM_CHK(vq == VQ_NULL, status, ERROR_VQUEUE_INVLD_PARAM);
+	VQ_PARAM_CHK(vq == NULL, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(vq->vq_free_cnt == 0, status, ERROR_VRING_FULL);
 
 	VQUEUE_BUSY(vq);
 
 	if (status == VQUEUE_SUCCESS) {
 
-		VQASSERT(vq, cookie != VQ_NULL, "enqueuing with no cookie");
+		VQASSERT(vq, cookie != NULL, "enqueuing with no cookie");
 
 		head_idx = vq->vq_desc_head_idx;
 		dxp = &vq->vq_descx[head_idx];
@@ -276,8 +276,8 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len, uint16_t * idx)
 	void *cookie;
 	uint16_t used_idx, desc_idx;
 
-	if ((vq == VQ_NULL) || (vq->vq_used_cons_idx == vq->vq_ring.used->idx))
-		return (VQ_NULL);
+	if ((vq == NULL) || (vq->vq_used_cons_idx == vq->vq_ring.used->idx))
+		return (NULL);
 
 	VQUEUE_BUSY(vq);
 
@@ -287,15 +287,15 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len, uint16_t * idx)
 	atomic_thread_fence(memory_order_seq_cst);
 
 	desc_idx = (uint16_t) uep->id;
-	if (len != VQ_NULL)
+	if (len != NULL)
 		*len = uep->len;
 
 	vq_ring_free_chain(vq, desc_idx);
 
 	cookie = vq->vq_descx[desc_idx].cookie;
-	vq->vq_descx[desc_idx].cookie = VQ_NULL;
+	vq->vq_descx[desc_idx].cookie = NULL;
 
-	if (idx != VQ_NULL)
+	if (idx != NULL)
 		*idx = used_idx;
 	VQUEUE_IDLE(vq);
 
@@ -316,7 +316,7 @@ uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx)
 void virtqueue_free(struct virtqueue *vq)
 {
 
-	if (vq != VQ_NULL) {
+	if (vq != NULL) {
 
 		if (vq->vq_free_cnt != vq->vq_nentries) {
 			openamp_print
@@ -325,9 +325,9 @@ void virtqueue_free(struct virtqueue *vq)
 		}
 		//TODO : Need to free indirect buffers here
 
-		if (vq->vq_ring_mem != VQ_NULL) {
+		if (vq->vq_ring_mem != NULL) {
 			vq->vq_ring_size = 0;
-			vq->vq_ring_mem = VQ_NULL;
+			vq->vq_ring_mem = NULL;
 		}
 
 		metal_free_memory(vq);
@@ -353,7 +353,7 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
 
 	atomic_thread_fence(memory_order_seq_cst);
 	if (vq->vq_available_idx == vq->vq_ring.avail->idx) {
-		return (VQ_NULL);
+		return (NULL);
 	}
 
 	VQUEUE_BUSY(vq);
@@ -382,7 +382,7 @@ int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 				  uint32_t len)
 {
 
-	struct vring_used_elem *used_desc = VQ_NULL;
+	struct vring_used_elem *used_desc = NULL;
 	uint16_t used_idx;
 
 	if (head_idx > vq->vq_nentries) {
@@ -468,7 +468,7 @@ void virtqueue_kick(struct virtqueue *vq)
 void virtqueue_dump(struct virtqueue *vq)
 {
 
-	if (vq == VQ_NULL)
+	if (vq == NULL)
 		return;
 
 	openamp_print("VQ: %s - size=%d; free=%d; used=%d; queued=%d; "
@@ -495,7 +495,7 @@ uint32_t virtqueue_get_desc_size(struct virtqueue * vq)
 	uint32_t len = 0;
 
 	if (vq->vq_available_idx == vq->vq_ring.avail->idx) {
-		return (VQ_NULL);
+		return 0;
 	}
 
 	VQUEUE_BUSY(vq);
@@ -684,7 +684,7 @@ void virtqueue_notification(struct virtqueue *vq)
 {
 
 	atomic_thread_fence(memory_order_seq_cst);
-	if (vq->callback != VQ_NULL)
+	if (vq->callback != NULL)
 		vq->callback(vq);
 }
 
@@ -716,7 +716,7 @@ static int vq_ring_must_notify_host(struct virtqueue *vq)
 static void vq_ring_notify_host(struct virtqueue *vq)
 {
 
-	if (vq->notify != VQ_NULL)
+	if (vq->notify != NULL)
 		vq->notify(vq);
 }
 
