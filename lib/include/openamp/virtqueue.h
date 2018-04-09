@@ -141,6 +141,7 @@ typedef void vq_notify(struct virtqueue *);
 
 #if (VQUEUE_DEBUG == true)
 #include <metal/log.h>
+#include <metal/assert.h>
 
 #define VQASSERT(_vq, _exp, _msg) \
 	do{ \
@@ -149,7 +150,7 @@ typedef void vq_notify(struct virtqueue *);
 				  "%s: %s - "_msg, \
 				  __func__, \
 				  (_vq)->vq_name); \
-			while(1); \
+			metal_assert(_exp); \
 		} \
 	} while(0)
 
