@@ -29,6 +29,7 @@
 #include <metal/irq.h>
 #include <metal/cpu.h>
 #include <metal/alloc.h>
+#include <metal/assert.h>
 #include <metal/shmem.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -247,8 +248,8 @@ static int _poll(struct hil_proc *proc, int nonblock)
 	//int r;
 	int i;
 
-	openamp_assert(proc);
-	//openamp_assert(num_vrings <= (int)(sizeof(fds)/sizeof(fds[0])));
+	metal_assert(proc);
+	//metal_assert(num_vrings <= (int)(sizeof(fds)/sizeof(fds[0])));
 
 	notified = 0;
 	while (1) {

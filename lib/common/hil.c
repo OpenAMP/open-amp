@@ -26,6 +26,7 @@
 #include <openamp/remoteproc.h>
 #include <metal/io.h>
 #include <metal/alloc.h>
+#include <metal/assert.h>
 #include <metal/device.h>
 #include <metal/shmem.h>
 #include <metal/utilities.h>
@@ -106,7 +107,7 @@ struct metal_device *hil_create_generic_mem_dev(
 	if (ret)
 		return NULL;
 	dev = metal_allocate_memory(sizeof(*dev));
-	openamp_assert(dev);
+	metal_assert(dev);
 	memset(dev, 0, sizeof(*dev));
 	sprintf(dev->name, "%s%lx.%lx", HIL_DEV_NAME_PREFIX, pa,
 			(unsigned long)size);
@@ -118,9 +119,9 @@ struct metal_device *hil_create_generic_mem_dev(
 			sizeof(pa) << 3, flags, NULL);
 
 	ret = metal_register_generic_device(mdev);
-	openamp_assert(!ret);
+	metal_assert(!ret);
 	ret = metal_device_open("generic", dev->name, &mdev);
-	openamp_assert(!ret);
+	metal_assert(!ret);
 
 	return mdev;
 }
@@ -652,7 +653,7 @@ int hil_set_shm (struct hil_proc *proc,
 			proc->sh_buff.size = size;
 		} else {
 			io = proc->ops->alloc_shm(proc, paddr, size, &dev);
-			openamp_assert(dev);
+			metal_assert(io);
 			proc->sh_buff.dev = dev;
 			proc->sh_buff.io = io;
 			proc->sh_buff.start_paddr = paddr;
