@@ -9,7 +9,6 @@
 #define RSC_TABLE_PARSER_H
 
 #include <openamp/remoteproc.h>
-#include <openamp/env.h>
 #include <openamp/hil.h>
 
 #if defined __cplusplus

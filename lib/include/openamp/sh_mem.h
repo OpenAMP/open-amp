@@ -25,7 +25,6 @@
 #define SH_MEM_H_
 
 #include <metal/mutex.h>
-#include <openamp/env.h>
 
 #if defined __cplusplus
 extern "C" {

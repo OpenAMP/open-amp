@@ -19,7 +19,6 @@ extern "C" {
 typedef uint8_t boolean;
 
 #include <openamp/virtio_ring.h>
-#include <openamp/env.h>
 #include <metal/dma.h>
 #include <metal/io.h>
 

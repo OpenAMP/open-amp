@@ -8,7 +8,6 @@
 #ifndef FIRMWARE_H
 #define FIRMWARE_H
 
-#include <openamp/env.h>
 #include <stdint.h>
 
 #if defined __cplusplus

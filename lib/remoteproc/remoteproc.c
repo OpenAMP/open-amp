@@ -10,7 +10,6 @@
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
 #include <openamp/rsc_table_parser.h>
-#include <openamp/env.h>
 #include <openamp/hil.h>
 #include <metal/sys.h>
 #include <metal/alloc.h>

@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <openamp/env.h>
 #include <openamp/rsc_table_parser.h>
 #include <metal/io.h>
 
