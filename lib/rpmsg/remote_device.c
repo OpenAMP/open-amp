@@ -55,6 +55,34 @@ virtio_dispatch rpmsg_rdev_config_ops = {
 };
 
 /**
+ * rpmsg_memb_match
+ *
+ * This internal function checks if the contents in two memories matches byte
+ * by byte. This function is needed because memcmp() or strcmp() does not
+ * always work across different memories.
+ *
+ * @param ptr1 - pointer to memory
+ * @param ptr2 - pointer to memory
+ * @param n - number of bytes to compare
+ *
+ * @return 0 if the contents in the two memories matches, otherwise -1.
+ */
+static int rpmsg_memb_match(const void *ptr1, const void *ptr2, size_t n)
+{
+	size_t i;
+	const unsigned char *tmp1, *tmp2;
+
+	tmp1 = ptr1;
+	tmp2 = ptr2;
+	for (i = 0; i < n; i++, tmp1++, tmp2++) {
+		if (*tmp1 != *tmp2)
+			return -1;
+	}
+
+	return 0;
+}
+
+/**
  * rpmsg_rdev_init
  *
  * This function creates and initializes the remote device. The remote device
