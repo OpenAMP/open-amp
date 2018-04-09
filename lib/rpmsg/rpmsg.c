@@ -35,6 +35,7 @@
 #include <string.h>
 #include <openamp/rpmsg.h>
 #include <metal/sys.h>
+#include <metal/assert.h>
 #include <metal/cache.h>
 #include <metal/sleep.h>
 
@@ -187,7 +188,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
 
 	/* Enqueue buffer on virtqueue. */
 	ret = rpmsg_enqueue_buffer(rdev, buffer, buff_len, idx);
-	RPMSG_ASSERT(ret == VQUEUE_SUCCESS, "FATAL: RPMSG failed to enqueue buffer.\n");
+	metal_assert(ret == VQUEUE_SUCCESS);
 	/* Let the other side know that there is a job to process. */
 	virtqueue_kick(rdev->tvq);
 
