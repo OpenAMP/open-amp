@@ -36,7 +36,7 @@ static int virtqueue_nused(struct virtqueue *vq);
  * @param notify    - Pointer to notify function, used to notify
  *                    other side that there is job available for it
  * @param shm_io    - shared memory I/O region of the virtqueue
- * @param v_queue   - Created VirtIO queue.
+ * @param vq        - Created VirtIO queue.
  *
  * @return          - Function status
  */
@@ -45,28 +45,17 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
 		     struct metal_io_region *shm_io,
-		     struct virtqueue **v_queue)
+		     struct virtqueue *vq)
 {
-	struct virtqueue *vq = NULL;
 	int status = VQUEUE_SUCCESS;
-	uint32_t vq_size = 0;
 
 	VQ_PARAM_CHK(ring == NULL, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(ring->num_descs == 0, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(ring->num_descs & (ring->num_descs - 1), status,
 		     ERROR_VRING_ALIGN);
+	VQ_PARAM_CHK(vq == NULL, status, ERROR_NO_MEM);
 
 	if (status == VQUEUE_SUCCESS) {
-		vq_size = sizeof(struct virtqueue)
-		    + (ring->num_descs) * sizeof(struct vq_desc_extra);
-		vq = (struct virtqueue *)metal_allocate_memory(vq_size);
-
-		if (vq == NULL) {
-			return (ERROR_NO_MEM);
-		}
-
-		memset(vq, 0x00, vq_size);
-
 		vq->vq_dev = virt_dev;
 		strncpy(vq->vq_name, name, VIRTQUEUE_MAX_NAME_SZ);
 		vq->vq_queue_index = id;
@@ -83,8 +72,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		 * once initialization is completed.
 		 */
 		virtqueue_disable_cb(vq);
-
-		*v_queue = vq;
 	}
 
 	return (status);
