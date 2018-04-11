@@ -74,12 +74,9 @@ struct virtqueue {
 	uint32_t vq_flags;
 	int vq_alignment;
 	int vq_ring_size;
-	boolean vq_inuse;
 	void *vq_ring_mem;
 	void (*callback) (struct virtqueue * vq);
 	void (*notify) (struct virtqueue * vq);
-	int vq_max_indirect_size;
-	int vq_indirect_mem_size;
 	struct vring vq_ring;
 	uint16_t vq_free_cnt;
 	uint16_t vq_queued_cnt;
@@ -105,7 +102,7 @@ struct virtqueue {
 	 */
 	uint16_t vq_available_idx;
 
-	uint8_t padd;
+	boolean vq_inuse;
 
 	/*
 	 * Used by the host side during callback. Cookie
@@ -115,8 +112,6 @@ struct virtqueue {
 
 	struct vq_desc_extra {
 		void *cookie;
-		struct vring_desc *indirect;
-		uint32_t indirect_paddr;
 		uint16_t ndescs;
 	} vq_descx[0];
 };
