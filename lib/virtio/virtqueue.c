@@ -14,7 +14,7 @@
 #include <metal/alloc.h>
 
 /* Prototype for internal functions. */
-static void vq_ring_init(struct virtqueue *);
+static void vq_ring_init(struct virtqueue *, int);
 static void vq_ring_update_avail(struct virtqueue *, uint16_t);
 static uint16_t vq_ring_add_buffer(struct virtqueue *, struct vring_desc *,
 				   uint16_t, struct metal_sg *, int, int);
@@ -74,7 +74,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		vq->vq_dev = virt_dev;
 		strncpy(vq->vq_name, name, VIRTQUEUE_MAX_NAME_SZ);
 		vq->vq_queue_index = id;
-		vq->vq_alignment = ring->align;
 		vq->vq_nentries = ring->num_descs;
 		vq->vq_free_cnt = vq->vq_nentries;
 		vq->callback = callback;
@@ -86,7 +85,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		vq->vq_ring_mem = (void *)ring->vaddr;
 
 		/* Initialize vring control block in virtqueue. */
-		vq_ring_init(vq);
+		vq_ring_init(vq, ring->align);
 
 		/* Disable callbacks - will be enabled by the application
 		 * once initialization is completed.
@@ -582,7 +581,7 @@ static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx)
  * vq_ring_init
  *
  */
-static void vq_ring_init(struct virtqueue *vq)
+static void vq_ring_init(struct virtqueue *vq, int alignment)
 {
 	struct vring *vr;
 	unsigned char *ring_mem;
@@ -592,7 +591,7 @@ static void vq_ring_init(struct virtqueue *vq)
 	size = vq->vq_nentries;
 	vr = &vq->vq_ring;
 
-	vring_init(vr, size, ring_mem, vq->vq_alignment);
+	vring_init(vr, size, ring_mem, alignment);
 
 	for (i = 0; i < size - 1; i++)
 		vr->desc[i].next = i + 1;
