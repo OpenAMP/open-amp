@@ -194,7 +194,6 @@ static void _notify(struct hil_proc *proc, struct proc_intr *intr_info)
 
 	char dummy = 1;
 	send(ipi->fd, &dummy, 1, MSG_NOSIGNAL);
-	//printf("%s:%d\n", __func__, ipi->fd);
 }
 
 static int _boot_cpu(struct hil_proc *proc, unsigned int load_addr)
@@ -240,16 +239,12 @@ static int _poll(struct hil_proc *proc, int nonblock)
 	struct vring_ipi_info *ipi;
 	unsigned int flags;
 
-	//struct pollfd fds[32];
-	//char dummy_buf[32];
 	int num_vrings = proc->vdev.num_vrings;
 	int ret = 0;
 	int notified;
-	//int r;
 	int i;
 
 	metal_assert(proc);
-	//metal_assert(num_vrings <= (int)(sizeof(fds)/sizeof(fds[0])));
 
 	notified = 0;
 	while (1) {
