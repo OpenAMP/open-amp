@@ -63,15 +63,15 @@ void rpmsg_virtio_set_features(struct virtio_device *dev, uint32_t feature);
 
 /* Ops table for virtio device */
 virtio_dispatch rpmsg_virtio_config_ops = {
-	rpmsg_virtio_create_virtqueues,
-	rpmsg_virtio_get_status,
-	rpmsg_virtio_set_status,
-	rpmsg_virtio_get_features,
-	rpmsg_virtio_set_features,
-	NULL, //rpmsg_virtio_negotiate_feature,
-	NULL, //rpmsg_virtio_read_config,
-	NULL, //rpmsg_virtio_write_config,
-	NULL, //rpmsg_virtio_reset
+	.create_virtqueues	= rpmsg_virtio_create_virtqueues,
+	.get_status		= rpmsg_virtio_get_status,
+	.set_status		= rpmsg_virtio_set_status,
+	.get_features		= rpmsg_virtio_get_features,
+	.set_features		= rpmsg_virtio_set_features,
+	.negotiate_features	= NULL,
+	.read_config		= NULL,
+	.write_config		= NULL,
+	.reset_device		= NULL,
 };
 
 #if defined __cplusplus
