@@ -326,7 +326,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
 }
 
 /**
- * rpmsg_vdev_init: ropmsg initialisation
+ * rpmsg_init_vdev: ropmsg initialisation
  * Master side:
  * Initialize RPMsg virtio queues and shared buffers, the address of shm can be
  * ANY. In this case, function will get shared memory from system shared memory
@@ -344,7 +344,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
  * @return - status of function execution
  */
 
-int rpmsg_vdev_init(struct rpmsg_virtio *rpmsg_vdev, struct virtio_device *vdev,
+int rpmsg_init_vdev(struct rpmsg_virtio *rpmsg_vdev, struct virtio_device *vdev,
 		    void *shm, int len)
 {
 	struct sh_mem_pool *mem_pool = shm;

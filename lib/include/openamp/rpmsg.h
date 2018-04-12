@@ -339,7 +339,7 @@ struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_virtio *rpmsgv,
 
 void rpmsg_destroy_endpoint(struct rpmsg_endpoint *ept);
 
-int rpmsg_vdev_init(struct rpmsg_virtio *rpmsg_vdev, struct virtio_device *vdev,
+int rpmsg_init_vdev(struct rpmsg_virtio *rpmsg_vdev, struct virtio_device *vdev,
 		    void *shm, int len);
 
 #if defined __cplusplus
