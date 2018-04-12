@@ -91,13 +91,17 @@ int rpmsg_start_ipc(struct remote_device *rdev)
 
 	/* Initialize names and callbacks based on the device role */
 	if (rdev->role == RPMSG_MASTER) {
+#ifdef DEBUG
 		vq_names[0] = "tx_vq";
 		vq_names[1] = "rx_vq";
+#endif
 		callback[0] = rpmsg_tx_callback;
 		callback[1] = rpmsg_rx_callback;
 	} else {
+#ifdef DEBUG
 		vq_names[0] = "rx_vq";
 		vq_names[1] = "tx_vq";
+#endif
 		callback[0] = rpmsg_rx_callback;
 		callback[1] = rpmsg_tx_callback;
 	}

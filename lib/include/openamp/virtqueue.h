@@ -65,7 +65,9 @@ typedef enum {
 
 struct virtqueue {
 	struct virtio_device *vq_dev;
+#ifdef DEBUG
 	char vq_name[VIRTQUEUE_MAX_NAME_SZ];
+#endif
 	uint16_t vq_queue_index;
 	uint16_t vq_nentries;
 	uint32_t vq_flags;
