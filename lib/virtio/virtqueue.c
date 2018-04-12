@@ -14,7 +14,7 @@
 #include <metal/alloc.h>
 
 /* Prototype for internal functions. */
-static void vq_ring_init(struct virtqueue *, int);
+static void vq_ring_init(struct virtqueue *, void *, int);
 static void vq_ring_update_avail(struct virtqueue *, uint16_t);
 static uint16_t vq_ring_add_buffer(struct virtqueue *, struct vring_desc *,
 				   uint16_t, struct metal_sg *, int, int);
@@ -80,10 +80,8 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		vq->notify = notify;
 		vq->shm_io = shm_io;
 
-		vq->vq_ring_mem = (void *)ring->vaddr;
-
 		/* Initialize vring control block in virtqueue. */
-		vq_ring_init(vq, ring->align);
+		vq_ring_init(vq, (void *)ring->vaddr, ring->align);
 
 		/* Disable callbacks - will be enabled by the application
 		 * once initialization is completed.
@@ -301,11 +299,6 @@ void virtqueue_free(struct virtqueue *vq)
 			metal_log(METAL_LOG_WARNING,
 				  "%s: freeing non-empty virtqueue\r\n",
 				  vq->vq_name);
-		}
-		//TODO : Need to free indirect buffers here
-
-		if (vq->vq_ring_mem != NULL) {
-			vq->vq_ring_mem = NULL;
 		}
 
 		metal_free_memory(vq);
@@ -578,17 +571,15 @@ static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx)
  * vq_ring_init
  *
  */
-static void vq_ring_init(struct virtqueue *vq, int alignment)
+static void vq_ring_init(struct virtqueue *vq, void *ring_mem, int alignment)
 {
 	struct vring *vr;
-	unsigned char *ring_mem;
 	int i, size;
 
-	ring_mem = vq->vq_ring_mem;
 	size = vq->vq_nentries;
 	vr = &vq->vq_ring;
 
-	vring_init(vr, size, ring_mem, alignment);
+	vring_init(vr, size, (unsigned char *)ring_mem, alignment);
 
 	for (i = 0; i < size - 1; i++)
 		vr->desc[i].next = i + 1;
