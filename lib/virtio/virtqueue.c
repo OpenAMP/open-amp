@@ -80,8 +80,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		vq->notify = notify;
 		vq->shm_io = shm_io;
 
-		//TODO : Whether we want to support indirect addition or not.
-		vq->vq_ring_size = vring_size(ring->num_descs, ring->align);
 		vq->vq_ring_mem = (void *)ring->vaddr;
 
 		/* Initialize vring control block in virtqueue. */
@@ -307,7 +305,6 @@ void virtqueue_free(struct virtqueue *vq)
 		//TODO : Need to free indirect buffers here
 
 		if (vq->vq_ring_mem != NULL) {
-			vq->vq_ring_size = 0;
 			vq->vq_ring_mem = NULL;
 		}
 

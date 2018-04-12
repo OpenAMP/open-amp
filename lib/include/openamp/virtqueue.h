@@ -72,7 +72,6 @@ struct virtqueue {
 	uint16_t vq_queue_index;
 	uint16_t vq_nentries;
 	uint32_t vq_flags;
-	int vq_ring_size;
 	void *vq_ring_mem;
 	void (*callback) (struct virtqueue * vq);
 	void (*notify) (struct virtqueue * vq);
