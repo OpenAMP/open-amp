@@ -11,6 +11,7 @@
 #include <openamp/rpmsg_core.h>
 
 
+#if 0
 static struct rpmsg_endpoint *rpmsg_get_ept_from_id(
 				struct rpmsg_virtio_device *rvdev,
 				char *name, unsigned int addr)
@@ -27,6 +28,7 @@ static struct rpmsg_endpoint *rpmsg_get_ept_from_id(
 
 	return RPMSG_NULL;
 }
+#endif
 
 static struct rpmsg_endpoint *rpmsg_get_ept_from_remote_addr(
 			      struct rpmsg_virtio_device *rvdev, uint32_t addr)
