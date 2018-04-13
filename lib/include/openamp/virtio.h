@@ -8,6 +8,7 @@
 #define _VIRTIO_H_
 
 #include <openamp/virtqueue.h>
+#include <metal/spinlock.h>
 
 #if defined __cplusplus
 extern "C" {
@@ -36,6 +37,12 @@ extern "C" {
 #define VIRTIO_CONFIG_STATUS_NEEDS_RESET 0x40
 #define VIRTIO_CONFIG_STATUS_FAILED    0x80
 
+struct virtio_device_id {
+	uint32_t device;
+	uint32_t vendor;
+};
+#define VIRTIO_DEV_ANY_ID	((unsigned int)-1)
+
 /*
  * Generate interrupt when the virtqueue ring is
  * completely used, even if we've suppressed them.
@@ -62,7 +69,6 @@ struct virtio_feature_desc {
 	uint32_t vfd_val;
 	const char *vfd_str;
 };
-
 
 /**
 * struct proc_vring
@@ -108,39 +114,21 @@ struct virtio_buffer_info {
  */
 
 struct virtio_device {
-	/*
-	 * Since there is no generic device structure so
-	 * keep its type as void. The driver layer will take
-	 * care of it.
-	 */
-	void *client_dev;
-	void *rproc_dev;
-
-	/* Address for the vdev info */
-	void *vdev_info;
-
-	/* Device name */
-	char *name;
-
-	/* Number of vrings */
-	unsigned int num_vrings;
-
-	/* Vring info control blocks */
+	int index;                               /**< unique position on the virtio bus */
+	struct virtio_device_id id;              /**< the device type identification (used to match it with a driver). */
+	struct metal_device *dev;                /**< do we need this in virtio device ? */
+	struct metal_spinlock lock;                     /**< spin lock */
+	uint64_t features;                       /**< the features supported by both ends. */
+	unsigned int role;                       /**< if it is virtio backend or front end. */
+	void (*rst_cb)(struct virtio_device *vdev); /**< user registered virtio device callback */
+	void *priv;                              /**< pointer to virtio_device private data */
+	int vrings_num;                          /**< number of vrings */
+	struct virtqueue vqs[1];                 /**< array of virtqueues */
+	
+	/* add-on */
 	struct virtio_vring_info vring_info[VIRTIO_MAX_NUM_VRINGS];
+	virtio_dispatch *func;			 /**< Virtio dispatch table */
 
-	/* buffer */
-	struct virtio_buffer_info sh_buff;
-	/* Virtio device specific features */
-	uint32_t features;
-
-	/* Virtio dispatch table */
-	virtio_dispatch *func;
-
-	/*
-	 * Pointer to hold some private data, useful
-	 * in callbacks.
-	 */
-	void *data;
 };
 
 /* 
