@@ -8,298 +8,63 @@
  */
 
 #include <openamp/rpmsg.h>
+#include <openamp/rpmsg_core.h>
+#include <metal/sleep.h>
 
 #ifndef RPMSG_NUM_VRINGS
 #define RPMSG_NUM_VRINGS (2)
 #endif
 
+#define RPMSG_ADDR_BMP_SIZE     4
 
-static unsigned int rpmsg_features = VIRTIO_RPMSG_F_NS;
+/* Total tick count for 15secs - 1msec tick. */
+#define RPMSG_TICK_COUNT                        15000
 
-/**
- * rpmsg_rdev_get_endpoint_from_addr
- *
- * This function returns endpoint node based on src address. It must be called
- * with mutex locked.
- *
- * @param rdev - pointer remote device control block
- * @param addr - src address
- *
- * @return - rpmsg endpoint
- *
- */
-struct rpmsg_endpoint *rpmsg_get_endpoint_from_addr(struct rpmsg_virtio *rvdev,
-						uint32_t addr)
-{
-	struct rpmsg_endpoint *rp_ept;
-	struct metal_list *node;
-
-	metal_list_for_each(&rvdev->rp_endpoints, node) {
-		rp_ept = metal_container_of(node,
-				struct rpmsg_endpoint, node);
-		if (rp_ept->src == addr)
-			return rp_ept;
-	}
-
-	return RPMSG_NULL;
-}
+/* Time to wait - In multiple of 10 msecs. */
+#define RPMSG_TICKS_PER_INTERVAL                10
 
 /**
- * rpmsg_get_tx_buffer
+ * rpmsg_get_buffer_size
  *
- * Provides buffer to transmit messages.
+ * Returns buffer size available for sending messages.
  *
- * @param rvdev - pointer to rpmsg device
- * @param len  - length of returned buffer
- * @param idx  - buffer index
+ * @param channel - pointer to rpmsg channel
  *
- * return - pointer to buffer.
- */
-void *rpmsg_get_tx_buffer(struct rpmsg_virtio *rvdev, unsigned long *len,
-			  unsigned short *idx)
-{
-	void *data;
-
-	if (rvdev->role == RPMSG_REMOTE) {
-		data = virtqueue_get_buffer(rvdev->tvq, (uint32_t *) len, idx);
-		if (data == RPMSG_NULL) {
-			data = sh_mem_get_buffer(rvdev->mem_pool);
-			*len = RPMSG_BUFFER_SIZE;
-		}
-	} else {
-		data =
-		    virtqueue_get_available_buffer(rvdev->tvq, idx,
-						   (uint32_t *) len);
-	}
-	return data;
-}
-/**
- * rpmsg_get_rx_buffer
- *
- * Retrieves the received buffer from the virtqueue.
- *
- * @param rvdev - pointer to rpmsg device
- * @param len  - size of received buffer
- * @param idx  - index of buffer
- *
- * @return - pointer to received buffer
+ * @return - buffer size
  *
  */
-void *rpmsg_get_rx_buffer(struct rpmsg_virtio *rvdev, unsigned long *len,
-			  unsigned short *idx)
+static int rpmsg_get_buffer_size(struct rpmsg_endpoint *ept)
 {
+	struct rpmsg_virtio_device *rvdev = ept->rvdev;
+	int length;
 
-	void *data;
+	metal_mutex_acquire(&rvdev->lock);
 
-	if (rvdev->role == RPMSG_REMOTE) {
-		data = virtqueue_get_buffer(rvdev->rvq, (uint32_t *) len, idx);
-	} else {
-		data =
-		    virtqueue_get_available_buffer(rvdev->rvq, idx,
-						   (uint32_t *) len);
-	}
-	if (data) {
-		/* FIX ME: library should not worry about if it needs
-		 * to flush/invalidate cache, it is shared memory.
-		 * The shared memory should be mapped properly before
-		 * using it.
-		 */
-		metal_cache_invalidate(data, (unsigned int)(*len));
-	}
-
-	return data;
-}
-
-/**
- * rpmsg_return_buffer
- *
- * Places the used buffer back on the virtqueue.
- *
- * @param rvdev   - pointer to remote core
- * @param buffer - buffer pointer
- * @param len    - buffer length
- * @param idx    - buffer index
- *
- */
-void rpmsg_return_buffer(struct rpmsg_virtio *rvdev, void *buffer,
-			 unsigned long len, unsigned short idx)
-{
-	struct metal_sg sg;
-
-	if (rvdev->role == RPMSG_REMOTE) {
-		/* Initialize buffer node */
-		sg.virt = buffer;
-		sg.len = len;
-		sg.io = rvdev->virt_dev->sh_buff.io;
-		virtqueue_add_buffer(rvdev->rvq, &sg, 0, 1, buffer);
-	} else {
-		(void)sg;
-		virtqueue_add_consumed_buffer(rvdev->rvq, idx, len);
-	}
-}
-
-/**
- * rpmsg_tx_callback
- *
- * Tx callback function.
- *
- * @param vq - pointer to virtqueue on which Tx is has been
- *             completed.
- *
- */
-static void rpmsg_tx_callback(struct virtqueue *vq)
-{
-	struct virtio_device *vdev = vq->vq_dev;
-	struct rpmsg_virtio *rpmsg_dev = vdev->client_dev;
-	struct rpmsg_channel *rp_chnl;
-	struct metal_list *node;
-
-	/* Check if the remote device is master. */
-	if (rpmsg_dev->role == RPMSG_MASTER) {
-
+	if (rvdev->vdev->role == RPMSG_REMOTE) {
 		/*
-		 * Notification is received from the master. Now the remote(us)
-		 * can performs one of two operations;
-		 *
-		 * a. If name service announcement is supported then it will
-		 *    send NS message.
-		 * else
-		 * b. It will update the channel state to active so that further
-		 *    communication can take place.
+		 * If device role is Remote then buffers are provided by us
+		 * (RPMSG Master), so just provide the macro.
 		 */
-		metal_list_for_each(&rpmsg_dev->rp_channels, node) {
-			rp_chnl = metal_container_of(node,
-				struct rpmsg_channel, node);
-
-			if (rp_chnl->state == RPMSG_CHNL_STATE_IDLE) {
-				if (rpmsg_dev->support_ns) {
-#if 0
-					if (rpmsg_send_ns_message(rpmsg_dev,
-						rp_chnl, RPMSG_NS_CREATE) ==
-						RPMSG_SUCCESS)
-						rp_chnl->state =
-							RPMSG_CHNL_STATE_NS;
-#endif
-				} else {
-					rp_chnl->state =
-					    RPMSG_CHNL_STATE_ACTIVE;
-				}
-
-			}
-
-		}
-	}
-}
-
-/**
- * rpmsg_rx_callback
- *
- * Rx callback function.
- *
- * @param vq - pointer to virtqueue on which messages is received
- *
- */
-void rpmsg_rx_callback(struct virtqueue *vq)
-{
-	struct virtio_device *vdev = vq->vq_dev;
-	struct rpmsg_virtio *rpmsg_dev = vdev->client_dev;
-	struct rpmsg_channel *rp_chnl;
-	struct rpmsg_endpoint *rp_ept;
-	struct rpmsg_hdr *rp_hdr;
-//	struct rpmsg_hdr_reserved *reserved;
-	unsigned long len;
-	unsigned short idx;
-
-	metal_mutex_acquire(&rpmsg_dev->lock);
-
-	/* Process the received data from remote node */
-	rp_hdr = (struct rpmsg_hdr *)rpmsg_get_rx_buffer(rpmsg_dev, &len, &idx);
-
-	metal_mutex_release(&rpmsg_dev->lock);
-
-	while (rp_hdr) {
-		/* Get the channel node from the remote device channels list. */
-		metal_mutex_acquire(&rpmsg_dev->lock);
-		rp_ept = rpmsg_get_endpoint_from_addr(rpmsg_dev, rp_hdr->dst);
-		metal_mutex_release(&rpmsg_dev->lock);
-
-		if (!rp_ept)
-			/* Fatal error no endpoint for the given dst addr. */
-			return;
-
-		rp_chnl = rp_ept->rp_chnl;
-
-		if ((rp_chnl) && (rp_chnl->state == RPMSG_CHNL_STATE_NS)) {
-			/*
-			 * First message from RPMSG Master, update channel
-			 * destination address and state
-			 */
-			rp_ept->dst = rp_ept->src;
-			rp_chnl->state = RPMSG_CHNL_STATE_ACTIVE;
-
-#if 0
-			/* Notify channel creation to application */
-			if (rpmsg_dev->channel_created)
-				rpmsg_dev->channel_created(rp_chnl);
-#endif
-		} else {
-			rp_ept->cb(rp_ept, (void *)RPMSG_LOCATE_DATA(rp_hdr),
-				   rp_hdr->len, rp_ept->src, rp_ept->priv);
-		}
-
-		metal_mutex_acquire(&rpmsg_dev->lock);
-
-		/* Check whether callback wants to hold buffer */
-		if (rp_hdr->reserved & RPMSG_BUF_HELD) {
-#if 0
-			/*
-			 * 'rp_hdr->reserved' field is now used as storage for
-			 * 'idx' to release buffer later
-			 */
-			reserved =
-				(struct rpmsg_hdr_reserved *)&rp_hdr->reserved;
-			reserved->idx = (uint16_t)idx;
-#endif
-		} else {
-			/* Return used buffers. */
-			rpmsg_return_buffer(rpmsg_dev, rp_hdr, len, idx);
-		}
-
-		rp_hdr =
-		    (struct rpmsg_hdr *)rpmsg_get_rx_buffer(rpmsg_dev, &len,
-							    &idx);
-		metal_mutex_release(&rpmsg_dev->lock);
-	}
-}
-
-/**
- * check if the remote is ready to start RPMsg communication
- */
-static int rpmsg_wait_remote_ready(struct rpmsg_virtio *rpmsg_vdev)
-{
-	struct virtio_device *vdev = rpmsg_vdev->virt_dev;
-	uint8_t status;
-
-	while (1) {
-		status = vdev->func->get_status(vdev);
-		/* Busy wait until the remote is ready */
-		if (status & VIRTIO_CONFIG_STATUS_NEEDS_RESET) {
-			vdev->func->set_status(vdev, 0);
-			/* TODO notify remote processor */
-		} else if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK) {
-			return true;
-		}
-		/* TODO: clarify metal_cpu_yield usage*/
-		metal_cpu_yield();
+		length = RPMSG_BUFFER_SIZE - sizeof(struct rpmsg_hdr);
+	} else {
+		/*
+		 * If other core is Master then buffers are provided by it,
+		 * so get the buffer size from the virtqueue.
+		 */
+		length =
+		    (int)virtqueue_get_desc_size(rvdev->svq) -
+		    sizeof(struct rpmsg_hdr);
 	}
 
-	return false;
+	metal_mutex_release(&rvdev->lock);
+
+	return length;
 }
 
 /**
  * This function sends rpmsg "message" to remote device.
  *
- * @param rp_chnl - pointer to rpmsg channel
+ * @param ept     - pointer to end point
  * @param src     - source address of channel
  * @param dst     - destination address of channel
  * @param data    - data to transmit
@@ -311,18 +76,129 @@ static int rpmsg_wait_remote_ready(struct rpmsg_virtio *rpmsg_vdev)
  *
  */
 
-int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
+int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 			      uint32_t dst, const void *data,
 			      int size, int wait)
 {
-	(void)rp_chnl;
-	(void)src;
-	(void)dst;
-	(void)data;
-	(void)size;
-	(void)wait;
+	struct rpmsg_virtio_device *rvdev;
+	struct rpmsg_hdr rp_hdr;
+	void *buffer;
+	unsigned short idx;
+	int ret, tick_count = 0;
+	unsigned long buff_len;
+	uint8_t status;
+	struct metal_io_region *io;
 
-	return RPMSG_SUCCESS;
+	if (!ept || !data)
+		return RPMSG_ERR_PARAM;
+
+	/* Get the associated remote device for channel. */
+	rvdev = ept->rvdev;
+
+	status = rvdev->vdev->func->get_status(rvdev->vdev);
+	/* Validate device state */
+	if (ept->dest_addr == RPMSG_ADDR_ANY ||
+	    status != VIRTIO_CONFIG_STATUS_DRIVER_OK) {
+		return RPMSG_ERR_DEV_STATE;
+	}
+
+	if (size > (rpmsg_get_buffer_size(ept)))
+		return RPMSG_ERR_BUFF_SIZE;
+
+	/* Lock the device to enable exclusive access to virtqueues */
+	metal_mutex_acquire(&rvdev->lock);
+	/* Get rpmsg buffer for sending message. */
+	buffer = rpmsg_get_tx_buffer(rvdev, &buff_len, &idx);
+	/* Unlock the device */
+	metal_mutex_release(&rvdev->lock);
+
+	if (!buffer && !wait)
+		return RPMSG_ERR_NO_BUFF;
+
+	while (!buffer) {
+		/*
+		 * Wait parameter is true - pool the buffer for
+		 * 15 secs as defined by the APIs.
+		 */
+		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
+		metal_mutex_acquire(&rvdev->lock);
+		buffer = rpmsg_get_tx_buffer(rvdev, &buff_len, &idx);
+		metal_mutex_release(&rvdev->lock);
+		tick_count += RPMSG_TICKS_PER_INTERVAL;
+		if (!buffer && (tick_count >=
+		    (RPMSG_TICK_COUNT / RPMSG_TICKS_PER_INTERVAL))) {
+			return RPMSG_ERR_NO_BUFF;
+		}
+	}
+
+	/* Initialize RPMSG header. */
+	rp_hdr.dst = dst;
+	rp_hdr.src = src;
+	rp_hdr.len = size;
+	rp_hdr.reserved = 0;
+
+	/* Copy data to rpmsg buffer. */
+	io = rvdev->shbuf_io;
+	metal_io_block_write(io,
+			metal_io_virt_to_offset(io, buffer),
+			&rp_hdr, sizeof(rp_hdr));
+	metal_io_block_write(io,
+			metal_io_virt_to_offset(io, RPMSG_LOCATE_DATA(buffer)),
+			data, size);
+	metal_mutex_acquire(&rvdev->lock);
+
+	/* Enqueue buffer on virtqueue. */
+	ret = rpmsg_virtio_enqueue_buffer(rvdev, buffer, buff_len, idx);
+	RPMSG_ASSERT(ret == VQUEUE_SUCCESS, "failed to enqueue buffer\n");
+	/* Let the other side know that there is a job to process. */
+	virtqueue_kick(rvdev->svq);
+
+	metal_mutex_release(&rvdev->lock);
+
+	return size;
+}
+
+int rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
+		     struct rpmsg_endpoint *ept)
+{
+	int status;
+
+	if (!ept->cb)
+		return RPMSG_ERR_PARAM;
+
+	status = rpmsg_register_endpoint(rvdev, ept);
+	if (status < 0)
+		return status;
+
+	if (ept->dest_addr == RPMSG_ADDR_ANY)
+		/* Send NS announcement to remote processor */
+		status = rpmsg_send_ns_message(rvdev, ept, RPMSG_NS_CREATE);
+
+	return status;
+}
+
+/**
+ * rpmsg_destroy_ept
+ *
+ * This function deletes rpmsg endpoint and performs cleanup.
+ *
+ * @param ept - pointer to endpoint to destroy
+ *
+ */
+void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
+{
+	struct rpmsg_virtio_device *rvdev;
+
+	if (!ept)
+		return;
+
+	rvdev = ept->rvdev;
+
+	metal_mutex_acquire(&rvdev->lock);
+	rpmsg_release_address(rvdev->bitmap, RPMSG_ADDR_BMP_SIZE,
+			      ept->addr);
+	metal_list_del(&ept->node);
+	metal_mutex_release(&rvdev->lock);
 }
 
 /**
@@ -336,32 +212,42 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rp_chnl, uint32_t src,
  * Slave side:
  * This API will not return until the driver ready is set by the master side.
  *
- * @param rpmsg_vdev   - pointer to the rpmsg device
+ * @param rvdev   - pointer to the rpmsg device
  * @param vdev   - pointer to the virtio device
- * @param shm    - pointer to the share memory. Can be NULL for slave.
+ * @param shm    - pointer to the share memory.
  * @param len    - length of the shared memory section.
  *
  * @return - status of function execution
  */
 
-int rpmsg_init_vdev(struct rpmsg_virtio *rpmsg_vdev, struct virtio_device *vdev,
-		    void *shm, int len)
+int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
+		    struct virtio_device *vdev, void *shm, int len)
 {
-	struct sh_mem_pool *mem_pool = shm;
+	struct rproc_vshm_pool *rp_shm = shm;
 	const char *vq_names[RPMSG_NUM_VRINGS];
 	void (*callback[RPMSG_NUM_VRINGS]) (struct virtqueue *vq);
-	int status;
+	unsigned long dev_features;
+	unsigned int vq_size;
+	static struct rpmsg_endpoint ns_ept;
+	int status, i;
 
-	metal_mutex_init(&rpmsg_vdev->lock);
+	metal_mutex_init(&rvdev->lock);
 
-	vdev->client_dev = rpmsg_vdev;
-
-	vdev->func->set_features(vdev, rpmsg_features);
-
-	/* Initialize names and callbacks based on the device role */
-	if (rpmsg_vdev->role == RPMSG_MASTER) {
+	if (rvdev->vdev->role == RPMSG_MASTER) {
+		/*
+		 * Since device is RPMSG Remote so we need to manage the
+		 * shared buffers. Create shared memory pool to handle buffers.
+		 */
 		if (!shm || !len)
 			return -RPMSG_ERR_NO_MEM;
+
+		rvdev->shbuf =
+		    sh_mem_create_pool(rp_shm->va, rp_shm->size,
+				       RPMSG_BUFFER_SIZE);
+
+		if (!rvdev->shbuf)
+			return RPMSG_ERR_NO_MEM;
+
 		vq_names[0] = "tx_vq";
 		vq_names[1] = "rx_vq";
 		callback[0] = rpmsg_tx_callback;
@@ -372,26 +258,62 @@ int rpmsg_init_vdev(struct rpmsg_virtio *rpmsg_vdev, struct virtio_device *vdev,
 		callback[0] = rpmsg_rx_callback;
 		callback[1] = rpmsg_tx_callback;
 	}
+	rvdev->shbuf_io = rp_shm->io;
 
 	/* Create virtqueues for remote device */
 	status = vdev->func->create_virtqueues(vdev, 0, RPMSG_NUM_VRINGS,
 					       vq_names, callback, RPMSG_NULL);
 	if (status != RPMSG_SUCCESS)
 		return status;
-	if (rpmsg_vdev->role == RPMSG_MASTER) {
-
-		rpmsg_vdev->mem_pool = mem_pool;
+	if (rvdev->vdev->role == RPMSG_MASTER) {
 		vdev->func->set_status(vdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
 	} else {
 		/* wait synchro with the master */
-		rpmsg_wait_remote_ready(rpmsg_vdev);
+		rpmsg_wait_remote_ready(rvdev);
 	}
-	rpmsg_vdev->virt_dev = vdev;
+	rvdev->vdev = vdev;
+	vdev->priv = rvdev;
 
 	/* Initialize channels and endpoints list */
-	metal_list_init(&rpmsg_vdev->rp_endpoints);
-	metal_list_init(&rpmsg_vdev->rp_channels);
+	metal_list_init(&rvdev->endpoints);
 
-	/*TODO : create name servioce endpoints */
-	return RPMSG_SUCCESS;
+	dev_features = vdev->func->get_features(vdev);
+
+	/*
+	 * Create name service announcement endpoint if device supports name
+	 * service announcement feature.
+	 */
+	if ((dev_features & (1 << VIRTIO_RPMSG_F_NS))) {
+		ns_ept.addr = RPMSG_NS_EPT_ADDR;
+		ns_ept.cb = rpmsg_ns_callback;
+		strncpy(ns_ept.name, "NS", sizeof("NS"));
+		status = rpmsg_register_endpoint(rvdev, &ns_ept);
+	}
+
+	return status;
 }
+
+void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev)
+{
+	struct metal_list *node;
+	struct rpmsg_endpoint *ept;
+
+	metal_mutex_acquire(&rvdev->lock);
+	while (!metal_list_is_empty(&rvdev->endpoints)) {
+		node = rvdev->endpoints.next;
+		ept = metal_container_of(node, struct rpmsg_endpoint, node);
+
+		rpmsg_destroy_ept(ept);
+	}
+
+	rvdev->rvq = 0;
+	rvdev->svq = 0;
+	if (rvdev->shbuf) {
+		sh_mem_delete_pool(rvdev->shbuf);
+		rvdev->shbuf = NULL;
+	}
+	metal_mutex_release(&rvdev->lock);
+
+	metal_mutex_deinit(&rvdev->lock);
+}
+
