@@ -164,7 +164,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
  *
  * Returns number of bytes it has sent or negative error value on failure.
  */
-static int rpmsg_send(struct rpmsg_endpoint *ept, const void *data, int len)
+static inline int rpmsg_send(struct rpmsg_endpoint *ept, const void *data, int len)
 {
 	if (ept->dest_addr == RPMSG_ADDR_ANY)
 		return RPMSG_ERR_ADDR;
@@ -190,7 +190,7 @@ static int rpmsg_send(struct rpmsg_endpoint *ept, const void *data, int len)
  *
  * Returns number of bytes it has sent or negative error value on failure.
  */
-static int rpmsg_sendto(struct rpmsg_endpoint *ept, const void *data,
+static inline int rpmsg_sendto(struct rpmsg_endpoint *ept, const void *data,
 			int len, uint32_t dst)
 {
 	return rpmsg_send_offchannel_raw(ept, ept->addr, dst, data, len,

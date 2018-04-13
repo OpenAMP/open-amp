@@ -33,9 +33,8 @@
  * @return - buffer size
  *
  */
-static int rpmsg_get_buffer_size(struct rpmsg_endpoint *ept)
+static int rpmsg_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 {
-	struct rpmsg_virtio_device *rvdev = ept->rvdev;
 	int length;
 
 	metal_mutex_acquire(&rvdev->lock);
@@ -102,7 +101,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 		return RPMSG_ERR_DEV_STATE;
 	}
 
-	if (size > (rpmsg_get_buffer_size(ept)))
+	if (size > (rpmsg_get_buffer_size(rvdev)))
 		return RPMSG_ERR_BUFF_SIZE;
 
 	/* Lock the device to enable exclusive access to virtqueues */
@@ -227,9 +226,8 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	const char *vq_names[RPMSG_NUM_VRINGS];
 	void (*callback[RPMSG_NUM_VRINGS]) (struct virtqueue *vq);
 	unsigned long dev_features;
-	unsigned int vq_size;
 	static struct rpmsg_endpoint ns_ept;
-	int status, i;
+	int status;
 
 	metal_mutex_init(&rvdev->lock);
 
