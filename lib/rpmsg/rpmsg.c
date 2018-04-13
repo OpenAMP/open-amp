@@ -355,7 +355,6 @@ int rpmsg_init_vdev(struct rpmsg_virtio *rpmsg_vdev, struct virtio_device *vdev,
 	metal_mutex_init(&rpmsg_vdev->lock);
 
 	vdev->client_dev = rpmsg_vdev;
-	vdev->func = &rpmsg_virtio_config_ops;
 
 	vdev->func->set_features(vdev, rpmsg_features);
 
