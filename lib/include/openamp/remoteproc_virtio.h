@@ -119,7 +119,7 @@ struct rproc_virtio {
 struct rproc_virtio *
 rproc_virtio_create_vdev(int role, void *vdev_info,
 			 unsigned int num_vrings, void *priv,
-			 int (*notify)(uint32_id, void *priv));
+			 int (*notify)(uint32_t id, void *priv));
 
 /**
  * rproc_virtio_create_vring
