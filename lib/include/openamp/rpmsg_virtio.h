@@ -13,6 +13,7 @@
 #define _RPMSG_VIRTIO_H_
 
 #include <openamp/virtio.h>
+#include <openamp/remoteproc_virtio.h>
 #include <metal/io.h>
 #include <metal/alloc.h>
 #include <metal/utilities.h>
@@ -24,38 +25,38 @@
 extern "C" {
 #endif
 
+#define RPMSG_ADDR_BMP_SIZE	4
+
 /**
- * rpmsg_virtio - rpmsg virtio structure
- * @virt_dev: virtio device assocuited to the rpmsg
- * @vring_table: shared local address
- * @dst: destination address
- * rdev: rpmsg remote device
- * @ept: the rpmsg endpoint of this channel
- * @state: channel state
+ * struct rpmsg_virtio_device - representation of a rpmsg device based on virtio
+ * @vdev: pointer to the virtio device
+ * @lock: mutex lock for rpmsg management
+ * @rvq: pointer to receive virtqueue
+ * @svq: pointer to send virtqueue
+ * @buffers_number: number of shared buffers
+ * @shbuf_io: pointer to the shared buffer I/O region.
+ * @new_endpoint_cb: callback handler for new service announcement without local
+ *                   endpoints waiting to bind.
+ * @endpoints: list of endpoints.
+ * @bitmap: table endpoin address allocation.
  */
-struct rpmsg_virtio {
-	struct virtio_device *virt_dev;
-	struct virtqueue *rvq;
-	struct virtqueue *tvq;
-	struct proc_vring *vring_table;
-	struct metal_list rp_channels;
-	struct metal_list rp_endpoints;
-	struct sh_mem_pool *mem_pool;
-//	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
-//	rpmsg_chnl_cb_t channel_created;
-//	rpmsg_chnl_cb_t channel_destroyed;
-//	rpmsg_cb_t default_cb;
+struct rpmsg_virtio_device {
+	struct virtio_device *vdev;
 	metal_mutex_t lock;
-	unsigned int role;
-	unsigned int state;
-	int support_ns;
+	struct virtqueue *rvq;
+	struct virtqueue *svq;
+	int buffers_number;
+	struct metal_io_region *shbuf_io;
+	struct sh_mem_pool *shbuf;
+	int (*new_endpoint_cb)(const char *name, uint32_t addr);
+	struct metal_list endpoints;
+	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
 };
 
 int rpmsg_virtio_create_virtqueues(struct virtio_device *dev, int flags,
 				   unsigned int nvqs, const char *names[],
 				   vq_callback * callbacks[],
 				   struct virtqueue *vqs_[]);
-
 #if defined __cplusplus
 }
 #endif
