@@ -57,8 +57,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 	VQ_PARAM_CHK(ring->num_descs & (ring->num_descs - 1), status,
 		     ERROR_VRING_ALIGN);
 
-	//TODO : Error check for indirect buffer addition
-
 	if (status == VQUEUE_SUCCESS) {
 
 		vq_size = sizeof(struct virtqueue)
@@ -89,9 +87,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		virtqueue_disable_cb(vq);
 
 		*v_queue = vq;
-
-		//TODO : Need to add cleanup in case of error used with the indirect buffer addition
-		//TODO: do we need to save the new queue in db based on its id
 	}
 
 	return (status);
@@ -126,13 +121,9 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 	VQ_PARAM_CHK(needed < 1, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(vq->vq_free_cnt == 0, status, ERROR_VRING_FULL);
 
-	//TODO: Add parameters validation for indirect buffer addition
-
 	VQUEUE_BUSY(vq);
 
 	if (status == VQUEUE_SUCCESS) {
-
-		//TODO : Indirect buffer addition support
 
 		VQASSERT(vq, cookie != NULL, "enqueuing with no cookie");
 

@@ -64,9 +64,6 @@ typedef enum {
 } vq_postpone_t;
 
 struct virtqueue {
-	//TODO: Need to define proper structure for
-	//        virtio device with RPmsg and paravirtualization.
-
 	struct virtio_device *vq_dev;
 	char vq_name[VIRTQUEUE_MAX_NAME_SZ];
 	uint16_t vq_queue_index;
