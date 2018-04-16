@@ -39,7 +39,7 @@ static int rpmsg_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 
 	metal_mutex_acquire(&rvdev->lock);
 
-	if (rvdev->vdev->role == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
 		/*
 		 * If device role is Remote then buffers are provided by us
 		 * (RPMSG Master), so just provide the macro.
@@ -94,7 +94,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 	/* Get the associated remote device for channel. */
 	rvdev = ept->rvdev;
 
-	status = rvdev->vdev->func->get_status(rvdev->vdev);
+	status = rpmsg_virtio_get_status(rvdev);
 	/* Validate device state */
 	if (ept->dest_addr == RPMSG_ADDR_ANY ||
 	    status != VIRTIO_CONFIG_STATUS_DRIVER_OK) {
@@ -231,7 +231,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 
 	metal_mutex_init(&rvdev->lock);
 
-	if (rvdev->vdev->role == RPMSG_MASTER) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		/*
 		 * Since device is RPMSG Remote so we need to manage the
 		 * shared buffers. Create shared memory pool to handle buffers.
@@ -259,12 +259,12 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	rvdev->shbuf_io = rp_shm->io;
 
 	/* Create virtqueues for remote device */
-	status = vdev->func->create_virtqueues(vdev, 0, RPMSG_NUM_VRINGS,
+	status = rpmsg_virtio_create_virtqueues(rvdev, 0, RPMSG_NUM_VRINGS,
 					       vq_names, callback, RPMSG_NULL);
 	if (status != RPMSG_SUCCESS)
 		return status;
-	if (rvdev->vdev->role == RPMSG_MASTER) {
-		vdev->func->set_status(vdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
+		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
 	} else {
 		/* wait synchro with the master */
 		rpmsg_wait_remote_ready(rvdev);
@@ -275,7 +275,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	/* Initialize channels and endpoints list */
 	metal_list_init(&rvdev->endpoints);
 
-	dev_features = vdev->func->get_features(vdev);
+	dev_features = rpmsg_virtio_get_features(rvdev);
 
 	/*
 	 * Create name service announcement endpoint if device supports name

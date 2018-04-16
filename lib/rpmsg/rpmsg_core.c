@@ -169,7 +169,7 @@ void *rpmsg_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 {
 	void *data;
 
-	if (rvdev->vdev->role == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
 		data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
 		if (data == RPMSG_NULL) {
 			data = sh_mem_get_buffer(rvdev->shbuf);
@@ -201,7 +201,7 @@ void *rpmsg_get_rx_buffer(struct rpmsg_virtio_device *rvdev, unsigned long *len,
 {
 	void *data;
 
-	if (rvdev->vdev->role == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
 		data = virtqueue_get_buffer(rvdev->rvq, (uint32_t *)len, idx);
 	} else {
 		data =
@@ -223,16 +223,15 @@ void *rpmsg_get_rx_buffer(struct rpmsg_virtio_device *rvdev, unsigned long *len,
 /**
  * check if the remote is ready to start RPMsg communication
  */
-int rpmsg_wait_remote_ready(struct rpmsg_virtio_device *rpmsg_vdev)
+int rpmsg_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
 {
-	struct virtio_device *vdev = rpmsg_vdev->vdev;
 	uint8_t status;
 
 	while (1) {
-		status = vdev->func->get_status(vdev);
+		status = rpmsg_virtio_get_status(rvdev);
 		/* Busy wait until the remote is ready */
 		if (status & VIRTIO_CONFIG_STATUS_NEEDS_RESET) {
-			vdev->func->set_status(vdev, 0);
+			rpmsg_virtio_set_status(rvdev, 0);
 			/* TODO notify remote processor */
 		} else if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK) {
 			return true;
@@ -262,7 +261,7 @@ void rpmsg_tx_callback(struct virtqueue *vq)
 	struct metal_list *node;
 
 	/* Check if the remote device is master. */
-	if (rvdev->vdev->role == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
 		/*
 		 * Notification is received from the master. Now the remote(us)
 		 * can performs one of two operations;
@@ -277,7 +276,7 @@ void rpmsg_tx_callback(struct virtqueue *vq)
 			ept = metal_container_of(node, struct rpmsg_endpoint,
 						 node);
 
-			dev_features = vdev->func->get_features(vdev);
+			dev_features = rpmsg_virtio_get_features(rvdev);
 			if ((dev_features & (1 << VIRTIO_RPMSG_F_NS))) {
 				if (rpmsg_send_ns_message(rvdev, ept,
 					RPMSG_NS_CREATE) != RPMSG_SUCCESS)
