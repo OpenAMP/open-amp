@@ -24,6 +24,8 @@
 #ifndef SH_MEM_H_
 #define SH_MEM_H_
 
+#include <metal/io.h>
+#include <metal/list.h>
 #include <metal/mutex.h>
 
 #if defined __cplusplus
@@ -55,14 +57,21 @@ extern "C" {
 struct sh_mem_pool {
 	void *start_addr;
 	metal_mutex_t lock;
-	int size;
-	int buff_size;
-	int total_buffs;
-	int used_buffs;
-	int bmp_size;
+	unsigned int size;
+	unsigned int buff_size;
+	unsigned int total_buffs;
+	unsigned int used_buffs;
+	unsigned int bmp_size;
 };
 
-/* APIs */
+struct openamp_shmem {
+	void *va;
+	metal_phys_addr_t pa;
+};
+
+void *openamp_get_shmem_datova(struct metal_list *shmems,
+			       metal_phys_addr_t da, size_t size,
+			       struct metal_io_region **io);
 struct sh_mem_pool *sh_mem_create_pool(void *start_addr, unsigned int size,
 				       unsigned int buff_size);
 void sh_mem_delete_pool(struct sh_mem_pool *pool);
