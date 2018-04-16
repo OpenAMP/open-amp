@@ -99,6 +99,7 @@ enum fw_resource_type {
 };
 
 #define FW_RSC_ADDR_ANY (0xFFFFFFFFFFFFFFFF)
+#define FW_RSC_U32_ADDR_ANY (0xFFFFFFFF)
 
 /**
  * struct fw_rsc_carveout - physically contiguous memory request
