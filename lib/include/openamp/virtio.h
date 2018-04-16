@@ -68,6 +68,7 @@ struct virtio_device_id {
 #define VIRTIO_TRANSPORT_F_END        32
 
 typedef struct _virtio_dispatch_ virtio_dispatch;
+typedef void (*virtio_dev_reset_cb)(struct virtio_device *vdev);
 
 struct virtio_feature_desc {
 	uint32_t vfd_val;
@@ -123,7 +124,7 @@ struct virtio_device {
 	struct metal_spinlock lock; /**< spin lock */
 	uint64_t features; /**< the features supported by both ends. */
 	unsigned int role; /**< if it is virtio backend or front end. */
-	void (*rst_cb)(struct virtio_device *vdev); /**< user registered virtio
+	virtio_dev_reset_cb reset_cb; /**< user registered virtio
 						         device callback */
 	virtio_dispatch *func;/**< Virtio dispatch table */
 	void *priv; /**< TODO: should remove pointer to virtio_device private
