@@ -58,10 +58,6 @@ void rpmsg_return_buffer(struct rpmsg_virtio_device *rpmsgv, void *buffer,
 int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rpmsgv,
 				void *buffer, unsigned long len,
 				unsigned short idx);
-int rpmsg_virtio_create_virtqueues(struct virtio_device *dev, int flags,
-				   unsigned int nvqs, const char *names[],
-				   vq_callback * callbacks[],
-				   struct virtqueue *vqs_[]);
 #if defined __cplusplus
 }
 #endif
