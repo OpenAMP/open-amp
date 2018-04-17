@@ -35,7 +35,6 @@ static int virtqueue_nused(struct virtqueue *vq);
  *                    when message is available on VirtIO queue
  * @param notify    - Pointer to notify function, used to notify
  *                    other side that there is job available for it
- * @param shm_io    - shared memory I/O region of the virtqueue
  * @param vq        - Created VirtIO queue.
  *
  * @return          - Function status
@@ -44,7 +43,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     const char *name, struct vring_alloc_info *ring,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
-		     struct metal_io_region *shm_io,
 		     struct virtqueue *vq)
 {
 	int status = VQUEUE_SUCCESS;
@@ -63,7 +61,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		vq->vq_free_cnt = vq->vq_nentries;
 		vq->callback = callback;
 		vq->notify = notify;
-		vq->shm_io = shm_io;
 
 		/* Initialize vring control block in virtqueue. */
 		vq_ring_init(vq, (void *)ring->vaddr, ring->align);
