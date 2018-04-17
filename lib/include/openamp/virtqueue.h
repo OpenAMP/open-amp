@@ -21,7 +21,6 @@ typedef uint8_t boolean;
 
 #include <openamp/virtio_ring.h>
 #include <metal/alloc.h>
-#include <metal/dma.h>
 #include <metal/io.h>
 
 /*Error Codes*/
@@ -63,6 +62,11 @@ typedef enum {
 	VQ_POSTPONE_LONG,
 	VQ_POSTPONE_EMPTIED	/* Until all available desc are used. */
 } vq_postpone_t;
+
+struct virtqueue_buf {
+	void *buf;
+	int len;
+};
 
 struct virtqueue {
 	struct virtio_device *vq_dev;
@@ -193,7 +197,7 @@ static inline void virtqueue_set_shmem_io(struct virtqueue *vq,
 	vq->shm_io = io;
 }
 
-int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
+int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
 			 int readable, int writable, void *cookie);
 
 void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len, uint16_t *idx);
