@@ -76,24 +76,6 @@ struct virtio_feature_desc {
 };
 
 /**
-* struct proc_vring
-*
-* This structure is maintained by hardware interface layer to keep
-* vring physical memory and notification info.
-*
-*/
-struct virtio_vring_info {
-	/* Vring logical address */
-	void *vaddr;
-	/* Vring I/O region */
-	struct metal_io_region *io;
-	/* Number of vring descriptors */
-	unsigned short num_descs;
-	/* Vring alignment */
-	unsigned long align;
-};
-
-/**
  * struct proc_shm
  *
  * This structure is maintained by hardware interface layer for
@@ -110,6 +92,24 @@ struct virtio_buffer_info {
 	struct metal_io_region *io;
 	/* Size of shared memory. */
 	unsigned long size;
+};
+
+/**
+ * struct remoteproc_vring - remoteproc vring structure
+ * @vq virtio queue
+ * @va logical address
+ * @notifyid vring notify id
+ * @num_descs number of descriptors
+ * @align vring alignment
+ * @io metal I/O region of the vring memory, can be NULL
+ */
+struct virtio_vring_info {
+	struct virtqueue *vq;
+	void *va;
+	uint32_t notifyid;
+	unsigned int num_descs;
+	unsigned int align;
+	struct metal_io_region *io;
 };
 
 /*
@@ -130,7 +130,7 @@ struct virtio_device {
 	void *priv; /**< TODO: should remove pointer to virtio_device private
 		         data */
 	unsigned int vrings_num; /**< number of vrings */
-	struct virtqueue vqs[1]; /**< array of virtqueues */
+	struct virtio_vring_info *vrings_info;
 };
 
 /*
