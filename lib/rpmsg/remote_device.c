@@ -439,6 +439,8 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 				     rdev->proc->sh_buff.io,
 				     vqs[idx]);
 
+		virtqueue_set_shmem_io(vqs[idx], rdev->proc->sh_buff.io);
+
 		if (status != RPMSG_SUCCESS) {
 			return status;
 		}
