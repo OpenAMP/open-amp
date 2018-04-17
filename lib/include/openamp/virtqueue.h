@@ -79,8 +79,7 @@ struct virtqueue {
 	struct vring vq_ring;
 	uint16_t vq_free_cnt;
 	uint16_t vq_queued_cnt;
-	/** Shared memory I/O region */
-	struct metal_io_region *shm_io;
+	void * shm_io; /* opaque pointer to data needed to allow v2p & p2v */
 
 	/*
 	 * Head of the free chain in the descriptor table. If
