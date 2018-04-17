@@ -22,6 +22,20 @@ static int vq_ring_must_notify_host(struct virtqueue *vq);
 static void vq_ring_notify_host(struct virtqueue *vq);
 static int virtqueue_nused(struct virtqueue *vq);
 
+/* Default implementation of P2V based on libmetal */
+void * metal_weak virtqueue_phys_to_virt(void * priv, metal_phys_addr_t phys)
+{
+	struct metal_io_region *io = priv;
+	return metal_io_phys_to_virt(io, phys);
+}
+
+/* Default implementation of V2P based on libmetal */
+metal_phys_addr_t metal_weak virtqueue_virt_to_phys(void * priv, void *buf)
+{
+	struct metal_io_region *io = priv;
+	return metal_io_virt_to_phys(io, buf);
+}
+
 /**
  * virtqueue_create - Creates new VirtIO queue
  *
@@ -33,7 +47,9 @@ static int virtqueue_nused(struct virtqueue *vq);
  *                    when message is available on VirtIO queue
  * @param notify    - Pointer to notify function, used to notify
  *                    other side that there is job available for it
- * @param shm_io    - shared memory I/O region of the virtqueue
+ * @param shm_io    - Opaque pointer to data needed to allow p2v and v2p
+ *                    functions to be implemented.  (default assumption is
+ *                    this is a pointer to a struct metal_io_region)
  * @param v_queue   - Created VirtIO queue.
  *
  * @return          - Function status
@@ -42,7 +58,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     char *name, struct vring_alloc_info *ring,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
-		     struct metal_io_region *shm_io,
+		     void *shm_io,
 		     struct virtqueue **v_queue)
 {
 	struct virtqueue *vq = NULL;
@@ -249,7 +265,8 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
 	head_idx = vq->vq_available_idx++ & (vq->vq_nentries - 1);
 	*avail_idx = vq->vq_ring.avail->ring[head_idx];
 
-	buffer = metal_io_phys_to_virt(vq->shm_io, vq->vq_ring.desc[*avail_idx].addr);
+	buffer = virtqueue_phys_to_virt(vq->shm_io,
+					vq->vq_ring.desc[*avail_idx].addr);
 	*len = vq->vq_ring.desc[*avail_idx].len;
 
 	VQUEUE_IDLE(vq);
@@ -421,7 +438,7 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 			 "premature end of free desc chain");
 
 		dp = &desc[idx];
-		dp->addr = metal_io_virt_to_phys(vq->shm_io, buf_list[i].buf);
+		dp->addr = virtqueue_virt_to_phys(vq->shm_io, buf_list[i].buf);
 		dp->len = buf_list[i].len;
 		dp->flags = 0;
 
