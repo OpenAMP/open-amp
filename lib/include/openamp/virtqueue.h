@@ -178,6 +178,20 @@ int virtqueue_create(struct virtio_device *device, unsigned short id,
 		     struct metal_io_region *shm_io,
 		     struct virtqueue *v_queue);
 
+/*
+ * virtqueue_set_shmem_io
+ *
+ * set virtqueue shared memory I/O region
+ *
+ * @vq - virt queue
+ * @io - pointer to the shared memory I/O region
+ */
+static inline void virtqueue_set_shmem_io(struct virtqueue *vq,
+					  struct metal_io_region *io)
+{
+	vq->shm_io = io;
+}
+
 int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 			 int readable, int writable, void *cookie);
 
