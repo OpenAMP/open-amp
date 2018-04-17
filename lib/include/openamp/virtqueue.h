@@ -177,7 +177,6 @@ int virtqueue_create(struct virtio_device *device, unsigned short id,
 		     const char *name, struct vring_alloc_info *ring,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
-		     struct metal_io_region *shm_io,
 		     struct virtqueue *v_queue);
 
 /*
