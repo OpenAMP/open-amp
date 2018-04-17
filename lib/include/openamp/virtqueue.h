@@ -196,10 +196,6 @@ static inline void virtqueue_set_shmem_io(struct virtqueue *vq,
 int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 			 int readable, int writable, void *cookie);
 
-int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
-				struct metal_sg *sg, int writable,
-				boolean has_next);
-
 void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len, uint16_t *idx);
 
 void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
