@@ -423,7 +423,7 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 			 "premature end of free desc chain");
 
 		dp = &desc[idx];
-		dp->addr = metal_io_virt_to_phys(sg[i].io, sg[i].virt);
+		dp->addr = metal_io_virt_to_phys(vq->shm_io, sg[i].virt);
 		dp->len = sg[i].len;
 		dp->flags = 0;
 
