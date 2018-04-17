@@ -8,8 +8,6 @@
 #include <string.h>
 #include <openamp/virtqueue.h>
 #include <metal/atomic.h>
-#include <metal/dma.h>
-#include <metal/io.h>
 #include <metal/log.h>
 #include <metal/alloc.h>
 
@@ -17,7 +15,7 @@
 static void vq_ring_init(struct virtqueue *, void *, int);
 static void vq_ring_update_avail(struct virtqueue *, uint16_t);
 static uint16_t vq_ring_add_buffer(struct virtqueue *, struct vring_desc *,
-				   uint16_t, struct metal_sg *, int, int);
+				   uint16_t, struct virtqueue_buf *, int, int);
 static int vq_ring_enable_interrupt(struct virtqueue *, uint16_t);
 static void vq_ring_free_chain(struct virtqueue *, uint16_t);
 static int vq_ring_must_notify_host(struct virtqueue *vq);
@@ -80,14 +78,14 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
  *                            inserted before writable buffers
  *
  * @param vq                - Pointer to VirtIO queue control block.
- * @param sg                - Pointer to buffer scatter/gather list
+ * @param buf_list          - Pointer to a list of virtqueue buffers.
  * @param readable          - Number of readable buffers
  * @param writable          - Number of writable buffers
  * @param cookie            - Pointer to hold call back data
  *
  * @return                  - Function status
  */
-int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
+int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
 			 int readable, int writable, void *cookie)
 {
 	struct vq_desc_extra *dxp = NULL;
@@ -119,8 +117,8 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 		dxp->ndescs = needed;
 
 		/* Enqueue buffer onto the ring. */
-		idx = vq_ring_add_buffer(vq, vq->vq_ring.desc, head_idx, sg,
-					 readable, writable);
+		idx = vq_ring_add_buffer(vq, vq->vq_ring.desc, head_idx,
+					 buf_list, readable, writable);
 
 		vq->vq_desc_head_idx = idx;
 		vq->vq_free_cnt -= needed;
@@ -390,7 +388,7 @@ uint32_t virtqueue_get_desc_size(struct virtqueue * vq)
  */
 static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 				   struct vring_desc *desc, uint16_t head_idx,
-				   struct metal_sg *sg, int readable,
+				   struct virtqueue_buf *buf_list, int readable,
 				   int writable)
 {
 	struct vring_desc *dp;
@@ -407,8 +405,8 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 			 "premature end of free desc chain");
 
 		dp = &desc[idx];
-		dp->addr = metal_io_virt_to_phys(vq->shm_io, sg[i].virt);
-		dp->len = sg[i].len;
+		dp->addr = metal_io_virt_to_phys(vq->shm_io, buf_list[i].buf);
+		dp->len = buf_list[i].len;
 		dp->flags = 0;
 
 		if (i < needed - 1)
