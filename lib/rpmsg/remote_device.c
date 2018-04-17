@@ -436,7 +436,6 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 		status =
 		    virtqueue_create(dev, idx, (char *)names[idx], &ring_info,
 				     callbacks[idx], hil_vring_notify,
-				     rdev->proc->sh_buff.io,
 				     vqs[idx]);
 
 		virtqueue_set_shmem_io(vqs[idx], rdev->proc->sh_buff.io);
