@@ -39,9 +39,9 @@
 #include <metal/utilities.h>
 #include <metal/alloc.h>
 
-static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
+static void rproc_virtio_virtqueue_notify(struct virtio_device *vdev,
+					  struct virtqueue *vq)
 {
-	struct virtio_device *vdev;
 	struct remoteproc_virtio *rpvdev;
 	struct virtio_vring *rvring;
 	unsigned int vq_id = vq->vq_queue_index;
@@ -51,49 +51,6 @@ static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 	assert(vq_id <= vdev->num_vrings);
 	rvring = &vdev->rvrings[vq_id];
 	rpvdev->notify(rpvdev->priv, rvring->notifyid);
-}
-
-static int rproc_virtio_create_virtqueues(struct virtio_device *vdev,
-					  unsigned int flags,
-					  unsigned int nvqs,
-					  const char *names[],
-					  vq_callback *callbacks[],
-					  struct virtqueue *vqs[])
-{
-	struct virtio_vring *rvring;
-	struct vring_alloc_info vring_info;
-	unsigned int num_vrings, i;
-	int ret;
-	(void)flags;
-
-	num_vrings = vdev->vrings_num;
-	if (nvqs > num_vrings)
-		return -RPROC_EINVAL;
-	/* Initialize virtqueue for each vring */
-	for (i = 0; i < nvqs; i++) {
-		rvring = &vdev->rvrings[i];
-		if (vdev->role == VIRTIO_DEV_HOST) {
-			size_t offset;
-			struct metal_io_region *io = rvring->io;
-			unsigned int num_descs = rvring->num_descs;
-			unsigned int align = rvring->align;
-
-			vring_info.vaddr = rvring->va;
-			vring_info.align = rvring->align;
-			vring_info.num_descs = rvring->num_descs;
-			offset = metal_io_virt_to_offset(io, rvring->va);
-			metal_io_block_set(io, offset, 0,
-					   vring_size(num_descs, align));
-		}
-		ret = virtqueue_create(vdev, i,
-					names[i], &vring_info,
-					callbacks[i],
-					rproc_virtio_virtqueue_notify,
-					rvring->vq);
-		if (ret)
-			return -RPROC_EINVAL;
-	}
-	return 0;
 }
 
 static unsigned char rproc_virtio_get_status(struct virtio_device *vdev)
@@ -194,7 +151,6 @@ static void rproc_virtio_reset_device(struct virtio_device *vdev)
 }
 
 virtio_dispatch remoteproc_virtio_dispatch_funcs = {
-	.create_virtqueues = rproc_virtio_create_virtqueues,
 	.get_status =  rproc_virtio_get_status,
 	.set_status = rproc_virtio_set_status,
 	.get_features = rproc_virtio_get_features,
@@ -203,6 +159,7 @@ virtio_dispatch remoteproc_virtio_dispatch_funcs = {
 	.read_config = rproc_virtio_read_config,
 	.write_config = rpmsg_virtio_write_config,
 	.reset_device = rproc_virtio_reset_device,
+	.notify = rproc_virtio_virtqueue_notify,
 };
 
 struct virtio_device *
@@ -288,6 +245,8 @@ int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
 	rvring->notifyid = notifyid;
 	rvring->num_descs = num_descs;
 	rvring->align = align;
+
+	return 0;
 }
 
 int rproc_virtio_set_shm(struct remoteproc_virtio *rpvdev,
