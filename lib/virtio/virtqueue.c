@@ -47,7 +47,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     struct metal_io_region *shm_io,
 		     struct virtqueue **v_queue)
 {
-
 	struct virtqueue *vq = NULL;
 	int status = VQUEUE_SUCCESS;
 	uint32_t vq_size = 0;
@@ -58,7 +57,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     ERROR_VRING_ALIGN);
 
 	if (status == VQUEUE_SUCCESS) {
-
 		vq_size = sizeof(struct virtqueue)
 		    + (ring->num_descs) * sizeof(struct vq_desc_extra);
 		vq = (struct virtqueue *)metal_allocate_memory(vq_size);
@@ -108,7 +106,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 			 int readable, int writable, void *cookie)
 {
-
 	struct vq_desc_extra *dxp = NULL;
 	int status = VQUEUE_SUCCESS;
 	uint16_t head_idx;
@@ -283,7 +280,6 @@ uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx)
  */
 void virtqueue_free(struct virtqueue *vq)
 {
-
 	if (vq != NULL) {
 
 		if (vq->vq_free_cnt != vq->vq_nentries) {
@@ -309,7 +305,6 @@ void virtqueue_free(struct virtqueue *vq)
 void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
 				     uint32_t * len)
 {
-
 	uint16_t head_idx = 0;
 	void *buffer;
 
@@ -343,7 +338,6 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
 int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 				  uint32_t len)
 {
-
 	struct vring_used_elem *used_desc = NULL;
 	uint16_t used_idx;
 
@@ -376,7 +370,6 @@ int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
  */
 int virtqueue_enable_cb(struct virtqueue *vq)
 {
-
 	return (vq_ring_enable_interrupt(vq, 0));
 }
 
@@ -388,7 +381,6 @@ int virtqueue_enable_cb(struct virtqueue *vq)
  */
 void virtqueue_disable_cb(struct virtqueue *vq)
 {
-
 	VQUEUE_BUSY(vq);
 
 	if (vq->vq_flags & VIRTQUEUE_FLAG_EVENT_IDX) {
@@ -408,7 +400,6 @@ void virtqueue_disable_cb(struct virtqueue *vq)
  */
 void virtqueue_kick(struct virtqueue *vq)
 {
-
 	VQUEUE_BUSY(vq);
 
 	/* Ensure updated avail->idx is visible to host. */
@@ -429,7 +420,6 @@ void virtqueue_kick(struct virtqueue *vq)
  */
 void virtqueue_dump(struct virtqueue *vq)
 {
-
 	if (vq == NULL)
 		return;
 
@@ -486,7 +476,6 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 				   struct metal_sg *sg, int readable,
 				   int writable)
 {
-
 	struct vring_desc *dp;
 	int i, needed;
 	uint16_t idx;
@@ -611,7 +600,6 @@ static void vq_ring_update_avail(struct virtqueue *vq, uint16_t desc_idx)
  */
 static int vq_ring_enable_interrupt(struct virtqueue *vq, uint16_t ndesc)
 {
-
 	/*
 	 * Enable interrupts, making sure we get the latest index of
 	 * what's already been consumed.
@@ -643,7 +631,6 @@ static int vq_ring_enable_interrupt(struct virtqueue *vq, uint16_t ndesc)
  */
 void virtqueue_notification(struct virtqueue *vq)
 {
-
 	atomic_thread_fence(memory_order_seq_cst);
 	if (vq->callback != NULL)
 		vq->callback(vq);
@@ -676,7 +663,6 @@ static int vq_ring_must_notify_host(struct virtqueue *vq)
  */
 static void vq_ring_notify_host(struct virtqueue *vq)
 {
-
 	if (vq->notify != NULL)
 		vq->notify(vq);
 }
