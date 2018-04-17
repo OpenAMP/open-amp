@@ -32,6 +32,7 @@
 #include <metal/utilities.h>
 #include <metal/time.h>
 #include <metal/cache.h>
+#include <stdio.h>
 
 #define DEFAULT_VRING_MEM_SIZE 0x10000
 #define HIL_DEV_NAME_PREFIX "hil-dev."
