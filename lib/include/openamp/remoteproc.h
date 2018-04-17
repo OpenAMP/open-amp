@@ -394,6 +394,7 @@ struct remoteproc_mem {
  * @rsc_len: length of resource table
  * @rsc_io: metal I/O region of resource table
  * @mems: remoteproc memories
+ * @vdevs: remoteproc virtio devices
  * @bitmap: bitmap for notify IDs for remoteproc subdevices
  * @state: remote processor state
  * @priv: private data
@@ -404,10 +405,12 @@ struct remoteproc {
 	size_t rsc_len;
 	struct metal_io_region *rsc_io;
 	struct metal_list mems;
+	struct metal_list vdevs;
 	unsigned long bitmap;
 	struct remoteproc_ops *ops;
 	metal_phys_addr_t bootaddr;
 	struct loader_ops *loader_ops;
+	int (*notify)(void *priv, unsigned int id);
 	unsigned int state;
 	void *priv;
 };
@@ -596,9 +599,9 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 		    struct metal_io_region **io);
 
 /**
- * remoteproc_set_rsc_table
+ * remoteproc_parse_rsc_table
  *
- * Set resource table of remoteproc
+ * Parse resource table of remoteproc
  *
  * @rproc - pointer to remoteproc instance
  * @rsc_table - pointer to resource table
@@ -606,9 +609,9 @@ void *remoteproc_mmap(struct remoteproc *rproc,
  *
  * returns 0 for success and negative value for errors
  */
-int remoteproc_set_rsc_table(struct remoteproc *rproc,
-			     struct resource_table *rsc_table,
-			     size_t rsc_size);
+int remoteproc_parse_rsc_table(struct remoteproc *rproc,
+			       struct resource_table *rsc_table,
+			       size_t rsc_size);
 
 /**
  * remoteproc_get_ready
@@ -717,7 +720,7 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 struct virtio_device *
 remoteproc_create_virtio(struct remoteproc *rproc,
 			 int vdev_id, unsigned int role,
-			 int (*rst_cb)(struct virtio_device *vdev));
+			 void (*rst_cb)(struct virtio_device *vdev));
 
 /* remoteproc_remove_virtio
  *
@@ -727,7 +730,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
  * @vdev: pointer to the virtio device
  *
  */
-void remoteproc_remote_virtio(struct remoteproc *rproc,
+void remoteproc_remove_virtio(struct remoteproc *rproc,
 			      struct virtio_device *vdev);
 #if defined __cplusplus
 }
