@@ -395,6 +395,7 @@ struct remoteproc_mem {
  * @rsc_len: length of resource table
  * @rsc_io: metal I/O region of resource table
  * @mems: remoteproc memories
+ * @vdevs: remoteproc virtio devices
  * @bitmap: bitmap for notify IDs for remoteproc subdevices
  * @state: remote processor state
  * @priv: private data
@@ -405,6 +406,7 @@ struct remoteproc {
 	size_t rsc_len;
 	struct metal_io_region *rsc_io;
 	struct metal_list mems;
+	struct metal_list vdevs;
 	unsigned long bitmap;
 	struct remoteproc_ops *ops;
 	metal_phys_addr_t bootaddr;
@@ -427,7 +429,7 @@ struct remoteproc {
  * @stop: stop the remoteproc from running application, the resource such as
  *        memory may not be off.
  * @shutdown: shutdown the remoteproc and release its resources.
- * @kick: notify the remote
+ * @notify: notify the remote
  */
 struct remoteproc_ops {
 	struct remoteproc *(*init)(struct remoteproc_ops *ops, void *arg);
@@ -440,7 +442,7 @@ struct remoteproc_ops {
 	int (*start)(struct remoteproc *rproc);
 	int (*stop)(struct remoteproc *rproc);
 	int (*shutdown)(struct remoteproc *rproc);
-	int (*kick)(struct remoteproc *rproc, int id);
+	int (*notify)(struct remoteproc *rproc, uint32_t id);
 };
 
 /* Remoteproc error codes */
@@ -520,40 +522,24 @@ struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv);
 void remoteproc_remove(struct remoteproc *rproc);
 
 /**
- * remoteproc_datova
+ * remoteproc_get_io_with_name
  *
- * remoteproc convert device address to virtual address
- *
- * @rproc - pointer to the remote processor
- * @da - device address
- * @size - size of the memory
- * @io - pointer to the pointer of the I/O region
- *
- * returns pointer to the memory
- */
-void *remoteproc_datova(struct remoteproc *rproc, metal_phys_addr_t da,
-			size_t size, struct metal_io_region **io);
-
-/**
- * remoteproc_get_mem_with_name
- *
- * get remoteproc memory with name
+ * get remoteproc memory I/O region with name
  *
  * @rproc - pointer to the remote processor
  * @name - name of the shared memory
- * @va - pointer to hold the virtual address
  * @io - pointer to the pointer of the I/O region
  *
- * returns size of the memory, negative value for failure
+ * returns metal I/O region pointer, NULL for failure
  */
-int remoteproc_get_mem_with_name(struct remoteproc *rproc,
-				 const char *name, void **va,
-				 struct metal_io_region **io);
+struct metal_io_region *
+remoteproc_get_io_with_name(struct remoteproc *rproc,
+			    const char *name);
 
 /**
- * remoteproc_get_mem_with_pa
+ * remoteproc_get_io_with_pa
  *
- * get remoteproc memory with physical address
+ * get remoteproc memory I/O region with physical address
  *
  * @rproc - pointer to the remote processor
  * @pa - physical address
@@ -561,13 +547,29 @@ int remoteproc_get_mem_with_name(struct remoteproc *rproc,
  * returns metal I/O region pointer, NULL for failure
  */
 struct metal_io_region *
-remoteproc_get_mem_with_pa(struct remoteproc *rproc,
-			   metal_phys_addr_t pa);
+remoteproc_get_io_with_pa(struct remoteproc *rproc,
+			  metal_phys_addr_t pa);
 
 /**
- * remoteproc_get_mem_with_va
+ * remoteproc_get_io_with_da
  *
- * get remoteproc memory with virtual address
+ * get remoteproc memory I/O region with device address
+ *
+ * @rproc - pointer to the remote processor
+ * @da - device address
+ * @offset - I/O region offset of the device address
+ *
+ * returns metal I/O region pointer, NULL for failure
+ */
+struct metal_io_region *
+remoteproc_get_io_with_da(struct remoteproc *rproc,
+			  metal_phys_addr_t da,
+			  unsigned long *offset);
+
+/**
+ * remoteproc_get_io_with_va
+ *
+ * get remoteproc memory I/O region with virtual address
  *
  * @rproc - pointer to the remote processor
  * @va - virtual address
@@ -575,7 +577,8 @@ remoteproc_get_mem_with_pa(struct remoteproc *rproc,
  * returns metal I/O region pointer, NULL for failure
  */
 struct metal_io_region *
-remoteproc_get_mem_with_va(struct remoteproc *rproc, void *va);
+remoteproc_get_io_with_va(struct remoteproc *rproc,
+			  void *va);
 
 /**
  * remoteproc_mmap
@@ -597,9 +600,24 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 		    struct metal_io_region **io);
 
 /**
+ * remoteproc_parse_rsc_table
+ *
+ * Parse resource table of remoteproc
+ *
+ * @rproc - pointer to remoteproc instance
+ * @rsc_table - pointer to resource table
+ * @rsc_size - resource table size
+ *
+ * returns 0 for success and negative value for errors
+ */
+int remoteproc_parse_rsc_table(struct remoteproc *rproc,
+			       struct resource_table *rsc_table,
+			       size_t rsc_size);
+
+/**
  * remoteproc_set_rsc_table
  *
- * Set resource table of remoteproc
+ * Parse and set resource table of remoteproc
  *
  * @rproc - pointer to remoteproc instance
  * @rsc_table - pointer to resource table
@@ -718,7 +736,7 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 struct virtio_device *
 remoteproc_create_virtio(struct remoteproc *rproc,
 			 int vdev_id, unsigned int role,
-			 int (*rst_cb)(struct virtio_device *vdev));
+			 void (*rst_cb)(struct virtio_device *vdev));
 
 /* remoteproc_remove_virtio
  *
@@ -728,8 +746,21 @@ remoteproc_create_virtio(struct remoteproc *rproc,
  * @vdev: pointer to the virtio device
  *
  */
-void remoteproc_remote_virtio(struct remoteproc *rproc,
+void remoteproc_remove_virtio(struct remoteproc *rproc,
 			      struct virtio_device *vdev);
+
+/* remoteproc_get_notification
+ *
+ * remoteproc is got notified, it will check its subdevices
+ * for the notification
+ *
+ * @rproc -  pointer to the remoteproc instance
+ * @notifyid - notificatin id
+ *
+ * return 0 for succeed, negative value for failure
+ */
+int remoteproc_get_notification(struct remoteproc *rproc,
+				 uint32_t notifyid);
 #if defined __cplusplus
 }
 #endif
