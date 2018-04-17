@@ -43,13 +43,13 @@ static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 {
 	struct virtio_device *vdev;
 	struct remoteproc_virtio *rpvdev;
-	struct remoteproc_vring *rvring;
+	struct virtio_vring *rvring;
 	unsigned int vq_id = vq->vq_queue_index;
 
 	vdev = vq->vq_dev;
 	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
 	assert(vq_id <= vdev->num_vrings);
-	rvring = &rpvdev->rvrings[vq_id];
+	rvring = &vdev->rvrings[vq_id];
 	rpvdev->notify(rpvdev->priv, rvring->notifyid);
 }
 
@@ -60,20 +60,18 @@ static int rproc_virtio_create_virtqueues(struct virtio_device *vdev,
 					  vq_callback *callbacks[],
 					  struct virtqueue *vqs[])
 {
-	struct remoteproc_virtio *rpvdev;
-	struct remoteproc_vring *rvring;
+	struct virtio_vring *rvring;
 	struct vring_alloc_info vring_info;
 	unsigned int num_vrings, i;
 	int ret;
-
 	(void)flags;
-	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+
 	num_vrings = vdev->vrings_num;
 	if (nvqs > num_vrings)
 		return -RPROC_EINVAL;
 	/* Initialize virtqueue for each vring */
 	for (i = 0; i < nvqs; i++) {
-		rvring = &rpvdev->rvrings[i];
+		rvring = &vdev->rvrings[i];
 		if (vdev->role == VIRTIO_DEV_HOST) {
 			size_t offset;
 			struct metal_io_region *io = rvring->io;
@@ -215,7 +213,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 			 virtio_dev_reset_cb rst_cb)
 {
 	struct remoteproc_virtio *rpvdev;
-	struct remoteproc_vring *rvrings;
+	struct virtio_vring *rvrings;
 	struct fw_rsc_vdev *vdev_rsc = rsc;
 	struct virtio_device *vdev;
 	unsigned int num_vrings = vdev_rsc->num_of_vrings;
@@ -246,7 +244,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 	//rpvdev->notifyid = notifyid;
 	rpvdev->notify = notify;
 	rpvdev->priv = priv;
-	rpvdev->rvrings = rvrings;
+	vdev->rvrings = rvrings;
 	/* Assuming the shared memory has been mapped and registered if
 	 * necessary
 	 */
@@ -278,15 +276,13 @@ int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
 			    struct metal_io_region *io,
 			    unsigned int num_descs, unsigned int align)
 {
-	struct remoteproc_virtio *rpvdev;
-	struct remoteproc_vring *rvring;
+	struct virtio_vring *rvring;
 	unsigned int num_vrings;;
 
-	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
 	num_vrings = vdev->vrings_num;
 	if (index >= num_vrings)
 		return -RPROC_EINVAL;
-	rvring = &rpvdev->rvrings[index];
+	rvring = &vdev->rvrings[index];
 	rvring->va = va;
 	rvring->io = io;
 	rvring->notifyid = notifyid;

@@ -48,24 +48,6 @@ extern "C" {
 typedef int (*rpvdev_notify_func)(void *priv, unsigned int id);
 
 /**
- * struct remoteproc_vring - remoteproc vring structure
- * @vq virtio queue
- * @va logical address
- * @notifyid vring notify id
- * @num_descs number of descriptors
- * @align vring alignment
- * @io metal I/O region of the vring memory, can be NULL
- */
-struct remoteproc_vring {
-	struct virtqueue *vq;
-	void *va;
-	uint32_t notifyid;
-	unsigned int num_descs;
-	unsigned int align;
-	struct metal_io_region *io;
-};
-
-/**
  * struct remoteproc_virtio
  * @priv pointer to private data
  * @notifyid: notification id
@@ -78,7 +60,6 @@ struct remoteproc_vring {
 struct remoteproc_virtio {
 	void *priv;
 	uint32_t notify_id;
-	struct remoteproc_vring *rvrings;
 	void *vdev_rsc;
 	struct shm_pool *shm;
 	struct metal_io_region *vdev_rsc_io;
