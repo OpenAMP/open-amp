@@ -392,6 +392,8 @@ struct remoteproc_mem {
  * @rsc_len: length of resource table
  * @rsc_io: metal I/O region of resource table
  * @mems: remoteproc memories
+ * @vdevs: remoteproc virtio devices
+ * @bitmap: bitmap for notify IDs for remoteproc subdevices
  * @state: remote processor state
  * @priv: private data
  */
@@ -401,6 +403,8 @@ struct remoteproc {
 	size_t rsc_len;
 	struct metal_io_region *rsc_io;
 	struct metal_list mems;
+	struct metal_list vdevs;
+	unsigned long bitmap;
 	struct remoteproc_ops *ops;
 	metal_phys_addr_t bootaddr;
 	struct loader_ops *loader_ops;
