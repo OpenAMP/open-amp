@@ -41,7 +41,7 @@ static int virtqueue_nused(struct virtqueue *vq);
  * @return          - Function status
  */
 int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
-		     char *name, struct vring_alloc_info *ring,
+		     const char *name, struct vring_alloc_info *ring,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
 		     struct metal_io_region *shm_io,
