@@ -96,7 +96,9 @@ struct virtqueue {
 	 */
 	uint16_t vq_available_idx;
 
+#if (VQUEUE_DEBUG == true)
 	boolean vq_inuse;
+#endif
 
 	/*
 	 * Used by the host side during callback. Cookie
