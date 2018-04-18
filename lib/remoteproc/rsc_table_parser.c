@@ -182,3 +182,24 @@ static int handle_dummy_rsc(struct remoteproc *rproc, void *rsc)
 
 	return -RPROC_ERR_RSC_TAB_NS;
 }
+
+size_t find_rsc(void *rsc_table, unsigned int rsc_type, unsigned int index)
+{
+	struct resource_table *r_table = rsc_table;
+	unsigned int i, rsc_index;
+	unsigned int lrsc_type;
+	void *rsc_start;
+
+	metal_assert(r_table);
+	/* Loop through the offset array and parse each resource entry */
+	rsc_index = 0;
+	for (i = 0; i < r_table->num; i++) {
+		rsc_start = r_table + r_table->offset[i];
+		lrsc_type = *((uint32_t *)rsc_start);
+		if (lrsc_type == rsc_type) {
+			if (rsc_index++ == index)
+				return r_table->offset[i];
+		}
+	}
+	return 0;
+}
