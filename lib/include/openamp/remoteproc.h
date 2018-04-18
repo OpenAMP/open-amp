@@ -712,7 +712,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
  * @vdev: pointer to the virtio device
  *
  */
-void remoteproc_remote_virtio(struct remoteproc *rproc,
+void remoteproc_remove_virtio(struct remoteproc *rproc,
 			      struct virtio_device *vdev);
 #if defined __cplusplus
 }
