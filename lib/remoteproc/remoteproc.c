@@ -12,6 +12,7 @@
 #include <openamp/elf_loader.h>
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
+#include <openamp/remoteproc_virtio.h>
 #include <openamp/rsc_table_parser.h>
 #include <openamp/sh_mem.h>
 
@@ -432,6 +433,8 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 				    unsigned int start,
 				    unsigned int end)
 {
+	unsigned int notifyid;
+
 	if (start == RSC_NOTIFY_ID_ANY)
 		start = 0;
 	if (end == RSC_NOTIFY_ID_ANY)
@@ -439,14 +442,14 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 	notifyid = metal_bitmap_next_set_bit(&rproc->bitmap,
 					     start, end);
 	if (notifyid != end)
-		metal_bitmap_set_bit(&rproc->bitmap, nofityid);
+		metal_bitmap_set_bit(&rproc->bitmap, notifyid);
 	return notifyid;
 }
 
 struct virtio_device *
 remoteproc_create_virtio(struct remoteproc *rproc,
 			 int vdev_id, unsigned int role,
-			 int (*rst_cb)(struct virtio_device *vdev))
+			 void (*rst_cb)(struct virtio_device *vdev))
 {
 	void *rsc_table;
 	struct fw_rsc_vdev *vdev_rsc;
@@ -467,7 +470,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	}
 	vdev_rsc = rsc_table + vdev_rsc_offset;
 	notifyid = vdev_rsc->notifyid;
-	vdev = rproc_virtio_create_vdev(role, vdev_notifyid,
+	vdev = rproc_virtio_create_vdev(role, vdev_rsc->notifyid,
 					vdev_rsc, vdev_rsc_io,
 					rproc, rproc->nofity, rst_cb);
 	num_vrings = vdev_rsc->num_of_vrings;
@@ -481,13 +484,13 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 		void *va;
 		int ret;
 
-		vring_rsc = &vdev_rsc->vrings[i];
+		vring_rsc = &vdev_rsc->vring[i];
 		notifyid = vring_rsc->notifyid;
 		da = vring_rsc->da;
 		num_descs = vring_rsc->num;
 		align = vring_rsc->align;
 		size = vring_size(num_descs, align);
-		va = remoteproc_datova(rproc, da, size, &io)
+		va = remoteproc_datova(rproc, da, size, &io);
 		if (!va)
 			goto err1;
 		ret = rproc_virtio_init_vring(vdev, i, notifyid,
