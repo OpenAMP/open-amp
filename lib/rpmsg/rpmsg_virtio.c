@@ -11,7 +11,6 @@
 #include <string.h>
 #include "openamp/rpmsg.h"
 #include "openamp/remoteproc.h"
-#include "openamp/hil.h"
 #include "metal/utilities.h"
 #include "metal/alloc.h"
 #include "metal/atomic.h"
