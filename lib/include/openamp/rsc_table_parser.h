@@ -33,6 +33,19 @@ int handle_fw_chksum_rsc(struct remoteproc *rproc, void *rsc);
 int handle_mmu_rsc(struct remoteproc *rproc, void *rsc);
 int handle_vendor_rsc(struct remoteproc *rproc, void *rsc);
 
+/**
+ * find_rsc
+ *
+ * find out location of a resource type in the resource table.
+ *
+ * @rsc_table - pointer to the resource table
+ * @rsc_type - type of the resource
+ * @index - index of the resource of the specified type
+ *
+ * return the offset to the resource on success, or 0 on failure
+ */
+size_t find_rsc(void *rsc_table, unsigned int rsc_type, unsigned int index);
+
 #if defined __cplusplus
 }
 #endif
