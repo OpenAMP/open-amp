@@ -148,10 +148,6 @@ void virtio_describe(struct virtio_device *dev, const char *msg,
  */
 
 struct _virtio_dispatch_ {
-	int (*create_virtqueues) (struct virtio_device * dev, int flags,
-				  unsigned int nvqs, const char *names[],
-				  vq_callback * callbacks[],
-				  struct virtqueue * vqs[]);
 	uint8_t(*get_status) (struct virtio_device * dev);
 	void (*set_status) (struct virtio_device * dev, uint8_t status);
 	uint32_t(*get_features) (struct virtio_device * dev);
@@ -171,6 +167,10 @@ struct _virtio_dispatch_ {
 	void (*reset_device) (struct virtio_device * dev);
 
 };
+
+int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
+			     unsigned int nvqs, const char *names[],
+			     vq_callback *callbacks[]);
 
 #if defined __cplusplus
 }
