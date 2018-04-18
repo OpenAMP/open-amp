@@ -45,47 +45,35 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
 		     struct metal_io_region *shm_io,
-		     struct virtqueue **v_queue)
+		     struct virtqueue *vq)
 {
-	struct virtqueue *vq = NULL;
 	int status = VQUEUE_SUCCESS;
-	uint32_t vq_size = 0;
 
 	VQ_PARAM_CHK(ring == NULL, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(ring->num_descs == 0, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(ring->num_descs & (ring->num_descs - 1), status,
 		     ERROR_VRING_ALIGN);
 
-	if (status == VQUEUE_SUCCESS) {
-		vq_size = sizeof(struct virtqueue)
-		    + (ring->num_descs) * sizeof(struct vq_desc_extra);
-		vq = (struct virtqueue *)metal_allocate_memory(vq_size);
-
-		if (vq == NULL) {
-			return (ERROR_NO_MEM);
-		}
-
-		memset(vq, 0x00, vq_size);
-
-		vq->vq_dev = virt_dev;
-		strncpy(vq->vq_name, name, VIRTQUEUE_MAX_NAME_SZ);
-		vq->vq_queue_index = id;
-		vq->vq_nentries = ring->num_descs;
-		vq->vq_free_cnt = vq->vq_nentries;
-		vq->callback = callback;
-		vq->notify = notify;
-		vq->shm_io = shm_io;
-
-		/* Initialize vring control block in virtqueue. */
-		vq_ring_init(vq, (void *)ring->vaddr, ring->align);
-
-		/* Disable callbacks - will be enabled by the application
-		 * once initialization is completed.
-		 */
-		virtqueue_disable_cb(vq);
-
-		*v_queue = vq;
+	if (vq == NULL) {
+		return (ERROR_NO_MEM);
 	}
+
+	vq->vq_dev = virt_dev;
+	strncpy(vq->vq_name, name, VIRTQUEUE_MAX_NAME_SZ);
+	vq->vq_queue_index = id;
+	vq->vq_nentries = ring->num_descs;
+	vq->vq_free_cnt = vq->vq_nentries;
+	vq->callback = callback;
+	vq->notify = notify;
+	vq->shm_io = shm_io;
+
+	/* Initialize vring control block in virtqueue. */
+	vq_ring_init(vq, (void *)ring->vaddr, ring->align);
+
+	/* Disable callbacks - will be enabled by the application
+		* once initialization is completed.
+		*/
+	virtqueue_disable_cb(vq);
 
 	return (status);
 }

@@ -428,11 +428,16 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 				vring_table[idx].align));
 		}
 
+		vqs[idx] = virtqueue_allocate(ring_info.num_descs);
+		if (vqs[idx] == NULL) {
+			return (ERROR_NO_MEM);
+		}
+
 		status =
 		    virtqueue_create(dev, idx, (char *)names[idx], &ring_info,
 				     callbacks[idx], hil_vring_notify,
 				     rdev->proc->sh_buff.io,
-				     &vqs[idx]);
+				     vqs[idx]);
 
 		if (status != RPMSG_SUCCESS) {
 			return status;
