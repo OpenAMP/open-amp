@@ -20,7 +20,6 @@ extern "C" {
 typedef uint8_t boolean;
 
 #include <openamp/virtio_ring.h>
-#include <metal/dma.h>
 #include <metal/io.h>
 
 /*Error Codes*/
@@ -63,6 +62,11 @@ typedef enum {
 	VQ_POSTPONE_EMPTIED	/* Until all available desc are used. */
 } vq_postpone_t;
 
+struct virtqueue_buf {
+	void *buf;
+	int len;
+};
+
 struct virtqueue {
 	struct virtio_device *vq_dev;
 	char vq_name[VIRTQUEUE_MAX_NAME_SZ];
@@ -74,8 +78,7 @@ struct virtqueue {
 	struct vring vq_ring;
 	uint16_t vq_free_cnt;
 	uint16_t vq_queued_cnt;
-	/** Shared memory I/O region */
-	struct metal_io_region *shm_io;
+	void * shm_io; /* opaque pointer to data needed to allow v2p & p2v */
 
 	/*
 	 * Head of the free chain in the descriptor table. If
@@ -176,15 +179,11 @@ int virtqueue_create(struct virtio_device *device, unsigned short id,
 		     char *name, struct vring_alloc_info *ring,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
-		     struct metal_io_region *shm_io,
+		     void *shm_io,
 		     struct virtqueue **v_queue);
 
-int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
+int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
 			 int readable, int writable, void *cookie);
-
-int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
-				struct metal_sg *sg, int writable,
-				boolean has_next);
 
 void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len, uint16_t *idx);
 
