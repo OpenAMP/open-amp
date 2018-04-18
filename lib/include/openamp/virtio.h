@@ -129,7 +129,7 @@ struct virtio_device {
 	virtio_dispatch *func;/**< Virtio dispatch table */
 	void *priv; /**< TODO: should remove pointer to virtio_device private
 		         data */
-	int vrings_num; /**< number of vrings */
+	unsigned int vrings_num; /**< number of vrings */
 	struct virtio_vring_info *rvrings;
 };
 

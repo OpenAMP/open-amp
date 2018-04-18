@@ -48,7 +48,7 @@ static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 
 	vdev = vq->vq_dev;
 	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
-	metal_assert(vq_id <= vdev->num_vrings);
+	metal_assert(vq_id <= vdev->vrings_num);
 	rvring = &vdev->rvrings[vq_id];
 	rpvdev->notify(rpvdev->priv, rvring->notifyid);
 }
