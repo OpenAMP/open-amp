@@ -23,6 +23,7 @@
 #include <string.h>
 #include <openamp/sh_mem.h>
 #include <metal/alloc.h>
+#include <metal/utilities.h>
 
 /**
  * sh_mem_create_pool
