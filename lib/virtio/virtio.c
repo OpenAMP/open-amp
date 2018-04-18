@@ -84,7 +84,7 @@ int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 			     unsigned int nvqs, const char *names[],
 			     vq_callback *callbacks[])
 {
-	struct virtio_vring *rvring;
+	struct virtio_vring_info *rvring;
 	struct vring_alloc_info vring_info;
 	unsigned int num_vrings, i;
 	int ret;

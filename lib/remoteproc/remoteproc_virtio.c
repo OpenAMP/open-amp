@@ -42,7 +42,7 @@
 static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 {
 	struct remoteproc_virtio *rpvdev;
-	struct virtio_vring *rvring;
+	struct virtio_vring_info *rvring;
 	struct virtio_device *vdev;
 	unsigned int vq_id = vq->vq_queue_index;
 
@@ -170,7 +170,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 			 virtio_dev_reset_cb rst_cb)
 {
 	struct remoteproc_virtio *rpvdev;
-	struct virtio_vring *rvrings;
+	struct virtio_vring_info *rvrings;
 	struct fw_rsc_vdev *vdev_rsc = rsc;
 	struct virtio_device *vdev;
 	unsigned int num_vrings = vdev_rsc->num_of_vrings;
@@ -233,7 +233,7 @@ int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
 			    struct metal_io_region *io,
 			    unsigned int num_descs, unsigned int align)
 {
-	struct virtio_vring *rvring;
+	struct virtio_vring_info *rvring;
 	unsigned int num_vrings;;
 
 	num_vrings = vdev->vrings_num;
