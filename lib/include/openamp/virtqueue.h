@@ -177,7 +177,7 @@ typedef void vq_notify(struct virtqueue *);
 #endif
 
 int virtqueue_create(struct virtio_device *device, unsigned short id,
-		     char *name, struct vring_alloc_info *ring,
+		     const char *name, struct vring_alloc_info *ring,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
 		     struct virtqueue *v_queue);
