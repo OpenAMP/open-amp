@@ -55,11 +55,11 @@ extern "C" {
 struct sh_mem_pool {
 	void *start_addr;
 	metal_mutex_t lock;
-	int size;
-	int buff_size;
-	int total_buffs;
-	int used_buffs;
-	int bmp_size;
+	unsigned int size;
+	unsigned int buff_size;
+	unsigned int total_buffs;
+	unsigned int used_buffs;
+	unsigned int bmp_size;
 };
 
 /* APIs */
