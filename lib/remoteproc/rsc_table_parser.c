@@ -16,7 +16,7 @@ rsc_handler rsc_handler_table[] = {
 	handle_carve_out_rsc, /**< carved out resource */
 	handle_dummy_rsc, /**< IOMMU dev mem resource */
 	handle_dummy_rsc, /**< trace buffer resource */
-	handle_dummy_rsc, /**< virtio resource */
+	handle_vdev_rsc, /**< virtio resource */
 	handle_dummy_rsc, /**< rproc shared memory resource */
 	handle_dummy_rsc, /**< firmware checksum resource */
 };
@@ -132,6 +132,36 @@ int handle_vendor_rsc(struct remoteproc *rproc, void *rsc)
 		return rproc->ops->handle_rsc(rproc, rsc, len);
 	}
 	return -RPROC_ERR_RSC_TAB_NS;
+}
+
+int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
+{
+	struct fw_rsc_vdev *vdev_rsc = (struct fw_rsc_vdev *)rsc;
+	unsigned int notifyid, i, num_vrings;
+
+	/* only assign notification IDs but do not initialize vdev */
+	notifyid = vdev_rsc->notifyid;
+	if (notifyid == RSC_NOTIFY_ID_ANY) {
+		notifyid = remoteproc_allocate_id(rproc,
+						  notifyid, notifyid + 1);
+		vdev_rsc->notifyid = notifyid;
+	}
+
+	num_vrings = vdev_rsc->num_of_vrings;
+	for (i = 0; i < num_vrings; i++) {
+		struct fw_rsc_vdev_vring *vring_rsc;
+
+		vring_rsc = &vdev_rsc->vring[i];
+		notifyid = vring_rsc->notifyid;
+		if (notifyid == RSC_NOTIFY_ID_ANY) {
+			notifyid = remoteproc_allocate_id(rproc,
+							  notifyid,
+							  notifyid + 1);
+			vdev_rsc->notifyid = notifyid;
+		}
+	}
+
+	return 0;
 }
 
 /**
