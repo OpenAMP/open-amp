@@ -20,6 +20,7 @@ extern "C" {
 typedef uint8_t boolean;
 
 #include <openamp/virtio_ring.h>
+#include <metal/alloc.h>
 #include <metal/dma.h>
 #include <metal/io.h>
 
@@ -176,8 +177,21 @@ int virtqueue_create(struct virtio_device *device, unsigned short id,
 		     char *name, struct vring_alloc_info *ring,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
-		     struct metal_io_region *shm_io,
-		     struct virtqueue **v_queue);
+		     struct virtqueue *v_queue);
+
+/*
+ * virtqueue_set_shmem_io
+ *
+ * set virtqueue shared memory I/O region
+ *
+ * @vq - virt queue
+ * @io - pointer to the shared memory I/O region
+ */
+static inline void virtqueue_set_shmem_io(struct virtqueue *vq,
+					  struct metal_io_region *io)
+{
+	vq->shm_io = io;
+}
 
 int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 			 int readable, int writable, void *cookie);
@@ -199,6 +213,21 @@ void virtqueue_disable_cb(struct virtqueue *vq);
 int virtqueue_enable_cb(struct virtqueue *vq);
 
 void virtqueue_kick(struct virtqueue *vq);
+
+static inline struct virtqueue * virtqueue_allocate(unsigned int num_descs)
+{
+	struct virtqueue *vqs;
+	uint32_t vq_size = sizeof(struct virtqueue) +
+		 num_descs * sizeof(struct vq_desc_extra);
+
+	vqs = (struct virtqueue *)metal_allocate_memory(vq_size);
+
+	if (vqs) {
+		memset(vqs, 0x00, vq_size);
+	}
+
+	return vqs;
+}
 
 void virtqueue_free(struct virtqueue *vq);
 
