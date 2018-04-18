@@ -470,7 +470,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	}
 	vdev_rsc = rsc_table + vdev_rsc_offset;
 	notifyid = vdev_rsc->notifyid;
-	vdev = rproc_virtio_create_vdev(role, vdev_rsc->notifyid,
+	vdev = rproc_virtio_create_vdev(role, notifyid,
 					vdev_rsc, vdev_rsc_io,
 					rproc, rproc->notify, rst_cb);
 	num_vrings = vdev_rsc->num_of_vrings;
@@ -478,7 +478,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	for (i = 0; i < num_vrings; i++) {
 		struct fw_rsc_vdev_vring *vring_rsc;
 		metal_phys_addr_t da;
-		unsigned int notifyid, num_descs, align;
+		unsigned int num_descs, align;
 		struct metal_io_region *io;
 		size_t size;
 		void *va;
@@ -495,6 +495,8 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 			goto err1;
 		ret = rproc_virtio_init_vring(vdev, i, notifyid,
 					      va, io, num_descs, align);
+		if (ret)
+			goto err1;
 
 	}
 err1:
