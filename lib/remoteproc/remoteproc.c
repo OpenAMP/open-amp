@@ -12,6 +12,7 @@
 #include <openamp/elf_loader.h>
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
+#include <openamp/remoteproc_virtio.h>
 #include <openamp/rsc_table_parser.h>
 #include <openamp/sh_mem.h>
 
@@ -432,6 +433,8 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 				    unsigned int start,
 				    unsigned int end)
 {
+	unsigned int notifyid;
+
 	if (start == RSC_NOTIFY_ID_ANY)
 		start = 0;
 	if (end == RSC_NOTIFY_ID_ANY)
@@ -439,6 +442,75 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 	notifyid = metal_bitmap_next_set_bit(&rproc->bitmap,
 					     start, end);
 	if (notifyid != end)
-		metal_bitmap_set_bit(&rproc->bitmap, nofityid);
+		metal_bitmap_set_bit(&rproc->bitmap, notifyid);
 	return notifyid;
+}
+
+struct virtio_device *
+remoteproc_create_virtio(struct remoteproc *rproc,
+			 int vdev_id, unsigned int role,
+			 void (*rst_cb)(struct virtio_device *vdev))
+{
+	void *rsc_table;
+	struct fw_rsc_vdev *vdev_rsc;
+	struct metal_io_region *vdev_rsc_io;
+	struct virtio_device *vdev;
+	size_t vdev_rsc_offset;
+	unsigned int notifyid;
+	unsigned int num_vrings, i;
+
+	metal_assert(rproc);
+	metal_mutex_acquire(&rproc->lock);
+	rsc_table = rproc->rsc_table;
+	vdev_rsc_io = rproc->rsc_io;
+	vdev_rsc_offset = find_rsc(rsc_table, RSC_VDEV, vdev_id);
+	if (!vdev_rsc_offset) {
+		metal_mutex_release(&rproc->lock);
+		return NULL;
+	}
+	vdev_rsc = rsc_table + vdev_rsc_offset;
+	notifyid = vdev_rsc->notifyid;
+	vdev = rproc_virtio_create_vdev(role, vdev_rsc->notifyid,
+					vdev_rsc, vdev_rsc_io,
+					rproc, rproc->notify, rst_cb);
+	num_vrings = vdev_rsc->num_of_vrings;
+	/* set the notification id for vrings */
+	for (i = 0; i < num_vrings; i++) {
+		struct fw_rsc_vdev_vring *vring_rsc;
+		metal_phys_addr_t da;
+		unsigned int notifyid, num_descs, align;
+		struct metal_io_region *io;
+		size_t size;
+		void *va;
+		int ret;
+
+		vring_rsc = &vdev_rsc->vring[i];
+		notifyid = vring_rsc->notifyid;
+		da = vring_rsc->da;
+		num_descs = vring_rsc->num;
+		align = vring_rsc->align;
+		size = vring_size(num_descs, align);
+		va = remoteproc_datova(rproc, da, size, &io);
+		if (!va)
+			goto err1;
+		ret = rproc_virtio_init_vring(vdev, i, notifyid,
+					      va, io, num_descs, align);
+
+	}
+err1:
+	remoteproc_remove_virtio(rproc, vdev);
+	vdev = NULL;
+	metal_mutex_release(&rproc->lock);
+	return vdev;
+}
+
+void remoteproc_remove_virtio(struct remoteproc *rproc,
+			      struct virtio_device *vdev)
+{
+	struct remoteproc_virtio *rpvdev;
+
+	(void)rproc;
+	metal_assert(vdev);
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	rproc_virtio_remove_vdev(&rpvdev->vdev);
 }

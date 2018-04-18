@@ -410,6 +410,7 @@ struct remoteproc {
 	struct remoteproc_ops *ops;
 	metal_phys_addr_t bootaddr;
 	struct loader_ops *loader_ops;
+	int (*notify)(void *priv, unsigned int id);
 	unsigned int state;
 	void *priv;
 };
@@ -718,7 +719,7 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 struct virtio_device *
 remoteproc_create_virtio(struct remoteproc *rproc,
 			 int vdev_id, unsigned int role,
-			 int (*rst_cb)(struct virtio_device *vdev));
+			 void (*rst_cb)(struct virtio_device *vdev));
 
 /* remoteproc_remove_virtio
  *
