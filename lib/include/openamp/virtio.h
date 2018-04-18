@@ -183,7 +183,7 @@ struct _virtio_dispatch_ {
 	void (*write_config) (struct virtio_device * dev, uint32_t offset,
 			      void *src, int length);
 	void (*reset_device) (struct virtio_device * dev);
-
+	void (*notify) (struct virtqueue *vq);
 };
 
 int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
