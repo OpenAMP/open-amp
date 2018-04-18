@@ -91,7 +91,8 @@ struct sh_mem_pool *sh_mem_create_pool(void *start_addr, unsigned int size,
 void *sh_mem_get_buffer(struct sh_mem_pool *pool)
 {
 	void *buff = NULL;
-	int idx, bit_idx;
+	int bit_idx;
+	unsigned int idx;
 
 	if (!pool)
 		return NULL;
