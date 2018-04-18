@@ -50,7 +50,7 @@ typedef int (*rpvdev_notify_func)(void *priv, unsigned int id);
 /**
  * struct remoteproc_virtio
  * @priv pointer to private data
- * @notifyid: notification id
+ * @notifyid notification id
  * @rvrings vrings information list
  * @vdev_rsc address of vdev resource
  * @vdev_rsc_io metal I/O region of vdev_info, can be NULL
@@ -89,6 +89,15 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 			 void *priv,
 			 rpvdev_notify_func notify,
 			 virtio_dev_reset_cb rst_cb);
+
+/**
+ * rproc_virtio_remove_vdev
+ *
+ * Create rproc virtio vdev
+ *
+ * @vdev - pointer to the virtio device
+ */
+void rproc_virtio_remove_vdev(struct virtio_device *vdev);
 
 /**
  * rproc_virtio_create_vring
