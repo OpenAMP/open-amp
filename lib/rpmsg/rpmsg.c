@@ -260,7 +260,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 
 	/* Create virtqueues for remote device */
 	status = rpmsg_virtio_create_virtqueues(rvdev, 0, RPMSG_NUM_VRINGS,
-					       vq_names, callback, RPMSG_NULL);
+					       vq_names, callback);
 	if (status != RPMSG_SUCCESS)
 		return status;
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
