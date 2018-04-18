@@ -13,7 +13,6 @@
 #define _RPMSG_VIRTIO_H_
 
 #include <openamp/virtio.h>
-#include <openamp/remoteproc_virtio.h>
 #include <metal/io.h>
 #include <metal/alloc.h>
 #include <metal/utilities.h>
@@ -81,10 +80,9 @@ static inline uint32_t rpmsg_virtio_get_features(struct rpmsg_virtio_device *rvd
 
 static inline int rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device * rvdev, int flags,
 				  unsigned int nvqs, const char *names[],
-				  vq_callback * callbacks[],
-				  struct virtqueue * vqs[])
+				  vq_callback * callbacks[])
 {
-	return rvdev->vdev->func->create_virtqueues(rvdev->vdev, flags, nvqs, names, callbacks, vqs);
+	return virtio_create_virtqueues(rvdev->vdev, flags, nvqs, names, callbacks);
 }
 
 #if defined __cplusplus
