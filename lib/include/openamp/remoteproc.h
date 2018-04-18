@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#define RSC_NOTIFY_ID_ANY 0xFFFFFFFFUL
+
 /**
  * struct resource_table - firmware resource table header
  * @ver: version number
@@ -688,6 +690,20 @@ int remoteproc_load(struct remoteproc *rproc,
 		    void *store, void **loader_data,
 		    struct image_store_ops *store_ops);
 
+/**
+ * remoteproc_allocate_id
+ *
+ * allocate notifyid for resource
+ *
+ * @rproc - pointer to the remoteproc instance
+ * @start - start of the id range
+ * @end - end of the id range
+ *
+ * return allocated notify id
+ */
+unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
+				    unsigned int start,
+				    unsigned int end);
 /* remoteproc_create_virtio
  *
  * create virtio device, it returns pointer to the created virtio device.

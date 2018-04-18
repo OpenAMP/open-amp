@@ -427,3 +427,18 @@ error1:
 	metal_mutex_release(&rproc->lock);
 	return ret;
 }
+
+unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
+				    unsigned int start,
+				    unsigned int end)
+{
+	if (start == RSC_NOTIFY_ID_ANY)
+		start = 0;
+	if (end == RSC_NOTIFY_ID_ANY)
+		end = METAL_BITS_PER_ULONG;
+	notifyid = metal_bitmap_next_set_bit(&rproc->bitmap,
+					     start, end);
+	if (notifyid != end)
+		metal_bitmap_set_bit(&rproc->bitmap, nofityid);
+	return notifyid;
+}
