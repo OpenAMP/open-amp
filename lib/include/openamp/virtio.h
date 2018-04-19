@@ -130,7 +130,7 @@ struct virtio_device {
 	void *priv; /**< TODO: should remove pointer to virtio_device private
 		         data */
 	unsigned int vrings_num; /**< number of vrings */
-	struct virtio_vring_info *rvrings;
+	struct virtio_vring_info *vrings_info;
 };
 
 /*
