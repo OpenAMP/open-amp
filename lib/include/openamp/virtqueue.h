@@ -68,6 +68,8 @@ struct virtqueue_buf {
 	int len;
 };
 
+struct virtio_device;
+
 struct virtqueue {
 	struct virtio_device *vq_dev;
 	char vq_name[VIRTQUEUE_MAX_NAME_SZ];
@@ -213,20 +215,19 @@ int virtqueue_enable_cb(struct virtqueue *vq);
 
 void virtqueue_kick(struct virtqueue *vq);
 
-static inline struct virtqueue * virtqueue_allocate(unsigned int num_descs)
-{
-	struct virtqueue *vqs;
-	uint32_t vq_size = sizeof(struct virtqueue) +
-		 num_descs * sizeof(struct vq_desc_extra);
+/**
+ * virtqueue_allocate
+ *
+ * allocate virt queue memory
+ *
+ * @vdev - virtio device
+ * @num_decs - number of descriptors
+ *
+ * return pointer to the allocated virtqueue instance, NULL for failure
+ */
 
-	vqs = (struct virtqueue *)metal_allocate_memory(vq_size);
-
-	if (vqs) {
-		memset(vqs, 0x00, vq_size);
-	}
-
-	return vqs;
-}
+struct virtqueue * virtqueue_allocate(unsigned int num_descs,
+				      bool with_extra_desc);
 
 void virtqueue_free(struct virtqueue *vq);
 
