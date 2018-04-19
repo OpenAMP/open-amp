@@ -85,7 +85,7 @@ int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 			     vq_callback *callbacks[])
 {
 	struct virtio_vring_info *vring_info;
-	struct vring_alloc_info vring_info;
+	struct vring_alloc_info vring_alloc;
 	unsigned int num_vrings, i;
 	int ret;
 	(void)flags;
@@ -102,15 +102,15 @@ int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 			unsigned int num_descs = vring_info->num_descs;
 			unsigned int align = vring_info->align;
 
-			vring_info.vaddr = vring_info->va;
-			vring_info.align = vring_info->align;
-			vring_info.num_descs = vring_info->num_descs;
+			vring_alloc.vaddr = vring_info->va;
+			vring_alloc.align = vring_info->align;
+			vring_alloc.num_descs = vring_info->num_descs;
 			offset = metal_io_virt_to_offset(io, vring_info->va);
 			metal_io_block_set(io, offset, 0,
 					   vring_size(num_descs, align));
 		}
 		ret = virtqueue_create(vdev, i,
-					names[i], &vring_info,
+					names[i], &vring_alloc,
 					callbacks[i],
 					vdev->func->notify,
 					vring_info->vq);
