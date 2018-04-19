@@ -21,13 +21,21 @@
 #include <openamp/hil.h>
 #include <metal/atomic.h>
 #include "platform_info.h"
+#include "rsc_table.h"
 
 #define IPI_BASE_ADDR        XPAR_XIPIPSU_0_BASE_ADDRESS /* IPI base address*/
 #define IPI_CHN_BITMASK      0x01000000 /* IPI channel bit mask for IPI from/to
 					   APU */
 
-#define APU_CPU_ID           0 /* APU remote CPU Index. We only talk to one CPU
-				* in the example. We set the CPU index to 0. */
+/* Cortex R5 memory attributes */
+#define DEVICE_SHARED		0x00000001U /*device, shareable*/
+#define DEVICE_NONSHARED	0x00000010U /*device, non shareable*/
+#define NORM_NSHARED_NCACHE	0x00000008U /* Non cacheable  non shareable */
+#define NORM_SHARED_NCACHE	0x0000000CU /* Non cacheable shareable */
+#define	PRIV_RW_USER_RW		(0x00000003U<<8U) /* Full Access */
+
+#define SHARED_BUF_PA  0x3ED00000UL
+#define SHARED_BUF_SIZE 0x80000UL
 
 /* IPI information used by remoteproc operations.
  */
@@ -46,7 +54,7 @@ struct ipi_info {
 
 /* processor operations for hil_proc from r5 to a53. It defines
  * notification operation and remote processor managementi operations. */
-extern struct hil_platform_ops zynqmp_r5_a53_proc_ops;
+struct remoteproc_ops zynqmp_r5_a53_proc_ops;
 
 /* IPI information definition. It is used in the RPU to APU remoteproc
  * operations. The fields name, bus_name, dev and io are NULL because they
@@ -55,45 +63,76 @@ static struct ipi_info chn_ipi_info[] = {
 	{NULL, NULL, NULL, NULL, IPI_BASE_ADDR, IPI_CHN_BITMASK, 0, 0},
 };
 
-/* Firmware_info and fw_table_size are required in current version (2017.3)
- * of OpenAMP library to pass compilation. Will be removed in next release
- * if the OpenAMP application is not used to boot the remote. */
-const struct firmware_info fw_table[] =
+struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 {
-	{"unknown",
-	 0,
-	 0}
-};
-const int fw_table_size = sizeof(fw_table)/sizeof(struct firmware_info);
+	struct remoteproc *rproc;
+	void *rsc_table;
+	int rsc_size;
+	metal_phys_addr_t shbuf_pa = SHARED_BUF_PA;
+	int ret;
 
-struct hil_proc *platform_create_proc(int proc_index)
-{
 	(void) proc_index;
+	rsc_table = get_resource_table(rsc_index, &rsc_size)
 
-	/* structure to represent a remote processor. It encapsulates the
-	 * shared memory and notification info required for inter processor
-	 * communication. */
-	struct hil_proc *proc;
-	proc = hil_create_proc(&zynqmp_r5_a53_proc_ops, APU_CPU_ID, NULL);
-	if (!proc)
+	/* Initialize remoteproc instance */
+	rproc = remoteproc_init(&zynqmp_r5_a53_proc_ops, &chn_ipi_info);
+	if (!rproc)
 		return NULL;
 
-	/*************************************************************
-	 * Set VirtIO device and vrings notification private data to
-	 * hil_proc.
-	 *************************************************************/
-	/* Set VirtIO device nofication private data. It will be used when it
-	 * needs to notify the remote on the virtio device status change. */
-	hil_set_vdev_ipi(proc, 0,
-		IPI_IRQ_VECT_ID, (void *)&chn_ipi_info[0]);
-	/* Set vring 0 nofication private data. */
-	hil_set_vring_ipi(proc, 0,
-		IPI_IRQ_VECT_ID, (void *)&chn_ipi_info[0]);
-	/* Set vring 1 nofication private data. */
-	hil_set_vring_ipi(proc, 1,
-		IPI_IRQ_VECT_ID, (void *)&chn_ipi_info[0]);
-	/* Set name of RPMsg channel 0 */
-	hil_set_rpmsg_channel(proc, 0, RPMSG_CHAN_NAME);
+	/*
+	 * Mmap shared memories
+	 * Or shall we constraint that they will be set as carved out
+	 * in the resource table?
+	 */
+	/* mmap resource table */
+	(void *)remoteproc_mmap(rproc, (metal_phys_addr_t)rsc_table,
+				NULL, rsc_size,
+				NORM_NSHARED_NCACHE|PRIV_RW_USER_RW,
+				&rproc->rsc_io);
+	/* mmap shared buffers */
+	(void *)remoteproc_mmap(rproc, SHARED_BUF_PA,
+				NULL, SHARED_BUF_SIZE,
+				NORM_NSHARED_NCACHE|PRIV_RW_USER_RW,
+				NULL);
 
-	return proc;
+	/* parse resource table to remoteproc */
+	ret = remoteproc_parse_rsc_table(rproc, rsc_table, rsc_size);
+	if (ret) {
+		remoteproc_remove(rproc);
+		return NULL;
+	}
+
+	return rproc;
+}
+
+struct  rpmsg_virtio_device *
+platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
+			   unsigned int role,
+			   void (*rst_cb)(struct virtio_device *vdev))
+{
+	struct rpmsg_virtio_device *rpmsg_vdev;
+	struct virtio_device *vdev;
+	void *shbuf;
+	struct metal_io_region *shbuf_io;
+
+	rpmsg_vdev = metal_allocate_memory(*rpmsg_vdev);
+	if (!rpmsg_vdev)
+		return NULL;
+	shbuf_io = remoteproc_get_mem_with_pa(rproc, SHARED_BUF_PA);
+	shbuf = metal_io_phys_to_virt(shbuf_io, SHARED_BUF_PA);
+
+	/* TODO: can we have a wrapper for the following two functions? */
+	vdev = remoteproc_create_virtio(rproc, vdev_index, role, rst_cb);
+	if (!vdev)
+		goto err1;
+
+	ret =  rpmsg_init_vdev(rpmsg_vdev, vdev, shbuf, shbuf_io,
+			       SHARED_BUF_SIZE);
+	if (ret)
+		remoteproc_remove_virtio(rproc, vdev);
+	else
+		return rpmsg_virtio_dev;
+err1:
+	metal_free_memory(rpmsg_vdev);
+	return NULL;
 }
