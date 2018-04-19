@@ -472,7 +472,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	notifyid = vdev_rsc->notifyid;
 	vdev = rproc_virtio_create_vdev(role, notifyid,
 					vdev_rsc, vdev_rsc_io,
-					rproc, rproc->nofity, rst_cb);
+					rproc, rproc->notify, rst_cb);
 	num_vrings = vdev_rsc->num_of_vrings;
 	/* set the notification id for vrings */
 	for (i = 0; i < num_vrings; i++) {

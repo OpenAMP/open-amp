@@ -410,7 +410,7 @@ struct remoteproc {
 	struct remoteproc_ops *ops;
 	metal_phys_addr_t bootaddr;
 	struct loader_ops *loader_ops;
-	int (*nofity)(void *priv, unsigned int id);
+	int (*notify)(void *priv, unsigned int id);
 	unsigned int state;
 	void *priv;
 };
