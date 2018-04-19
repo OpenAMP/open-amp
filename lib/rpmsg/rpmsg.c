@@ -214,20 +214,22 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
  * @param rvdev   - pointer to the rpmsg device
  * @param vdev   - pointer to the virtio device
  * @param shm    - pointer to the share memory.
+ * @param shm_io    - pointer to the share memory I/O region.
  * @param len    - length of the shared memory section.
  *
  * @return - status of function execution
  */
 
 int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
-		    struct virtio_device *vdev, void *shm, int len)
+		    struct virtio_device *vdev, void *shm,
+		    struct metal_io_region *shm_io, int len)
 {
-	struct remoteproc_vshm_pool *rp_shm = shm;
 	const char *vq_names[RPMSG_NUM_VRINGS];
 	void (*callback[RPMSG_NUM_VRINGS]) (struct virtqueue *vq);
 	unsigned long dev_features;
 	static struct rpmsg_endpoint ns_ept;
 	int status;
+	unsigned int i;
 
 	metal_mutex_init(&rvdev->lock);
 
@@ -240,8 +242,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 			return -RPMSG_ERR_NO_MEM;
 
 		rvdev->shbuf =
-		    sh_mem_create_pool(rp_shm->va, rp_shm->size,
-				       RPMSG_BUFFER_SIZE);
+		    sh_mem_create_pool(shm, len, RPMSG_BUFFER_SIZE);
 
 		if (!rvdev->shbuf)
 			return RPMSG_ERR_NO_MEM;
@@ -256,14 +257,21 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		callback[0] = rpmsg_rx_callback;
 		callback[1] = rpmsg_tx_callback;
 	}
-	rvdev->shbuf_io = rp_shm->io;
+	rvdev->shbuf_io = shm_io;
 
 	/* Create virtqueues for remote device */
 	status = rpmsg_virtio_create_virtqueues(rvdev, 0, RPMSG_NUM_VRINGS,
 					       vq_names, callback);
+	/* TODO: can have a virtio function to set the shared memory I/O */
+	for (i = 0; i < RPMSG_NUM_VRINGS; i++) {
+		struct virtqueue *vq;
+
+		vq = vdev->vrings_info[i].vq;
+		vq->shm_io = shm_io;
+	}
 	if (status != RPMSG_SUCCESS)
 		return status;
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
+	if (rpmsg_virtio_get_role(rvdev) == VIRTIO_DEV_GUEST) {
 		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
 	} else {
 		/* wait synchro with the master */
