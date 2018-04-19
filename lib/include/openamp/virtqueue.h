@@ -226,8 +226,8 @@ void virtqueue_kick(struct virtqueue *vq);
  * return pointer to the allocated virtqueue instance, NULL for failure
  */
 
-struct virtqueue *
-virtqueue_allocate(struct virtio_device *vdev, unsigned int num_descs);
+struct virtqueue * virtqueue_allocate(unsigned int num_descs, 
+				      bool with_extra_desc);
 
 void virtqueue_free(struct virtqueue *vq);
 

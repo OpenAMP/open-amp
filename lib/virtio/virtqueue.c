@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include <openamp/virtqueue.h>
+#include <openamp/virtqueue.h>
 #include <metal/atomic.h>
 #include <metal/log.h>
 #include <metal/alloc.h>
@@ -89,13 +90,13 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 }
 
 struct virtqueue *
-virtqueue_allocate(struct virtio_device *vdev, unsigned int num_descs)
+virtqueue_allocate(unsigned int num_descs, bool with_extra_desc)
 {
 	struct virtqueue *vq;
 	uint32_t vq_size = sizeof(*vq);
 
-	/* vq_desc_extra is not used in virito backend */
-	if (vdev->role == VIRTIO_DEV_GUEST)
+	/* vq_desc_extra is not used in virtio backend */
+	if (with_extra_desc)
 		vq_size += num_descs * sizeof(struct vq_desc_extra);
 
 	vq = (struct virtqueue *)metal_allocate_memory(vq_size);
