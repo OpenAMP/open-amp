@@ -191,7 +191,8 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 		struct fw_rsc_vdev_vring *vring_rsc;
 
 		vring_rsc = &vdev_rsc->vring[i];
-		vq = virtqueue_allocate(vring_rsc->num);
+		vq = virtqueue_allocate(vring_rsc->num,
+					vdev->role == VIRTIO_DEV_HOST);
 		if (!vq)
 			goto err1;
 		vrings_info[i].vq = vq;
