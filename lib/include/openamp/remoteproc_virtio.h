@@ -83,6 +83,8 @@ struct remoteproc_virtio {
 	struct virtio_device vdev;
 };
 
+extern virtio_dispatch remoteproc_virtio_dispatch_funcs;
+
 /**
  * rproc_virtio_create_vdev
  *
