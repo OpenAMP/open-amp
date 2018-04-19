@@ -145,7 +145,7 @@ static void rpmsg_virtio_write_config(struct virtio_device *vdev,
 
 static void rproc_virtio_reset_device(struct virtio_device *vdev)
 {
-	if (vdev->role == VIRTIO_DEV_GUEST)
+	if (vdev->role == VIRTIO_DEV_MASTER)
 		rproc_virtio_set_status(vdev,
 					VIRTIO_CONFIG_STATUS_NEEDS_RESET);
 }
@@ -192,7 +192,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 
 		vring_rsc = &vdev_rsc->vring[i];
 		vq = virtqueue_allocate(vring_rsc->num,
-					vdev->role == VIRTIO_DEV_HOST);
+					vdev->role == VIRTIO_DEV_MASTER);
 		if (!vq)
 			goto err1;
 		vrings_info[i].vq = vq;
