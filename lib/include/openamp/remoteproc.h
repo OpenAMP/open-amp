@@ -599,9 +599,9 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 		    struct metal_io_region **io);
 
 /**
- * remoteproc_set_rsc_table
+ * remoteproc_parse_rsc_table
  *
- * Set resource table of remoteproc
+ * Parse resource table of remoteproc
  *
  * @rproc - pointer to remoteproc instance
  * @rsc_table - pointer to resource table
@@ -609,9 +609,9 @@ void *remoteproc_mmap(struct remoteproc *rproc,
  *
  * returns 0 for success and negative value for errors
  */
-int remoteproc_set_rsc_table(struct remoteproc *rproc,
-			     struct resource_table *rsc_table,
-			     size_t rsc_size);
+int remoteproc_parse_rsc_table(struct remoteproc *rproc,
+			       struct resource_table *rsc_table,
+			       size_t rsc_size);
 
 /**
  * remoteproc_get_ready
