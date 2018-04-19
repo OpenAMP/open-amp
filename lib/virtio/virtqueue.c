@@ -88,6 +88,24 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 	return (status);
 }
 
+struct virtqueue *
+virtqueue_allocate(struct virtio_device *vdev, unsigned int num_descs)
+{
+	struct virtqueue *vq;
+	uint32_t vq_size = sizeof(*vq);
+
+	/* vq_desc_extra is not used in virito backend */
+	if (vdev->role == VIRTIO_DEV_GUEST)
+		vq_size += num_descs * sizeof(struct vq_desc_extra);
+
+	vq = (struct virtqueue *)metal_allocate_memory(vq_size);
+
+	if (vq)
+		memset(vq, 0x00, vq_size);
+
+	return vq;
+}
+
 /**
  * virtqueue_add_buffer()   - Enqueues new buffer in vring for consumption
  *                            by other side. Readable buffers are always
