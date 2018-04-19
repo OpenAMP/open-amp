@@ -42,15 +42,15 @@
 static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 {
 	struct remoteproc_virtio *rpvdev;
-	struct virtio_vring_info *rvring;
+	struct virtio_vring_info *vring_info;
 	struct virtio_device *vdev;
 	unsigned int vq_id = vq->vq_queue_index;
 
 	vdev = vq->vq_dev;
 	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
 	metal_assert(vq_id <= vdev->vrings_num);
-	rvring = &vdev->rvrings[vq_id];
-	rpvdev->notify(rpvdev->priv, rvring->notifyid);
+	vring_info = &vdev->vrings_info[vq_id];
+	rpvdev->notify(rpvdev->priv, vring_info->notifyid);
 }
 
 static unsigned char rproc_virtio_get_status(struct virtio_device *vdev)
@@ -170,7 +170,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 			 virtio_dev_reset_cb rst_cb)
 {
 	struct remoteproc_virtio *rpvdev;
-	struct virtio_vring_info *rvrings;
+	struct virtio_vring_info *vrings_info;
 	struct fw_rsc_vdev *vdev_rsc = rsc;
 	struct virtio_device *vdev;
 	unsigned int num_vrings = vdev_rsc->num_of_vrings;
@@ -179,11 +179,11 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 	rpvdev = metal_allocate_memory(sizeof(*rpvdev));
 	if (!rpvdev)
 		return NULL;
-	rvrings = metal_allocate_memory(sizeof(*rvrings) * num_vrings);
-	if (!rvrings)
+	vrings_info = metal_allocate_memory(sizeof(*vrings_info) * num_vrings);
+	if (!vrings_info)
 		goto err0;
 	memset(rpvdev, 0, sizeof(*rpvdev));
-	memset(rvrings, 0, sizeof(*rvrings));
+	memset(vrings_info, 0, sizeof(*vrings_info));
 	vdev = &rpvdev->vdev;
 
 	for (i = 0; i < num_vrings; i++) {
@@ -194,14 +194,14 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 		vq = virtqueue_allocate(vring_rsc->num);
 		if (!vq)
 			goto err1;
-		rvrings[i].vq = vq;
+		vrings_info[i].vq = vq;
 	}
 
 	/* FIXME commended as seems not nedded, already stored in vdev */
 	//rpvdev->notifyid = notifyid;
 	rpvdev->notify = notify;
 	rpvdev->priv = priv;
-	vdev->rvrings = rvrings;
+	vdev->vrings_info = vrings_info;
 	/* Assuming the shared memory has been mapped and registered if
 	 * necessary
 	 */
@@ -219,10 +219,10 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 
 err1:
 	for (i = 0; i < num_vrings; i++) {
-		if (rvrings[i].vq)
-			metal_free_memory(rvrings[i].vq);
+		if (vrings_info[i].vq)
+			metal_free_memory(vrings_info[i].vq);
 	}
-	metal_free_memory(rvrings);
+	metal_free_memory(vrings_info);
 err0:
 	metal_free_memory(rpvdev);
 	return NULL;
@@ -233,18 +233,18 @@ int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
 			    struct metal_io_region *io,
 			    unsigned int num_descs, unsigned int align)
 {
-	struct virtio_vring_info *rvring;
+	struct virtio_vring_info *vring_info;
 	unsigned int num_vrings;;
 
 	num_vrings = vdev->vrings_num;
 	if (index >= num_vrings)
 		return -RPROC_EINVAL;
-	rvring = &vdev->rvrings[index];
-	rvring->va = va;
-	rvring->io = io;
-	rvring->notifyid = notifyid;
-	rvring->num_descs = num_descs;
-	rvring->align = align;
+	vring_info = &vdev->vrings_info[index];
+	vring_info->va = va;
+	vring_info->io = io;
+	vring_info->notifyid = notifyid;
+	vring_info->num_descs = num_descs;
+	vring_info->align = align;
 
 	return 0;
 }

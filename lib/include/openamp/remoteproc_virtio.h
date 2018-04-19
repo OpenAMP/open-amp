@@ -51,7 +51,6 @@ typedef int (*rpvdev_notify_func)(void *priv, unsigned int id);
  * struct remoteproc_virtio
  * @priv pointer to private data
  * @notifyid notification id
- * @rvrings vrings information list
  * @vdev_rsc address of vdev resource
  * @vdev_rsc_io metal I/O region of vdev_info, can be NULL
  * @notify notification function
