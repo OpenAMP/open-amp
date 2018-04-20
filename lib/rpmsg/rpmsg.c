@@ -285,6 +285,38 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	if (status != RPMSG_SUCCESS)
 		return status;
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
+		struct virtqueue_buf vqbuf;
+		unsigned int idx;
+		void * buffer;
+
+
+                vqbuf.len = RPMSG_BUFFER_SIZE;
+                for (idx = 0; ((idx < rvdev->rvq->vq_nentries)
+                               && (idx < rvdev->shbuf->total_buffs / 2));
+                     idx++) {
+
+                        /* Initialize TX virtqueue buffers for remote device */
+                        buffer = sh_mem_get_buffer(rvdev->shbuf);
+
+                        if (!buffer) {
+                                return RPMSG_ERR_NO_BUFF;
+                        }
+
+                        vqbuf.buf = buffer;
+
+                        metal_io_block_set(shm_io,
+                                metal_io_virt_to_offset(shm_io, buffer),
+                                0x00,
+                                RPMSG_BUFFER_SIZE);
+                        status =
+                            virtqueue_add_buffer(rvdev->rvq, &vqbuf, 0, 1,
+                                                 buffer);
+
+                        if (status != RPMSG_SUCCESS) {
+                                return status;
+                        }
+                }
+
 		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
 	} else {
 		/* wait synchro with the master */
