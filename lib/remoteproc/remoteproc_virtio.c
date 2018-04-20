@@ -81,6 +81,7 @@ static void rproc_virtio_set_status(struct virtio_device *vdev,
 	metal_io_write8(io,
 			metal_io_virt_to_offset(io, &vdev_rsc->status),
 			status);
+	rpvdev->notify(rpvdev->priv, vdev->index);
 }
 
 static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
@@ -114,6 +115,7 @@ static void rproc_virtio_set_features(struct virtio_device *vdev,
 	metal_io_write32(io,
 			 metal_io_virt_to_offset(io, &vdev_rsc->status),
 			 features);
+	rpvdev->notify(rpvdev->priv, vdev->index);
 }
 
 static uint32_t rproc_virtio_negotiate_features(struct virtio_device *vdev,
