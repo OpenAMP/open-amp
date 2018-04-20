@@ -230,6 +230,25 @@ err0:
 	return NULL;
 }
 
+void rproc_virtio_remove_vdev(struct virtio_device *vdev)
+{
+	struct remoteproc_virtio *rpvdev;
+	unsigned int num_vrings, i;
+
+	if (!vdev)
+		return;
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	for (i = 0; i < num_vrings; i++) {
+		struct virtqueue *vq;
+
+		vq = vdev->vrings_info[i].vq;
+		if (vq)
+			metal_free_memory(vq);
+	}
+	metal_free_memory(vdev->vrings_info);
+	metal_free_memory(rpvdev);
+}
+
 int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
 			    unsigned int notifyid, void *va,
 			    struct metal_io_region *io,
