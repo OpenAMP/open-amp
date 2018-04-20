@@ -157,23 +157,40 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 	return size;
 }
 
-int rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
-		     struct rpmsg_endpoint *ept)
+struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
+					const char *name, uint32_t src,
+					uint32_t dest, rpmsg_ept_cb cb,
+					rpmsg_ept_destroy_cb destroy_cb)
 {
+	struct rpmsg_endpoint *ept;
 	int status;
 
-	if (!ept->cb)
-		return RPMSG_ERR_PARAM;
+	ept = metal_allocate_memory(sizeof(*ept));
+	ept->addr = src;
+	ept->dest_addr = dest;
+	ept->cb = cb;
+	ept->destroy_cb = destroy_cb;
+	strcpy(ept->name, name);
 
 	status = rpmsg_register_endpoint(rvdev, ept);
 	if (status < 0)
-		return status;
+		goto reg_err;
 
-	if (ept->dest_addr == RPMSG_ADDR_ANY)
+	if (ept->dest_addr == RPMSG_ADDR_ANY) {
 		/* Send NS announcement to remote processor */
 		status = rpmsg_send_ns_message(rvdev, ept, RPMSG_NS_CREATE);
+		if(status)
+			goto ns_err;
+	}
 
-	return status;
+	return ept;
+
+ns_err:
+	rpmsg_unregister_endpoint(ept);
+reg_err:
+	metal_free_memory(ept);
+
+	return NULL;
 }
 
 /**
@@ -190,6 +207,7 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 		return;
 
 	rpmsg_unregister_endpoint(ept);
+	metal_free_memory(ept);
 }
 
 /**
