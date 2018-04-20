@@ -39,7 +39,7 @@
 #include <metal/utilities.h>
 #include <metal/alloc.h>
 
-static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
+void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 {
 	struct remoteproc_virtio *rpvdev;
 	struct virtio_vring_info *vring_info;
@@ -53,7 +53,7 @@ static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 	rpvdev->notify(rpvdev->priv, vring_info->notifyid);
 }
 
-static unsigned char rproc_virtio_get_status(struct virtio_device *vdev)
+unsigned char rproc_virtio_get_status(struct virtio_device *vdev)
 {
 	struct remoteproc_virtio *rpvdev;
 	struct fw_rsc_vdev *vdev_rsc;
@@ -68,8 +68,7 @@ static unsigned char rproc_virtio_get_status(struct virtio_device *vdev)
 	return status;
 }
 
-static void rproc_virtio_set_status(struct virtio_device *vdev,
-				    unsigned char status)
+void rproc_virtio_set_status(struct virtio_device *vdev, unsigned char status)
 {
 	struct remoteproc_virtio *rpvdev;
 	struct fw_rsc_vdev *vdev_rsc;
@@ -84,7 +83,7 @@ static void rproc_virtio_set_status(struct virtio_device *vdev,
 	rpvdev->notify(rpvdev->priv, vdev->index);
 }
 
-static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
+uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
 {
 	struct remoteproc_virtio *rpvdev;
 	struct fw_rsc_vdev *vdev_rsc;
@@ -101,8 +100,7 @@ static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
 	return features;
 }
 
-static void rproc_virtio_set_features(struct virtio_device *vdev,
-				      uint32_t features)
+void rproc_virtio_set_features(struct virtio_device *vdev, uint32_t features)
 {
 	struct remoteproc_virtio *rpvdev;
 	struct fw_rsc_vdev *vdev_rsc;
@@ -118,8 +116,8 @@ static void rproc_virtio_set_features(struct virtio_device *vdev,
 	rpvdev->notify(rpvdev->priv, vdev->index);
 }
 
-static uint32_t rproc_virtio_negotiate_features(struct virtio_device *vdev,
-						uint32_t features)
+uint32_t rproc_virtio_negotiate_features(struct virtio_device *vdev,
+					 uint32_t features)
 {
 	(void)vdev;
 	(void)features;
@@ -127,8 +125,8 @@ static uint32_t rproc_virtio_negotiate_features(struct virtio_device *vdev,
 	return 0;
 }
 
-static void rproc_virtio_read_config(struct virtio_device *vdev,
-				     uint32_t offset, void *dst, int length)
+void rproc_virtio_read_config(struct virtio_device *vdev,
+			      uint32_t offset, void *dst, int length)
 {
 	(void)vdev;
 	(void)offset;
@@ -136,8 +134,8 @@ static void rproc_virtio_read_config(struct virtio_device *vdev,
 	(void)length;
 }
 
-static void rproc_virtio_write_config(struct virtio_device *vdev,
-				      uint32_t offset, void *src, int length)
+void rproc_virtio_write_config(struct virtio_device *vdev,
+			       uint32_t offset, void *src, int length)
 {
 	(void)vdev;
 	(void)offset;
@@ -145,24 +143,12 @@ static void rproc_virtio_write_config(struct virtio_device *vdev,
 	(void)length;
 }
 
-static void rproc_virtio_reset_device(struct virtio_device *vdev)
+void rproc_virtio_reset_device(struct virtio_device *vdev)
 {
 	if (vdev->role == VIRTIO_DEV_MASTER)
 		rproc_virtio_set_status(vdev,
 					VIRTIO_CONFIG_STATUS_NEEDS_RESET);
 }
-
-virtio_dispatch remoteproc_virtio_dispatch_funcs = {
-	.get_status =  rproc_virtio_get_status,
-	.set_status = rproc_virtio_set_status,
-	.get_features = rproc_virtio_get_features,
-	.set_features = rproc_virtio_set_features,
-	.negotiate_features = rproc_virtio_negotiate_features,
-	.read_config = rproc_virtio_read_config,
-	.write_config = rproc_virtio_write_config,
-	.reset_device = rproc_virtio_reset_device,
-	.notify = rproc_virtio_virtqueue_notify,
-};
 
 struct virtio_device *
 rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
@@ -215,7 +201,6 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 	vdev->role = role;
 	vdev->reset_cb = rst_cb;
 	vdev->vrings_num = num_vrings;
-	vdev->func = &remoteproc_virtio_dispatch_funcs;
 	metal_spinlock_init(&vdev->lock);
 	/* TODO: Shall we set features here ? */
 

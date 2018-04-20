@@ -9,7 +9,7 @@
 
 #include <openamp/rpmsg.h>
 #include <openamp/rpmsg_core.h>
-
+#include <openamp/remoteproc_virtio.h>
 
 #if 0
 static struct rpmsg_endpoint *rpmsg_get_ept_from_id(
@@ -228,10 +228,10 @@ int rpmsg_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
 	uint8_t status;
 
 	while (1) {
-		status = rpmsg_virtio_get_status(rvdev);
+		status = rproc_virtio_get_status(rvdev->vdev);
 		/* Busy wait until the remote is ready */
 		if (status & VIRTIO_CONFIG_STATUS_NEEDS_RESET) {
-			rpmsg_virtio_set_status(rvdev, 0);
+			rproc_virtio_set_status(rvdev->vdev, 0);
 			/* TODO notify remote processor */
 		} else if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK) {
 			return true;
@@ -276,7 +276,7 @@ void rpmsg_tx_callback(struct virtqueue *vq)
 			ept = metal_container_of(node, struct rpmsg_endpoint,
 						 node);
 
-			dev_features = rpmsg_virtio_get_features(rvdev);
+			dev_features = rproc_virtio_get_features(rvdev->vdev);
 			if ((dev_features & (1 << VIRTIO_RPMSG_F_NS))) {
 				if (rpmsg_send_ns_message(rvdev, ept,
 					RPMSG_NS_CREATE) != RPMSG_SUCCESS)

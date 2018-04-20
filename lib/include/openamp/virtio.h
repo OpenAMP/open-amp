@@ -67,7 +67,6 @@ struct virtio_device_id {
 #define VIRTIO_TRANSPORT_F_START      28
 #define VIRTIO_TRANSPORT_F_END        32
 
-typedef struct _virtio_dispatch_ virtio_dispatch;
 typedef void (*virtio_dev_reset_cb)(struct virtio_device *vdev);
 
 struct virtio_feature_desc {
@@ -125,8 +124,7 @@ struct virtio_device {
 	uint64_t features; /**< the features supported by both ends. */
 	unsigned int role; /**< if it is virtio backend or front end. */
 	virtio_dev_reset_cb reset_cb; /**< user registered virtio
-						         device callback */
-	virtio_dispatch *func;/**< Virtio dispatch table */
+					   device callback */
 	void *priv; /**< TODO: should remove pointer to virtio_device private
 		         data */
 	unsigned int vrings_num; /**< number of vrings */

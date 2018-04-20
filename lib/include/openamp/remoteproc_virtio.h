@@ -66,6 +66,19 @@ struct remoteproc_virtio {
 	struct virtio_device vdev;
 };
 
+void rproc_virtio_virtqueue_notify(struct virtqueue *vq);
+unsigned char rproc_virtio_get_status(struct virtio_device *vdev);
+void rproc_virtio_set_status(struct virtio_device *vdev,
+			     unsigned char status);
+uint32_t rproc_virtio_get_features(struct virtio_device *vdev);
+void rproc_virtio_set_features(struct virtio_device *vdev,
+			       uint32_t features);
+void rproc_virtio_read_config(struct virtio_device *vdev,
+			      uint32_t offset, void *dst, int length);
+void rproc_virtio_write_config(struct virtio_device *vdev,
+			       uint32_t offset, void *src, int length);
+void rproc_virtio_reset_device(struct virtio_device *vdev);
+
 /**
  * rproc_virtio_create_vdev
  *

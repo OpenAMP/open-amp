@@ -4,7 +4,9 @@
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
+
 #include <openamp/virtio.h>
+#include <openamp/remoteproc_virtio.h>
 
 static const char *virtio_feature_name(unsigned long feature,
 				       const struct virtio_feature_desc *);
@@ -112,7 +114,7 @@ int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 		ret = virtqueue_create(vdev, i,
 					names[i], &vring_alloc,
 					callbacks[i],
-					vdev->func->notify,
+					rproc_virtio_virtqueue_notify,
 					vring_info->vq);
 		if (ret)
 			return ret;

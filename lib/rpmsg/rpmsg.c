@@ -9,6 +9,7 @@
 
 #include <openamp/rpmsg.h>
 #include <openamp/rpmsg_core.h>
+#include <openamp/remoteproc_virtio.h>
 #include <metal/sleep.h>
 
 #ifndef RPMSG_NUM_VRINGS
@@ -94,7 +95,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 	/* Get the associated remote device for channel. */
 	rvdev = ept->rvdev;
 
-	status = rpmsg_virtio_get_status(rvdev);
+	status = rproc_virtio_get_status(rvdev->vdev);
 	/* Validate device state */
 	if (ept->dest_addr == RPMSG_ADDR_ANY ||
 	    status != VIRTIO_CONFIG_STATUS_DRIVER_OK) {
@@ -261,7 +262,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 
 	/* Create virtqueues for remote device */
 	status = rpmsg_virtio_create_virtqueues(rvdev, 0, RPMSG_NUM_VRINGS,
-					       vq_names, callback);
+						vq_names, callback);
 	/* TODO: can have a virtio function to set the shared memory I/O */
 	for (i = 0; i < RPMSG_NUM_VRINGS; i++) {
 		struct virtqueue *vq;
@@ -272,7 +273,8 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	if (status != RPMSG_SUCCESS)
 		return status;
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
-		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
+		rproc_virtio_set_status(rvdev->vdev,
+					VIRTIO_CONFIG_STATUS_DRIVER_OK);
 	} else {
 		/* wait synchro with the master */
 		rpmsg_wait_remote_ready(rvdev);
@@ -283,7 +285,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	/* Initialize channels and endpoints list */
 	metal_list_init(&rvdev->endpoints);
 
-	dev_features = rpmsg_virtio_get_features(rvdev);
+	dev_features = rproc_virtio_get_features(rvdev->vdev);
 
 	/*
 	 * Create name service announcement endpoint if device supports name
