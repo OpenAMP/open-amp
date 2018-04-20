@@ -136,7 +136,7 @@ static void rproc_virtio_read_config(struct virtio_device *vdev,
 	(void)length;
 }
 
-static void rpmsg_virtio_write_config(struct virtio_device *vdev,
+static void rproc_virtio_write_config(struct virtio_device *vdev,
 				      uint32_t offset, void *src, int length)
 {
 	(void)vdev;
@@ -159,7 +159,7 @@ virtio_dispatch remoteproc_virtio_dispatch_funcs = {
 	.set_features = rproc_virtio_set_features,
 	.negotiate_features = rproc_virtio_negotiate_features,
 	.read_config = rproc_virtio_read_config,
-	.write_config = rpmsg_virtio_write_config,
+	.write_config = rproc_virtio_write_config,
 	.reset_device = rproc_virtio_reset_device,
 	.notify = rproc_virtio_virtqueue_notify,
 };
