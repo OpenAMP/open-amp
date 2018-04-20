@@ -88,7 +88,7 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 	(void *)remoteproc_mmap(rproc, (metal_phys_addr_t)rsc_table,
 				NULL, rsc_size,
 				NORM_NSHARED_NCACHE|PRIV_RW_USER_RW,
-				NULL);
+				&rproc->rsc_io);
 	/* mmap shared buffers */
 	(void *)remoteproc_mmap(rproc, SHARED_BUF_PA,
 				NULL, SHARED_BUF_SIZE,
