@@ -60,6 +60,23 @@ struct rpmsg_endpoint *rpmsg_get_ept_from_addr(
 	return RPMSG_NULL;
 }
 
+void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept)
+{
+	struct rpmsg_virtio_device *rvdev;
+
+	if (!ept)
+		return;
+
+	rvdev = ept->rvdev;
+
+	metal_mutex_acquire(&rvdev->lock);
+	if(ept->addr != RPMSG_ADDR_ANY)
+		rpmsg_release_address(rvdev->bitmap, RPMSG_ADDR_BMP_SIZE,
+				      ept->addr);
+	metal_list_del(&ept->node);
+	metal_mutex_release(&rvdev->lock);
+}
+
 int rpmsg_register_endpoint(struct rpmsg_virtio_device *rvdev,
 			    struct rpmsg_endpoint *ept)
 {
@@ -97,7 +114,7 @@ int rpmsg_register_endpoint(struct rpmsg_virtio_device *rvdev,
 		    (r_ept->addr == RPMSG_ADDR_ANY)) {
 			/* Free the temporary endpoint in the list */
 			dest_addr = r_ept->dest_addr;
-			metal_list_del(&r_ept->node);
+			rpmsg_unregister_endpoint(r_ept);
 			metal_free_memory(r_ept);
 		}
 	}

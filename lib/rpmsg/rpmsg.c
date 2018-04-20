@@ -186,18 +186,10 @@ int rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
  */
 void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 {
-	struct rpmsg_virtio_device *rvdev;
-
 	if (!ept)
 		return;
 
-	rvdev = ept->rvdev;
-
-	metal_mutex_acquire(&rvdev->lock);
-	rpmsg_release_address(rvdev->bitmap, RPMSG_ADDR_BMP_SIZE,
-			      ept->addr);
-	metal_list_del(&ept->node);
-	metal_mutex_release(&rvdev->lock);
+	rpmsg_unregister_endpoint(ept);
 }
 
 /**
