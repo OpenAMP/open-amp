@@ -213,6 +213,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 	vdev->role = role;
 	vdev->reset_cb = rst_cb;
 	vdev->vrings_num = num_vrings;
+	vdev->func = &remoteproc_virtio_dispatch_funcs;
 	metal_spinlock_init(&vdev->lock);
 	/* TODO: Shall we set features here ? */
 
