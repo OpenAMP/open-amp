@@ -166,6 +166,9 @@ struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
 	int status;
 
 	ept = metal_allocate_memory(sizeof(*ept));
+	if (!ept) {
+		return NULL;
+	}
 	ept->addr = src;
 	ept->dest_addr = dest;
 	ept->cb = cb;
