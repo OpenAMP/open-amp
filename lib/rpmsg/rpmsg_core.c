@@ -193,7 +193,6 @@ void *rpmsg_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 		if (data == RPMSG_NULL) {
 			data = sh_mem_get_buffer(rvdev->shbuf);
 			*len = RPMSG_BUFFER_SIZE;
-			return 0;
 		}
 	} else {
 		data =
