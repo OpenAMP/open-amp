@@ -460,6 +460,13 @@ static int remoteproc_virtio_notify(void *priv, uint32_t id)
 	return rproc->ops->notify(rproc, id);
 }
 
+static void remoteproc_virtio_enable_notification(void *priv, uint32_t id)
+{
+	struct remoteproc *rproc = priv;
+
+	rproc->ops->enable_notification(rproc, id);
+}
+
 struct virtio_device *
 remoteproc_create_virtio(struct remoteproc *rproc,
 			 int vdev_id, unsigned int role,
@@ -487,6 +494,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	vdev = rproc_virtio_create_vdev(role, notifyid,
 					vdev_rsc, vdev_rsc_io, rproc,
 					remoteproc_virtio_notify,
+					remoteproc_virtio_enable_notification,
 					rst_cb);
 	num_vrings = vdev_rsc->num_of_vrings;
 	/* set the notification id for vrings */

@@ -53,6 +53,21 @@ static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 	rpvdev->notify(rpvdev->priv, vring_info->notifyid);
 }
 
+static void rproc_virtio_enable_notification(struct virtio_device *vdev,
+					     struct virtqueue *vq)
+{
+	struct remoteproc_virtio *rpvdev;
+	uint32_t id;
+
+	metal_assert(vdev);
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	if (vq)
+		id = vq->vq_queue_index;
+	else
+		id = vdev->index;
+	rpvdev->enable_notification(rpvdev->priv, id);
+}
+
 static unsigned char rproc_virtio_get_status(struct virtio_device *vdev)
 {
 	struct remoteproc_virtio *rpvdev;
@@ -169,6 +184,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 			 void *rsc, struct metal_io_region *rsc_io,
 			 void *priv,
 			 rpvdev_notify_func notify,
+			 rpvdev_enable_notification_func enable_notification,
 			 virtio_dev_reset_cb rst_cb)
 {
 	struct remoteproc_virtio *rpvdev;
@@ -203,6 +219,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 	/* FIXME commended as seems not nedded, already stored in vdev */
 	//rpvdev->notifyid = notifyid;
 	rpvdev->notify = notify;
+	rpvdev->enable_notification = enable_notification;
 	rpvdev->priv = priv;
 	vdev->vrings_info = vrings_info;
 	/* Assuming the shared memory has been mapped and registered if

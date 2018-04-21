@@ -442,6 +442,7 @@ struct remoteproc_ops {
 	int (*stop)(struct remoteproc *rproc);
 	int (*shutdown)(struct remoteproc *rproc);
 	int (*notify)(struct remoteproc *rproc, uint32_t id);
+	void (*enable_notification)(struct remoteproc *rproc, uint32_t id);
 };
 
 /* Remoteproc error codes */
