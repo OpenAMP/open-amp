@@ -410,7 +410,6 @@ struct remoteproc {
 	struct remoteproc_ops *ops;
 	metal_phys_addr_t bootaddr;
 	struct loader_ops *loader_ops;
-	int (*notify)(void *priv, unsigned int id);
 	unsigned int state;
 	void *priv;
 };
@@ -429,7 +428,7 @@ struct remoteproc {
  * @stop: stop the remoteproc from running application, the resource such as
  *        memory may not be off.
  * @shutdown: shutdown the remoteproc and release its resources.
- * @kick: notify the remote
+ * @notify: notify the remote
  */
 struct remoteproc_ops {
 	struct remoteproc *(*init)(struct remoteproc_ops *ops, void *arg);
@@ -442,7 +441,7 @@ struct remoteproc_ops {
 	int (*start)(struct remoteproc *rproc);
 	int (*stop)(struct remoteproc *rproc);
 	int (*shutdown)(struct remoteproc *rproc);
-	int (*kick)(struct remoteproc *rproc, int id);
+	int (*notify)(struct remoteproc *rproc, uint32_t id);
 };
 
 /* Remoteproc error codes */
