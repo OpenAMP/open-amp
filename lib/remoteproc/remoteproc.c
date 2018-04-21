@@ -453,6 +453,13 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 	return notifyid;
 }
 
+static int remoteproc_virtio_notify(void *priv, uint32_t id)
+{
+	struct remoteproc *rproc = priv;
+
+	return rproc->ops->notify(rproc, id);
+}
+
 struct virtio_device *
 remoteproc_create_virtio(struct remoteproc *rproc,
 			 int vdev_id, unsigned int role,
@@ -478,8 +485,9 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	vdev_rsc = rsc_table + vdev_rsc_offset;
 	notifyid = vdev_rsc->notifyid;
 	vdev = rproc_virtio_create_vdev(role, notifyid,
-					vdev_rsc, vdev_rsc_io,
-					rproc, rproc->notify, rst_cb);
+					vdev_rsc, vdev_rsc_io, rproc,
+					remoteproc_virtio_notify,
+					rst_cb);
 	num_vrings = vdev_rsc->num_of_vrings;
 	/* set the notification id for vrings */
 	for (i = 0; i < num_vrings; i++) {
