@@ -65,11 +65,10 @@ int handle_rsc_table(struct remoteproc *rproc,
 		return -RPROC_ERR_RSC_TAB_RSVD;
 	}
 
-	rsc_start = rsc_table;
-
 	/* Loop through the offset array and parse each resource entry */
 	for (idx = 0; idx < rsc_table->num; idx++) {
-		rsc_start = rsc_start + rsc_table->offset[idx];
+		rsc_start = rsc_table;
+		rsc_start += rsc_table->offset[idx];
 		rsc_type = *((uint32_t *)rsc_start);
 		if (rsc_type < RSC_LAST)
 			status = rsc_handler_table[rsc_type](rproc,
