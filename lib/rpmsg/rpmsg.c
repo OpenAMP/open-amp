@@ -39,7 +39,7 @@ static int rpmsg_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 
 	metal_mutex_acquire(&rvdev->lock);
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		/*
 		 * If device role is Remote then buffers are provided by us
 		 * (RPMSG Master), so just provide the macro.

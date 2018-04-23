@@ -188,7 +188,7 @@ void *rpmsg_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 {
 	void *data;
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
 		if (data == RPMSG_NULL) {
 			data = sh_mem_get_buffer(rvdev->shbuf);
@@ -220,7 +220,7 @@ void *rpmsg_get_rx_buffer(struct rpmsg_virtio_device *rvdev, unsigned long *len,
 {
 	void *data;
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->rvq, (uint32_t *)len, idx);
 	} else {
 		data =
