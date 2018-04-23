@@ -15,7 +15,7 @@ static int handle_dummy_rsc(struct remoteproc *rproc, void *rsc);
 rsc_handler rsc_handler_table[] = {
 	handle_carve_out_rsc, /**< carved out resource */
 	handle_dummy_rsc, /**< IOMMU dev mem resource */
-	handle_dummy_rsc, /**< trace buffer resource */
+	handle_trace_rsc, /**< trace buffer resource */
 	handle_vdev_rsc, /**< virtio resource */
 	handle_dummy_rsc, /**< rproc shared memory resource */
 	handle_dummy_rsc, /**< firmware checksum resource */
@@ -161,6 +161,29 @@ int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
 	}
 
 	return 0;
+}
+
+/**
+ * handle_trace_rsc
+ *
+ * trace resource handler.
+ *
+ * @param rproc - pointer to remote remoteproc
+ * @param rsc   - pointer to trace resource
+ *
+ * @returns - no service error
+ *
+ */
+int handle_trace_rsc(struct remoteproc *rproc, void *rsc)
+{
+	struct fw_rsc_trace *vdev_rsc = (struct fw_rsc_trace *)rsc;
+	(void)rproc;
+
+	if( vdev_rsc->da != FW_RSC_U32_ADDR_ANY && vdev_rsc->len != 0)
+		return 0;
+	/* FIXME: master should allocated a memory used by slave */ 
+			
+	return -RPROC_ERR_RSC_TAB_NS;
 }
 
 /**
