@@ -60,12 +60,31 @@ struct rpmsg_endpoint *rpmsg_get_ept_from_addr(
 	return RPMSG_NULL;
 }
 
+void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept)
+{
+	struct rpmsg_virtio_device *rvdev;
+
+	if (!ept)
+		return;
+
+	rvdev = ept->rvdev;
+
+	metal_mutex_acquire(&rvdev->lock);
+	if(ept->addr != RPMSG_ADDR_ANY)
+		rpmsg_release_address(rvdev->bitmap, RPMSG_ADDR_BMP_SIZE,
+				      ept->addr);
+	metal_list_del(&ept->node);
+	metal_mutex_release(&rvdev->lock);
+}
+
 int rpmsg_register_endpoint(struct rpmsg_virtio_device *rvdev,
 			    struct rpmsg_endpoint *ept)
 {
 	struct metal_list *node;
 	struct rpmsg_endpoint *r_ept;
 	uint32_t dest_addr = RPMSG_ADDR_ANY;
+
+	ept->rvdev = rvdev;
 
 	metal_mutex_acquire(&rvdev->lock);
 
@@ -97,7 +116,7 @@ int rpmsg_register_endpoint(struct rpmsg_virtio_device *rvdev,
 		    (r_ept->addr == RPMSG_ADDR_ANY)) {
 			/* Free the temporary endpoint in the list */
 			dest_addr = r_ept->dest_addr;
-			metal_list_del(&r_ept->node);
+			rpmsg_unregister_endpoint(r_ept);
 			metal_free_memory(r_ept);
 		}
 	}
@@ -169,12 +188,11 @@ void *rpmsg_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 {
 	void *data;
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
 		if (data == RPMSG_NULL) {
 			data = sh_mem_get_buffer(rvdev->shbuf);
 			*len = RPMSG_BUFFER_SIZE;
-			return 0;
 		}
 	} else {
 		data =
@@ -201,7 +219,7 @@ void *rpmsg_get_rx_buffer(struct rpmsg_virtio_device *rvdev, unsigned long *len,
 {
 	void *data;
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->rvq, (uint32_t *)len, idx);
 	} else {
 		data =

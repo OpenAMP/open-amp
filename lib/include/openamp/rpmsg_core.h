@@ -45,6 +45,7 @@ int rpmsg_send_ns_message(struct rpmsg_virtio_device *rpmsgv,
 
 int rpmsg_register_endpoint(struct rpmsg_virtio_device *rpmsgv,
 			    struct rpmsg_endpoint *ept);
+void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept);
 
 #if defined __cplusplus
 }
