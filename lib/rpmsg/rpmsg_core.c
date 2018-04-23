@@ -84,6 +84,8 @@ int rpmsg_register_endpoint(struct rpmsg_virtio_device *rvdev,
 	struct rpmsg_endpoint *r_ept;
 	uint32_t dest_addr = RPMSG_ADDR_ANY;
 
+	ept->rvdev = rvdev;
+
 	metal_mutex_acquire(&rvdev->lock);
 
 	if (ept->addr != RPMSG_ADDR_ANY) {
