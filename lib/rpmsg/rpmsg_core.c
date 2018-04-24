@@ -296,7 +296,7 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 			/* Fatal error no endpoint for the given dst addr. */
 			return;
 
-		if (ept && ept->dest_addr == RPMSG_ADDR_ANY) {
+		if (ept && ept->dest_addr == RPMSG_ADDR_ANY && ept->addr != RPMSG_NS_EPT_ADDR) {
 			/*
 			 * First message received from the remote side,
 			 * update channel destination address
