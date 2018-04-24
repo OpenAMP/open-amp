@@ -271,3 +271,26 @@ int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
 
 	return 0;
 }
+
+int rproc_virtio_notified(struct virtio_device *vdev, uint32_t notifyid)
+{
+	unsigned int num_vrings, i;
+	struct virtio_vring_info *vring_info;
+	struct virtqueue *vq;
+
+	if (!vdev)
+		return -EINVAL;
+	/* We do nothing for vdev notification in this implementation */
+	if (vdev->index == notifyid)
+		return 0;
+	num_vrings = vdev->vrings_num;
+	for (i = 0; i < num_vrings; i++) {
+		vring_info = &vdev->vrings_info[i];
+		if (vring_info->notifyid == notifyid ||
+		    notifyid == RSC_NOTIFY_ID_ANY) {
+			vq = vring_info->vq;
+			virtqueue_notification(vq);
+		}
+	}
+	return -EINVAL;
+}
