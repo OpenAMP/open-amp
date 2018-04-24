@@ -166,6 +166,9 @@ struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv)
 	if (rproc) {
 		rproc->state = RPROC_OFFLINE;
 		metal_mutex_init(&rproc->lock);
+		metal_list_init(&rproc->mems);
+		metal_list_init(&rproc->vdevs);
+		
 	}
 	return rproc;
 }
