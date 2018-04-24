@@ -284,6 +284,9 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	/* Create virtqueues for remote device */
 	status = rpmsg_virtio_create_virtqueues(rvdev, 0, RPMSG_NUM_VRINGS,
 					       vq_names, callback);
+	if (status != RPMSG_SUCCESS)
+		return status;
+
 	/* TODO: can have a virtio function to set the shared memory I/O */
 	for (i = 0; i < RPMSG_NUM_VRINGS; i++) {
 		struct virtqueue *vq;
@@ -291,8 +294,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		vq = vdev->vrings_info[i].vq;
 		vq->shm_io = shm_io;
 	}
-	if (status != RPMSG_SUCCESS)
-		return status;
+
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		struct virtqueue_buf vqbuf;
 		unsigned int idx;
