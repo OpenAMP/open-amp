@@ -246,6 +246,8 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 
 	metal_mutex_init(&rvdev->lock);
 
+	rvdev->vdev = vdev;
+	vdev->priv = rvdev;
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		/*
 		 * Since device is RPMSG Remote so we need to manage the
@@ -271,6 +273,11 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		callback[1] = rpmsg_tx_callback;
 	}
 	rvdev->shbuf_io = shm_io;
+
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
+		/* wait synchro with the master */
+		rpmsg_wait_remote_ready(rvdev);
+	}
 
 	/* Create virtqueues for remote device */
 	status = rpmsg_virtio_create_virtqueues(rvdev, 0, RPMSG_NUM_VRINGS,
@@ -318,12 +325,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
                 }
 
 		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
-	} else {
-		/* wait synchro with the master */
-		rpmsg_wait_remote_ready(rvdev);
 	}
-	rvdev->vdev = vdev;
-	vdev->priv = rvdev;
 
 	/* Initialize channels and endpoints list */
 	metal_list_init(&rvdev->endpoints);
