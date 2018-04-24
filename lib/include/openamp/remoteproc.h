@@ -732,6 +732,19 @@ remoteproc_create_virtio(struct remoteproc *rproc,
  */
 void remoteproc_remove_virtio(struct remoteproc *rproc,
 			      struct virtio_device *vdev);
+
+/* remoteproc_get_notification
+ *
+ * remoteproc is got notified, it will check its subdevices
+ * for the notification
+ *
+ * @rproc -  pointer to the remoteproc instance
+ * @notifyid - notificatin id
+ *
+ * return 0 for succeed, negative value for failure
+ */
+int remoteproc_get_notification(struct remoteproc *rproc,
+				 uint32_t notifyid);
 #if defined __cplusplus
 }
 #endif

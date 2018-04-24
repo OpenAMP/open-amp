@@ -574,3 +574,18 @@ void remoteproc_remove_virtio(struct remoteproc *rproc,
 	metal_list_del(&rpvdev->node);
 	rproc_virtio_remove_vdev(&rpvdev->vdev);
 }
+
+int remoteproc_get_notification(struct remoteproc *rproc,
+				 uint32_t notifyid)
+{
+	struct remoteproc_virtio *rpvdev;
+	struct metal_list *node;
+
+	metal_list_for_each(&rproc->vdevs, node) {
+		rpvdev = metal_container_of(node, struct remoteproc_virtio,
+					    node);
+		if (!rproc_virtio_notified(&rpvdev->vdev, notifyid))
+			return 0;
+	}
+	return -EINVAL;
+}
