@@ -125,11 +125,12 @@ int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
  *
  * remoteproc virtio is got notified
  *
- * @notify_id: notify id
+ * @vdev - pointer to the virtio device
+ * @notifyid - notify id
  *
  * return 0 for successful, negative value for failure
  */
-int rproc_virtio_notified(unsigned int notify_id);
+int rproc_virtio_notified(struct virtio_device *vdev, uint32_t notifyid);
 
 #if defined __cplusplus
 }
