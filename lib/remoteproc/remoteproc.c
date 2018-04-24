@@ -107,6 +107,31 @@ static void remoteproc_remove_mems(struct remoteproc *rproc)
 	}
 }
 
+/**
+ * remoteproc_remove_vdevs
+ *
+ * Remove virtio device resources from remote processor vdevs list.
+ * This function expect the caller have mutex protection.
+ *
+ * @rproc - pointer to the remote processor instance
+ *
+ */
+static void remoteproc_remove_vdevs(struct remoteproc *rproc)
+{
+	struct metal_list *node;
+
+	metal_list_for_each(&rproc->vdevs, node) {
+		struct remoteproc_virtio *rpvdev;
+		struct metal_list *tmpnode;
+
+		rpvdev = metal_container_of(node, struct remoteproc_virtio,
+					    node);
+		tmpnode = node->next;
+		remoteproc_remove_virtio(rproc, &rpvdev->vdev);
+		node = tmpnode;
+	}
+}
+
 static void *remoteproc_get_rsc_table(struct remoteproc *rproc,
 				      void *store, void *loader_info,
 				      struct loader_ops *loader_ops,
@@ -253,6 +278,7 @@ int remoteproc_shutdown(struct remoteproc *rproc)
 			if (!ret) {
 				ret = rproc->ops->shutdown(rproc);
 				rproc->state = RPROC_OFFLINE;
+
 				remoteproc_remove_mems(rproc);
 			}
 		}
@@ -472,9 +498,11 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	struct fw_rsc_vdev *vdev_rsc;
 	struct metal_io_region *vdev_rsc_io;
 	struct virtio_device *vdev;
+	struct remoteproc_virtio *rpvdev;
 	size_t vdev_rsc_offset;
 	unsigned int notifyid;
 	unsigned int num_vrings, i;
+	struct metal_list *node;
 
 	metal_assert(rproc);
 	metal_mutex_acquire(&rproc->lock);
@@ -487,6 +515,13 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	}
 	vdev_rsc = rsc_table + vdev_rsc_offset;
 	notifyid = vdev_rsc->notifyid;
+	/* Check if the virtio device is already created */
+	metal_list_for_each(&rproc->vdevs, node) {
+		rpvdev = metal_container_of(node, struct remoteproc_virtio,
+					    node);
+		if (rpvdev->vdev.index == notifyid)
+			return &rpvdev->vdev;
+	}
 	vdev = rproc_virtio_create_vdev(role, notifyid,
 					vdev_rsc, vdev_rsc_io, rproc,
 					remoteproc_virtio_notify,
@@ -517,6 +552,8 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 			goto err1;
 
 	}
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	metal_list_add_tail(&rproc->vdevs, &rpvdev->node);
 
 	return vdev;
 
@@ -534,5 +571,6 @@ void remoteproc_remove_virtio(struct remoteproc *rproc,
 	(void)rproc;
 	metal_assert(vdev);
 	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	metal_list_del(&rpvdev->node);
 	rproc_virtio_remove_vdev(&rpvdev->vdev);
 }
