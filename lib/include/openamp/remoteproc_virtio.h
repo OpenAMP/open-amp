@@ -46,8 +46,6 @@ extern "C" {
 
 /* define vdev notification funciton user should implement */
 typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
-/* define vdev enable notification funciton user should implement */
-typedef void (*rpvdev_enable_notification_func)(void *priv, uint32_t id);
 
 /**
  * struct remoteproc_virtio
@@ -65,7 +63,6 @@ struct remoteproc_virtio {
 	struct shm_pool *shm;
 	struct metal_io_region *vdev_rsc_io;
 	rpvdev_notify_func notify;
-	rpvdev_enable_notification_func enable_notification;
 	struct virtio_device vdev;
 };
 
@@ -90,7 +87,6 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 			 void *rsc, struct metal_io_region *rsc_io,
 			 void *priv,
 			 rpvdev_notify_func notify,
-			 rpvdev_enable_notification_func enable_notification,
 			 virtio_dev_reset_cb rst_cb);
 
 /**
