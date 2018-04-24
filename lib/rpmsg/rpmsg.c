@@ -339,7 +339,11 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		ns_ept.cb = rpmsg_ns_callback;
 		strncpy(ns_ept.name, "NS", sizeof("NS"));
 		status = rpmsg_register_endpoint(rvdev, &ns_ept);
+
 	}
+	/* check if there is message sent from master */
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE)
+		rpmsg_rx_callback(vdev->vrings_info[0].vq);
 
 	return status;
 }
