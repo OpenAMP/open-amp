@@ -239,36 +239,7 @@ int rpmsg_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
  */
 void rpmsg_tx_callback(struct virtqueue *vq)
 {
-	struct virtio_device *vdev = vq->vq_dev;
-	struct rpmsg_virtio_device *rvdev = vdev->priv;
-	struct rpmsg_endpoint *ept;
-	unsigned long dev_features;
-	struct metal_list *node;
-
-	/* Check if the remote device is master. */
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
-		/*
-		 * Notification is received from the master. Now the remote(us)
-		 * can performs one of two operations;
-		 *
-		 * a. If name service announcement is supported then it will
-		 *    send NS message.
-		 * else
-		 * b. It will update the channel state to active so that further
-		 *    communication can take place.
-		 */
-		metal_list_for_each(&rvdev->endpoints, node) {
-			ept = metal_container_of(node, struct rpmsg_endpoint,
-						 node);
-
-			dev_features = rpmsg_virtio_get_features(rvdev);
-			if ((dev_features & (1 << VIRTIO_RPMSG_F_NS))) {
-				if (rpmsg_send_ns_message(rvdev, ept,
-					RPMSG_NS_CREATE) != RPMSG_SUCCESS)
-					return;
-			}
-		}
-	}
+	(void)vq;
 }
 
 /**
