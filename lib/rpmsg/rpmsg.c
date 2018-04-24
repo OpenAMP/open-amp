@@ -348,7 +348,6 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
                         }
                 }
 
-		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
 	}
 
 	/* Initialize channels and endpoints list */
@@ -370,6 +369,9 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	/* check if there is message sent from master */
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE)
 		rpmsg_rx_callback(vdev->vrings_info[0].vq);
+	else
+		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
+
 
 	return status;
 }
