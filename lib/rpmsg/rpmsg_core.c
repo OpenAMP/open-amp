@@ -100,13 +100,16 @@ int rpmsg_register_endpoint(struct rpmsg_virtio_device *rvdev,
 					  ept->addr);
 
 		} else {
+			metal_mutex_release(&rvdev->lock);
 			return RPMSG_ERR_ADDR;
 		}
 	} else {
 		ept->addr = rpmsg_get_address(rvdev->bitmap,
 					      RPMSG_ADDR_BMP_SIZE);
-		if ((int)ept->addr < 0)
+		if ((int)ept->addr < 0) {
+			metal_mutex_release(&rvdev->lock);
 			return RPMSG_ERR_ADDR;
+		}
 	}
 
 	/* Check if a remote endpoint has been registered */
