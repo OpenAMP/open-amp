@@ -271,13 +271,3 @@ int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
 
 	return 0;
 }
-
-int rproc_virtio_set_shm(struct remoteproc_virtio *rpvdev,
-			 struct shm_pool *shm)
-{
-	if (!rpvdev)
-		return -RPROC_EINVAL;
-	rpvdev->shm = shm;
-
-	return 0;
-}
