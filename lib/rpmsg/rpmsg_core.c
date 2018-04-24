@@ -391,8 +391,7 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 				return;
 			}
 			if (rvdev->new_endpoint_cb)
-				rvdev->new_endpoint_cb(_ept->name,
-						       _ept->dest_addr);
+				rvdev->new_endpoint_cb(_ept);
 		}
 		_ept->dest_addr = src;
 	}

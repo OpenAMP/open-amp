@@ -39,6 +39,8 @@ extern "C" {
  * @endpoints: list of endpoints.
  * @bitmap: table endpoin address allocation.
  */
+struct rpmsg_endpoint;
+
 struct rpmsg_virtio_device {
 	struct virtio_device *vdev;
 	metal_mutex_t lock;
@@ -47,7 +49,7 @@ struct rpmsg_virtio_device {
 	int buffers_number;
 	struct metal_io_region *shbuf_io;
 	struct sh_mem_pool *shbuf;
-	int (*new_endpoint_cb)(const char *name, uint32_t addr);
+	void (*new_endpoint_cb)(struct rpmsg_endpoint *ep);
 	struct metal_list endpoints;
 	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
 };
