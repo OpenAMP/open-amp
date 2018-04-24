@@ -55,6 +55,7 @@ typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
  * @vdev_rsc_io metal I/O region of vdev_info, can be NULL
  * @notify notification function
  * @vdev virtio device
+ * @node list node
  */
 struct remoteproc_virtio {
 	void *priv;
@@ -64,6 +65,7 @@ struct remoteproc_virtio {
 	struct metal_io_region *vdev_rsc_io;
 	rpvdev_notify_func notify;
 	struct virtio_device vdev;
+	struct metal_list node;
 };
 
 /**
