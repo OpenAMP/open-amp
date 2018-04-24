@@ -517,11 +517,13 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 			goto err1;
 
 	}
+
+	return vdev;
+
 err1:
 	remoteproc_remove_virtio(rproc, vdev);
-	vdev = NULL;
 	metal_mutex_release(&rproc->lock);
-	return vdev;
+	return NULL;
 }
 
 void remoteproc_remove_virtio(struct remoteproc *rproc,
