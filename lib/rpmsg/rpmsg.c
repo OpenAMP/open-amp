@@ -97,7 +97,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 	status = rpmsg_virtio_get_status(rvdev);
 	/* Validate device state */
 	if (ept->dest_addr == RPMSG_ADDR_ANY ||
-	    status != VIRTIO_CONFIG_STATUS_DRIVER_OK) {
+	    !(status & VIRTIO_CONFIG_STATUS_DRIVER_OK)) {
 		return RPMSG_ERR_DEV_STATE;
 	}
 
