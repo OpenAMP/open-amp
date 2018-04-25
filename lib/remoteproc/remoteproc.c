@@ -193,7 +193,6 @@ struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv)
 		metal_mutex_init(&rproc->lock);
 		metal_list_init(&rproc->mems);
 		metal_list_init(&rproc->vdevs);
-		
 	}
 	return rproc;
 }
@@ -278,7 +277,7 @@ int remoteproc_shutdown(struct remoteproc *rproc)
 			if (!ret) {
 				ret = rproc->ops->shutdown(rproc);
 				rproc->state = RPROC_OFFLINE;
-
+				remoteproc_remove_vdevs(rproc);
 				remoteproc_remove_mems(rproc);
 			}
 		}
