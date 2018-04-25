@@ -60,6 +60,35 @@ struct rpmsg_endpoint *rpmsg_get_ept_from_addr(
 	return RPMSG_NULL;
 }
 
+struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_virtio_device *rvdev,
+					  const char *name, uint32_t addr,
+					  uint32_t dest_addr)
+{
+	struct metal_list *node;
+	struct rpmsg_endpoint *ept;
+
+	metal_list_for_each(&rvdev->endpoints, node) {
+		int name_match = 0;
+
+		name_match = !strncmp(ept->name, name, sizeof(ept->name));
+		ept = metal_container_of(node, struct rpmsg_endpoint, node);
+		if (addr != RPMSG_ADDR_ANY && ept->addr == addr)
+			return ept;
+		if (dest_addr == RPMSG_ADDR_ANY &&
+		    ept->addr == RPMSG_ADDR_ANY &&
+		    name_match)
+			return ept;
+		if (addr == RPMSG_ADDR_ANY &&
+		    ept->dest_addr == RPMSG_ADDR_ANY &&
+		    name_match)
+			return ept;
+		if (addr == ept->addr && dest_addr == ept->dest_addr &&
+		    name_match)
+			return ept;
+	}
+	return NULL;
+}
+
 void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept)
 {
 	struct rpmsg_virtio_device *rvdev;
@@ -80,53 +109,7 @@ void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept)
 int rpmsg_register_endpoint(struct rpmsg_virtio_device *rvdev,
 			    struct rpmsg_endpoint *ept)
 {
-	struct metal_list *node;
-	struct rpmsg_endpoint *r_ept;
-	uint32_t dest_addr = RPMSG_ADDR_ANY;
-
-	metal_mutex_acquire(&rvdev->lock);
-
-	if (ept->addr != RPMSG_ADDR_ANY) {
-		/*
-		 * Application has requested a particular src address for
-		 * endpoint, first check if address is available.
-		 */
-		if (!rpmsg_is_address_set
-		    (rvdev->bitmap, RPMSG_ADDR_BMP_SIZE, ept->addr)) {
-			/* Mark the address as used in the address bitmap. */
-			rpmsg_set_address(rvdev->bitmap, RPMSG_ADDR_BMP_SIZE,
-					  ept->addr);
-
-		} else {
-			metal_mutex_release(&rvdev->lock);
-			return RPMSG_ERR_ADDR;
-		}
-	} else {
-		ept->addr = rpmsg_get_address(rvdev->bitmap,
-					      RPMSG_ADDR_BMP_SIZE);
-		if ((int)ept->addr < 0) {
-			metal_mutex_release(&rvdev->lock);
-			return RPMSG_ERR_ADDR;
-		}
-	}
-
-	/* Check if a remote endpoint has been registered */
-	metal_list_for_each(&rvdev->endpoints, node) {
-		r_ept = metal_container_of(node, struct rpmsg_endpoint, node);
-		if ((strncmp(r_ept->name, ept->name, sizeof(ept->name)) == 0) &&
-		    (r_ept->addr == RPMSG_ADDR_ANY)) {
-			/* Free the temporary endpoint in the list */
-			dest_addr = r_ept->dest_addr;
-			rpmsg_unregister_endpoint(r_ept);
-			metal_free_memory(r_ept);
-		}
-	}
-
 	metal_list_add_tail(&rvdev->endpoints, &ept->node);
-	ept->dest_addr = dest_addr;
-
-	metal_mutex_release(&rvdev->lock);
-
 	return RPMSG_SUCCESS;
 }
 

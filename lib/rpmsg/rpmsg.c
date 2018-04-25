@@ -165,10 +165,24 @@ struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
 	struct rpmsg_endpoint *ept;
 	int status;
 
-	ept = metal_allocate_memory(sizeof(*ept));
-	if (!ept) {
-		return NULL;
+	metal_mutex_acquire(&rvdev->lock);
+	if (src != RPMSG_ADDR_ANY) {
+		if (!rpmsg_is_address_set
+		    (rvdev->bitmap, RPMSG_ADDR_BMP_SIZE, ept->addr))
+			/* Mark the address as used in the address bitmap. */
+			rpmsg_set_address(rvdev->bitmap, RPMSG_ADDR_BMP_SIZE,
+					  ept->addr);
+		else
+			return NULL;
+	} else {
+		src = rpmsg_get_address(rvdev->bitmap, RPMSG_ADDR_BMP_SIZE);
 	}
+
+	ept = rpmsg_get_endpoint(rvdev, name, src, dest);
+	if (!ept)
+		ept = metal_allocate_memory(sizeof(*ept));
+	if (!ept)
+		return NULL;
 	ept->addr = src;
 	ept->dest_addr = dest;
 	ept->cb = cb;
