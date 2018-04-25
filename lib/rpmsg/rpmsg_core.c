@@ -110,6 +110,8 @@ void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept)
 int rpmsg_register_endpoint(struct rpmsg_virtio_device *rvdev,
 			    struct rpmsg_endpoint *ept)
 {
+	ept->rvdev = rvdev;
+
 	metal_list_add_tail(&rvdev->endpoints, &ept->node);
 	return RPMSG_SUCCESS;
 }
