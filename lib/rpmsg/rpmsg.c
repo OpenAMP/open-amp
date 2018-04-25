@@ -280,19 +280,19 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		if (!rvdev->shbuf)
 			return RPMSG_ERR_NO_MEM;
 
-		vq_names[0] = "tx_vq";
-		vq_names[1] = "rx_vq";
-		callback[0] = rpmsg_tx_callback;
-		callback[1] = rpmsg_rx_callback;
-		rvdev->rvq  = vdev->vrings_info[1].vq;
-		rvdev->svq  = vdev->vrings_info[0].vq;
-	} else {
 		vq_names[0] = "rx_vq";
 		vq_names[1] = "tx_vq";
 		callback[0] = rpmsg_rx_callback;
 		callback[1] = rpmsg_tx_callback;
 		rvdev->rvq  = vdev->vrings_info[0].vq;
 		rvdev->svq  = vdev->vrings_info[1].vq;
+	} else {
+		vq_names[0] = "tx_vq";
+		vq_names[1] = "rx_vq";
+		callback[0] = rpmsg_tx_callback;
+		callback[1] = rpmsg_rx_callback;
+		rvdev->rvq  = vdev->vrings_info[1].vq;
+		rvdev->svq  = vdev->vrings_info[0].vq;
 	}
 
 	rvdev->shbuf_io = shm_io;
