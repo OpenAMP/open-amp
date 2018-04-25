@@ -72,7 +72,6 @@ struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_virtio_device *rvdev,
 
 		ept = metal_container_of(node, struct rpmsg_endpoint, node);
 		name_match = !strncmp(ept->name, name, sizeof(ept->name));
-		printk("%s name_match %d\n",__func__, name_match);
 		if (addr != RPMSG_ADDR_ANY && ept->addr == addr)
 			return ept;
 		if (dest_addr == RPMSG_ADDR_ANY &&
