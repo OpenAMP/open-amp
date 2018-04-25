@@ -168,12 +168,12 @@ struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
 	metal_mutex_acquire(&rvdev->lock);
 	if (src != RPMSG_ADDR_ANY) {
 		if (!rpmsg_is_address_set
-		    (rvdev->bitmap, RPMSG_ADDR_BMP_SIZE, ept->addr))
+		    (rvdev->bitmap, RPMSG_ADDR_BMP_SIZE, src))
 			/* Mark the address as used in the address bitmap. */
 			rpmsg_set_address(rvdev->bitmap, RPMSG_ADDR_BMP_SIZE,
-					  ept->addr);
+					  src);
 		else
-			return NULL;
+			goto ret_err;
 	} else {
 		src = rpmsg_get_address(rvdev->bitmap, RPMSG_ADDR_BMP_SIZE);
 	}
@@ -182,7 +182,7 @@ struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
 	if (!ept)
 		ept = metal_allocate_memory(sizeof(*ept));
 	if (!ept)
-		return NULL;
+		goto ret_err;
 	ept->addr = src;
 	ept->dest_addr = dest;
 	ept->cb = cb;
@@ -192,6 +192,8 @@ struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
 	status = rpmsg_register_endpoint(rvdev, ept);
 	if (status < 0)
 		goto reg_err;
+
+	metal_mutex_release(&rvdev->lock);
 
 	if (ept->dest_addr == RPMSG_ADDR_ANY) {
 		/* Send NS announcement to remote processor */
@@ -207,6 +209,8 @@ ns_err:
 reg_err:
 	metal_free_memory(ept);
 
+ret_err:
+	metal_mutex_release(&rvdev->lock);
 	return NULL;
 }
 
