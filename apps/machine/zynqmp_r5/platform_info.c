@@ -18,8 +18,9 @@
  *
  **************************************************************************/
 
-#include <openamp/hil.h>
 #include <metal/atomic.h>
+#include <metal/assert.h>
+#include <openamp/hil.h>
 #include "platform_info.h"
 #include "rsc_table.h"
 
@@ -42,17 +43,114 @@
 struct ipi_info {
 	const char *name; /* IPI device name */
 	const char *bus_name; /* IPI bus name */
-	struct meta_device *dev; /* IPI metal device */
-	struct metal_io_region *io; /* IPI metal IO region */
-	metal_phys_addr_t paddr; /* IPI registers base address */
 	uint32_t ipi_chn_mask; /* IPI channel mask */
-	int registered; /* used internally by RPU to APU remoteproc to mark
-			 * if the IPI interrup has been registered */
-	atomic_int sync; /* used internally by RPU to APU remoteproc to mark
-			  * if there is kick from the remote */
 };
 
-/* processor operations for hil_proc from r5 to a53. It defines
+struct remoteproc_priv {
+	struct remoteproc rproc;
+	struct metal_device *ipi_dev;
+	struct metal_io_region *ipi_io;
+	unsigned int ipi_chn_mask;
+	atomic_init ipi_nokick;
+};
+
+static struct remoteproc *
+zynqmp_r5_a53_proc_init(struct remoteproc_ops *ops, void *arg)
+{
+	struct ipi_info *ipi = arg;
+	struct remoteproc_priv *prproc;
+	struct metal_device *ipi_dev;
+	int ret;
+
+	if (!ipi || !ops)
+		return NULL;
+	memset(prproc, 0, sizeof(*prproc));
+	prproc = metal_allocate_memory(sizeof(*prproc));
+	if (!prproc)
+		return NULL;
+	ret = metal_device_open(ipi->bus_name, ipi->name, &ipi_dev);
+	if (ret)
+		goto err1;
+	prproc->ipi_dev = ipi_dev;
+	prproc->ipi_io = metal_device_io_region(ipi_dev, 0);
+	if (!prproc->ipi_io)
+		goto err2;
+	prproc->ipi_chn_mask = ipi->ipi_chn_mask;
+	atomic_store(&prproc->ipi_nokick, 1);
+err2:
+	metal_device_close(ipi_dev);
+err1:
+	metal_free_memory(prproc);
+	return NULL:
+}
+
+static void zynqmp_r5_a53_proc_remove(struct remoteproc *rproc)
+{
+	struct remoteproc_priv *prproc;
+
+	if (!rproc)
+		return;
+	prproc = metal_container_of(rproc, struct remoteproc_priv, rproc);
+	if (rproc->ipi_dev)
+		metal_device_close(rproc->ipi_de);
+	metal_free_memory(prproc);
+}
+
+static void *
+zynqmp_r5_a53_proc_mmap(struct remoteproc *rproc, metal_phys_addr_t *pa,
+			metal_phys_addr_t *da, size_t size,
+			unsigned int attribute, struct metal_io_region **io)
+{
+	struct remoteproc_mem *mem;
+	metal_phys_addr_t lpa, lda;
+	struct metal_io_region *io;
+
+	lpa = *pa;
+	lda = *da;
+
+	if (lpa == METAL_BAD_PHYS && lda == METAL_BAD_PHYS)
+		return NULL;
+	if (lpa == METAL_BAD_PHYS)
+		lpa = lda;
+	if (lda == METAL_BAD_PHYS)
+		lda = lpa;
+
+	if (!attribute)
+		attribute = NORM_SHARED_NCACHE | PRIV_RW_USER_RW;
+	mem = metal_allocate_memory(sizeof(*mem));
+	if (mem)
+		return NULL;
+	mem->pa = lpa;
+	mem->da = lda;
+	mem->size = size;
+	*io = metal_allocate_memory(sizeof(*io));
+	if (!*io) {
+		metal_free_memory(mem);
+		return NULL;
+	}
+	/* va is the same as pa in this platform */
+	metal_io_init(*io, (void *)mem->pa, &mem->pa, size,
+		      sizeof(metal_phys_addr_t)<<3, attribute, NULL);
+	mem->io = *io;
+	metal_list_add_tail(&rproc->mems, &mem->node);
+	*pa = lpa;
+	*da = lda;
+	return metal_io_phys_to_virt(*io, mem->pa);
+}
+
+static int zynqmp_r5_a53_proc_kick(struct remoteproc *rproc, int id)
+{
+	struct remoteproc_priv *prproc;
+
+	if (!rproc)
+		return -1;
+	prproc = metal_container_of(rproc, struct remoteproc_priv, rproc);
+
+	/* TODO: use IPI driver instead and pass ID */
+	metal_io_write(
+}
+
+/* processor operations from r5 to a53. It defines
  * notification operation and remote processor managementi operations. */
 struct remoteproc_ops zynqmp_r5_a53_proc_ops;
 

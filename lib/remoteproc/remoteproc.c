@@ -252,7 +252,8 @@ int remoteproc_stop(struct remoteproc *rproc)
 		metal_mutex_acquire(&rproc->lock);
 		if (rproc->state != RPROC_STOPPED &&
 		    rproc->state != RPROC_OFFLINE) {
-			ret = rproc->ops->stop(rproc);
+			if (rproc->ops->stop)
+				ret = rproc->ops->stop(rproc);
 			rproc->state = RPROC_STOPPED;
 		} else {
 			ret = 0;
@@ -271,14 +272,17 @@ int remoteproc_shutdown(struct remoteproc *rproc)
 		metal_mutex_acquire(&rproc->lock);
 		if (rproc->state != RPROC_OFFLINE) {
 			if (rproc->state != RPROC_STOPPED) {
-				ret = rproc->ops->stop(rproc);
-				rproc->state = RPROC_STOPPED;
+				if (rproc->ops->stop)
+					ret = rproc->ops->stop(rproc);
 			}
 			if (!ret) {
-				ret = rproc->ops->shutdown(rproc);
-				rproc->state = RPROC_OFFLINE;
-				remoteproc_remove_vdevs(rproc);
-				remoteproc_remove_mems(rproc);
+				if (rproc->ops->shutdown)
+					ret = rproc->ops->shutdown(rproc);
+				if (!ret) {
+					rproc->state = RPROC_OFFLINE;
+					remoteproc_remove_vdevs(rproc);
+					remoteproc_remove_mems(rproc);
+				}
 			}
 		}
 		metal_mutex_release(&rproc->lock);
