@@ -296,14 +296,13 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 
 		if (ept && ept->dest_addr == RPMSG_ADDR_ANY) {
 			/*
-			 * First message from RPMSG Master, update channel
-			 * destination address
+			 * First message received from the remote side,
+			 * update channel destination address
 			 */
 			ept->dest_addr = rp_hdr->src;
-		} else {
-			ept->cb(ept, (void *)RPMSG_LOCATE_DATA(rp_hdr),
+		} 
+		ept->cb(ept, (void *)RPMSG_LOCATE_DATA(rp_hdr),
 				   rp_hdr->len, ept->addr, ept->priv);
-		}
 
 		metal_mutex_acquire(&rvdev->lock);
 
