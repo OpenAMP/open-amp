@@ -336,7 +336,9 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	struct rpmsg_endpoint *_ept;
 	struct rpmsg_ns_msg *ns_msg;
 	int status;
+
 	(void)priv;
+	(void)src;
 
 	ns_msg = (struct rpmsg_ns_msg *)data;
 
@@ -375,7 +377,7 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			if (rvdev->new_endpoint_cb)
 				rvdev->new_endpoint_cb(_ept);
 		}
-		_ept->dest_addr = src;
+		_ept->dest_addr = ns_msg->addr;
 	}
 }
 
