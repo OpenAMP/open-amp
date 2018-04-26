@@ -308,6 +308,16 @@ void *remoteproc_datova(struct remoteproc *rproc,
 	return NULL;
 }
 
+struct metal_io_region *
+remoteproc_get_mem_with_pa(struct remoteproc *rproc,
+			   metal_phys_addr_t pa)
+{
+	struct metal_io_region *io = NULL;
+
+	(void)remoteproc_patova_from_mems(rproc, pa, 0, &io);
+	return io;
+}
+
 void *remoteproc_mmap(struct remoteproc *rproc,
 		      metal_phys_addr_t *pa, metal_phys_addr_t *da,
 		      size_t size, unsigned int attribute,
