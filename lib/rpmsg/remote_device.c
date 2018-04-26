@@ -452,7 +452,7 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 		sg.io = rdev->proc->sh_buff.io;
 		sg.len = RPMSG_BUFFER_SIZE;
 		for (idx = 0; ((idx < rdev->rvq->vq_nentries)
-			       && (idx < rdev->mem_pool->total_buffs / 2));
+			       && ((unsigned)idx < rdev->mem_pool->total_buffs / 2));
 		     idx++) {
 
 			/* Initialize TX virtqueue buffers for remote device */
