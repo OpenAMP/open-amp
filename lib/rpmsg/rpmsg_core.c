@@ -296,7 +296,7 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 			/* Fatal error no endpoint for the given dst addr. */
 			return;
 
-		if (ept && ept->dest_addr == RPMSG_ADDR_ANY) {
+		if (ept && ept->dest_addr == RPMSG_ADDR_ANY && ept->addr != RPMSG_NS_EPT_ADDR) {
 			/*
 			 * First message received from the remote side,
 			 * update channel destination address
@@ -369,11 +369,13 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 		if (!_ept)
 			return;
 		if (_ept->destroy_cb)
-			_ept->destroy_cb(ept);
+			_ept->destroy_cb(_ept);
 
 		rpmsg_destroy_ept(_ept);
+#if 0
 		if (_ept->addr == RPMSG_ADDR_ANY)
 			metal_free_memory(_ept);
+#endif
 	} else {
 		struct metal_io_region *io = rvdev->shbuf_io;
 
@@ -391,10 +393,9 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 				return;
 			}
 			if (rvdev->new_endpoint_cb)
-				rvdev->new_endpoint_cb(_ept->name,
-						       _ept->dest_addr);
+				rvdev->new_endpoint_cb(_ept);
 		}
-		_ept->dest_addr = src;
+		_ept->dest_addr = ns_msg->addr;
 	}
 }
 
