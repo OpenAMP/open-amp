@@ -371,8 +371,10 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			_ept->destroy_cb(_ept);
 
 		rpmsg_destroy_ept(_ept);
+#if 0
 		if (_ept->addr == RPMSG_ADDR_ANY)
 			metal_free_memory(_ept);
+#endif
 	} else {
 		struct metal_io_region *io = rvdev->shbuf_io;
 
