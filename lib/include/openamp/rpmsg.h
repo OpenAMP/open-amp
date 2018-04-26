@@ -132,6 +132,10 @@ struct rpmsg_ns_msg {
 
 struct rpmsg_endpoint;
 
+typedef void (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
+			     size_t len, uint32_t src, void *priv);
+typedef void (*rpmsg_ept_destroy_cb)(struct rpmsg_endpoint *ept);
+
 /**
  * struct rpmsg_endpoint - binds a local rpmsg address to its user
  * @name:name of the service supported
@@ -152,9 +156,8 @@ struct rpmsg_endpoint {
 	struct rpmsg_virtio_device *rvdev;
 	uint32_t addr;
 	uint32_t dest_addr;
-	void (*cb)(struct rpmsg_endpoint *ept, void *data, size_t len,
-		   uint32_t src, void *priv);
-	void (*destroy_cb)(struct rpmsg_endpoint *ept);
+	rpmsg_ept_cb cb;
+	rpmsg_ept_destroy_cb destroy_cb;
 	struct metal_list node;
 	void *priv;
 };
@@ -335,12 +338,15 @@ void (*rpmsg_endpoint_destroy_callback)(struct rpmsg_endpoint *ept, void *priv);
  * As an option Some rpmsg clients can specify an endpoint with a specific
  * source address.
  */
-int rpmsg_create_ept(struct rpmsg_virtio_device *rpmsgv,
-		     struct rpmsg_endpoint *ept);
+
+struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
+					const char *name, uint32_t src,
+					uint32_t dest, rpmsg_ept_cb cb,
+					rpmsg_ept_destroy_cb destroy_cb);
 
 void rpmsg_destroy_ept(struct rpmsg_endpoint *ept);
 
-int rpmsg_init_vdev(struct rpmsg_virtio_device *rpmsg_vdev,
+int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev, struct metal_io_region *shm_io,
 		    void *shm, unsigned int len);
 

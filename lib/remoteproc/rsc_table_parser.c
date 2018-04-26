@@ -15,7 +15,7 @@ static int handle_dummy_rsc(struct remoteproc *rproc, void *rsc);
 rsc_handler rsc_handler_table[] = {
 	handle_carve_out_rsc, /**< carved out resource */
 	handle_dummy_rsc, /**< IOMMU dev mem resource */
-	handle_dummy_rsc, /**< trace buffer resource */
+	handle_trace_rsc, /**< trace buffer resource */
 	handle_vdev_rsc, /**< virtio resource */
 	handle_dummy_rsc, /**< rproc shared memory resource */
 	handle_dummy_rsc, /**< firmware checksum resource */
@@ -65,11 +65,10 @@ int handle_rsc_table(struct remoteproc *rproc,
 		return -RPROC_ERR_RSC_TAB_RSVD;
 	}
 
-	rsc_start = rsc_table;
-
 	/* Loop through the offset array and parse each resource entry */
 	for (idx = 0; idx < rsc_table->num; idx++) {
-		rsc_start = rsc_start + rsc_table->offset[idx];
+		rsc_start = rsc_table;
+		rsc_start += rsc_table->offset[idx];
 		rsc_type = *((uint32_t *)rsc_start);
 		if (rsc_type < RSC_LAST)
 			status = rsc_handler_table[rsc_type](rproc,
@@ -165,6 +164,29 @@ int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
 }
 
 /**
+ * handle_trace_rsc
+ *
+ * trace resource handler.
+ *
+ * @param rproc - pointer to remote remoteproc
+ * @param rsc   - pointer to trace resource
+ *
+ * @returns - no service error
+ *
+ */
+int handle_trace_rsc(struct remoteproc *rproc, void *rsc)
+{
+	struct fw_rsc_trace *vdev_rsc = (struct fw_rsc_trace *)rsc;
+	(void)rproc;
+
+	if( vdev_rsc->da != FW_RSC_U32_ADDR_ANY && vdev_rsc->len != 0)
+		return 0;
+	/* FIXME: master should allocated a memory used by slave */ 
+			
+	return -RPROC_ERR_RSC_TAB_NS;
+}
+
+/**
  * handle_dummy_rsc
  *
  * dummy resource handler.
@@ -194,7 +216,8 @@ size_t find_rsc(void *rsc_table, unsigned int rsc_type, unsigned int index)
 	/* Loop through the offset array and parse each resource entry */
 	rsc_index = 0;
 	for (i = 0; i < r_table->num; i++) {
-		rsc_start = r_table + r_table->offset[i];
+		rsc_start = r_table;
+		rsc_start += r_table->offset[i];
 		lrsc_type = *((uint32_t *)rsc_start);
 		if (lrsc_type == rsc_type) {
 			if (rsc_index++ == index)

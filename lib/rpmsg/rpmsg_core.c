@@ -60,53 +60,58 @@ struct rpmsg_endpoint *rpmsg_get_ept_from_addr(
 	return RPMSG_NULL;
 }
 
+struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_virtio_device *rvdev,
+					  const char *name, uint32_t addr,
+					  uint32_t dest_addr)
+{
+	struct metal_list *node;
+	struct rpmsg_endpoint *ept;
+
+	metal_list_for_each(&rvdev->endpoints, node) {
+		int name_match = 0;
+
+		ept = metal_container_of(node, struct rpmsg_endpoint, node);
+		name_match = !strncmp(ept->name, name, sizeof(ept->name));
+		if (addr != RPMSG_ADDR_ANY && ept->addr == addr)
+			return ept;
+		if (dest_addr == RPMSG_ADDR_ANY &&
+		    ept->addr == RPMSG_ADDR_ANY &&
+		    name_match)
+			return ept;
+		if (addr == RPMSG_ADDR_ANY &&
+		    ept->dest_addr == RPMSG_ADDR_ANY &&
+		    name_match)
+			return ept;
+		if (addr == ept->addr && dest_addr == ept->dest_addr &&
+		    name_match)
+			return ept;
+	}
+	return NULL;
+}
+
+void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept)
+{
+	struct rpmsg_virtio_device *rvdev;
+
+	if (!ept)
+		return;
+
+	rvdev = ept->rvdev;
+
+	metal_mutex_acquire(&rvdev->lock);
+	if(ept->addr != RPMSG_ADDR_ANY)
+		rpmsg_release_address(rvdev->bitmap, RPMSG_ADDR_BMP_SIZE,
+				      ept->addr);
+	metal_list_del(&ept->node);
+	metal_mutex_release(&rvdev->lock);
+}
+
 int rpmsg_register_endpoint(struct rpmsg_virtio_device *rvdev,
 			    struct rpmsg_endpoint *ept)
 {
-	struct metal_list *node;
-	struct rpmsg_endpoint *r_ept;
-	uint32_t dest_addr = RPMSG_ADDR_ANY;
-
-	metal_mutex_acquire(&rvdev->lock);
-
-	if (ept->addr != RPMSG_ADDR_ANY) {
-		/*
-		 * Application has requested a particular src address for
-		 * endpoint, first check if address is available.
-		 */
-		if (!rpmsg_is_address_set
-		    (rvdev->bitmap, RPMSG_ADDR_BMP_SIZE, ept->addr)) {
-			/* Mark the address as used in the address bitmap. */
-			rpmsg_set_address(rvdev->bitmap, RPMSG_ADDR_BMP_SIZE,
-					  ept->addr);
-
-		} else {
-			return RPMSG_ERR_ADDR;
-		}
-	} else {
-		ept->addr = rpmsg_get_address(rvdev->bitmap,
-					      RPMSG_ADDR_BMP_SIZE);
-		if ((int)ept->addr < 0)
-			return RPMSG_ERR_ADDR;
-	}
-
-	/* Check if a remote endpoint has been registered */
-	metal_list_for_each(&rvdev->endpoints, node) {
-		r_ept = metal_container_of(node, struct rpmsg_endpoint, node);
-		if ((strncmp(r_ept->name, ept->name, sizeof(ept->name)) == 0) &&
-		    (r_ept->addr == RPMSG_ADDR_ANY)) {
-			/* Free the temporary endpoint in the list */
-			dest_addr = r_ept->dest_addr;
-			metal_list_del(&r_ept->node);
-			metal_free_memory(r_ept);
-		}
-	}
+	ept->rvdev = rvdev;
 
 	metal_list_add_tail(&rvdev->endpoints, &ept->node);
-	ept->dest_addr = dest_addr;
-
-	metal_mutex_release(&rvdev->lock);
-
 	return RPMSG_SUCCESS;
 }
 
@@ -169,12 +174,11 @@ void *rpmsg_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 {
 	void *data;
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
 		if (data == RPMSG_NULL) {
 			data = sh_mem_get_buffer(rvdev->shbuf);
 			*len = RPMSG_BUFFER_SIZE;
-			return 0;
 		}
 	} else {
 		data =
@@ -201,7 +205,7 @@ void *rpmsg_get_rx_buffer(struct rpmsg_virtio_device *rvdev, unsigned long *len,
 {
 	void *data;
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->rvq, (uint32_t *)len, idx);
 	} else {
 		data =
@@ -254,36 +258,7 @@ int rpmsg_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
  */
 void rpmsg_tx_callback(struct virtqueue *vq)
 {
-	struct virtio_device *vdev = vq->vq_dev;
-	struct rpmsg_virtio_device *rvdev = vdev->priv;
-	struct rpmsg_endpoint *ept;
-	unsigned long dev_features;
-	struct metal_list *node;
-
-	/* Check if the remote device is master. */
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
-		/*
-		 * Notification is received from the master. Now the remote(us)
-		 * can performs one of two operations;
-		 *
-		 * a. If name service announcement is supported then it will
-		 *    send NS message.
-		 * else
-		 * b. It will update the channel state to active so that further
-		 *    communication can take place.
-		 */
-		metal_list_for_each(&rvdev->endpoints, node) {
-			ept = metal_container_of(node, struct rpmsg_endpoint,
-						 node);
-
-			dev_features = rpmsg_virtio_get_features(rvdev);
-			if ((dev_features & (1 << VIRTIO_RPMSG_F_NS))) {
-				if (rpmsg_send_ns_message(rvdev, ept,
-					RPMSG_NS_CREATE) != RPMSG_SUCCESS)
-					return;
-			}
-		}
-	}
+	(void)vq;
 }
 
 /**
@@ -320,16 +295,15 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 			/* Fatal error no endpoint for the given dst addr. */
 			return;
 
-		if (ept && ept->dest_addr == RPMSG_ADDR_ANY) {
+		if (ept && ept->dest_addr == RPMSG_ADDR_ANY && ept->addr != RPMSG_NS_EPT_ADDR) {
 			/*
-			 * First message from RPMSG Master, update channel
-			 * destination address
+			 * First message received from the remote side,
+			 * update channel destination address
 			 */
 			ept->dest_addr = rp_hdr->src;
-		} else {
-			ept->cb(ept, (void *)RPMSG_LOCATE_DATA(rp_hdr),
+		} 
+		ept->cb(ept, (void *)RPMSG_LOCATE_DATA(rp_hdr),
 				   rp_hdr->len, ept->addr, ept->priv);
-		}
 
 		metal_mutex_acquire(&rvdev->lock);
 
@@ -381,7 +355,9 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	struct rpmsg_endpoint *_ept;
 	struct rpmsg_ns_msg *ns_msg;
 	int status;
+
 	(void)priv;
+	(void)src;
 
 	ns_msg = (struct rpmsg_ns_msg *)data;
 
@@ -394,11 +370,13 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 		if (!_ept)
 			return;
 		if (_ept->destroy_cb)
-			_ept->destroy_cb(ept);
+			_ept->destroy_cb(_ept);
 
 		rpmsg_destroy_ept(_ept);
+#if 0
 		if (_ept->addr == RPMSG_ADDR_ANY)
 			metal_free_memory(_ept);
+#endif
 	} else {
 		struct metal_io_region *io = rvdev->shbuf_io;
 
@@ -416,10 +394,9 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 				return;
 			}
 			if (rvdev->new_endpoint_cb)
-				rvdev->new_endpoint_cb(_ept->name,
-						       _ept->dest_addr);
+				rvdev->new_endpoint_cb(_ept);
 		}
-		_ept->dest_addr = src;
+		_ept->dest_addr = ns_msg->addr;
 	}
 }
 

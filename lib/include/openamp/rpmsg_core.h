@@ -43,8 +43,12 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 int rpmsg_send_ns_message(struct rpmsg_virtio_device *rpmsgv,
 			  struct rpmsg_endpoint *ept, unsigned long flags);
 
+struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_virtio_device *rvdev,
+					  const char *name, uint32_t addr,
+					  uint32_t dest_addr);
 int rpmsg_register_endpoint(struct rpmsg_virtio_device *rpmsgv,
 			    struct rpmsg_endpoint *ept);
+void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept);
 
 #if defined __cplusplus
 }

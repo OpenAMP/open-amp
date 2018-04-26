@@ -76,24 +76,6 @@ struct virtio_feature_desc {
 };
 
 /**
-* struct proc_vring
-*
-* This structure is maintained by hardware interface layer to keep
-* vring physical memory and notification info.
-*
-*/
-struct virtio_vring_info {
-	/* Vring logical address */
-	void *vaddr;
-	/* Vring I/O region */
-	struct metal_io_region *io;
-	/* Number of vring descriptors */
-	unsigned short num_descs;
-	/* Vring alignment */
-	unsigned long align;
-};
-
-/**
  * struct proc_shm
  *
  * This structure is maintained by hardware interface layer for
@@ -112,13 +94,31 @@ struct virtio_buffer_info {
 	unsigned long size;
 };
 
+/**
+ * struct remoteproc_vring - remoteproc vring structure
+ * @vq virtio queue
+ * @va logical address
+ * @notifyid vring notify id
+ * @num_descs number of descriptors
+ * @align vring alignment
+ * @io metal I/O region of the vring memory, can be NULL
+ */
+struct virtio_vring_info {
+	struct virtqueue *vq;
+	void *va;
+	uint32_t notifyid;
+	unsigned int num_descs;
+	unsigned int align;
+	struct metal_io_region *io;
+};
+
 /*
  * Structure definition for virtio devices for use by the
  * applications/drivers
  */
 
 struct virtio_device {
-	int index; /**< unique position on the virtio bus */
+	uint32_t index; /**< unique position on the virtio bus */
 	struct virtio_device_id id; /**< the device type identification
 				         (used to match it with a driver). */
 	struct metal_spinlock lock; /**< spin lock */
@@ -130,7 +130,7 @@ struct virtio_device {
 	void *priv; /**< TODO: should remove pointer to virtio_device private
 		         data */
 	unsigned int vrings_num; /**< number of vrings */
-	struct virtqueue vqs[1]; /**< array of virtqueues */
+	struct virtio_vring_info *vrings_info;
 };
 
 /*
@@ -148,10 +148,6 @@ void virtio_describe(struct virtio_device *dev, const char *msg,
  */
 
 struct _virtio_dispatch_ {
-	int (*create_virtqueues) (struct virtio_device * dev, int flags,
-				  unsigned int nvqs, const char *names[],
-				  vq_callback * callbacks[],
-				  struct virtqueue * vqs[]);
 	uint8_t(*get_status) (struct virtio_device * dev);
 	void (*set_status) (struct virtio_device * dev, uint8_t status);
 	uint32_t(*get_features) (struct virtio_device * dev);
@@ -169,8 +165,12 @@ struct _virtio_dispatch_ {
 	void (*write_config) (struct virtio_device * dev, uint32_t offset,
 			      void *src, int length);
 	void (*reset_device) (struct virtio_device * dev);
-
+	void (*notify) (struct virtqueue *vq);
 };
+
+int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
+			     unsigned int nvqs, const char *names[],
+			     vq_callback *callbacks[]);
 
 #if defined __cplusplus
 }

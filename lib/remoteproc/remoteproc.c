@@ -12,6 +12,7 @@
 #include <openamp/elf_loader.h>
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
+#include <openamp/remoteproc_virtio.h>
 #include <openamp/rsc_table_parser.h>
 #include <openamp/sh_mem.h>
 
@@ -106,6 +107,31 @@ static void remoteproc_remove_mems(struct remoteproc *rproc)
 	}
 }
 
+/**
+ * remoteproc_remove_vdevs
+ *
+ * Remove virtio device resources from remote processor vdevs list.
+ * This function expect the caller have mutex protection.
+ *
+ * @rproc - pointer to the remote processor instance
+ *
+ */
+static void remoteproc_remove_vdevs(struct remoteproc *rproc)
+{
+	struct metal_list *node;
+
+	metal_list_for_each(&rproc->vdevs, node) {
+		struct remoteproc_virtio *rpvdev;
+		struct metal_list *tmpnode;
+
+		rpvdev = metal_container_of(node, struct remoteproc_virtio,
+					    node);
+		tmpnode = node->next;
+		remoteproc_remove_virtio(rproc, &rpvdev->vdev);
+		node = tmpnode;
+	}
+}
+
 static void *remoteproc_get_rsc_table(struct remoteproc *rproc,
 				      void *store, void *loader_info,
 				      struct loader_ops *loader_ops,
@@ -150,6 +176,13 @@ error:
 	return rsc_table;
 }
 
+int remoteproc_parse_rsc_table(struct remoteproc *rproc,
+			       struct resource_table *rsc_table,
+			       size_t rsc_size)
+{
+	return handle_rsc_table(rproc, rsc_table, rsc_size);
+}
+
 struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv)
 {
 	struct remoteproc *rproc;
@@ -158,6 +191,8 @@ struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv)
 	if (rproc) {
 		rproc->state = RPROC_OFFLINE;
 		metal_mutex_init(&rproc->lock);
+		metal_list_init(&rproc->mems);
+		metal_list_init(&rproc->vdevs);
 	}
 	return rproc;
 }
@@ -217,7 +252,8 @@ int remoteproc_stop(struct remoteproc *rproc)
 		metal_mutex_acquire(&rproc->lock);
 		if (rproc->state != RPROC_STOPPED &&
 		    rproc->state != RPROC_OFFLINE) {
-			ret = rproc->ops->stop(rproc);
+			if (rproc->ops->stop)
+				ret = rproc->ops->stop(rproc);
 			rproc->state = RPROC_STOPPED;
 		} else {
 			ret = 0;
@@ -236,13 +272,17 @@ int remoteproc_shutdown(struct remoteproc *rproc)
 		metal_mutex_acquire(&rproc->lock);
 		if (rproc->state != RPROC_OFFLINE) {
 			if (rproc->state != RPROC_STOPPED) {
-				ret = rproc->ops->stop(rproc);
-				rproc->state = RPROC_STOPPED;
+				if (rproc->ops->stop)
+					ret = rproc->ops->stop(rproc);
 			}
 			if (!ret) {
-				ret = rproc->ops->shutdown(rproc);
-				rproc->state = RPROC_OFFLINE;
-				remoteproc_remove_mems(rproc);
+				if (rproc->ops->shutdown)
+					ret = rproc->ops->shutdown(rproc);
+				if (!ret) {
+					rproc->state = RPROC_OFFLINE;
+					remoteproc_remove_vdevs(rproc);
+					remoteproc_remove_mems(rproc);
+				}
 			}
 		}
 		metal_mutex_release(&rproc->lock);
@@ -266,6 +306,16 @@ void *remoteproc_datova(struct remoteproc *rproc,
 		return va;
 	}
 	return NULL;
+}
+
+struct metal_io_region *
+remoteproc_get_mem_with_pa(struct remoteproc *rproc,
+			   metal_phys_addr_t pa)
+{
+	struct metal_io_region *io = NULL;
+
+	(void)remoteproc_patova_from_mems(rproc, pa, 0, &io);
+	return io;
 }
 
 void *remoteproc_mmap(struct remoteproc *rproc,
@@ -443,4 +493,112 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 	if (notifyid != end)
 		metal_bitmap_set_bit(&rproc->bitmap, notifyid);
 	return notifyid;
+}
+
+static int remoteproc_virtio_notify(void *priv, uint32_t id)
+{
+	struct remoteproc *rproc = priv;
+
+	return rproc->ops->notify(rproc, id);
+}
+
+struct virtio_device *
+remoteproc_create_virtio(struct remoteproc *rproc,
+			 int vdev_id, unsigned int role,
+			 void (*rst_cb)(struct virtio_device *vdev))
+{
+	void *rsc_table;
+	struct fw_rsc_vdev *vdev_rsc;
+	struct metal_io_region *vdev_rsc_io;
+	struct virtio_device *vdev;
+	struct remoteproc_virtio *rpvdev;
+	size_t vdev_rsc_offset;
+	unsigned int notifyid;
+	unsigned int num_vrings, i;
+	struct metal_list *node;
+
+	metal_assert(rproc);
+	metal_mutex_acquire(&rproc->lock);
+	rsc_table = rproc->rsc_table;
+	vdev_rsc_io = rproc->rsc_io;
+	vdev_rsc_offset = find_rsc(rsc_table, RSC_VDEV, vdev_id);
+	if (!vdev_rsc_offset) {
+		metal_mutex_release(&rproc->lock);
+		return NULL;
+	}
+	vdev_rsc = rsc_table + vdev_rsc_offset;
+	notifyid = vdev_rsc->notifyid;
+	/* Check if the virtio device is already created */
+	metal_list_for_each(&rproc->vdevs, node) {
+		rpvdev = metal_container_of(node, struct remoteproc_virtio,
+					    node);
+		if (rpvdev->vdev.index == notifyid)
+			return &rpvdev->vdev;
+	}
+	vdev = rproc_virtio_create_vdev(role, notifyid,
+					vdev_rsc, vdev_rsc_io, rproc,
+					remoteproc_virtio_notify,
+					rst_cb);
+	num_vrings = vdev_rsc->num_of_vrings;
+	/* set the notification id for vrings */
+	for (i = 0; i < num_vrings; i++) {
+		struct fw_rsc_vdev_vring *vring_rsc;
+		metal_phys_addr_t da;
+		unsigned int num_descs, align;
+		struct metal_io_region *io;
+		size_t size;
+		void *va;
+		int ret;
+
+		vring_rsc = &vdev_rsc->vring[i];
+		notifyid = vring_rsc->notifyid;
+		da = vring_rsc->da;
+		num_descs = vring_rsc->num;
+		align = vring_rsc->align;
+		size = vring_size(num_descs, align);
+		va = remoteproc_datova(rproc, da, size, &io);
+		if (!va)
+			goto err1;
+		ret = rproc_virtio_init_vring(vdev, i, notifyid,
+					      va, io, num_descs, align);
+		if (ret)
+			goto err1;
+
+	}
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	metal_list_add_tail(&rproc->vdevs, &rpvdev->node);
+
+	return vdev;
+
+err1:
+	remoteproc_remove_virtio(rproc, vdev);
+	metal_mutex_release(&rproc->lock);
+	return NULL;
+}
+
+void remoteproc_remove_virtio(struct remoteproc *rproc,
+			      struct virtio_device *vdev)
+{
+	struct remoteproc_virtio *rpvdev;
+
+	(void)rproc;
+	metal_assert(vdev);
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	metal_list_del(&rpvdev->node);
+	rproc_virtio_remove_vdev(&rpvdev->vdev);
+}
+
+int remoteproc_get_notification(struct remoteproc *rproc,
+				 uint32_t notifyid)
+{
+	struct remoteproc_virtio *rpvdev;
+	struct metal_list *node;
+
+	metal_list_for_each(&rproc->vdevs, node) {
+		rpvdev = metal_container_of(node, struct remoteproc_virtio,
+					    node);
+		if (!rproc_virtio_notified(&rpvdev->vdev, notifyid))
+			return 0;
+	}
+	return -EINVAL;
 }

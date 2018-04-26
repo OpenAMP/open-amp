@@ -38,49 +38,34 @@
 
 #include <metal/io.h>
 #include <metal/list.h>
+#include <openamp/virtio.h>
 
 #if defined __cplusplus
 extern "C" {
 #endif
 
 /* define vdev notification funciton user should implement */
-typedef int (*notify_func)(uint32_t id, void *priv);
-
-/**
- * struct remoteproc_vring - remoteproc vring structure
- * @vq virtio queue
- * @va logical address
- * @notifyid vring notify id
- * @num_descs number of descriptors
- * @align vring alignment
- * @io metal I/O region of the vring memory, can be NULL
- */
-struct remoteproc_vring {
-	struct virtqueue *vq;
-	void *va;
-	uint32_t notifyid;
-	unsigned int num_descs;
-	unsigned int align;
-	struct metal_io_region *io;
-};
+typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
 
 /**
  * struct remoteproc_virtio
- * @rproc pointer to remoteproc instance
- * @rvrings vrings information list
- * @vdev pointer to virtio device
- * @num_vrings number of vrings
- * @vdev_rsc address of vdev informaiton
+ * @priv pointer to private data
+ * @notifyid notification id
+ * @vdev_rsc address of vdev resource
  * @vdev_rsc_io metal I/O region of vdev_info, can be NULL
+ * @notify notification function
  * @vdev virtio device
+ * @node list node
  */
 struct remoteproc_virtio {
-	struct remoteproc *rproc;
-	struct remoteproc_vring *rvrings;
-	unsigned int num_vrings;
+	void *priv;
+	uint32_t notify_id;
 	void *vdev_rsc;
+	struct shm_pool *shm;
 	struct metal_io_region *vdev_rsc_io;
+	rpvdev_notify_func notify;
 	struct virtio_device vdev;
+	struct metal_list node;
 };
 
 /**
@@ -88,35 +73,64 @@ struct remoteproc_virtio {
  *
  * Create rproc virtio vdev
  *
- * @rproc:  pointer to the remoteproc instance
  * @role: 0 - virtio master, 1 - virtio slave
- * @index: virtio device index
+ * @notifyid: virtio device notification id
  * @rsc: pointer to the virtio device resource
+ * @rsc_io: pointer to the virtio device resource I/O region
+ * @priv: pointer to the private data
+ * @notify: vdev and virtqueue notification function
  * @rst_cb: reset virtio device callback
  *
  * return pointer to the created virtio device for success,
  * NULL for failure.
  */
 struct virtio_device *
-rproc_virtio_create_vdev(struct remoteproc *rproc, unsigned int role,
-			 int index, void *rsc,
-			 int (*rst_cb)(struct virtio_device *vdev));
+rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
+			 void *rsc, struct metal_io_region *rsc_io,
+			 void *priv,
+			 rpvdev_notify_func notify,
+			 virtio_dev_reset_cb rst_cb);
+
+/**
+ * rproc_virtio_remove_vdev
+ *
+ * Create rproc virtio vdev
+ *
+ * @vdev - pointer to the virtio device
+ */
+void rproc_virtio_remove_vdev(struct virtio_device *vdev);
 
 /**
  * rproc_virtio_create_vring
  *
  * Create rproc virtio vring
  *
- * @rpvdev: pointer to the rproc virtio device
- * @index: vring index
+ * @vdev: pointer to the virtio device
+ * @index: vring index in the virtio device
+ * @notifyid: remoteproc vring notification id
  * @va: vring virtual address
+ * @io: pointer to vring I/O region
  * @num_desc: number of descriptors
  * @align: vring alignment
  *
  * return 0 for success, negative value for failure.
  */
-int rproc_virtio_create_vring(struct remoteproc_virtio *rpvdev, int index,
-			      void *va, size_t num_descs, unsigned int align);
+int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
+			    unsigned int notifyid, void *va,
+			    struct metal_io_region *io,
+			    unsigned int num_descs, unsigned int align);
+
+/**
+ * rproc_virtio_notified
+ *
+ * remoteproc virtio is got notified
+ *
+ * @vdev - pointer to the virtio device
+ * @notifyid - notify id
+ *
+ * return 0 for successful, negative value for failure
+ */
+int rproc_virtio_notified(struct virtio_device *vdev, uint32_t notifyid);
 
 #if defined __cplusplus
 }

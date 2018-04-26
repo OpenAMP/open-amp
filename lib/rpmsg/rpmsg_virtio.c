@@ -31,7 +31,7 @@ void rpmsg_return_buffer(struct rpmsg_virtio_device *rvdev, void *buffer,
 			 unsigned long len, unsigned short idx)
 {
 	struct virtqueue_buf vqbuf;
-	if (rvdev->vdev->role == RPMSG_REMOTE) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		/* Initialize buffer node */
 		vqbuf.buf = buffer;
 		vqbuf.len = len;
@@ -59,7 +59,7 @@ int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev, void *buffer,
 	int status;
 	struct virtqueue_buf vqbuf;
 
-	if (rvdev->vdev->role == RPMSG_MASTER) {
+	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		/* Initialize buffer node */
 		vqbuf.buf = buffer;
 		vqbuf.len = len;

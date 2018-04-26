@@ -107,6 +107,7 @@ enum fw_resource_type {
 };
 
 #define FW_RSC_ADDR_ANY (0xFFFFFFFFFFFFFFFF)
+#define FW_RSC_U32_ADDR_ANY (0xFFFFFFFF)
 
 /**
  * struct fw_rsc_carveout - physically contiguous memory request
@@ -394,6 +395,7 @@ struct remoteproc_mem {
  * @rsc_len: length of resource table
  * @rsc_io: metal I/O region of resource table
  * @mems: remoteproc memories
+ * @vdevs: remoteproc virtio devices
  * @bitmap: bitmap for notify IDs for remoteproc subdevices
  * @state: remote processor state
  * @priv: private data
@@ -404,6 +406,7 @@ struct remoteproc {
 	size_t rsc_len;
 	struct metal_io_region *rsc_io;
 	struct metal_list mems;
+	struct metal_list vdevs;
 	unsigned long bitmap;
 	struct remoteproc_ops *ops;
 	metal_phys_addr_t bootaddr;
@@ -426,7 +429,7 @@ struct remoteproc {
  * @stop: stop the remoteproc from running application, the resource such as
  *        memory may not be off.
  * @shutdown: shutdown the remoteproc and release its resources.
- * @kick: notify the remote
+ * @notify: notify the remote
  */
 struct remoteproc_ops {
 	struct remoteproc *(*init)(struct remoteproc_ops *ops, void *arg);
@@ -439,7 +442,7 @@ struct remoteproc_ops {
 	int (*start)(struct remoteproc *rproc);
 	int (*stop)(struct remoteproc *rproc);
 	int (*shutdown)(struct remoteproc *rproc);
-	int (*kick)(struct remoteproc *rproc, int id);
+	int (*notify)(struct remoteproc *rproc, uint32_t id);
 };
 
 /* Remoteproc error codes */
@@ -596,9 +599,9 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 		    struct metal_io_region **io);
 
 /**
- * remoteproc_set_rsc_table
+ * remoteproc_parse_rsc_table
  *
- * Set resource table of remoteproc
+ * Parse resource table of remoteproc
  *
  * @rproc - pointer to remoteproc instance
  * @rsc_table - pointer to resource table
@@ -606,9 +609,9 @@ void *remoteproc_mmap(struct remoteproc *rproc,
  *
  * returns 0 for success and negative value for errors
  */
-int remoteproc_set_rsc_table(struct remoteproc *rproc,
-			     struct resource_table *rsc_table,
-			     size_t rsc_size);
+int remoteproc_parse_rsc_table(struct remoteproc *rproc,
+			       struct resource_table *rsc_table,
+			       size_t rsc_size);
 
 /**
  * remoteproc_get_ready
@@ -717,7 +720,7 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 struct virtio_device *
 remoteproc_create_virtio(struct remoteproc *rproc,
 			 int vdev_id, unsigned int role,
-			 int (*rst_cb)(struct virtio_device *vdev));
+			 void (*rst_cb)(struct virtio_device *vdev));
 
 /* remoteproc_remove_virtio
  *
@@ -727,8 +730,21 @@ remoteproc_create_virtio(struct remoteproc *rproc,
  * @vdev: pointer to the virtio device
  *
  */
-void remoteproc_remote_virtio(struct remoteproc *rproc,
+void remoteproc_remove_virtio(struct remoteproc *rproc,
 			      struct virtio_device *vdev);
+
+/* remoteproc_get_notification
+ *
+ * remoteproc is got notified, it will check its subdevices
+ * for the notification
+ *
+ * @rproc -  pointer to the remoteproc instance
+ * @notifyid - notificatin id
+ *
+ * return 0 for succeed, negative value for failure
+ */
+int remoteproc_get_notification(struct remoteproc *rproc,
+				 uint32_t notifyid);
 #if defined __cplusplus
 }
 #endif
