@@ -368,7 +368,7 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 		if (!_ept)
 			return;
 		if (_ept->destroy_cb)
-			_ept->destroy_cb(ept);
+			_ept->destroy_cb(_ept);
 
 		rpmsg_destroy_ept(_ept);
 		if (_ept->addr == RPMSG_ADDR_ANY)
