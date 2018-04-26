@@ -20,7 +20,7 @@ extern "C" {
 typedef uint8_t boolean;
 
 #include <openamp/virtio_ring.h>
-#include <metal/dma.h>
+#include <metal/alloc.h>
 #include <metal/io.h>
 
 /*Error Codes*/
@@ -63,6 +63,11 @@ typedef enum {
 	VQ_POSTPONE_EMPTIED	/* Until all available desc are used. */
 } vq_postpone_t;
 
+struct virtqueue_buf {
+	void *buf;
+	int len;
+};
+
 struct virtqueue {
 	struct virtio_device *vq_dev;
 	char vq_name[VIRTQUEUE_MAX_NAME_SZ];
@@ -74,8 +79,7 @@ struct virtqueue {
 	struct vring vq_ring;
 	uint16_t vq_free_cnt;
 	uint16_t vq_queued_cnt;
-	/** Shared memory I/O region */
-	struct metal_io_region *shm_io;
+	void * shm_io; /* opaque pointer to data needed to allow v2p & p2v */
 
 	/*
 	 * Head of the free chain in the descriptor table. If
@@ -173,18 +177,27 @@ typedef void vq_notify(struct virtqueue *);
 #endif
 
 int virtqueue_create(struct virtio_device *device, unsigned short id,
-		     char *name, struct vring_alloc_info *ring,
+		     const char *name, struct vring_alloc_info *ring,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
-		     struct metal_io_region *shm_io,
-		     struct virtqueue **v_queue);
+		     struct virtqueue *v_queue);
 
-int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
+/*
+ * virtqueue_set_shmem_io
+ *
+ * set virtqueue shared memory I/O region
+ *
+ * @vq - virt queue
+ * @io - pointer to the shared memory I/O region
+ */
+static inline void virtqueue_set_shmem_io(struct virtqueue *vq,
+					  struct metal_io_region *io)
+{
+	vq->shm_io = io;
+}
+
+int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
 			 int readable, int writable, void *cookie);
-
-int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
-				struct metal_sg *sg, int writable,
-				boolean has_next);
 
 void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len, uint16_t *idx);
 
@@ -199,6 +212,21 @@ void virtqueue_disable_cb(struct virtqueue *vq);
 int virtqueue_enable_cb(struct virtqueue *vq);
 
 void virtqueue_kick(struct virtqueue *vq);
+
+static inline struct virtqueue * virtqueue_allocate(unsigned int num_descs)
+{
+	struct virtqueue *vqs;
+	uint32_t vq_size = sizeof(struct virtqueue) +
+		 num_descs * sizeof(struct vq_desc_extra);
+
+	vqs = (struct virtqueue *)metal_allocate_memory(vq_size);
+
+	if (vqs) {
+		memset(vqs, 0x00, vq_size);
+	}
+
+	return vqs;
+}
 
 void virtqueue_free(struct virtqueue *vq);
 
