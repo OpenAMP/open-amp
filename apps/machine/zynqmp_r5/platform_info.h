@@ -16,4 +16,5 @@ struct  rpmsg_virtio_device *
 platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
 			   unsigned int role,
 			   void (*rst_cb)(struct virtio_device *vdev));
+int platform_poll(void *priv);
 #endif /* PLATFORM_INFO_H_ */
