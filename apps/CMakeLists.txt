@@ -15,7 +15,7 @@ if (WITH_LINUXREMOTE)
   add_subdirectory (linux_firmware_remoteproc_slave)
 endif (WITH_LINUXREMOTE)
 
-#add_subdirectory (echo_test)
+add_subdirectory (echo_test)
 #add_subdirectory (matrix_multiply)
 add_subdirectory (load_fw)
 if (WITH_PROXY_APPS)
