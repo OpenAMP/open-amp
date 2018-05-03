@@ -8,13 +8,8 @@
  */
 
 #include <openamp/rpmsg_virtio.h>
-#include <string.h>
-#include "openamp/rpmsg.h"
-#include "openamp/remoteproc.h"
-#include "metal/utilities.h"
-#include "metal/alloc.h"
-#include "metal/atomic.h"
-#include "metal/cpu.h"
+#include <openamp/rpmsg.h>
+
 
 /**
  * rpmsg_return_buffer
@@ -30,7 +25,11 @@
 void rpmsg_return_buffer(struct rpmsg_virtio_device *rvdev, void *buffer,
 			 unsigned long len, unsigned short idx)
 {
+#if !defined VIRTIO_SLAVE_ONLY
 	struct virtqueue_buf vqbuf;
+#endif
+
+#if !defined VIRTIO_SLAVE_ONLY  && !defined  VIRTIO_MASTER_ONLY
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		/* Initialize buffer node */
 		vqbuf.buf = buffer;
@@ -39,6 +38,19 @@ void rpmsg_return_buffer(struct rpmsg_virtio_device *rvdev, void *buffer,
 	} else {
 		virtqueue_add_consumed_buffer(rvdev->rvq, idx, len);
 	}
+	
+#else
+#if defined VIRTIO_MASTER_ONLY
+	(void)idx;
+	/* Initialize buffer node */
+	vqbuf.buf = buffer;
+	vqbuf.len = len;
+	virtqueue_add_buffer(rvdev->rvq, &vqbuf, 0, 1, buffer);
+#else
+	(void)buffer;
+	virtqueue_add_consumed_buffer(rvdev->rvq, idx, len);
+#endif	
+#endif
 }
 
 /**
@@ -56,17 +68,30 @@ void rpmsg_return_buffer(struct rpmsg_virtio_device *rvdev, void *buffer,
 int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev, void *buffer,
 				unsigned long len, unsigned short idx)
 {
-	int status;
+#if !defined VIRTIO_SLAVE_ONLY
 	struct virtqueue_buf vqbuf;
-
+#endif
+	
+#if !defined VIRTIO_SLAVE_ONLY  && !defined  VIRTIO_MASTER_ONLY
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		/* Initialize buffer node */
 		vqbuf.buf = buffer;
 		vqbuf.len = len;
-		status = virtqueue_add_buffer(rvdev->svq, &vqbuf, 0, 1, buffer);
+		return virtqueue_add_buffer(rvdev->svq, &vqbuf, 0, 1, buffer);
 	} else {
-		status = virtqueue_add_consumed_buffer(rvdev->svq, idx, len);
+		return virtqueue_add_consumed_buffer(rvdev->svq, idx, len);
 	}
-
-	return status;
+	return ERROR_VQUEUE_INVLD_PARAM;
+#else
+#if defined VIRTIO_MASTER_ONLY
+	(void)idx;
+	/* Initialize buffer node */
+	vqbuf.buf = buffer;
+	vqbuf.len = len;
+	return virtqueue_add_buffer(rvdev->svq, &vqbuf, 0, 1, buffer);
+#else
+	(void)buffer;
+	return virtqueue_add_consumed_buffer(rvdev->svq, idx, len);
+#endif	
+#endif
 }

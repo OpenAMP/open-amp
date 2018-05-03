@@ -155,6 +155,7 @@ void *rpmsg_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 {
 	void *data;
 
+#if !defined VIRTIO_SLAVE_ONLY  && !defined  VIRTIO_MASTER_ONLY
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
 		if (data == RPMSG_NULL) {
@@ -162,10 +163,20 @@ void *rpmsg_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 			*len = RPMSG_BUFFER_SIZE;
 		}
 	} else {
-		data =
-		    virtqueue_get_available_buffer(rvdev->svq, idx,
-						   (uint32_t *)len);
+		data = virtqueue_get_available_buffer(rvdev->svq, idx,
+						      (uint32_t *)len);
 	}
+#else
+#if defined VIRTIO_MASTER_ONLY
+	data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
+	if (data == RPMSG_NULL) {
+		data = sh_mem_get_buffer(rvdev->shbuf);
+		*len = RPMSG_BUFFER_SIZE;
+	}
+#else
+	data = virtqueue_get_available_buffer(rvdev->svq, idx, (uint32_t *)len);
+#endif
+#endif
 	return data;
 }
 
@@ -186,6 +197,7 @@ void *rpmsg_get_rx_buffer(struct rpmsg_virtio_device *rvdev, unsigned long *len,
 {
 	void *data;
 
+#if !defined VIRTIO_SLAVE_ONLY  && !defined  VIRTIO_MASTER_ONLY
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->rvq, (uint32_t *)len, idx);
 	} else {
@@ -193,6 +205,13 @@ void *rpmsg_get_rx_buffer(struct rpmsg_virtio_device *rvdev, unsigned long *len,
 		    virtqueue_get_available_buffer(rvdev->rvq, idx,
 						   (uint32_t *)len);
 	}
+#else
+#if defined VIRTIO_MASTER_ONLY
+	data = virtqueue_get_buffer(rvdev->rvq, (uint32_t *)len, idx);
+#else
+	data = virtqueue_get_available_buffer(rvdev->rvq, idx, (uint32_t *)len);
+#endif
+#endif
 	if (data) {
 		/* FIX ME: library should not worry about if it needs
 		 * to flush/invalidate cache, it is shared memory.
@@ -288,25 +307,7 @@ void rpmsg_rx_callback(struct virtqueue *vq)
 
 		metal_mutex_acquire(&rvdev->lock);
 
-#if 0
-		/* Check whether callback wants to hold buffer */
-		if (rp_hdr->reserved & RPMSG_BUF_HELD) {
-			/*
-			 * 'rp_hdr->reserved' field is now used as storage for
-			 * 'idx' to release buffer later
-			 */
-			reserved =
-				(struct rpmsg_hdr_reserved *)&rp_hdr->reserved;
-			reserved->idx = (uint16_t)idx;
-
-		} else {
-			/* Return used buffers. */
-			rpmsg_return_buffer(rvdev, rp_hdr, len, idx);
-		}
-#else
-		/* Return used buffers. */
 		rpmsg_return_buffer(rvdev, rp_hdr, len, idx);
-#endif
 
 		rp_hdr =
 		    (struct rpmsg_hdr *)rpmsg_get_rx_buffer(rvdev, &len,

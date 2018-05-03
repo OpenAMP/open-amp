@@ -68,6 +68,7 @@ static unsigned char rproc_virtio_get_status(struct virtio_device *vdev)
 	return status;
 }
 
+#ifndef VIRTIO_SLAVE_ONLY
 static void rproc_virtio_set_status(struct virtio_device *vdev,
 				    unsigned char status)
 {
@@ -83,6 +84,7 @@ static void rproc_virtio_set_status(struct virtio_device *vdev,
 			status);
 	rpvdev->notify(rpvdev->priv, vdev->index);
 }
+#endif
 
 static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
 {
@@ -101,6 +103,7 @@ static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
 	return features;
 }
 
+#ifndef VIRTIO_SLAVE_ONLY
 static void rproc_virtio_set_features(struct virtio_device *vdev,
 				      uint32_t features)
 {
@@ -117,6 +120,7 @@ static void rproc_virtio_set_features(struct virtio_device *vdev,
 			 features);
 	rpvdev->notify(rpvdev->priv, vdev->index);
 }
+#endif
 
 static uint32_t rproc_virtio_negotiate_features(struct virtio_device *vdev,
 						uint32_t features)
@@ -136,6 +140,7 @@ static void rproc_virtio_read_config(struct virtio_device *vdev,
 	(void)length;
 }
 
+#ifndef VIRTIO_SLAVE_ONLY
 static void rproc_virtio_write_config(struct virtio_device *vdev,
 				      uint32_t offset, void *src, int length)
 {
@@ -151,17 +156,20 @@ static void rproc_virtio_reset_device(struct virtio_device *vdev)
 		rproc_virtio_set_status(vdev,
 					VIRTIO_CONFIG_STATUS_NEEDS_RESET);
 }
+#endif
 
 virtio_dispatch remoteproc_virtio_dispatch_funcs = {
 	.get_status =  rproc_virtio_get_status,
-	.set_status = rproc_virtio_set_status,
 	.get_features = rproc_virtio_get_features,
-	.set_features = rproc_virtio_set_features,
 	.negotiate_features = rproc_virtio_negotiate_features,
 	.read_config = rproc_virtio_read_config,
+	.notify = rproc_virtio_virtqueue_notify,
+#ifndef VIRTIO_SLAVE_ONLY
+	.set_status = rproc_virtio_set_status,
+	.set_features = rproc_virtio_set_features,
 	.write_config = rproc_virtio_write_config,
 	.reset_device = rproc_virtio_reset_device,
-	.notify = rproc_virtio_virtqueue_notify,
+#endif
 };
 
 struct virtio_device *
@@ -216,6 +224,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 	vdev->reset_cb = rst_cb;
 	vdev->vrings_num = num_vrings;
 	vdev->func = &remoteproc_virtio_dispatch_funcs;
+
 	/* TODO: Shall we set features here ? */
 
 	return &rpvdev->vdev;

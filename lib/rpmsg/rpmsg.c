@@ -39,6 +39,7 @@ static int rpmsg_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 
 	metal_mutex_acquire(&rvdev->lock);
 
+#if !defined VIRTIO_SLAVE_ONLY  && !defined  VIRTIO_MASTER_ONLY
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		/*
 		 * If device role is Remote then buffers are provided by us
@@ -50,11 +51,18 @@ static int rpmsg_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 		 * If other core is Master then buffers are provided by it,
 		 * so get the buffer size from the virtqueue.
 		 */
-		length =
-		    (int)virtqueue_get_desc_size(rvdev->svq) -
-		    sizeof(struct rpmsg_hdr);
+		length = (int)virtqueue_get_desc_size(rvdev->svq) -
+						      sizeof(struct rpmsg_hdr);
 	}
 
+#else
+#if defined VIRTIO_MASTER_ONLY
+	length = RPMSG_BUFFER_SIZE - sizeof(struct rpmsg_hdr);
+#else
+	length =  (int)virtqueue_get_desc_size(rvdev->svq) -
+					       sizeof(struct rpmsg_hdr);
+#endif	
+#endif
 	metal_mutex_release(&rvdev->lock);
 
 	return length;

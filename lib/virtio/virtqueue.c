@@ -95,9 +95,14 @@ virtqueue_allocate(unsigned int num_descs, bool with_extra_desc)
 	struct virtqueue *vq;
 	uint32_t vq_size = sizeof(*vq);
 
+#ifndef VIRTIO_SLAVE_ONLY
 	/* vq_desc_extra is not used in virtio backend */
 	if (with_extra_desc)
 		vq_size += num_descs * sizeof(struct vq_desc_extra);
+#else
+	(void)with_extra_desc;
+	(void)num_descs;
+#endif
 
 	vq = (struct virtqueue *)metal_allocate_memory(vq_size);
 
