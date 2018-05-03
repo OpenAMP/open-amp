@@ -346,9 +346,12 @@ struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
 
 void rpmsg_destroy_ept(struct rpmsg_endpoint *ept);
 
-int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
+int rpmsg_init_master_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev, struct metal_io_region *shm_io,
 		    void *shm, unsigned int len);
+
+int rpmsg_init_slave_vdev(struct rpmsg_virtio_device *rvdev,
+		    struct virtio_device *vdev, struct metal_io_region *shm_io);
 
 void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev);
 
