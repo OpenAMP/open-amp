@@ -305,7 +305,7 @@ platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
 	rpmsg_vdev = metal_allocate_memory(sizeof(*rpmsg_vdev));
 	if (!rpmsg_vdev)
 		return NULL;
-	shbuf_io = remoteproc_get_mem_with_pa(rproc, SHARED_BUF_PA);
+	shbuf_io = remoteproc_get_io_with_pa(rproc, SHARED_BUF_PA);
 	if (!shbuf_io)
 		return NULL;
 	shbuf = metal_io_phys_to_virt(shbuf_io, SHARED_BUF_PA);
