@@ -10,37 +10,6 @@
 #include <openamp/rpmsg.h>
 #include <openamp/rpmsg_core.h>
 
-
-static struct rpmsg_endpoint *rpmsg_get_ept_from_remote_addr(
-			      struct rpmsg_virtio_device *rvdev, uint32_t addr)
-{
-	struct rpmsg_endpoint *ept;
-	struct metal_list *node;
-
-	metal_list_for_each(&rvdev->endpoints, node) {
-		ept = metal_container_of(node, struct rpmsg_endpoint, node);
-		if (ept->dest_addr == addr)
-			return ept;
-	}
-
-	return RPMSG_NULL;
-}
-
-struct rpmsg_endpoint *rpmsg_get_ept_from_addr(
-			      struct rpmsg_virtio_device *rvdev, uint32_t addr)
-{
-	struct rpmsg_endpoint *ept;
-	struct metal_list *node;
-
-	metal_list_for_each(&rvdev->endpoints, node) {
-		ept = metal_container_of(node, struct rpmsg_endpoint, node);
-		if (ept->addr == addr)
-			return ept;
-	}
-
-	return RPMSG_NULL;
-}
-
 struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_virtio_device *rvdev,
 					  const char *name, uint32_t addr,
 					  uint32_t dest_addr)
@@ -52,9 +21,11 @@ struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_virtio_device *rvdev,
 		int name_match = 0;
 
 		ept = metal_container_of(node, struct rpmsg_endpoint, node);
-		name_match = !strncmp(ept->name, name, sizeof(ept->name));
 		if (addr != RPMSG_ADDR_ANY && ept->addr == addr)
 			return ept;
+		if (!name)
+			name_match = !strncmp(ept->name, name,
+					      sizeof(ept->name));
 		if (dest_addr == RPMSG_ADDR_ANY &&
 		    ept->addr == RPMSG_ADDR_ANY &&
 		    name_match)
@@ -70,6 +41,18 @@ struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_virtio_device *rvdev,
 	return NULL;
 }
 
+static struct rpmsg_endpoint *
+rpmsg_get_ept_from_remote_addr(struct rpmsg_virtio_device *rvdev,
+			       uint32_t dest_addr)
+{
+	return rpmsg_get_endpoint(rvdev, NULL, RPMSG_ADDR_ANY, addr);
+}
+
+static struct rpmsg_endpoint *
+rpmsg_get_ept_from_addr(struct rpmsg_virtio_device *rvdev, uint32_t addr)
+{
+	return rpmsg_get_endpoint(rvdev, NULL, addr, RPMSG_ADDR_ANY);
+}
 void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept)
 {
 	struct rpmsg_virtio_device *rvdev;
