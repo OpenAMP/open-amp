@@ -76,11 +76,22 @@ static int app_gic_initialize(void)
 	return 0;
 }
 
+static void system_metal_logger(enum metal_log_level level,
+			   const char *format, ...)
+{
+	(void)level;
+	(void)format;
+}
+
+
 /* Main hw machinery initialization entry point, called from main()*/
 /* return 0 on success */
 int init_system(void)
 {
-	struct metal_init_params metal_param = METAL_INIT_DEFAULTS;
+	struct metal_init_params metal_param = {
+		.log_handler = system_metal_logger,
+		.log_level = METAL_LOG_INFO,
+	};
 
 	/* Low level abstraction layer for openamp initialization */
 	metal_init(&metal_param);
