@@ -10,6 +10,7 @@
 
 #include <openamp/rpmsg.h>
 #include <openamp/remoteproc.h>
+#include <openamp/remoteproc_virtio.h>
 
 
 #endif				/* OPEN_AMP_H_ */
