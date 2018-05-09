@@ -365,9 +365,9 @@ void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			/*create an endpoint to store remote end point */
 			_ept = (struct rpmsg_endpoint *)
 				metal_allocate_memory(sizeof(*_ept));
-				metal_io_block_read(io,
-				      metal_io_virt_to_offset(io, ns_msg->name),
-				      &_ept->name, len);
+			metal_io_block_read(io,
+				metal_io_virt_to_offset(io, ns_msg->name),
+				&_ept->name, len);
 			_ept->addr = RPMSG_ADDR_ANY;
 			status = rpmsg_register_endpoint(rvdev, _ept);
 			if (status < 0) {
