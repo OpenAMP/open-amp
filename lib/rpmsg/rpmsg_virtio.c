@@ -453,10 +453,12 @@ static void rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 				metal_free_memory(ept);
 				return;
 			}
+			_ept->dest_addr = ns_msg->addr;
 			if (rdev->new_endpoint_cb)
 				rdev->new_endpoint_cb(_ept);
+		} else {
+			_ept->dest_addr = ns_msg->addr;
 		}
-		_ept->dest_addr = ns_msg->addr;
 	}
 }
 
