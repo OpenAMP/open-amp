@@ -258,7 +258,6 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	const char *vq_names[RPMSG_NUM_VRINGS];
 	void (*callback[RPMSG_NUM_VRINGS]) (struct virtqueue *vq);
 	unsigned long dev_features;
-	static struct rpmsg_endpoint ns_ept;
 	int status;
 	unsigned int i;
 
@@ -360,10 +359,10 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	 * service announcement feature.
 	 */
 	if ((dev_features & (1 << VIRTIO_RPMSG_F_NS))) {
-		ns_ept.addr = RPMSG_NS_EPT_ADDR;
-		ns_ept.cb = rpmsg_ns_callback;
-		strncpy(ns_ept.name, "NS", sizeof("NS"));
-		status = rpmsg_register_endpoint(rvdev, &ns_ept);
+		if (!rpmsg_create_ept(rvdev, "NS", RPMSG_NS_EPT_ADDR,
+				     RPMSG_NS_EPT_ADDR, rpmsg_ns_callback,
+				     NULL))
+			return RPMSG_ERR_NO_MEM;
 
 	}
 	/* check if there is message sent from master */
