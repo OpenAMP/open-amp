@@ -12,7 +12,7 @@
 
 struct remoteproc *platform_create_proc(int proc_index, int rsc_index);
 
-struct  rpmsg_virtio_device *
+struct  rpmsg_device *
 platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
 			   unsigned int role,
 			   void (*rst_cb)(struct virtio_device *vdev));

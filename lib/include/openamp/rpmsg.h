@@ -13,7 +13,6 @@
 #define _RPMSG_H_
 
 #include <openamp/compiler.h>
-#include <openamp/rpmsg_virtio.h>
 #include <openamp/sh_mem.h>
 #include <metal/mutex.h>
 #include <metal/list.h>
@@ -21,9 +20,6 @@
 #if defined __cplusplus
 extern "C" {
 #endif
-
-/* The feature bitmap for virtio rpmsg */
-#define VIRTIO_RPMSG_F_NS 0 /* RP supports name service notifications */
 
 /* Configurable parameters */
 #ifndef RPMSG_BUFFER_SIZE
@@ -59,25 +55,9 @@ extern "C" {
 #define RPMSG_ERR_INIT	(RPMSG_ERROR_BASE - 7)
 #define RPMSG_ERR_ADDR	(RPMSG_ERROR_BASE - 8)
 
-#define RPMSG_BUF_HELD (1U << 31) /* Flag to suggest to hold the buffer */
-
 #define RPMSG_LOCATE_DATA(p) ((unsigned char *)p + sizeof(struct rpmsg_hdr))
 
-/* remoteproc_vshm_pool is a place holder til we figure out how to
- * replace it */
-/**
- * struct remoteproc_vshm - remoteproc vring structure
- * @va logical address of the start of the shared memory
- * @pa physical address of the start of the shared memory
- * @size size of the shared memory pool
- * @io metal I/O region of the shared memory, can be NULL
- */
-struct remoteproc_vshm_pool {
-	void *va;
-	metal_phys_addr_t pa;
-	int size;
-	struct metal_io_region *io;
-};
+#define RPMSG_ADDR_BMP_SIZE	4
 
 /**
  * enum rpmsg_ns_flags - dynamic name service announcement flags
@@ -136,10 +116,12 @@ typedef void (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
 			     size_t len, uint32_t src, void *priv);
 typedef void (*rpmsg_ept_destroy_cb)(struct rpmsg_endpoint *ept);
 
+struct rpmsg_device;
+
 /**
  * struct rpmsg_endpoint - binds a local rpmsg address to its user
  * @name:name of the service supported
- * @rvdev: pointer to the rpmsg virtio device
+ * @vdev: pointer to the rpmsg device
  * @addr: local address of the endpoint
  * @dest_addr: address of the default remote endpoint binded.
  * @cb: user rx callback
@@ -153,13 +135,40 @@ typedef void (*rpmsg_ept_destroy_cb)(struct rpmsg_endpoint *ept);
  */
 struct rpmsg_endpoint {
 	char name[RPMSG_NAME_SIZE];
-	struct rpmsg_virtio_device *rvdev;
+	struct rpmsg_device *rdev;
 	uint32_t addr;
 	uint32_t dest_addr;
 	rpmsg_ept_cb cb;
 	rpmsg_ept_destroy_cb destroy_cb;
 	struct metal_list node;
 	void *priv;
+};
+
+/**
+ * struct rpmsg_device_ops - RPMsg device operations
+ * @send_offchannel_raw: send RPMsg data
+ */
+struct rpmsg_device_ops {
+	int (*send_offchannel_raw)(struct rpmsg_device *rdev,
+				   uint32_t src, uint32_t dst,
+				   const void *data, int size, int wait);
+};
+
+/**
+ * struct rpmsg_device - representation of a RPMsg device
+ * @endpoints: list of endpoints
+ * @bitmap: table endpoin address allocation.
+ * @lock: mutex lock for rpmsg management
+ * @new_endpoint_cb: callback handler for new service announcement without local
+ *                   endpoints waiting to bind.
+ * @ops: RPMsg device operations
+ */
+struct rpmsg_device {
+	struct metal_list endpoints;
+	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
+	metal_mutex_t lock;
+	void (*new_endpoint_cb)(struct rpmsg_endpoint *ep);
+	struct rpmsg_device_ops *ops;
 };
 
 int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
@@ -324,7 +333,7 @@ void (*rpmsg_endpoint_destroy_callback)(struct rpmsg_endpoint *ept, void *priv);
 
 /**
  * struct rpmsg_endpoint - binds a local rpmsg address to its user
- * @rpmsgv: rpmsg virtio device
+ * @rdev: rpmsg device
  * @name: service name associated to the endpoint
  * @ept: eendpoint created
  *
@@ -339,21 +348,12 @@ void (*rpmsg_endpoint_destroy_callback)(struct rpmsg_endpoint *ept, void *priv);
  * source address.
  */
 
-struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_virtio_device *rvdev,
+struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_device *rdev,
 					const char *name, uint32_t src,
 					uint32_t dest, rpmsg_ept_cb cb,
 					rpmsg_ept_destroy_cb destroy_cb);
 
 void rpmsg_destroy_ept(struct rpmsg_endpoint *ept);
-
-int rpmsg_init_master_vdev(struct rpmsg_virtio_device *rvdev,
-		    struct virtio_device *vdev, struct metal_io_region *shm_io,
-		    void *shm, unsigned int len);
-
-int rpmsg_init_slave_vdev(struct rpmsg_virtio_device *rvdev,
-		    struct virtio_device *vdev, struct metal_io_region *shm_io);
-
-void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev);
 
 #if defined __cplusplus
 }

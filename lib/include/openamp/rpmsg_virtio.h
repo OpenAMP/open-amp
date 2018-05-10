@@ -12,6 +12,8 @@
 #ifndef _RPMSG_VIRTIO_H_
 #define _RPMSG_VIRTIO_H_
 
+#include <openamp/rpmsg.h>
+#include <openamp/rpmsg_core.h>
 #include <openamp/virtio.h>
 #include <metal/io.h>
 #include <metal/alloc.h>
@@ -24,12 +26,16 @@
 extern "C" {
 #endif
 
-#define RPMSG_ADDR_BMP_SIZE	4
+/* The feature bitmap for virtio rpmsg */
+#define VIRTIO_RPMSG_F_NS 0 /* RP supports name service notifications */
+
+/* This feature looks only available on RPMsg on Virtio */
+#define RPMSG_BUF_HELD (1U << 31) /* Flag to suggest to hold the buffer */
 
 /**
  * struct rpmsg_virtio_device - representation of a rpmsg device based on virtio
+ * @rdev: rpmsg device, first property in the struct
  * @vdev: pointer to the virtio device
- * @lock: mutex lock for rpmsg management
  * @rvq: pointer to receive virtqueue
  * @svq: pointer to send virtqueue
  * @buffers_number: number of shared buffers
@@ -37,28 +43,18 @@ extern "C" {
  * @new_endpoint_cb: callback handler for new service announcement without local
  *                   endpoints waiting to bind.
  * @endpoints: list of endpoints.
- * @bitmap: table endpoin address allocation.
  */
 struct rpmsg_endpoint;
 
 struct rpmsg_virtio_device {
+	struct rpmsg_device rdev;
 	struct virtio_device *vdev;
-	metal_mutex_t lock;
 	struct virtqueue *rvq;
 	struct virtqueue *svq;
 	int buffers_number;
 	struct metal_io_region *shbuf_io;
 	struct sh_mem_pool *shbuf;
-	void (*new_endpoint_cb)(struct rpmsg_endpoint *ep);
-	struct metal_list endpoints;
-	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
 };
-
-void rpmsg_return_buffer(struct rpmsg_virtio_device *rpmsgv, void *buffer,
-			 unsigned long len, unsigned short idx);
-int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rpmsgv,
-				void *buffer, unsigned long len,
-				unsigned short idx);
 
 static inline unsigned int rpmsg_virtio_get_role(struct rpmsg_virtio_device *rvdev)
 {
@@ -85,6 +81,18 @@ static inline int rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device * rv
 				  vq_callback * callbacks[])
 {
 	return virtio_create_virtqueues(rvdev->vdev, flags, nvqs, names, callbacks);
+}
+
+int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
+		    struct virtio_device *vdev, struct metal_io_region *shm_io,
+		    void *shm, unsigned int len);
+
+void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev);
+
+static inline struct rpmsg_device *
+rpmsg_virtio_get_rpmsg_device(struct rpmsg_virtio_device *rvdev)
+{
+	return &rvdev->rdev;
 }
 
 #if defined __cplusplus

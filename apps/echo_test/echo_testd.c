@@ -51,12 +51,12 @@ static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
 /*-----------------------------------------------------------------------------*
  *  Application
  *-----------------------------------------------------------------------------*/
-int app(struct rpmsg_virtio_device *rvdev, void *priv)
+int app(struct rpmsg_device *rdev, void *priv)
 {
 	/* Initialize RPMSG framework */
 	LPRINTF("Try to create rpmsg endpoint.\n");
 
-	ept = rpmsg_create_ept(rvdev, RPMSG_CHAN_NAME, 0, RPMSG_ADDR_ANY,
+	ept = rpmsg_create_ept(rdev, RPMSG_CHAN_NAME, 0, RPMSG_ADDR_ANY,
 			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
 	if (!ept) {
 		LPERROR("Failed to create endpoint.\n");
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 	unsigned long proc_id = 0;
 	unsigned long rsc_id = 0;
 	struct remoteproc *rproc;
-	struct rpmsg_virtio_device *rvdev;
+	struct rpmsg_device *rdev;
 	int status = -1;
 
 	LPRINTF("Starting application...\n");
@@ -102,13 +102,13 @@ int main(int argc, char *argv[])
 	if (!rproc) {
 		LPERROR("Failed to create remoteproc device.\n");
 	} else {
-		rvdev = platform_create_rpmsg_vdev(rproc, 0,
+		rdev = platform_create_rpmsg_vdev(rproc, 0,
 						   VIRTIO_DEV_SLAVE,
 						   NULL);
-		if (!rvdev) {
+		if (!rdev) {
 			LPERROR("Failed to create rpmsg virtio device.\n");
 		} else {
-			app(rvdev, (void *)rproc);
+			app(rdev, (void *)rproc);
 		}
 	}
 
