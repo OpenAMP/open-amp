@@ -22,6 +22,8 @@
 #include <metal/assert.h>
 #include <metal/device.h>
 #include <metal/irq.h>
+#include <metal/utilities.h>
+#include <openamp/rpmsg_virtio.h>
 #include "platform_info.h"
 #include "rsc_table.h"
 
@@ -291,7 +293,7 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 	return rproc;
 }
 
-struct  rpmsg_virtio_device *
+struct  rpmsg_device *
 platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
 			   unsigned int role,
 			   void (*rst_cb)(struct virtio_device *vdev))
@@ -323,7 +325,7 @@ platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
 		xil_printf("failed rpmsg_init_vdev\r\n");
 		goto err2;
 	}
-	return rpmsg_vdev;
+	return rpmsg_virtio_get_rpmsg_device(rpmsg_vdev);
 err2:
 	remoteproc_remove_virtio(rproc, vdev);
 err1:
