@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#if (RPMSG_DEBUG == true)
+#ifdef RPMSG_DEBUG
 #define RPMSG_ASSERT(_exp, _msg) do { \
 		if (!(_exp)) { \
 			openamp_print("FATAL: %s - "_msg, __func__); \
