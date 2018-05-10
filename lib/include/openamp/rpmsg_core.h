@@ -7,6 +7,11 @@
 #ifndef _RPMSG_CORE_H_
 #define _RPMSG_CORE_H_
 
+#include <stdint.h>
+#include <metal/list.h>
+#include <metal/mutex.h>
+#include <openamp/rpmsg.h>
+
 #if defined __cplusplus
 extern "C" {
 #endif
@@ -26,30 +31,22 @@ int rpmsg_get_address(unsigned long *bitmap, int size);
 int rpmsg_set_address(unsigned long *bitmap, int size, int addr);
 int rpmsg_release_address(unsigned long *bitmap, int size, int addr);
 int rpmsg_is_address_set(unsigned long *bitmap, int size, int addr);
+int rpmsg_send_ns_message(struct rpmsg_endpoint *ept, unsigned long flags);
 
-void *rpmsg_get_tx_buffer(struct rpmsg_virtio_device *rpmsgv,
-			  unsigned long *len, unsigned short *idx);
-void *rpmsg_get_rx_buffer(struct rpmsg_virtio_device *rpmsgv,
-			  unsigned long *len, unsigned short *idx);
-int rpmsg_wait_remote_ready(struct rpmsg_virtio_device *rpmsg_vdev);
-
-struct rpmsg_channel *rpmsg_get_chnl_from_id(struct rpmsg_virtio_device *rpmsgv,
-					     char *ch_name, unsigned int addr);
-void rpmsg_tx_callback(struct virtqueue *vq);
-void rpmsg_rx_callback(struct virtqueue *vq);
-void rpmsg_ns_callback(struct rpmsg_endpoint *ept, void *data,
-		       size_t len, uint32_t src, void *priv);
-
-int rpmsg_send_ns_message(struct rpmsg_virtio_device *rpmsgv,
-			  struct rpmsg_endpoint *ept, unsigned long flags);
-
-struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_virtio_device *rvdev,
+struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_device *rvdev,
 					  const char *name, uint32_t addr,
 					  uint32_t dest_addr);
-int rpmsg_register_endpoint(struct rpmsg_virtio_device *rpmsgv,
+int rpmsg_register_endpoint(struct rpmsg_device *rdev,
 			    struct rpmsg_endpoint *ept);
 void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept);
 
+struct rpmsg_endpoint *
+rpmsg_get_ept_from_remote_addr(struct rpmsg_device *rdev,
+			       uint32_t dest_addr);
+
+
+struct rpmsg_endpoint *
+rpmsg_get_ept_from_addr(struct rpmsg_device *rdev, uint32_t addr);
 #if defined __cplusplus
 }
 #endif
