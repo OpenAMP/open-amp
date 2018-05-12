@@ -88,6 +88,7 @@ struct rpmsg_device_ops {
 /**
  * struct rpmsg_device - representation of a RPMsg device
  * @endpoints: list of endpoints
+ * @ns_ept: name service endpoint
  * @bitmap: table endpoin address allocation.
  * @lock: mutex lock for rpmsg management
  * @new_endpoint_cb: callback handler for new service announcement without local
@@ -96,6 +97,7 @@ struct rpmsg_device_ops {
  */
 struct rpmsg_device {
 	struct metal_list endpoints;
+	struct rpmsg_endpoint ns_ept;
 	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
 	metal_mutex_t lock;
 	void (*new_endpoint_cb)(struct rpmsg_endpoint *ep);

@@ -569,12 +569,10 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	 * service announcement feature.
 	 */
 	if ((dev_features & (1 << VIRTIO_RPMSG_F_NS))) {
-		if (!rpmsg_create_ept(rdev, "NS", RPMSG_NS_EPT_ADDR,
-				      RPMSG_NS_EPT_ADDR,
-				      rpmsg_virtio_ns_callback,
-				      NULL))
-			return RPMSG_ERR_NO_MEM;
-
+		rpmsg_init_ept(&rdev->ns_ept, "NS",
+			       RPMSG_NS_EPT_ADDR, RPMSG_NS_EPT_ADDR,
+			       rpmsg_virtio_ns_callback, NULL);
+		(void)rpmsg_register_endpoint(rdev, &rdev->ns_ept);
 	}
 
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER)
