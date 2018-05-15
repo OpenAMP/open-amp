@@ -1,5 +1,5 @@
 
-set (_cflags "${CMAKE_C_FLAGS} ${APP_EXTRA_C_FLAGS}")
+set (_cflags "${CMAKE_C_FLAGS} ${APP_EXTRA_C_FLAGS} -fdata-sections -ffunction-sections")
 set (_fw_dir "${APPS_SHARE_DIR}")
 
 collector_list (_list PROJECT_INC_DIRS)
