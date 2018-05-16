@@ -393,7 +393,7 @@ static void rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	struct rpmsg_virtio_device *rvdev = (struct rpmsg_virtio_device *)rdev;
 	struct rpmsg_endpoint *_ept;
 	struct rpmsg_ns_msg *ns_msg;
-	int status;
+	char name[RPMSG_NAME_SIZE];
 
 	(void)priv;
 	(void)src;
@@ -403,35 +403,26 @@ static void rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	/* check if a Ept has been locally registered */
 	metal_mutex_acquire(&rdev->lock);
 	_ept = rpmsg_get_ept_from_remote_addr(rdev, ns_msg->addr);
-	metal_mutex_release(&rdev->lock);
 
 	if (ns_msg->flags & RPMSG_NS_DESTROY) {
-		if (!_ept)
-			return;
-		metal_mutex_acquire(&rdev->lock);
-		rpmsg_destroy_ept(_ept);
+		if (_ept)
+			rpmsg_destroy_ept(_ept);
 		metal_mutex_release(&rdev->lock);
 	} else {
 		struct metal_io_region *io = rvdev->shbuf_io;
 
+		metal_mutex_release(&rdev->lock);
 		if (!_ept) {
-			/*create an endpoint to store remote end point */
-			_ept = (struct rpmsg_endpoint *)
-				metal_allocate_memory(sizeof(*_ept));
 			metal_io_block_read(io,
 				metal_io_virt_to_offset(io, ns_msg->name),
-				&_ept->name, len);
-			_ept->addr = RPMSG_ADDR_ANY;
-			_ept->dest_addr = ns_msg->addr;
-			status = rpmsg_register_endpoint(rdev, _ept);
-			if (status < 0) {
-				metal_free_memory(ept);
-				return;
-			}
-			if (rdev->new_endpoint_cb)
-				rdev->new_endpoint_cb(_ept);
-		} else {
-			_ept->dest_addr = ns_msg->addr;
+				&name, len);
+			/*
+			 * send callback to application, that can
+			 * - create the associated endpoints.
+			 * - store information for future use.
+			 * - just ignore the requet as service not supported.
+			 */
+			rdev->new_endpoint_cb(name,ns_msg->addr);
 		}
 	}
 }
@@ -458,7 +449,7 @@ static void rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
  */
 int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev,
-		    void (*new_endpoint_cb)(struct rpmsg_endpoint *ep),
+		    void (*new_endpoint_cb)(const char *name, uint32_t src),
 		    struct metal_io_region *shm_io,
 		    void *shm, unsigned int len)
 {
