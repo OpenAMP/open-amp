@@ -197,7 +197,7 @@ struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_device *rdev,
 			return ept;
 		if (addr == RPMSG_ADDR_ANY &&
 		    ept->dest_addr == RPMSG_ADDR_ANY &&
-		    name_match)
+		    name && name_match)
 			return ept;
 		if (addr == ept->addr && dest_addr == ept->dest_addr &&
 		    name_match)
