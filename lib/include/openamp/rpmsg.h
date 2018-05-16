@@ -312,10 +312,9 @@ static inline void rpmsg_init_ept(struct rpmsg_endpoint *ept,
  * source address.
  */
 
-struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_device *rdev,
-					const char *name, uint32_t src,
-					uint32_t dest, rpmsg_ept_cb cb,
-					rpmsg_ept_destroy_cb destroy_cb);
+int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
+		     const char *name, uint32_t src, uint32_t dest,
+		     rpmsg_ept_cb cb, rpmsg_ept_destroy_cb destroy_cb);
 
 /**
  * rpmsg_destroy_ept - destroy rpmsg endpoint and unregister it from rpmsg
