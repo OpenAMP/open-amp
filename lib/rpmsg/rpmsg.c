@@ -230,13 +230,15 @@ int rpmsg_register_endpoint(struct rpmsg_device *rdev,
 	return RPMSG_SUCCESS;
 }
 
-struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_device *rdev,
-					const char *name, uint32_t src,
-					uint32_t dest, rpmsg_ept_cb cb,
-					rpmsg_ept_destroy_cb destroy_cb)
+int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
+		     const char *name, uint32_t src, uint32_t dest,
+		     rpmsg_ept_cb cb, rpmsg_ept_destroy_cb destroy_cb)
 {
-	struct rpmsg_endpoint *ept;
-	int status;
+	int status = 0;
+	uint32_t addr = src;
+
+	if (!ept)
+		return -EINVAL;
 
 	metal_mutex_acquire(&rdev->lock);
 	if (src != RPMSG_ADDR_ANY) {
@@ -246,41 +248,30 @@ struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_device *rdev,
 			rpmsg_set_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE,
 					  src);
 		else
-			goto ret_err;
+			goto ret_status;
 	} else {
-		src = rpmsg_get_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE);
+		addr = rpmsg_get_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE);
 	}
 
-	ept = rpmsg_get_endpoint(rdev, name, src, dest);
-	if (!ept)
-		ept = metal_allocate_memory(sizeof(*ept));
-	if (!ept)
-		goto ret_err;
-	rpmsg_init_ept(ept, name, src, dest, cb, destroy_cb);
+	rpmsg_init_ept(ept, name, addr, dest, cb, destroy_cb);
 
 	status = rpmsg_register_endpoint(rdev, ept);
 	if (status < 0)
-		goto reg_err;
+		rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE, addr);
 
-	metal_mutex_release(&rdev->lock);
 
-	if (ept->dest_addr == RPMSG_ADDR_ANY) {
+	if (!status  && ept->dest_addr == RPMSG_ADDR_ANY) {
 		/* Send NS announcement to remote processor */
+		metal_mutex_release(&rdev->lock);
 		status = rpmsg_send_ns_message(ept, RPMSG_NS_CREATE);
+		metal_mutex_acquire(&rdev->lock);
 		if(status)
-			goto ns_err;
+			rpmsg_unregister_endpoint(ept);
 	}
 
-	return ept;
-
-ns_err:
-	rpmsg_unregister_endpoint(ept);
-reg_err:
-	metal_free_memory(ept);
-
-ret_err:
+ret_status:
 	metal_mutex_release(&rdev->lock);
-	return NULL;
+	return status;
 }
 
 /**
@@ -299,5 +290,4 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 	rpmsg_unregister_endpoint(ept);
 	if (ept->destroy_cb)
 		ept->destroy_cb(ept);
-	metal_free_memory(ept);
 }
