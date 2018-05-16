@@ -81,7 +81,7 @@ static inline int rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device * rv
 
 int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev,
-		    void (*new_endpoint_cb)(struct rpmsg_endpoint *ep),
+		    void (*new_endpoint_cb)(const char *name, uint32_t src),
 		    struct metal_io_region *shm_io,
 		    void *shm, unsigned int len);
 

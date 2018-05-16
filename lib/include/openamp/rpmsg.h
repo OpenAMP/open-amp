@@ -100,7 +100,7 @@ struct rpmsg_device {
 	struct rpmsg_endpoint ns_ept;
 	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
 	metal_mutex_t lock;
-	void (*new_endpoint_cb)(struct rpmsg_endpoint *ep);
+	void (*new_endpoint_cb)(const char *name, uint32_t src);
 	struct rpmsg_device_ops ops;
 };
 
