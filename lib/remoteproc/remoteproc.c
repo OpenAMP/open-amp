@@ -12,6 +12,7 @@
 #include <openamp/elf_loader.h>
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
+#include <openamp/remoteproc_virtio.h>
 #include <openamp/rsc_table_parser.h>
 #include <openamp/sh_mem.h>
 
@@ -34,76 +35,61 @@ remoteproc_check_fw_format(void *fw, struct image_store_ops *store_ops)
 		return NULL;
 }
 
-static void *remoteproc_datova_from_mems(struct remoteproc *rproc,
-					 metal_phys_addr_t da, size_t size,
-					 struct metal_io_region **io)
+static struct remoteproc_mem *
+remoteproc_get_mem(struct remoteproc *rproc, const char *name,
+		   metal_phys_addr_t pa, metal_phys_addr_t da,
+		   void *va, size_t size)
 {
 	struct metal_list *node;
+	struct remoteproc_mem *mem;
 
 	metal_list_for_each(&rproc->mems, node) {
-		metal_phys_addr_t da_start, da_end, pa;
-		struct remoteproc_mem *mem;
-		struct metal_io_region *tmpio;
-
 		mem = metal_container_of(node, struct remoteproc_mem, node);
-		tmpio = mem->io;
-		da_start = mem->da;
-		da_end = da_start + mem->size;
-		if (da >= da_start && (da + size) <= da_end) {
-			pa = mem->pa + (da - da_start);
-			*io = tmpio;
-			return metal_io_phys_to_virt(mem->io, pa);
+		if (name) {
+			if (!strncmp(name, mem->name, sizeof(mem->name)))
+				return mem;
+		} else if (pa != METAL_BAD_PHYS) {
+			metal_phys_addr_t pa_start, pa_end;
+
+			pa_start = mem->pa;
+			pa_end = pa_start + mem->size;
+			if (pa >= pa_start && (pa + size) <= pa_end)
+				return mem;
+		} else if (pa != METAL_BAD_PHYS) {
+			metal_phys_addr_t da_start, da_end;
+
+			da_start = mem->da;
+			da_end = da_start + mem->size;
+			if (da >= da_start && (da + size) <= da_end)
+				return mem;
+		} else if (va) {
+			if (metal_io_virt_to_offset(mem->io, va) !=
+			    METAL_BAD_OFFSET)
+				return mem;
+
+		} else {
+			return NULL;
 		}
 	}
 	return NULL;
 }
 
-static void *remoteproc_patova_from_mems(struct remoteproc *rproc,
-					 metal_phys_addr_t pa, size_t size,
-					 struct metal_io_region **io)
+static metal_phys_addr_t
+remoteproc_datopa(struct remoteproc_mem *mem, metal_phys_addr_t da)
 {
-	struct metal_list *node;
+	metal_phys_addr_t pa;
 
-	metal_list_for_each(&rproc->mems, node) {
-		metal_phys_addr_t pa_start, pa_end;
-		struct remoteproc_mem *mem;
-		struct metal_io_region *tmpio;
-
-		mem = metal_container_of(node, struct remoteproc_mem, node);
-		tmpio = mem->io;
-		pa_start = mem->pa;
-		pa_end = pa_start + mem->size;
-		if (pa >= pa_start && (pa + size) <= pa_end) {
-			*io = tmpio;
-			return metal_io_phys_to_virt(mem->io, pa);
-		}
-	}
-	return NULL;
+	pa = mem->pa + da - mem->da;
+	return pa;
 }
 
-/**
- * remoteproc_remove_mems
- *
- * Remove memory resources from remote processor mems list.
- * This function expect the caller have mutex protection.
- *
- * @rproc - pointer to the remote processor instance
- *
- */
-static void remoteproc_remove_mems(struct remoteproc *rproc)
+static metal_phys_addr_t
+remoteproc_patoda(struct remoteproc_mem *mem, metal_phys_addr_t pa)
 {
-	struct metal_list *node;
+	metal_phys_addr_t da;
 
-	metal_list_for_each(&rproc->mems, node) {
-		struct remoteproc_mem *mem;
-		struct metal_list *tmpnode;
-
-		mem = metal_container_of(node, struct remoteproc_mem, node);
-		tmpnode = node->next;
-		metal_list_del(node);
-		metal_free_memory(mem);
-		node = tmpnode;
-	}
+	da = mem->da + pa - mem->pa;
+	return da;
 }
 
 static void *remoteproc_get_rsc_table(struct remoteproc *rproc,
@@ -150,6 +136,30 @@ error:
 	return rsc_table;
 }
 
+int remoteproc_parse_rsc_table(struct remoteproc *rproc,
+			       struct resource_table *rsc_table,
+			       size_t rsc_size)
+{
+	return handle_rsc_table(rproc, rsc_table, rsc_size);
+}
+
+int remoteproc_set_rsc_table(struct remoteproc *rproc,
+			       struct resource_table *rsc_table,
+			       size_t rsc_size)
+{
+	struct metal_io_region *io;
+
+	io = remoteproc_get_io_with_va(rproc, (void *)rsc_table);
+	if (!io)
+		return -EINVAL;
+	rproc->rsc_table = rsc_table;
+	rproc->rsc_len = rsc_size;
+	rproc->rsc_io = io;
+
+	remoteproc_parse_rsc_table(rproc, rsc_table, rsc_size);
+	return 0;
+}
+
 struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv)
 {
 	struct remoteproc *rproc;
@@ -158,6 +168,8 @@ struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv)
 	if (rproc) {
 		rproc->state = RPROC_OFFLINE;
 		metal_mutex_init(&rproc->lock);
+		metal_list_init(&rproc->mems);
+		metal_list_init(&rproc->vdevs);
 	}
 	return rproc;
 }
@@ -217,7 +229,8 @@ int remoteproc_stop(struct remoteproc *rproc)
 		metal_mutex_acquire(&rproc->lock);
 		if (rproc->state != RPROC_STOPPED &&
 		    rproc->state != RPROC_OFFLINE) {
-			ret = rproc->ops->stop(rproc);
+			if (rproc->ops->stop)
+				ret = rproc->ops->stop(rproc);
 			rproc->state = RPROC_STOPPED;
 		} else {
 			ret = 0;
@@ -236,13 +249,15 @@ int remoteproc_shutdown(struct remoteproc *rproc)
 		metal_mutex_acquire(&rproc->lock);
 		if (rproc->state != RPROC_OFFLINE) {
 			if (rproc->state != RPROC_STOPPED) {
-				ret = rproc->ops->stop(rproc);
-				rproc->state = RPROC_STOPPED;
+				if (rproc->ops->stop)
+					ret = rproc->ops->stop(rproc);
 			}
 			if (!ret) {
-				ret = rproc->ops->shutdown(rproc);
-				rproc->state = RPROC_OFFLINE;
-				remoteproc_remove_mems(rproc);
+				if (rproc->ops->shutdown)
+					ret = rproc->ops->shutdown(rproc);
+				if (!ret) {
+					rproc->state = RPROC_OFFLINE;
+				}
 			}
 		}
 		metal_mutex_release(&rproc->lock);
@@ -250,22 +265,65 @@ int remoteproc_shutdown(struct remoteproc *rproc)
 	return ret;
 }
 
-void *remoteproc_datova(struct remoteproc *rproc,
-			metal_phys_addr_t da, size_t size,
-			struct metal_io_region **io)
+struct metal_io_region *
+remoteproc_get_io_with_name(struct remoteproc *rproc,
+			    const char *name)
 {
-	void *va;
+	struct remoteproc_mem *mem;
 
-	va = remoteproc_datova_from_mems(rproc, da, size, io);
-	if (va)
-		return va;
-	if (rproc->ops->mmap) {
-		metal_phys_addr_t pa = METAL_BAD_PHYS;
-		va = rproc->ops->mmap(rproc, &pa, &da, size,
-				      0, io);
-		return va;
+	mem = remoteproc_get_mem(rproc, name,
+				 METAL_BAD_PHYS, METAL_BAD_PHYS, NULL, 0);
+	if (mem)
+		return mem->io;
+	else
+		return NULL;
+}
+
+struct metal_io_region *
+remoteproc_get_io_with_pa(struct remoteproc *rproc,
+			  metal_phys_addr_t pa)
+{
+	struct remoteproc_mem *mem;
+
+	mem = remoteproc_get_mem(rproc, NULL, pa, METAL_BAD_PHYS, NULL, 0);
+	if (mem)
+		return mem->io;
+	else
+		return NULL;
+}
+
+struct metal_io_region *
+remoteproc_get_io_with_da(struct remoteproc *rproc,
+			  metal_phys_addr_t da,
+			  unsigned long *offset)
+{
+	struct remoteproc_mem *mem;
+
+	mem = remoteproc_get_mem(rproc, NULL, METAL_BAD_PHYS, da, NULL, 0);
+	if (mem) {
+		struct metal_io_region *io;
+		metal_phys_addr_t pa;
+
+		io = mem->io;
+		pa = remoteproc_datopa(mem, da);
+		*offset = metal_io_phys_to_offset(io, pa);
+		return io;
+	} else {
+		return NULL;
 	}
-	return NULL;
+}
+
+struct metal_io_region *
+remoteproc_get_io_with_va(struct remoteproc *rproc, void *va)
+{
+	struct remoteproc_mem *mem;
+
+	mem = remoteproc_get_mem(rproc, NULL, METAL_BAD_PHYS, METAL_BAD_PHYS,
+				 va, 0);
+	if (mem)
+		return mem->io;
+	else
+		return NULL;
 }
 
 void *remoteproc_mmap(struct remoteproc *rproc,
@@ -275,6 +333,7 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 {
 	void *va = NULL;
 	metal_phys_addr_t lpa, lda;
+	struct remoteproc_mem *mem;
 
 	if (!rproc)
 		return NULL;
@@ -288,12 +347,15 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 		lda =  *da;
 	else
 		lda = METAL_BAD_PHYS;
-	if (lpa != METAL_BAD_PHYS && lda == METAL_BAD_PHYS)
-		va = remoteproc_patova_from_mems(rproc, lpa, size, io);
-	else if (lda != METAL_BAD_PHYS && lpa == METAL_BAD_PHYS)
-		va = remoteproc_datova_from_mems(rproc, lda, size, io);
-
-	if (va == NULL && rproc->ops->mmap) {
+	mem = remoteproc_get_mem(rproc, NULL, lpa, lda, NULL, size);
+	if (mem) {
+		if (lpa != METAL_BAD_PHYS)
+			*da = remoteproc_patoda(mem, lpa);
+		else if (lda != METAL_BAD_PHYS)
+			*pa = remoteproc_datopa(mem, lda);
+		*io = mem->io;
+		va = metal_io_phys_to_virt(*io, *pa);
+	} else if (rproc->ops->mmap) {
 		va = rproc->ops->mmap(rproc, &lpa, &lda, size, attribute, io);
 		if (pa)
 			*pa  = lpa;
@@ -389,7 +451,7 @@ int remoteproc_load(struct remoteproc *rproc, void *store, void **loader_data,
 		metal_log(METAL_LOG_DEBUG, "%s: update resource table\n\r", __func__);
 		rsc_table = remoteproc_mmap(rproc, NULL, &rsc_da,
 					    rsc_len, 0, &io);
-		if (!rsc_table) {
+		if (rsc_table) {
 			/* FIX me: Should use metal_io_block_write */
 			memcpy(rsc_table, rsc_table_cp, rsc_len);
 			rproc->rsc_table = rsc_table;
@@ -443,4 +505,112 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 	if (notifyid != end)
 		metal_bitmap_set_bit(&rproc->bitmap, notifyid);
 	return notifyid;
+}
+
+static int remoteproc_virtio_notify(void *priv, uint32_t id)
+{
+	struct remoteproc *rproc = priv;
+
+	return rproc->ops->notify(rproc, id);
+}
+
+struct virtio_device *
+remoteproc_create_virtio(struct remoteproc *rproc,
+			 int vdev_id, unsigned int role,
+			 void (*rst_cb)(struct virtio_device *vdev))
+{
+	void *rsc_table;
+	struct fw_rsc_vdev *vdev_rsc;
+	struct metal_io_region *vdev_rsc_io;
+	struct virtio_device *vdev;
+	struct remoteproc_virtio *rpvdev;
+	size_t vdev_rsc_offset;
+	unsigned int notifyid;
+	unsigned int num_vrings, i;
+	struct metal_list *node;
+
+	metal_assert(rproc);
+	metal_mutex_acquire(&rproc->lock);
+	rsc_table = rproc->rsc_table;
+	vdev_rsc_io = rproc->rsc_io;
+	vdev_rsc_offset = find_rsc(rsc_table, RSC_VDEV, vdev_id);
+	if (!vdev_rsc_offset) {
+		metal_mutex_release(&rproc->lock);
+		return NULL;
+	}
+	vdev_rsc = rsc_table + vdev_rsc_offset;
+	notifyid = vdev_rsc->notifyid;
+	/* Check if the virtio device is already created */
+	metal_list_for_each(&rproc->vdevs, node) {
+		rpvdev = metal_container_of(node, struct remoteproc_virtio,
+					    node);
+		if (rpvdev->vdev.index == notifyid)
+			return &rpvdev->vdev;
+	}
+	vdev = rproc_virtio_create_vdev(role, notifyid,
+					vdev_rsc, vdev_rsc_io, rproc,
+					remoteproc_virtio_notify,
+					rst_cb);
+	num_vrings = vdev_rsc->num_of_vrings;
+	/* set the notification id for vrings */
+	for (i = 0; i < num_vrings; i++) {
+		struct fw_rsc_vdev_vring *vring_rsc;
+		metal_phys_addr_t da;
+		unsigned int num_descs, align;
+		struct metal_io_region *io;
+		void *va;
+		size_t size;
+		int ret;
+
+		vring_rsc = &vdev_rsc->vring[i];
+		notifyid = vring_rsc->notifyid;
+		da = vring_rsc->da;
+		num_descs = vring_rsc->num;
+		align = vring_rsc->align;
+		size = vring_size(num_descs, align);
+		va = remoteproc_mmap(rproc, NULL, &da, size, 0, &io);
+		if (!va)
+			goto err1;
+		ret = rproc_virtio_init_vring(vdev, i, notifyid,
+					      va, io, num_descs, align);
+		if (ret)
+			goto err1;
+
+	}
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	metal_list_add_tail(&rproc->vdevs, &rpvdev->node);
+
+	return vdev;
+
+err1:
+	remoteproc_remove_virtio(rproc, vdev);
+	metal_mutex_release(&rproc->lock);
+	return NULL;
+}
+
+void remoteproc_remove_virtio(struct remoteproc *rproc,
+			      struct virtio_device *vdev)
+{
+	struct remoteproc_virtio *rpvdev;
+
+	(void)rproc;
+	metal_assert(vdev);
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	metal_list_del(&rpvdev->node);
+	rproc_virtio_remove_vdev(&rpvdev->vdev);
+}
+
+int remoteproc_get_notification(struct remoteproc *rproc,
+				 uint32_t notifyid)
+{
+	struct remoteproc_virtio *rpvdev;
+	struct metal_list *node;
+
+	metal_list_for_each(&rproc->vdevs, node) {
+		rpvdev = metal_container_of(node, struct remoteproc_virtio,
+					    node);
+		if (!rproc_virtio_notified(&rpvdev->vdev, notifyid))
+			return 0;
+	}
+	return -EINVAL;
 }
