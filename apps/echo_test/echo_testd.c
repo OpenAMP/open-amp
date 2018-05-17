@@ -14,7 +14,7 @@ This application echoes back data that was sent to it by the master core. */
 //#define LPRINTF(format, ...)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
-static struct rpmsg_endpoint *ept = NULL;
+static struct rpmsg_endpoint lept;
 static int ept_deleted = 0;
 
 /* External functions */
@@ -47,7 +47,6 @@ static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
 	(void)ept;
 	LPERROR("Endpoint is destroyed\n");
 	/* user application will need to free the endpoint memory */
-	metal_free_memory(ept);
 	ept_deleted = 1;
 }
 
@@ -56,12 +55,14 @@ static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
  *-----------------------------------------------------------------------------*/
 int app(struct rpmsg_device *rdev, void *priv)
 {
+	int ret;
+
 	/* Initialize RPMSG framework */
 	LPRINTF("Try to create rpmsg endpoint.\n");
 
-	ept = rpmsg_create_ept(rdev, RPMSG_CHAN_NAME, 0, RPMSG_ADDR_ANY,
+	ret = rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME, 0, RPMSG_ADDR_ANY,
 			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
-	if (!ept) {
+	if (ret) {
 		LPERROR("Failed to create endpoint.\n");
 		return -1;
 	}
