@@ -42,12 +42,13 @@ extern "C" {
 #define RPMSG_ERR_ADDR		(RPMSG_ERROR_BASE - 7)
 
 struct rpmsg_endpoint;
+struct rpmsg_device;
 
 typedef void (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
 			     size_t len, uint32_t src, void *priv);
 typedef void (*rpmsg_ept_destroy_cb)(struct rpmsg_endpoint *ept);
-
-struct rpmsg_device;
+typedef void (*rpmsg_ept_create_cb)(struct rpmsg_device *rdev,
+				    const char *name, uint32_t dest);
 
 /**
  * struct rpmsg_endpoint - binds a local rpmsg address to its user
@@ -100,8 +101,7 @@ struct rpmsg_device {
 	struct rpmsg_endpoint ns_ept;
 	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
 	metal_mutex_t lock;
-	void (*new_endpoint_cb)(struct rpmsg_device *rdev,
-				const char *name, uint32_t src);
+	rpmsg_ept_create_cb new_endpoint_cb;
 	struct rpmsg_device_ops ops;
 };
 
