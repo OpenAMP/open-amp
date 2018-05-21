@@ -327,6 +327,20 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
  */
 void rpmsg_destroy_ept(struct rpmsg_endpoint *ept);
 
+/**
+ * is_rpmsg_ept_ready - check if the rpmsg endpoint ready to send
+ *
+ * @ept: pointer to rpmsg endpoint
+ *
+ * Returns 1 if the rpmsg endpoint has both local addr and destination
+ * addr set, 0 otherwise
+ */
+static inline uint32_t is_rpmsg_ept_ready(struct rpmsg_endpoint *ept)
+{
+	return (ept->dest_addr == RPMSG_ADDR_ANY ||
+		ept->addr == RPMSG_ADDR_ANY) ? 0 : 1;
+}
+
 #if defined __cplusplus
 }
 #endif
