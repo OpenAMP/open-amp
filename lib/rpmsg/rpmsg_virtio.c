@@ -421,7 +421,7 @@ static void rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			 * - store information for future use.
 			 * - just ignore the requet as service not supported.
 			 */
-			rdev->new_endpoint_cb(name, dest);
+			rdev->new_endpoint_cb(rdev, name, dest);
 		} else {
 			_ept->dest_addr = dest;
 		}
@@ -468,7 +468,8 @@ int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev)
  */
 int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev,
-		    void (*new_endpoint_cb)(const char *name, uint32_t src),
+		    void (*new_endpoint_cb)(struct rpmsg_device *rdev,
+					    const char *name, uint32_t src),
 		    struct metal_io_region *shm_io,
 		    void *shm, unsigned int len)
 {
