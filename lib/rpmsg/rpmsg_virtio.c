@@ -391,40 +391,42 @@ static void rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 {
 	struct rpmsg_device *rdev = ept->rdev;
 	struct rpmsg_virtio_device *rvdev = (struct rpmsg_virtio_device *)rdev;
+	struct metal_io_region *io = rvdev->shbuf_io;
 	struct rpmsg_endpoint *_ept;
 	struct rpmsg_ns_msg *ns_msg;
+	uint32_t dest;
 	char name[RPMSG_NAME_SIZE];
 
 	(void)priv;
 	(void)src;
 
 	ns_msg = (struct rpmsg_ns_msg *)data;
+	metal_io_block_read(io,
+			    metal_io_virt_to_offset(io, ns_msg->name),
+			    &name, len);
+	dest = ns_msg->addr;
 
 	/* check if a Ept has been locally registered */
 	metal_mutex_acquire(&rdev->lock);
-	_ept = rpmsg_get_ept_from_remote_addr(rdev, ns_msg->addr);
+	_ept = rpmsg_get_endpoint(rdev, name, RPMSG_ADDR_ANY, dest);
 
 	if (ns_msg->flags & RPMSG_NS_DESTROY) {
 		if (_ept)
 			rpmsg_destroy_ept(_ept);
-		metal_mutex_release(&rdev->lock);
 	} else {
-		struct metal_io_region *io = rvdev->shbuf_io;
-
-		metal_mutex_release(&rdev->lock);
 		if (!_ept) {
-			metal_io_block_read(io,
-				metal_io_virt_to_offset(io, ns_msg->name),
-				&name, len);
 			/*
 			 * send callback to application, that can
 			 * - create the associated endpoints.
 			 * - store information for future use.
 			 * - just ignore the requet as service not supported.
 			 */
-			rdev->new_endpoint_cb(name,ns_msg->addr);
+			rdev->new_endpoint_cb(name, dest);
+		} else {
+			_ept->dest_addr = dest;
 		}
 	}
+	metal_mutex_release(&rdev->lock);
 }
 
 int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev)
