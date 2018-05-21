@@ -173,7 +173,7 @@ static int rpmsg_virtio_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
 }
 
 /**
- * rpmsg_virtio_get_buffer_size
+ * _rpmsg_virtio_get_buffer_size
  *
  * Returns buffer size available for sending messages.
  *
@@ -182,7 +182,7 @@ static int rpmsg_virtio_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
  * @return - buffer size
  *
  */
-static int rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
+static int _rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 {
 	int length;
 
@@ -244,7 +244,7 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 
 	/* Lock the device to enable exclusive access to virtqueues */
 	metal_mutex_acquire(&rdev->lock);
-	if (size > (rpmsg_virtio_get_buffer_size(rvdev))) {
+	if (size > (_rpmsg_virtio_get_buffer_size(rvdev))) {
 		metal_mutex_release(&rdev->lock);
 		return RPMSG_ERR_BUFF_SIZE;
 	}
@@ -425,6 +425,20 @@ static void rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			rdev->new_endpoint_cb(name,ns_msg->addr);
 		}
 	}
+}
+
+int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev)
+{
+	int size;
+	struct rpmsg_virtio_device *rvdev;
+
+	if (!rdev)
+		return RPMSG_ERR_PARAM;
+	metal_mutex_acquire(&rdev->lock);
+	rvdev = (struct rpmsg_virtio_device *)rdev;
+	size = _rpmsg_virtio_get_buffer_size(rvdev);
+	metal_mutex_release(&rdev->lock);
+	return size;
 }
 
 /**
