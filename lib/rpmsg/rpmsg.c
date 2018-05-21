@@ -234,21 +234,23 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 		     const char *name, uint32_t src, uint32_t dest,
 		     rpmsg_ept_cb cb, rpmsg_ept_destroy_cb destroy_cb)
 {
-	int status = 0;
+	int status;
 	uint32_t addr = src;
 
 	if (!ept)
-		return -EINVAL;
+		return RPMSG_ERR_PARAM;
 
 	metal_mutex_acquire(&rdev->lock);
 	if (src != RPMSG_ADDR_ANY) {
 		if (!rpmsg_is_address_set
-		    (rdev->bitmap, RPMSG_ADDR_BMP_SIZE, src))
+		    (rdev->bitmap, RPMSG_ADDR_BMP_SIZE, src)) {
 			/* Mark the address as used in the address bitmap. */
 			rpmsg_set_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE,
 					  src);
-		else
+		} else {
+			status = RPMSG_SUCCESS;
 			goto ret_status;
+		}
 	} else {
 		addr = rpmsg_get_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE);
 	}
