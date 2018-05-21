@@ -468,8 +468,7 @@ int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev)
  */
 int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev,
-		    void (*new_endpoint_cb)(struct rpmsg_device *rdev,
-					    const char *name, uint32_t src),
+		    rpmsg_ept_create_cb new_endpoint_cb,
 		    struct metal_io_region *shm_io,
 		    void *shm, unsigned int len)
 {
