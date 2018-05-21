@@ -79,6 +79,15 @@ static inline int rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device * rv
 	return virtio_create_virtqueues(rvdev->vdev, flags, nvqs, names, callbacks);
 }
 
+/**
+ * rpmsg_virtio_get_buffer_size - get rpmsg virtio buffer size
+ *
+ * @rdev - pointer to the rpmsg device
+ *
+ * @return - next available buffer size for text, negative value for failure
+ */
+int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev);
+
 int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev,
 		    void (*new_endpoint_cb)(const char *name, uint32_t src),
