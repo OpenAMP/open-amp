@@ -87,13 +87,6 @@ int rpmsg_register_endpoint(struct rpmsg_device *rdev,
 			    struct rpmsg_endpoint *ept);
 
 static inline struct rpmsg_endpoint *
-rpmsg_get_ept_from_remote_addr(struct rpmsg_device *rdev,
-			       uint32_t addr)
-{
-	return rpmsg_get_endpoint(rdev, NULL, RPMSG_ADDR_ANY, addr);
-}
-
-static inline struct rpmsg_endpoint *
 rpmsg_get_ept_from_addr(struct rpmsg_device *rdev, uint32_t addr)
 {
 	return rpmsg_get_endpoint(rdev, NULL, addr, RPMSG_ADDR_ANY);

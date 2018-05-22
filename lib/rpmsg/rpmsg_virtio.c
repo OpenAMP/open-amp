@@ -421,8 +421,10 @@ static void rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			 * - store information for future use.
 			 * - just ignore the requet as service not supported.
 			 */
+			metal_mutex_release(&rdev->lock);
 			if (rdev->new_endpoint_cb)
 				rdev->new_endpoint_cb(rdev, name, dest);
+			return;
 		} else {
 			_ept->dest_addr = dest;
 		}
