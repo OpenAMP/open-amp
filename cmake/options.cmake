@@ -75,7 +75,6 @@ if (WITH_ZEPHYR)
 endif (WITH_ZEPHYR)
 
 option (WITH_LIBMETAL_FIND "Check Libmetal library can be found" ON)
-option (WITH_EXT_INCLUDES_FIND "Check other external includes are found" ON)
 
 message ("-- C_FLAGS : ${CMAKE_C_FLAGS}")
 # vim: expandtab:ts=2:sw=2:smartindent
