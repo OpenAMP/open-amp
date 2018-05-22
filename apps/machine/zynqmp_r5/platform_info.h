@@ -15,6 +15,7 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index);
 struct  rpmsg_device *
 platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
 			   unsigned int role,
-			   void (*rst_cb)(struct virtio_device *vdev));
+			   void (*rst_cb)(struct virtio_device *vdev),
+			   rpmsg_ept_create_cb new_endpoint_cb);
 int platform_poll(void *priv);
 #endif /* PLATFORM_INFO_H_ */
