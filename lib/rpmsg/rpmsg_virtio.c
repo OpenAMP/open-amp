@@ -282,12 +282,18 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 
 	/* Copy data to rpmsg buffer. */
 	io = rvdev->shbuf_io;
-	metal_io_block_write(io,
+	status = metal_io_block_write(io,
 			metal_io_virt_to_offset(io, buffer),
 			&rp_hdr, sizeof(rp_hdr));
-	metal_io_block_write(io,
+	if (status != sizeof(rp_hdr) )
+		return RPMSG_ERR_UNEXPECTED;
+
+	status = metal_io_block_write(io,
 			metal_io_virt_to_offset(io, RPMSG_LOCATE_DATA(buffer)),
 			data, size);
+	if (status != size )
+		return RPMSG_ERR_UNEXPECTED;
+
 	metal_mutex_acquire(&rdev->lock);
 
 	/* Enqueue buffer on virtqueue. */
