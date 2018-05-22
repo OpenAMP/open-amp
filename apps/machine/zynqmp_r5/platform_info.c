@@ -47,8 +47,9 @@
 #define NORM_SHARED_NCACHE	0x0000000CU /* Non cacheable shareable */
 #define	PRIV_RW_USER_RW		(0x00000003U<<8U) /* Full Access */
 
-#define SHARED_BUF_PA  0x3ED40000UL
-#define SHARED_BUF_SIZE 0x100000UL
+#define SHARED_MEM_PA  0x3ED40000UL
+#define SHARED_MEM_SIZE 0x100000UL
+#define SHARED_BUF_OFFSET 0x8000UL
 
 #define _rproc_wait() asm volatile("wfi")
 
@@ -258,10 +259,8 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 	(void)metal_register_generic_device(&ipi_device);
 	/* Initialize remoteproc instance */
 	rproc = remoteproc_init(&zynqmp_r5_a53_proc_ops, &ipi_info);
-	if (!rproc) {
-		xil_printf("Failed to intialize remoteproc\r\n");
+	if (!rproc)
 		return NULL;
-	}
 
 	/*
 	 * Mmap shared memories
@@ -275,20 +274,20 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 				NORM_NSHARED_NCACHE|PRIV_RW_USER_RW,
 				&rproc->rsc_io);
 	/* mmap shared memory */
-	pa = SHARED_BUF_PA;
+	pa = SHARED_MEM_PA;
 	(void *)remoteproc_mmap(rproc, &pa,
-				NULL, SHARED_BUF_SIZE,
+				NULL, SHARED_MEM_SIZE,
 				NORM_NSHARED_NCACHE|PRIV_RW_USER_RW,
 				NULL);
 
 	/* parse resource table to remoteproc */
 	ret = remoteproc_set_rsc_table(rproc, rsc_table, rsc_size);
 	if (ret) {
-		xil_printf("Failed to parse resource table\r\n");
+		xil_printf("Failed to intialize remoteproc\r\n");
 		remoteproc_remove(rproc);
 		return NULL;
 	}
-	xil_printf("Successfully parse resource table\r\n");
+	xil_printf("Failed to intialize remoteproc\r\n");
 
 	return rproc;
 }
@@ -296,7 +295,8 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 struct  rpmsg_device *
 platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
 			   unsigned int role,
-			   void (*rst_cb)(struct virtio_device *vdev))
+			   void (*rst_cb)(struct virtio_device *vdev),
+			   rpmsg_ept_create_cb new_endpoint_cb)
 {
 	struct rpmsg_virtio_device *rpmsg_vdev;
 	struct virtio_device *vdev;
@@ -307,11 +307,13 @@ platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
 	rpmsg_vdev = metal_allocate_memory(sizeof(*rpmsg_vdev));
 	if (!rpmsg_vdev)
 		return NULL;
-	shbuf_io = remoteproc_get_io_with_pa(rproc, SHARED_BUF_PA);
+	shbuf_io = remoteproc_get_io_with_pa(rproc, SHARED_MEM_PA);
 	if (!shbuf_io)
 		return NULL;
-	shbuf = metal_io_phys_to_virt(shbuf_io, SHARED_BUF_PA);
+	shbuf = metal_io_phys_to_virt(shbuf_io,
+				      SHARED_MEM_PA + SHARED_BUF_OFFSET);
 
+	xil_printf("creating remoteproc virtio\r\n");
 	/* TODO: can we have a wrapper for the following two functions? */
 	vdev = remoteproc_create_virtio(rproc, vdev_index, role, rst_cb);
 	if (!vdev) {
@@ -319,12 +321,15 @@ platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
 		goto err1;
 	}
 
-	ret =  rpmsg_init_vdev(rpmsg_vdev, vdev, NULL, shbuf_io, shbuf,
-			       SHARED_BUF_SIZE);
+	xil_printf("initializing rpmsg vdev\r\n");
+	ret =  rpmsg_init_vdev(rpmsg_vdev, vdev, new_endpoint_cb,
+			       shbuf_io, shbuf,
+			       (SHARED_MEM_SIZE - SHARED_BUF_OFFSET));
 	if (ret) {
 		xil_printf("failed rpmsg_init_vdev\r\n");
 		goto err2;
 	}
+	xil_printf("initializing rpmsg vdev\r\n");
 	return rpmsg_virtio_get_rpmsg_device(rpmsg_vdev);
 err2:
 	remoteproc_remove_virtio(rproc, vdev);
@@ -345,8 +350,10 @@ int platform_poll(void *priv)
 		if (!(atomic_flag_test_and_set(&prproc->ipi_nokick))) {
 			metal_irq_restore_enable(flags);
 			remoteproc_get_notification(rproc, RSC_NOTIFY_ID_ANY);
+			break;
 		}
 		_rproc_wait();
 		metal_irq_restore_enable(flags);
 	}
+	return 0;
 }
