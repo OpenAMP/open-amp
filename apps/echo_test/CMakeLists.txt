@@ -15,7 +15,7 @@ collector_list (_deps PROJECT_LIB_DEPS)
 
 set (OPENAMP_LIB open_amp)
 
-foreach (_app echo_testd)
+foreach (_app echo_test echo_testd)
   collector_list (_sources APP_COMMON_SOURCES)
   set (build_app 1)
   if (WITH_REMOTEPROC_MASTER)
