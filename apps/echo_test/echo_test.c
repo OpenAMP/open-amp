@@ -9,8 +9,10 @@ This application echoes back data that was sent to it by the master core. */
 #include <openamp/open_amp.h>
 #include <metal/alloc.h>
 #include "rsc_table.h"
+#include "platform_info.h"
 
 #define SHUTDOWN_MSG	0xEF56A55A
+#define APP_EPT_ADDR    0
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
@@ -22,141 +24,31 @@ struct _payload {
 
 static int err_cnt;
 
-#define RPMSG_GET_KFIFO_SIZE 1
-#define RPMSG_GET_AVAIL_DATA_SIZE 2
-#define RPMSG_GET_FREE_SPACE 3
-
-#define RPMSG_HEADER_LEN sizeof(struct rpmsg_hdr)
-#define MAX_RPMSG_BUFF_SIZE (RPMSG_BUFFER_SIZE - RPMSG_HEADER_LEN)
 #define PAYLOAD_MIN_SIZE	1
-#define PAYLOAD_MAX_SIZE	(MAX_RPMSG_BUFF_SIZE - 24)
-#define NUM_PAYLOADS		(PAYLOAD_MAX_SIZE/PAYLOAD_MIN_SIZE)
 
-/* Internal functions */
-static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl);
-static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl);
-static void rpmsg_read_cb(struct rpmsg_channel *, void *, int, void *,
-			  unsigned long);
 /* Globals */
-static struct rpmsg_channel *app_rp_chnl;
-static struct rpmsg_endpoint *rp_ept;
-static struct remote_proc *proc = NULL;
-static struct rsc_table_info rsc_info;
+static struct rpmsg_endpoint lept;
 static struct _payload *i_payload;
 static int rnum = 0;
 static int err_cnt = 0;
+static int ept_deleted = 0;
 
 /* External functions */
 extern int init_system();
 extern void cleanup_system();
-extern struct hil_proc *platform_create_proc(int proc_index);
-extern void *get_resource_table (int rsc_id, int *len);
 
-/* Application entry point */
-int app (struct hil_proc *hproc)
+/*-----------------------------------------------------------------------------*
+ *  RPMSG endpoint callbacks
+ *-----------------------------------------------------------------------------*/
+static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
+			      uint32_t src, void *priv)
 {
-	int status = 0;
-	int shutdown_msg = SHUTDOWN_MSG;
-	int i;
-	int size;
-	int expect_rnum = 0;
-
-	LPRINTF(" 1 - Send data to remote core, retrieve the echo");
-	LPRINTF(" and validate its integrity ..\n");
-
-	i_payload =
-	    (struct _payload *)metal_allocate_memory(2 * sizeof(unsigned long) +
-				      PAYLOAD_MAX_SIZE);
-
-	if (!i_payload) {
-		LPERROR("memory allocation failed.\n");
-		return -1;
-	}
-
-	/* Initialize RPMSG framework */
-	status =
-	    remoteproc_resource_init(&rsc_info, hproc,
-				     rpmsg_channel_created,
-				     rpmsg_channel_deleted, rpmsg_read_cb,
-				     &proc, 1);
-
-	if (status) {
-		LPERROR("Failed to initialize remoteproc resource.\n");
-		return -1;
-	}
-
-	LPRINTF("Remote proc resource initialized.\n");
-	while (!app_rp_chnl) {
-		hil_poll(proc->proc, 0);
-	}
-
-	LPRINTF("RPMSG channel has created.\n");
-	for (i = 0, size = PAYLOAD_MIN_SIZE; i < (int)NUM_PAYLOADS; i++, size++) {
-		i_payload->num = i;
-		i_payload->size = size;
-
-		/* Mark the data buffer. */
-		memset(&(i_payload->data[0]), 0xA5, size);
-
-		LPRINTF("sending payload number %lu of size %d\n",
-			i_payload->num, (2 * sizeof(unsigned long)) + size);
-
-		status = rpmsg_send(app_rp_chnl, i_payload,
-			(2 * sizeof(unsigned long)) + size);
-
-		if (status < 0) {
-			LPRINTF("Error sending data...\n");
-			break;
-		}
-		LPRINTF("echo test: sent : %d\n",
-		(2 * sizeof(unsigned long)) + size);
-
-		expect_rnum++;
-		do {
-			hil_poll(proc->proc, 0);
-		} while ((rnum < expect_rnum) && !err_cnt && app_rp_chnl);
-
-	}
-
-	LPRINTF("**********************************\n");
-	LPRINTF(" Test Results: Error count = %d \n", err_cnt);
-	LPRINTF("**********************************\n");
-	/* Send shutdown message to remote */
-	rpmsg_send(app_rp_chnl, &shutdown_msg, sizeof(int));
-	sleep(1);
-	LPRINTF("Quitting application .. Echo test end\n");
-
-	remoteproc_resource_deinit(proc);
-	cleanup_system();
-	metal_free_memory(i_payload);
-	return 0;
-}
-
-static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
-{
-	app_rp_chnl = rp_chnl;
-	rp_ept = rpmsg_create_ept(rp_chnl, rpmsg_read_cb, RPMSG_NULL,
-				  RPMSG_ADDR_ANY);
-}
-
-static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
-{
-	(void)rp_chnl;
-	rpmsg_destroy_ept(rp_ept);
-	LPRINTF("%s\n", __func__);
-	app_rp_chnl = NULL;
-	rp_ept = NULL;
-}
-
-static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
-			  void *priv, unsigned long src)
-{
-	(void)rp_chnl;
-	(void)src;
-	(void)priv;
 	int i;
 	struct _payload *r_payload = (struct _payload *)data;
 
+	(void)ept;
+	(void)src;
+	(void)priv;
 	LPRINTF(" received payload number %lu of size %d \r\n",
 		r_payload->num, len);
 
@@ -176,11 +68,116 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 	rnum = r_payload->num + 1;
 }
 
+static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
+{
+	(void)ept;
+	LPERROR("Endpoint is destroyed\n");
+	ept_deleted = 1;
+}
+
+static void rpmsg_new_endpoint_cb(struct rpmsg_device *rdev, const char *name,
+				  uint32_t src)
+{
+	if (strcmp(name, RPMSG_CHAN_NAME))
+		LPERROR("Unexpected name service %s.\n", name);
+	else
+		(void)rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME,
+				       APP_EPT_ADDR, src,
+				       rpmsg_endpoint_cb,
+				       rpmsg_endpoint_destroy);
+
+}
+
+/*-----------------------------------------------------------------------------*
+ *  Application
+ *-----------------------------------------------------------------------------*/
+int app (struct rpmsg_device *rdev, void *priv)
+{
+	int ret;
+	int shutdown_msg = SHUTDOWN_MSG;
+	int i;
+	int size, max_size, num_payloads;
+	int expect_rnum = 0;
+
+	LPRINTF(" 1 - Send data to remote core, retrieve the echo");
+	LPRINTF(" and validate its integrity ..\n");
+
+	max_size = rpmsg_virtio_get_buffer_size(rdev);
+	if (max_size < 0) {
+		LPERROR("No avaiable buffer size.\n");
+		return -1;
+	}
+	num_payloads = max_size - PAYLOAD_MIN_SIZE + 1;
+	i_payload =
+	    (struct _payload *)metal_allocate_memory(2 * sizeof(unsigned long) +
+				      max_size);
+
+	if (!i_payload) {
+		LPERROR("memory allocation failed.\n");
+		return -1;
+	}
+
+	/* Initialize RPMSG framework */
+	ret = rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME, APP_EPT_ADDR,
+			       RPMSG_ADDR_ANY,
+			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
+
+	if (ret) {
+		LPERROR("Failed to initialize remoteproc resource.\n");
+		return ret;
+	}
+
+	while (!is_rpmsg_ept_ready(&lept))
+		platform_poll(priv);
+
+	LPRINTF("RPMSG endpoint is binded with remote.\n");
+	for (i = 0, size = PAYLOAD_MIN_SIZE; i < num_payloads; i++, size++) {
+		i_payload->num = i;
+		i_payload->size = size;
+
+		/* Mark the data buffer. */
+		memset(&(i_payload->data[0]), 0xA5, size);
+
+		LPRINTF("sending payload number %lu of size %d\n",
+			i_payload->num, (2 * sizeof(unsigned long)) + size);
+
+		ret = rpmsg_send(&lept, i_payload,
+				 (2 * sizeof(unsigned long)) + size);
+
+		if (ret < 0) {
+			LPRINTF("Error sending data...\n");
+			break;
+		}
+		LPRINTF("echo test: sent : %d\n",
+		(2 * sizeof(unsigned long)) + size);
+
+		expect_rnum++;
+		do {
+			platform_poll(priv);
+		} while ((rnum < expect_rnum) && !err_cnt);
+
+	}
+
+	LPRINTF("**********************************\n");
+	LPRINTF(" Test Results: Error count = %d \n", err_cnt);
+	LPRINTF("**********************************\n");
+	/* Send shutdown message to remote */
+	rpmsg_send(&lept, &shutdown_msg, sizeof(int));
+	while(!ept_deleted)
+		platform_poll(priv);
+	LPRINTF("Quitting application .. Echo test end\n");
+
+	metal_free_memory(i_payload);
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	unsigned long proc_id = 0;
 	unsigned long rsc_id = 0;
-	struct hil_proc *hproc;
+	struct remoteproc *rproc;
+	struct rpmsg_device *rdev;
+	int ret;
 
 	/* Initialize HW system components */
 	init_system();
@@ -193,18 +190,28 @@ int main(int argc, char *argv[])
 		rsc_id = strtoul(argv[2], NULL, 0);
 	}
 
-	/* Create HIL proc */
-	hproc = platform_create_proc(proc_id);
-	if (!hproc) {
-		LPERROR("Failed to create hil proc.\n");
-		return -1;
+	rproc = platform_create_proc(proc_id, rsc_id);
+	if (!rproc) {
+		LPERROR("Failed to create remoteproc device.\n");
+		ret = -1;
+	} else {
+		rdev = platform_create_rpmsg_vdev(rproc, 0,
+						  VIRTIO_DEV_MASTER,
+						  NULL,
+						  rpmsg_new_endpoint_cb);
+		if (!rdev) {
+			LPERROR("Failed to create rpmsg virtio device.\n");
+			ret = -1;
+		} else {
+			app(rdev, (void *)rproc);
+			ret = 0;
+		}
 	}
-	rsc_info.rsc_tab = get_resource_table(
-		(int)rsc_id, &rsc_info.size);
-	if (!rsc_info.rsc_tab) {
-		LPRINTF("Failed to get resource table data.\n");
-		return -1;
-	}
-	return app(hproc);
+
+	LPRINTF("Stopping application...\n");
+	remoteproc_remove(rproc);
+	cleanup_system();
+
+	return ret;
 }
 
