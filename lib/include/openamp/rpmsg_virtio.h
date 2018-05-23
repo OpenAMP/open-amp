@@ -88,12 +88,37 @@ static inline int rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device * rv
  */
 int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev);
 
+/**
+ * rpmsg_init_vdev - initialize rpmsg virtio device
+ * Master side:
+ * Initialize RPMsg virtio queues and shared buffers, the address of shm can be
+ * ANY. In this case, function will get shared memory from system shared memory
+ * pools. If the vdev has RPMsg name service feature, this API will create an
+ * name service endpoint.
+ *
+ * Slave side:
+ * This API will not return until the driver ready is set by the master side.
+ *
+ * @param rvdev  - pointer to the rpmsg virtio device
+ * @param vdev   - pointer to the virtio device
+ * @param new_endpoint_cb - pointer to callback on creation of a new endpoint
+ * @param shm_io - pointer to the share memory I/O region.
+ * @param shm    - pointer to the share memory.
+ * @param len    - length of the shared memory section.
+ *
+ * @return - status of function execution
+ */
 int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev,
 		    rpmsg_ept_create_cb new_endpoint_cb,
 		    struct metal_io_region *shm_io,
 		    void *shm, unsigned int len);
 
+/**
+ * rpmsg_deinit_vdev - deinitialize rpmsg virtio device
+ *
+ * @param rvdev - pointer to the rpmsg virtio device
+ */
 void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev);
 
 static inline struct rpmsg_device *
