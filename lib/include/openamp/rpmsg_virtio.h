@@ -29,16 +29,29 @@ extern "C" {
 /* The feature bitmap for virtio rpmsg */
 #define VIRTIO_RPMSG_F_NS 0 /* RP supports name service notifications */
 
+struct rpmsg_virtio_shm_pool;
+/**
+ * struct rpmsg_virtio_shm_pool - shared memory pool used for rpmsg buffers
+ * @get_buffer: function to get buffer from the pool
+ * @base: base address of the memory pool
+ * @avail: available memory size
+ * @size: total pool size
+ */
+struct rpmsg_virtio_shm_pool {
+	void *(*get_buffer)(struct rpmsg_virtio_shm_pool *shpool, size_t size);
+	void *base;
+	size_t avail;
+	size_t size;
+};
+
 /**
  * struct rpmsg_virtio_device - representation of a rpmsg device based on virtio
  * @rdev: rpmsg device, first property in the struct
  * @vdev: pointer to the virtio device
  * @rvq: pointer to receive virtqueue
  * @svq: pointer to send virtqueue
- * @buffers_number: number of shared buffers
- * @shbuf_io: pointer to the shared buffer I/O region.
- * @new_endpoint_cb: callback handler for new service announcement without local
- *                   endpoints waiting to bind.
+ * @shbuf_io: pointer to the shared buffer I/O region
+ * @shpool: pointer to the shared buffers pool
  * @endpoints: list of endpoints.
  */
 struct rpmsg_virtio_device {
@@ -47,7 +60,7 @@ struct rpmsg_virtio_device {
 	struct virtqueue *rvq;
 	struct virtqueue *svq;
 	struct metal_io_region *shbuf_io;
-	struct sh_mem_pool *shbuf;
+	struct rpmsg_virtio_shm_pool *shpool;
 };
 
 #define RPMSG_REMOTE	VIRTIO_DEV_SLAVE
@@ -103,8 +116,7 @@ int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev);
  * @param vdev   - pointer to the virtio device
  * @param new_endpoint_cb - pointer to callback on creation of a new endpoint
  * @param shm_io - pointer to the share memory I/O region.
- * @param shm    - pointer to the share memory.
- * @param len    - length of the shared memory section.
+ * @param shpool - pointer to shared memory pool.
  *
  * @return - status of function execution
  */
@@ -112,7 +124,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev,
 		    rpmsg_ept_create_cb new_endpoint_cb,
 		    struct metal_io_region *shm_io,
-		    void *shm, unsigned int len);
+		    struct rpmsg_virtio_shm_pool *shpool);
 
 /**
  * rpmsg_deinit_vdev - deinitialize rpmsg virtio device
@@ -120,6 +132,21 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
  * @param rvdev - pointer to the rpmsg virtio device
  */
 void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev);
+
+/**
+ * rpmsg_virtio_init_shm_pool - initialize default shared buffers pool
+ *
+ * RPMsg virtio has default shared buffers pool implementation.
+ * The memory assigned to this pool will be dedicated to the RPMsg
+ * virtio. If you prefer to have other shared buffers allocation,
+ * you can implement your rpmsg virtio shared buffers pool.
+ *
+ * @param shpool - pointer to the shared buffers pool
+ * @param shbuf - pointer to the beginning of shared buffers
+ * @param size - shared buffers total size
+ */
+void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
+				void *shb, size_t size);
 
 static inline struct rpmsg_device *
 rpmsg_virtio_get_rpmsg_device(struct rpmsg_virtio_device *rvdev)
