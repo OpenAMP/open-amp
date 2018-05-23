@@ -10,7 +10,7 @@ This application echoes back data that was sent to it by the master core. */
 
 #define SHUTDOWN_MSG	0xEF56A55A
 
-#define LPRINTF(format, ...) xil_printf(format, ##__VA_ARGS__)
+#define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
 //#define LPRINTF(format, ...)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
@@ -22,7 +22,7 @@ extern int init_system(void);
 extern void cleanup_system(void);
 
 /*-----------------------------------------------------------------------------*
- *  RPMSG callbacks setup by remoteproc_resource_init()
+ *  RPMSG endpoint callbacks
  *-----------------------------------------------------------------------------*/
 static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 			      uint32_t src, void *priv)
@@ -46,7 +46,6 @@ static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
 	LPERROR("Endpoint is destroyed\n");
-	/* user application will need to free the endpoint memory */
 	ept_deleted = 1;
 }
 
@@ -87,7 +86,7 @@ int main(int argc, char *argv[])
 	unsigned long rsc_id = 0;
 	struct remoteproc *rproc;
 	struct rpmsg_device *rdev;
-	int status = -1;
+	int ret;
 
 	LPRINTF("Starting application...\n");
 
@@ -105,14 +104,17 @@ int main(int argc, char *argv[])
 	rproc = platform_create_proc(proc_id, rsc_id);
 	if (!rproc) {
 		LPERROR("Failed to create remoteproc device.\n");
+		ret = -1;
 	} else {
 		rdev = platform_create_rpmsg_vdev(rproc, 0,
 						   VIRTIO_DEV_SLAVE,
-						   NULL);
+						   NULL, NULL);
 		if (!rdev) {
 			LPERROR("Failed to create rpmsg virtio device.\n");
+			ret = -1;
 		} else {
 			app(rdev, (void *)rproc);
+			ret = 0;
 		}
 	}
 
@@ -120,6 +122,6 @@ int main(int argc, char *argv[])
 	remoteproc_remove(rproc);
 	cleanup_system();
 
-	return status;
+	return ret;
 }
 
