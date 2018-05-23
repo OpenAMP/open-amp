@@ -23,20 +23,15 @@
  *
  * return - a unique address
  */
-static int rpmsg_get_address(unsigned long *bitmap, int size)
+static uint32_t rpmsg_get_address(unsigned long *bitmap, int size)
 {
-	int addr = -1;
-	int i, tmp32;
+	unsigned int addr = RPMSG_ADDR_ANY;
+	unsigned int nextbit;
 
-	/* Find first available buffer */
-	for (i = 0; i < size; i++) {
-		tmp32 = get_first_zero_bit(bitmap[i]);
-
-		if (tmp32 < 32) {
-			addr = tmp32 + (i * 32);
-			bitmap[i] |= (1 << tmp32);
-			break;
-		}
+	nextbit = metal_bitmap_next_clear_bit(bitmap, 0, size);
+	if (nextbit < (uint32_t)size) {
+		addr = nextbit;
+		metal_bitmap_set_bit(bitmap, nextbit);
 	}
 
 	return addr;
@@ -50,25 +45,12 @@ static int rpmsg_get_address(unsigned long *bitmap, int size)
  * @param bitmap - bit map for addresses
  * @param size   - size of bitmap
  * @param addr   - address to free
- *
- * return - none
  */
-static int rpmsg_release_address(unsigned long *bitmap, int size, int addr)
+static void rpmsg_release_address(unsigned long *bitmap, int size,
+				  int addr)
 {
-	unsigned int i, j;
-	unsigned long mask = 1;
-
-	if (addr >= size * 32)
-		return -1;
-
-	/* Mark the addr as available */
-	i = addr / 32;
-	j = addr % 32;
-
-	mask = mask << j;
-	bitmap[i] = bitmap[i] & (~mask);
-
-	return RPMSG_SUCCESS;
+	if (addr < size)
+		metal_bitmap_clear_bit(bitmap, addr);
 }
 
 /**
@@ -84,18 +66,10 @@ static int rpmsg_release_address(unsigned long *bitmap, int size, int addr)
  */
 static int rpmsg_is_address_set(unsigned long *bitmap, int size, int addr)
 {
-	int i, j;
-	unsigned long mask = 1;
-
-	if (addr >= size * 32)
-		return -1;
-
-	/* Mark the id as available */
-	i = addr / 32;
-	j = addr % 32;
-	mask = mask << j;
-
-	return (bitmap[i] & mask);
+	if (addr < size)
+		return metal_bitmap_is_bit_set(bitmap, addr);
+	else
+		return RPMSG_ERR_PARAM;
 }
 
 /**
@@ -111,19 +85,12 @@ static int rpmsg_is_address_set(unsigned long *bitmap, int size, int addr)
  */
 static int rpmsg_set_address(unsigned long *bitmap, int size, int addr)
 {
-	int i, j;
-	unsigned long mask = 1;
-
-	if (addr >= size * 32)
-		return -1;
-
-	/* Mark the id as available */
-	i = addr / 32;
-	j = addr % 32;
-	mask = mask << j;
-	bitmap[i] |= mask;
-
-	return RPMSG_SUCCESS;
+	if (addr < size) {
+		metal_bitmap_set_bit(bitmap, addr);
+		return RPMSG_SUCCESS;
+	} else {
+		return RPMSG_ERR_PARAM;
+	}
 }
 
 /**
@@ -242,13 +209,16 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 
 	metal_mutex_acquire(&rdev->lock);
 	if (src != RPMSG_ADDR_ANY) {
-		if (!rpmsg_is_address_set
-		    (rdev->bitmap, RPMSG_ADDR_BMP_SIZE, src)) {
+		status = rpmsg_is_address_set(rdev->bitmap,
+					      RPMSG_ADDR_BMP_SIZE, src);
+		if (!status) {
 			/* Mark the address as used in the address bitmap. */
 			rpmsg_set_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE,
 					  src);
-		} else {
+		} else if (status > 0) {
 			status = RPMSG_SUCCESS;
+			goto ret_status;
+		} else {
 			goto ret_status;
 		}
 	} else {
