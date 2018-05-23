@@ -18,6 +18,7 @@
 #include <metal/list.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/types.h>
 
 #if defined __cplusplus
 extern "C" {
