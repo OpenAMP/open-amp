@@ -500,7 +500,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		 * shared buffers. Create shared memory pool to handle buffers.
 		 */
 		if (!shm || !len)
-			return -RPMSG_ERR_NO_MEM;
+			return -RPMSG_ERR_PARAM;
 
 		rvdev->shbuf =
 		    sh_mem_create_pool(shm, len, RPMSG_BUFFER_SIZE);
