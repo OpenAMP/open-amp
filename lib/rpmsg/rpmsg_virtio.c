@@ -23,6 +23,34 @@
 /* Time to wait - In multiple of 10 msecs. */
 #define RPMSG_TICKS_PER_INTERVAL                10
 
+#define WORD_SIZE                sizeof(unsigned long)
+#define WORD_ALIGN(a)            (((a) & (WORD_SIZE-1)) != 0)? \
+                                 (((a) & (~(WORD_SIZE-1))) + WORD_SIZE):(a)
+
+metal_weak void *
+rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
+				 size_t size)
+{
+	void *buffer;
+
+	if(shpool->avail < size)
+		return NULL;
+	buffer =  shpool->base + shpool->size - shpool->avail;
+	shpool->avail -= size;
+
+	return buffer;
+}
+
+void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
+				void *shb, size_t size)
+{
+	if (!shpool)
+		return;
+	shpool->base = shb;
+	shpool->size = WORD_ALIGN(size);
+	shpool->avail = WORD_ALIGN(size);
+}
+
 /**
  * rpmsg_virtio_return_buffer
  *
@@ -101,14 +129,15 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
 		if (data == NULL) {
-			data = sh_mem_get_buffer(rvdev->shbuf);
+			data = rpmsg_virtio_shm_pool_get_buffer(rvdev->shpool,
+							     RPMSG_BUFFER_SIZE);
 			*len = RPMSG_BUFFER_SIZE;
 		}
 	} else {
-		data =
-		    virtqueue_get_available_buffer(rvdev->svq, idx,
-						   (uint32_t *)len);
+		data = virtqueue_get_available_buffer(rvdev->svq, idx,
+						      (uint32_t *)len);
 	}
+
 	return data;
 }
 
@@ -456,7 +485,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev,
 		    rpmsg_ept_create_cb new_endpoint_cb,
 		    struct metal_io_region *shm_io,
-		    void *shm, unsigned int len)
+		    struct rpmsg_virtio_shm_pool *shpool)
 {
 	struct rpmsg_device *rdev;
 	const char *vq_names[RPMSG_NUM_VRINGS];
@@ -476,14 +505,11 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		 * Since device is RPMSG Remote so we need to manage the
 		 * shared buffers. Create shared memory pool to handle buffers.
 		 */
-		if (!shm || !len)
-			return -RPMSG_ERR_PARAM;
-
-		rvdev->shbuf =
-		    sh_mem_create_pool(shm, len, RPMSG_BUFFER_SIZE);
-
-		if (!rvdev->shbuf)
-			return RPMSG_ERR_NO_MEM;
+		if (!shpool)
+			return RPMSG_ERR_PARAM;
+		if (!shpool->size)
+			return RPMSG_ERR_NO_BUFF;
+		rvdev->shpool = shpool;
 
 		vq_names[0] = "rx_vq";
 		vq_names[1] = "tx_vq";
@@ -527,12 +553,11 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		void * buffer;
 
                 vqbuf.len = RPMSG_BUFFER_SIZE;
-                for (idx = 0; ((idx < rvdev->rvq->vq_nentries)
-                               && (idx < rvdev->shbuf->total_buffs / 2));
-                     idx++) {
+                for (idx = 0; (idx < rvdev->rvq->vq_nentries); idx++) {
 
                         /* Initialize TX virtqueue buffers for remote device */
-                        buffer = sh_mem_get_buffer(rvdev->shbuf);
+			buffer = rpmsg_virtio_shm_pool_get_buffer(shpool,
+							     RPMSG_BUFFER_SIZE);
 
                         if (!buffer) {
                                 return RPMSG_ERR_NO_BUFF;
@@ -594,10 +619,7 @@ void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev)
 
 	rvdev->rvq = 0;
 	rvdev->svq = 0;
-	if (rvdev->shbuf) {
-		sh_mem_delete_pool(rvdev->shbuf);
-		rvdev->shbuf = NULL;
-	}
+
 	metal_mutex_release(&rdev->lock);
 
 	metal_mutex_deinit(&rdev->lock);
