@@ -263,7 +263,7 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 	unsigned short idx;
 	int ret, tick_count = 0;
 	unsigned long buff_len;
-	uint8_t status;
+	int status;
 	struct metal_io_region *io;
 
 	/* Get the associated remote device for channel. */
