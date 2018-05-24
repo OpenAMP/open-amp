@@ -275,37 +275,27 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 		return RPMSG_ERR_DEV_STATE;
 	}
 
-	/* Lock the device to enable exclusive access to virtqueues */
-	metal_mutex_acquire(&rdev->lock);
-	if (size > (_rpmsg_virtio_get_buffer_size(rvdev))) {
-		metal_mutex_release(&rdev->lock);
-		return RPMSG_ERR_BUFF_SIZE;
-	}
+	if (wait)
+		tick_count = RPMSG_TICK_COUNT / RPMSG_TICKS_PER_INTERVAL;
+	else
+		tick_count = 0;
 
-	/* Get rpmsg buffer for sending message. */
-	buffer = rpmsg_virtio_get_tx_buffer(rvdev, &buff_len, &idx);
-	/* Unlock the device */
-	metal_mutex_release(&rdev->lock);
-
-	if (!buffer && !wait) {
-		return RPMSG_ERR_NO_BUFF;
-	}
-
-	while (!buffer) {
-		/*
-		 * Wait parameter is true - pool the buffer for
-		 * 15 secs as defined by the APIs.
-		 */
-		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
+	while(1) {
+		/* Lock the device to enable exclusive access to virtqueues */
 		metal_mutex_acquire(&rdev->lock);
+		if (size > (_rpmsg_virtio_get_buffer_size(rvdev))) {
+			metal_mutex_release(&rdev->lock);
+			return RPMSG_ERR_BUFF_SIZE;
+		}
 		buffer = rpmsg_virtio_get_tx_buffer(rvdev, &buff_len, &idx);
 		metal_mutex_release(&rdev->lock);
-		tick_count += RPMSG_TICKS_PER_INTERVAL;
-		if (!buffer && (tick_count >=
-		    (RPMSG_TICK_COUNT / RPMSG_TICKS_PER_INTERVAL))) {
-			return RPMSG_ERR_NO_BUFF;
-		}
+		if (buffer || !tick_count)
+			break;
+		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
+		tick_count--;
 	}
+	if (!buffer)
+		return RPMSG_ERR_NO_BUFF;
 
 	/* Initialize RPMSG header. */
 	rp_hdr.dst = dst;
@@ -318,13 +308,13 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 	status = metal_io_block_write(io,
 			metal_io_virt_to_offset(io, buffer),
 			&rp_hdr, sizeof(rp_hdr));
-	if (status != sizeof(rp_hdr) )
+	if (status != sizeof(rp_hdr))
 		return RPMSG_ERR_UNEXPECTED;
 
 	status = metal_io_block_write(io,
 			metal_io_virt_to_offset(io, RPMSG_LOCATE_DATA(buffer)),
 			data, size);
-	if (status != size )
+	if (status != size)
 		return RPMSG_ERR_UNEXPECTED;
 
 	metal_mutex_acquire(&rdev->lock);
