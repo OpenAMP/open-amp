@@ -32,16 +32,22 @@ extern "C" {
 struct rpmsg_virtio_shm_pool;
 /**
  * struct rpmsg_virtio_shm_pool - shared memory pool used for rpmsg buffers
- * @get_buffer: function to get buffer from the pool
  * @base: base address of the memory pool
  * @avail: available memory size
  * @size: total pool size
  */
 struct rpmsg_virtio_shm_pool {
-	void *(*get_buffer)(struct rpmsg_virtio_shm_pool *shpool, size_t size);
 	void *base;
 	size_t avail;
 	size_t size;
+};
+
+/**
+ * struct rpmsg_device_ops - RPMsg device operations
+ * @get_buffer: function to get buffer from the pool
+ */
+struct rpmsg_virtio_ops {
+	void *(*get_buffer)(struct rpmsg_virtio_shm_pool *shpool, size_t size);
 };
 
 /**
@@ -61,6 +67,7 @@ struct rpmsg_virtio_device {
 	struct virtqueue *svq;
 	struct metal_io_region *shbuf_io;
 	struct rpmsg_virtio_shm_pool *shpool;
+	struct rpmsg_virtio_ops *ops;
 };
 
 #define RPMSG_REMOTE	VIRTIO_DEV_SLAVE
@@ -90,6 +97,20 @@ static inline int rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device * rv
 				  vq_callback * callbacks[])
 {
 	return virtio_create_virtqueues(rvdev->vdev, flags, nvqs, names, callbacks);
+}
+
+/**
+ * rpmsg_virtio_set_ops - set the ops function
+ * optional ops  initialization. have to be called before rpmsg_init_vdev.
+ *
+ * @rvdev - pointer to the rpmsg virtio device.
+ *
+ * @ops - RPMsg virtio device operations.
+ */
+static inline void rpmsg_virtio_set_ops(struct rpmsg_virtio_device *rvdev,
+					struct rpmsg_virtio_ops *ops)
+{
+	rvdev->ops = ops;
 }
 
 /**

@@ -28,10 +28,15 @@
                                  (((a) & (~(WORD_SIZE-1))) + WORD_SIZE):(a)
 
 static void *
-rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
-				 size_t size)
+rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_device *rvdev, size_t size)
 {
+	struct rpmsg_virtio_shm_pool *shpool = rvdev->shpool;
+	struct rpmsg_virtio_ops *ops = rvdev->ops;
+	
 	void *buffer;
+
+	if (ops && ops->get_buffer)
+		return ops->get_buffer(shpool, RPMSG_BUFFER_SIZE);
 
 	if(shpool->avail < size)
 		return NULL;
@@ -49,7 +54,6 @@ void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
 	shpool->base = shb;
 	shpool->size = WORD_ALIGN(size);
 	shpool->avail = WORD_ALIGN(size);
-	shpool->get_buffer = rpmsg_virtio_shm_pool_get_buffer;
 }
 
 /**
@@ -130,12 +134,9 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
 		if (data == NULL) {
-			struct rpmsg_virtio_shm_pool *shpool = rvdev->shpool;
-
-			if (shpool && shpool->get_buffer) {
-				data = shpool->get_buffer(shpool, RPMSG_BUFFER_SIZE);
-				*len = RPMSG_BUFFER_SIZE;
-			}
+			data = rpmsg_virtio_shm_pool_get_buffer(rvdev,
+							RPMSG_BUFFER_SIZE);
+			*len = RPMSG_BUFFER_SIZE;
 		}
 	} else {
 		data = virtqueue_get_available_buffer(rvdev->svq, idx,
@@ -553,7 +554,8 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
                 for (idx = 0; (idx < rvdev->rvq->vq_nentries); idx++) {
 
                         /* Initialize TX virtqueue buffers for remote device */
-                        buffer = shpool->get_buffer(shpool, RPMSG_BUFFER_SIZE);
+                        buffer = rpmsg_virtio_shm_pool_get_buffer(rvdev,
+							RPMSG_BUFFER_SIZE);
 
                         if (!buffer) {
                                 return RPMSG_ERR_NO_BUFF;
