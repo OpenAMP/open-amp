@@ -257,7 +257,7 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 	struct rpmsg_hdr rp_hdr;
 	void *buffer;
 	unsigned short idx;
-	int ret, tick_count = 0;
+	int tick_count = 0;
 	unsigned long buff_len;
 	int status;
 	struct metal_io_region *io;
@@ -316,8 +316,8 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 	metal_mutex_acquire(&rdev->lock);
 
 	/* Enqueue buffer on virtqueue. */
-	ret = rpmsg_virtio_enqueue_buffer(rvdev, buffer, buff_len, idx);
-	RPMSG_ASSERT(ret == VQUEUE_SUCCESS, "failed to enqueue buffer\n");
+	status = rpmsg_virtio_enqueue_buffer(rvdev, buffer, buff_len, idx);
+	RPMSG_ASSERT(status == VQUEUE_SUCCESS, "failed to enqueue buffer\n");
 	/* Let the other side know that there is a job to process. */
 	virtqueue_kick(rvdev->svq);
 
