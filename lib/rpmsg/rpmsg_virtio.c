@@ -482,7 +482,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	void (*callback[RPMSG_NUM_VRINGS]) (struct virtqueue *vq);
 	unsigned long dev_features;
 	int status;
-	unsigned int i;
+	unsigned int i, role;
 
 	rdev = &rvdev->rdev;
 	metal_mutex_init(&rdev->lock);
@@ -490,7 +490,8 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	rdev->new_endpoint_cb = new_endpoint_cb;
 	vdev->priv = rvdev;
 	rdev->ops.send_offchannel_raw = rpmsg_virtio_send_offchannel_raw;
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
+	role = rpmsg_virtio_get_role(rvdev);
+	if (role == RPMSG_MASTER) {
 		/*
 		 * Since device is RPMSG Remote so we need to manage the
 		 * shared buffers. Create shared memory pool to handle buffers.
@@ -518,7 +519,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 
 	rvdev->shbuf_io = shm_io;
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_REMOTE) {
+	if (role == RPMSG_REMOTE) {
 		/* wait synchro with the master */
 		rpmsg_virtio_wait_remote_ready(rvdev);
 	}
@@ -537,7 +538,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		vq->shm_io = shm_io;
 	}
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
+	if (role == RPMSG_MASTER) {
 		struct virtqueue_buf vqbuf;
 		unsigned int idx;
 		void * buffer;
@@ -586,7 +587,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		(void)rpmsg_register_endpoint(rdev, &rdev->ns_ept);
 	}
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER)
+	if (role == RPMSG_MASTER)
 		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
 
 
