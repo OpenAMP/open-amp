@@ -27,6 +27,7 @@
 #define WORD_ALIGN(a)	((((a) & (WORD_SIZE - 1)) != 0) ? \
 			(((a) & (~(WORD_SIZE - 1))) + WORD_SIZE) : (a))
 
+#ifndef VIRTIO_SLAVE_ONLY
 metal_weak void *
 rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
 				 size_t size)
@@ -40,6 +41,7 @@ rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
 
 	return buffer;
 }
+#endif /*!VIRTIO_SLAVE_ONLY*/
 
 void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
 				void *shb, size_t size)
@@ -67,7 +69,7 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
 				       unsigned short idx)
 {
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
-
+#ifndef VIRTIO_SLAVE_ONLY
 	if (role == RPMSG_MASTER) {
 		struct virtqueue_buf vqbuf;
 
@@ -76,9 +78,15 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
 		vqbuf.buf = buffer;
 		vqbuf.len = len;
 		virtqueue_add_buffer(rvdev->rvq, &vqbuf, 0, 1, buffer);
-	} else {
+	}
+#endif /*VIRTIO_SLAVE_ONLY*/
+
+#ifndef VIRTIO_MASTER_ONLY
+	if (role == RPMSG_REMOTE) {
+		(void)buffer;
 		virtqueue_add_consumed_buffer(rvdev->rvq, idx, len);
 	}
+#endif /*VIRTIO_MASTER_ONLY*/
 }
 
 /**
@@ -97,19 +105,26 @@ static int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev,
 				       void *buffer, unsigned long len,
 				       unsigned short idx)
 {
-	int status;
-	struct virtqueue_buf vqbuf;
+	unsigned int role = rpmsg_virtio_get_role(rvdev);
+#ifndef VIRTIO_SLAVE_ONLY
+	if (role == RPMSG_MASTER) {
+		struct virtqueue_buf vqbuf;
+		(void)idx;
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
 		/* Initialize buffer node */
 		vqbuf.buf = buffer;
 		vqbuf.len = len;
-		status = virtqueue_add_buffer(rvdev->svq, &vqbuf, 0, 1, buffer);
-	} else {
-		status = virtqueue_add_consumed_buffer(rvdev->svq, idx, len);
+		return virtqueue_add_buffer(rvdev->svq, &vqbuf, 0, 1, buffer);
 	}
+#endif /*!VIRTIO_SLAVE_ONLY*/
 
-	return status;
+#ifndef VIRTIO_MASTER_ONLY
+	if (role == RPMSG_REMOTE) {
+		(void)buffer;
+		return virtqueue_add_consumed_buffer(rvdev->svq, idx, len);
+	}
+#endif /*!VIRTIO_MASTER_ONLY*/
+	return 0;
 }
 
 /**
@@ -130,6 +145,7 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
 	void *data = NULL;
 
+#ifndef VIRTIO_SLAVE_ONLY
 	if (role == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
 		if (data == NULL) {
@@ -137,10 +153,15 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 							     RPMSG_BUFFER_SIZE);
 			*len = RPMSG_BUFFER_SIZE;
 		}
-	} else {
+	}
+#endif /*!VIRTIO_SLAVE_ONLY*/
+
+#ifndef VIRTIO_MASTER_ONLY
+	if (role == RPMSG_REMOTE) {
 		data = virtqueue_get_available_buffer(rvdev->svq, idx,
 						      (uint32_t *)len);
 	}
+#endif /*!VIRTIO_MASTER_ONLY*/
 
 	return data;
 }
@@ -161,15 +182,23 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 					unsigned long *len,
 					unsigned short *idx)
 {
-	void *data;
+	unsigned int role = rpmsg_virtio_get_role(rvdev);
+	void *data = NULL;
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
+#ifndef VIRTIO_SLAVE_ONLY
+	if (role == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->rvq, (uint32_t *)len, idx);
-	} else {
+	}
+#endif /*!VIRTIO_SLAVE_ONLY*/
+
+#ifndef VIRTIO_MASTER_ONLY
+	if (role == RPMSG_REMOTE) {
 		data =
 		    virtqueue_get_available_buffer(rvdev->rvq, idx,
 						   (uint32_t *)len);
 	}
+#endif /*!VIRTIO_MASTER_ONLY*/
+
 	if (data) {
 		/* FIX ME: library should not worry about if it needs
 		 * to flush/invalidate cache, it is shared memory.
@@ -182,6 +211,7 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 	return data;
 }
 
+#ifndef VIRTIO_MASTER_ONLY
 /**
  * check if the remote is ready to start RPMsg communication
  */
@@ -204,6 +234,7 @@ static int rpmsg_virtio_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
 
 	return false;
 }
+#endif /*!VIRTIO_MASTER_ONLY*/
 
 /**
  * _rpmsg_virtio_get_buffer_size
@@ -217,15 +248,21 @@ static int rpmsg_virtio_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
  */
 static int _rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 {
-	int length;
+	unsigned int role = rpmsg_virtio_get_role(rvdev);
+	int length = 0;
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
+#ifndef VIRTIO_SLAVE_ONLY
+	if (role == RPMSG_MASTER) {
 		/*
 		 * If device role is Remote then buffers are provided by us
 		 * (RPMSG Master), so just provide the macro.
 		 */
 		length = RPMSG_BUFFER_SIZE - sizeof(struct rpmsg_hdr);
-	} else {
+	}
+#endif /*!VIRTIO_SLAVE_ONLY*/
+
+#ifndef VIRTIO_MASTER_ONLY
+	if (role == RPMSG_REMOTE) {
 		/*
 		 * If other core is Master then buffers are provided by it,
 		 * so get the buffer size from the virtqueue.
@@ -234,6 +271,7 @@ static int _rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 		    (int)virtqueue_get_desc_size(rvdev->svq) -
 		    sizeof(struct rpmsg_hdr);
 	}
+#endif /*!VIRTIO_MASTER_ONLY*/
 
 	return length;
 }
@@ -498,6 +536,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	rdev->ops.send_offchannel_raw = rpmsg_virtio_send_offchannel_raw;
 	role = rpmsg_virtio_get_role(rvdev);
 
+#ifndef VIRTIO_SLAVE_ONLY
 	if (role == RPMSG_MASTER) {
 		/*
 		 * Since device is RPMSG Remote so we need to manage the
@@ -515,7 +554,12 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		callback[1] = rpmsg_virtio_tx_callback;
 		rvdev->rvq  = vdev->vrings_info[0].vq;
 		rvdev->svq  = vdev->vrings_info[1].vq;
-	} else {
+	}
+#endif /*!VIRTIO_SLAVE_ONLY*/
+
+#ifndef VIRTIO_MASTER_ONLY
+	(void)shpool;
+	if (role == RPMSG_REMOTE) {
 		vq_names[0] = "tx_vq";
 		vq_names[1] = "rx_vq";
 		callback[0] = rpmsg_virtio_tx_callback;
@@ -523,13 +567,15 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		rvdev->rvq  = vdev->vrings_info[1].vq;
 		rvdev->svq  = vdev->vrings_info[0].vq;
 	}
-
+#endif /*!VIRTIO_MASTER_ONLY*/
 	rvdev->shbuf_io = shm_io;
 
+#ifndef VIRTIO_MASTER_ONLY
 	if (role == RPMSG_REMOTE) {
 		/* wait synchro with the master */
 		rpmsg_virtio_wait_remote_ready(rvdev);
 	}
+#endif /*!VIRTIO_MASTER_ONLY*/
 
 	/* Create virtqueues for remote device */
 	status = rpmsg_virtio_create_virtqueues(rvdev, 0, RPMSG_NUM_VRINGS,
@@ -545,6 +591,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		vq->shm_io = shm_io;
 	}
 
+#ifndef VIRTIO_SLAVE_ONLY
 	if (role == RPMSG_MASTER) {
 		struct virtqueue_buf vqbuf;
 		unsigned int idx;
@@ -575,6 +622,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 			}
 		}
 	}
+#endif /*!VIRTIO_SLAVE_ONLY*/
 
 	/* Initialize channels and endpoints list */
 	metal_list_init(&rdev->endpoints);
@@ -592,8 +640,10 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		(void)rpmsg_register_endpoint(rdev, &rdev->ns_ept);
 	}
 
+#ifndef VIRTIO_SLAVE_ONLY
 	if (role == RPMSG_MASTER)
 		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
+#endif /*!VIRTIO_SLAVE_ONLY*/
 
 	return status;
 }
