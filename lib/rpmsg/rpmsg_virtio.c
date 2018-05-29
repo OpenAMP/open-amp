@@ -23,9 +23,9 @@
 /* Time to wait - In multiple of 10 msecs. */
 #define RPMSG_TICKS_PER_INTERVAL                10
 
-#define WORD_SIZE                sizeof(unsigned long)
-#define WORD_ALIGN(a)            (((a) & (WORD_SIZE-1)) != 0)? \
-                                 (((a) & (~(WORD_SIZE-1))) + WORD_SIZE):(a)
+#define WORD_SIZE	sizeof(unsigned long)
+#define WORD_ALIGN(a)	((((a) & (WORD_SIZE - 1)) != 0) ? \
+			(((a) & (~(WORD_SIZE - 1))) + WORD_SIZE) : (a))
 
 metal_weak void *
 rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
@@ -66,9 +66,12 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
 				       void *buffer, unsigned long len,
 				       unsigned short idx)
 {
-	struct virtqueue_buf vqbuf;
+	unsigned int role = rpmsg_virtio_get_role(rvdev);
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
+	if (role == RPMSG_MASTER) {
+		struct virtqueue_buf vqbuf;
+
+		(void)idx;
 		/* Initialize buffer node */
 		vqbuf.buf = buffer;
 		vqbuf.len = len;
@@ -124,9 +127,10 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 					unsigned long *len,
 					unsigned short *idx)
 {
-	void *data;
+	unsigned int role = rpmsg_virtio_get_role(rvdev);
+	void *data = NULL;
 
-	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER) {
+	if (role == RPMSG_MASTER) {
 		data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
 		if (data == NULL) {
 			data = rpmsg_virtio_shm_pool_get_buffer(rvdev->shpool,
@@ -276,7 +280,7 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 	else
 		tick_count = 0;
 
-	while(1) {
+	while (1) {
 		/* Lock the device to enable exclusive access to virtqueues */
 		metal_mutex_acquire(&rdev->lock);
 		if (size > (_rpmsg_virtio_get_buffer_size(rvdev))) {
@@ -301,9 +305,8 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 
 	/* Copy data to rpmsg buffer. */
 	io = rvdev->shbuf_io;
-	status = metal_io_block_write(io,
-			metal_io_virt_to_offset(io, buffer),
-			&rp_hdr, sizeof(rp_hdr));
+	status = metal_io_block_write(io, metal_io_virt_to_offset(io, buffer),
+				      &rp_hdr, sizeof(rp_hdr));
 	if (status != sizeof(rp_hdr))
 		return RPMSG_ERR_UNEXPECTED;
 
@@ -450,9 +453,8 @@ static void rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			if (rdev->new_endpoint_cb)
 				rdev->new_endpoint_cb(rdev, name, dest);
 			return;
-		} else {
-			_ept->dest_addr = dest;
 		}
+		_ept->dest_addr = dest;
 	}
 	metal_mutex_release(&rdev->lock);
 }
@@ -494,6 +496,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	vdev->priv = rvdev;
 	rdev->ops.send_offchannel_raw = rpmsg_virtio_send_offchannel_raw;
 	role = rpmsg_virtio_get_role(rvdev);
+
 	if (role == RPMSG_MASTER) {
 		/*
 		 * Since device is RPMSG Remote so we need to manage the
@@ -529,7 +532,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 
 	/* Create virtqueues for remote device */
 	status = rpmsg_virtio_create_virtqueues(rvdev, 0, RPMSG_NUM_VRINGS,
-					       vq_names, callback);
+						vq_names, callback);
 	if (status != RPMSG_SUCCESS)
 		return status;
 
@@ -544,34 +547,32 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	if (role == RPMSG_MASTER) {
 		struct virtqueue_buf vqbuf;
 		unsigned int idx;
-		void * buffer;
+		void *buffer;
 
-                vqbuf.len = RPMSG_BUFFER_SIZE;
-                for (idx = 0; (idx < rvdev->rvq->vq_nentries); idx++) {
+		vqbuf.len = RPMSG_BUFFER_SIZE;
+		for (idx = 0; idx < rvdev->rvq->vq_nentries; idx++) {
 
                         /* Initialize TX virtqueue buffers for remote device */
 			buffer = rpmsg_virtio_shm_pool_get_buffer(shpool,
 							     RPMSG_BUFFER_SIZE);
 
-                        if (!buffer) {
-                                return RPMSG_ERR_NO_BUFF;
-                        }
+			if (!buffer) {
+				return RPMSG_ERR_NO_BUFF;
+			}
 
-                        vqbuf.buf = buffer;
+			vqbuf.buf = buffer;
 
-                        metal_io_block_set(shm_io,
-                                metal_io_virt_to_offset(shm_io, buffer),
-                                0x00,
-                                RPMSG_BUFFER_SIZE);
-                        status =
-                            virtqueue_add_buffer(rvdev->rvq, &vqbuf, 0, 1,
-                                                 buffer);
+			metal_io_block_set(shm_io,
+				metal_io_virt_to_offset(shm_io, buffer),
+				0x00, RPMSG_BUFFER_SIZE);
+			status =
+				virtqueue_add_buffer(rvdev->rvq, &vqbuf, 0, 1,
+						     buffer);
 
-                        if (status != RPMSG_SUCCESS) {
-                                return status;
-                        }
-                }
-
+			if (status != RPMSG_SUCCESS) {
+				return status;
+			}
+		}
 	}
 
 	/* Initialize channels and endpoints list */
@@ -592,7 +593,6 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 
 	if (role == RPMSG_MASTER)
 		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
-
 
 	return status;
 }

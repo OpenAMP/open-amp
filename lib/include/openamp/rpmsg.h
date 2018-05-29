@@ -127,7 +127,8 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
  *
  * Returns number of bytes it has sent or negative error value on failure.
  */
-static inline int rpmsg_send(struct rpmsg_endpoint *ept, const void *data, int len)
+static inline int rpmsg_send(struct rpmsg_endpoint *ept, const void *data,
+			     int len)
 {
 	if (ept->dest_addr == RPMSG_ADDR_ANY)
 		return RPMSG_ERR_ADDR;
@@ -154,7 +155,7 @@ static inline int rpmsg_send(struct rpmsg_endpoint *ept, const void *data, int l
  * Returns number of bytes it has sent or negative error value on failure.
  */
 static inline int rpmsg_sendto(struct rpmsg_endpoint *ept, const void *data,
-			int len, uint32_t dst)
+			       int len, uint32_t dst)
 {
 	return rpmsg_send_offchannel_raw(ept, ept->addr, dst, data, len, true);
 }
@@ -274,7 +275,7 @@ void (*rpmsg_endpoint_destroy_callback)(struct rpmsg_endpoint *ept, void *priv);
  * @src: local address of the endpoint
  * @dest: target address of the endpoint
  * @cb: endpoint callback
- * @destroy_cb: destory endpoint callback
+ * @destroy_cb: destroy endpoint callback
  */
 static inline void rpmsg_init_ept(struct rpmsg_endpoint *ept,
 				  const char *name,
@@ -301,7 +302,7 @@ static inline void rpmsg_init_ept(struct rpmsg_endpoint *ept,
  * @src: local address of the endpoint
  * @dest: target address of the endpoint
  * @cb: endpoint callback
- * @destroy_cb: destory endpoint callback
+ * @destroy_cb: destroy endpoint callback
  *
  * In essence, an rpmsg endpoint represents a listener on the rpmsg bus, as
  * it binds an rpmsg address with an rx callback handler.
