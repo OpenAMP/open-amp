@@ -24,6 +24,15 @@ static int vq_ring_must_notify_host(struct virtqueue *vq);
 static void vq_ring_notify_host(struct virtqueue *vq);
 static int virtqueue_nused(struct virtqueue *vq);
 
+static inline char* vq_get_name(struct virtqueue *vq)
+{
+#ifdef DEBUG
+	return vq->vq_name;
+#else
+	return NULL;
+#endif
+}
+
 /**
  * virtqueue_create - Creates new VirtIO queue
  *
@@ -68,7 +77,9 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		memset(vq, 0x00, vq_size);
 
 		vq->vq_dev = virt_dev;
+#ifdef DEBUG
 		strncpy(vq->vq_name, name, VIRTQUEUE_MAX_NAME_SZ);
+#endif
 		vq->vq_queue_index = id;
 		vq->vq_nentries = ring->num_descs;
 		vq->vq_free_cnt = vq->vq_nentries;
@@ -285,7 +296,7 @@ void virtqueue_free(struct virtqueue *vq)
 		if (vq->vq_free_cnt != vq->vq_nentries) {
 			metal_log(METAL_LOG_WARNING,
 				  "%s: freeing non-empty virtqueue\r\n",
-				  vq->vq_name);
+				  vq_get_name(vq));
 		}
 
 		metal_free_memory(vq);
@@ -427,7 +438,7 @@ void virtqueue_dump(struct virtqueue *vq)
 		  "VQ: %s - size=%d; free=%d; used=%d; queued=%d; "
 		  "desc_head_idx=%d; avail.idx=%d; used_cons_idx=%d; "
 		  "used.idx=%d; avail.flags=0x%x; used.flags=0x%x\r\n",
-		  vq->vq_name, vq->vq_nentries, vq->vq_free_cnt,
+		  vq_get_name(vq), vq->vq_nentries, vq->vq_free_cnt,
 		  virtqueue_nused(vq), vq->vq_queued_cnt, vq->vq_desc_head_idx,
 		  vq->vq_ring.avail->idx, vq->vq_used_cons_idx,
 		  vq->vq_ring.used->idx, vq->vq_ring.avail->flags,
