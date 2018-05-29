@@ -289,7 +289,7 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 		remoteproc_remove(rproc);
 		return NULL;
 	}
-	xil_printf("Failed to intialize remoteproc\r\n");
+	xil_printf("Initialize remoteproc successfully.\r\n");
 
 	return rproc;
 }
