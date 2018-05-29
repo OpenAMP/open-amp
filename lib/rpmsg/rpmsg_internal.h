@@ -17,12 +17,15 @@ extern "C" {
 #ifdef RPMSG_DEBUG
 #define RPMSG_ASSERT(_exp, _msg) do { \
 		if (!(_exp)) { \
-			openamp_print("FATAL: %s - "_msg, __func__); \
+			openamp_print("FATAL: %s - _msg", __func__); \
 			while (1); \
 		} \
 	} while (0)
 #else
-#define RPMSG_ASSERT(_exp, _msg) if (!(_exp)) while (1)
+#define RPMSG_ASSERT(_exp, _msg) do { \
+		if (!(_exp)) \
+			while (1); \
+	} while (0)
 #endif
 
 #define RPMSG_LOCATE_DATA(p) ((unsigned char *)p + sizeof(struct rpmsg_hdr))
@@ -77,7 +80,6 @@ struct rpmsg_ns_msg {
 	uint32_t flags;
 } OPENAMP_PACKED_END;
 
-
 int rpmsg_send_ns_message(struct rpmsg_endpoint *ept, unsigned long flags);
 
 struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_device *rvdev,
@@ -91,6 +93,7 @@ rpmsg_get_ept_from_addr(struct rpmsg_device *rdev, uint32_t addr)
 {
 	return rpmsg_get_endpoint(rdev, NULL, addr, RPMSG_ADDR_ANY);
 }
+
 #if defined __cplusplus
 }
 #endif
