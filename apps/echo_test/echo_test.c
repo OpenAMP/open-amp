@@ -117,13 +117,13 @@ int app (struct rpmsg_device *rdev, void *priv)
 		return -1;
 	}
 
-	/* Initialize RPMSG framework */
+	/* Create RPMsg endpoint */
 	ret = rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME, APP_EPT_ADDR,
 			       RPMSG_ADDR_ANY,
 			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
 
 	if (ret) {
-		LPERROR("Failed to initialize remoteproc resource.\n");
+		LPERROR("Failed to create RPMsg endpoint.\n");
 		return ret;
 	}
 
