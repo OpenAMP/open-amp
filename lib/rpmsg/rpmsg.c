@@ -184,7 +184,7 @@ static void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept)
 
 	rdev = ept->rdev;
 
-	if(ept->addr != RPMSG_ADDR_ANY)
+	if (ept->addr != RPMSG_ADDR_ANY)
 		rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE,
 				      ept->addr);
 	metal_list_del(&ept->node);
@@ -233,13 +233,12 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 	if (status < 0)
 		rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE, addr);
 
-
 	if (!status  && ept->dest_addr == RPMSG_ADDR_ANY) {
 		/* Send NS announcement to remote processor */
 		metal_mutex_release(&rdev->lock);
 		status = rpmsg_send_ns_message(ept, RPMSG_NS_CREATE);
 		metal_mutex_acquire(&rdev->lock);
-		if(status)
+		if (status)
 			rpmsg_unregister_endpoint(ept);
 	}
 
