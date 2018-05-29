@@ -57,7 +57,7 @@ static const char *virtio_feature_name(unsigned long val,
 	};
 
 	for (i = 0; i < 2; i++) {
-		if (descs[i] == NULL)
+		if (!descs[i])
 			continue;
 
 		for (j = 0; descs[i][j].vfd_val != 0; j++) {
@@ -102,16 +102,15 @@ int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 			size_t offset;
 			struct metal_io_region *io = vring_info->io;
 
-			offset = metal_io_virt_to_offset(io, vring_alloc->vaddr);
+			offset = metal_io_virt_to_offset(io,
+							 vring_alloc->vaddr);
 			metal_io_block_set(io, offset, 0,
 					   vring_size(vring_alloc->num_descs,
 						      vring_alloc->align));
 		}
-		ret = virtqueue_create(vdev, i,
-					names[i], vring_alloc,
-					callbacks[i],
-					vdev->func->notify,
-					vring_info->vq);
+		ret = virtqueue_create(vdev, i, names[i], vring_alloc,
+				       callbacks[i], vdev->func->notify,
+			               vring_info->vq);
 		if (ret)
 			return ret;
 	}
