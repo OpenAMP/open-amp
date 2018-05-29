@@ -16,7 +16,7 @@ if (WITH_LINUXREMOTE)
 endif (WITH_LINUXREMOTE)
 
 add_subdirectory (echo_test)
-#add_subdirectory (matrix_multiply)
+add_subdirectory (matrix_multiply)
 add_subdirectory (load_fw)
 if (WITH_PROXY_APPS)
 if (NOT WITH_REMOTEPROC_MASTER)

@@ -15,8 +15,8 @@ multiplies them and returns the result to the master core. */
 
 #define SHUTDOWN_MSG	0xEF56A55A
 
-//#define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
-#define LPRINTF(format, ...)
+#define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
+//#define LPRINTF(format, ...)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
 typedef struct _matrix {
@@ -25,14 +25,13 @@ typedef struct _matrix {
 } matrix;
 
 /* Local variables */
-static struct remote_proc *proc = NULL;
-static struct rsc_table_info rsc_info;
-
-static int evt_chnl_deleted = 0;
+static struct rpmsg_endpoint lept;
+static int ept_deleted = 0;
 
 /* External functions */
 extern int init_system(void);
 extern void cleanup_system(void);
+
 
 /*-----------------------------------------------------------------------------*
  *  Calculate the Matrix
@@ -57,8 +56,8 @@ static void Matrix_Multiply(const matrix *m, const matrix *n, matrix *r)
 /*-----------------------------------------------------------------------------*
  *  RPMSG callbacks setup by remoteproc_resource_init()
  *-----------------------------------------------------------------------------*/
-static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
-			  void *priv, unsigned long src)
+static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
+			      uint32_t src, void *priv)
 {
 	matrix matrix_array[NUM_MATRIX];
 	matrix matrix_result;
@@ -67,7 +66,7 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 	(void)src;
 
 	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
-		evt_chnl_deleted = 1;
+		LPRINTF("shutdown message is received.\n");
 		return;
 	}
 
@@ -76,48 +75,40 @@ static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
 	Matrix_Multiply(&matrix_array[0], &matrix_array[1], &matrix_result);
 
 	/* Send the result of matrix multiplication back to master. */
-	if (rpmsg_send(rp_chnl, &matrix_result, sizeof(matrix)) < 0) {
+	if (rpmsg_send(ept, &matrix_result, sizeof(matrix)) < 0) {
 		LPERROR("rpmsg_send failed\n");
 	}
 }
 
-static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
+static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
 {
-	(void)rp_chnl;
+	(void)ept;
+	LPERROR("Endpoint is destroyed\n");
+	ept_deleted = 1;
 }
 
-static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
+/*-----------------------------------------------------------------------------*
+ *  Application
+ *-----------------------------------------------------------------------------*/
+int app(struct rpmsg_device *rdev, void *priv)
 {
-	(void)rp_chnl;
-	evt_chnl_deleted = 1;
-}
+	int ret;
 
-int app(struct hil_proc *hproc)
-{
-	int status = 0;
-
-	/* Initialize framework */
-	LPRINTF("Try to init remoteproc resource\n");
-	status = remoteproc_resource_init(&rsc_info, hproc,
-					  rpmsg_channel_created,
-					  rpmsg_channel_deleted, rpmsg_read_cb,
-					  &proc, 0);
-
-	if (RPROC_SUCCESS != status) {
-		LPERROR("Failed  to initialize remoteproc resource.\n");
+	ret = rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME, 0, RPMSG_ADDR_ANY,
+			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
+	if (ret) {
+		LPERROR("Failed to create endpoint.\n");
 		return -1;
 	}
 
-	LPRINTF("Init remoteproc resource done\n");
-
 	LPRINTF("Waiting for events...\n");
-	do {
-		hil_poll(proc->proc, 0);
-	} while (!evt_chnl_deleted);
-
-	/* disable interrupts and free resources */
-	LPRINTF("De-initializating remoteproc resource\n");
-	remoteproc_resource_deinit(proc);
+	while(1) {
+		platform_poll(priv);
+		/* we got a shutdown request, exit */
+		if (ept_deleted) {
+			break;
+		}
+	}
 
 	return 0;
 }
@@ -129,8 +120,9 @@ int main(int argc, char *argv[])
 {
 	unsigned long proc_id = 0;
 	unsigned long rsc_id = 0;
-	struct hil_proc *hproc;
-	int status = -1;
+	struct remoteproc *rproc;
+	struct rpmsg_device *rdev;
+	int ret;
 
 	LPRINTF("Starting application...\n");
 
@@ -145,22 +137,26 @@ int main(int argc, char *argv[])
 		rsc_id = strtoul(argv[2], NULL, 0);
 	}
 
-	/* Create HIL proc */
-	hproc = platform_create_proc(proc_id);
-	if (!hproc) {
-		LPERROR("Failed to create hil proc.\n");
+	rproc = platform_create_proc(proc_id, rsc_id);
+	if (!rproc) {
+		LPERROR("Failed to create remoteproc device.\n");
+		ret = -1;
 	} else {
-		rsc_info.rsc_tab =
-			get_resource_table((int)rsc_id, &rsc_info.size);
-		if (!rsc_info.rsc_tab) {
-			LPERROR("Failed to get resource table data.\n");
+		rdev = platform_create_rpmsg_vdev(rproc, 0,
+						   VIRTIO_DEV_SLAVE,
+						   NULL, NULL);
+		if (!rdev) {
+			LPERROR("Failed to create rpmsg virtio device.\n");
+			ret = -1;
 		} else {
-			status = app(hproc);
+			app(rdev, (void *)rproc);
+			ret = 0;
 		}
 	}
 
 	LPRINTF("Stopping application...\n");
-
+	remoteproc_remove(rproc);
 	cleanup_system();
-	return status;
+
+	return ret;
 }
