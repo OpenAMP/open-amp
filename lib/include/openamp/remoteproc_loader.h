@@ -53,7 +53,7 @@ struct image_store_ops {
 	int (*open)(void *store);
 	void (*close)(void *store);
 	long (*load)(void *store, size_t offset, void *dest,
-			size_t size, struct metal_io_region *io, int sync);
+		     size_t size, struct metal_io_region *io, int sync);
 	int (*load_finish)(void *store);
 	unsigned int features;
 };
