@@ -99,7 +99,10 @@ typedef struct {
 #define     EI_PAD          9	/* Start of padding bytes    */
 #define     EI_NIDENT       16	/* Size of e_ident[]         */
 
-/* EI_MAG0 to EI_MAG3 - A file's first 4 bytes hold amagic number, identifying the file as an ELF object file */
+/*
+ * EI_MAG0 to EI_MAG3 - A file's first 4 bytes hold amagic number, identifying
+ * the file as an ELF object file
+ */
 #define     ELFMAG0         0x7f /* e_ident[EI_MAG0]          */
 #define     ELFMAG1         'E'	/* e_ident[EI_MAG1]          */
 #define     ELFMAG2         'L'	/* e_ident[EI_MAG2]          */
@@ -107,13 +110,19 @@ typedef struct {
 #define     ELFMAG          "\177ELF"
 #define     SELFMAG         4
 
-/* EI_CLASS - The next byte, e_ident[EI_CLASS], identifies the file's class, or capacity. */
+/*
+ * EI_CLASS - The next byte, e_ident[EI_CLASS], identifies the file's class, or
+ * capacity.
+ */
 #define     ELFCLASSNONE    0	/* Invalid class             */
 #define     ELFCLASS32      1	/* 32-bit objects            */
 #define     ELFCLASS64      2	/* 64-bit objects            */
 
-/* EI_DATA - Byte e_ident[EI_DATA] specifies the data encoding of the remote_proc-specific data in the object
-file. The following encodings are currently defined. */
+/*
+ * EI_DATA - Byte e_ident[EI_DATA] specifies the data encoding of the
+ * remote_proc-specific data in the object file. The following encodings are
+ * currently defined.
+ */
 #define     ELFDATANONE     0	/* Invalid data encoding     */
 #define     ELFDATA2LSB     1	/* See Data encodings, below */
 #define     ELFDATA2MSB     2	/* See Data encodings, below */
@@ -246,7 +255,7 @@ typedef struct elf64_rela {
 } Elf64_Rela;
 
 /* Macros to extract information from 'r_info' field of relocation entries */
-#define ELF32_R_SYM(i)  ((i)>>8)
+#define ELF32_R_SYM(i)  ((i) >> 8)
 #define ELF32_R_TYPE(i) ((unsigned char)(i))
 #define ELF64_R_SYM(i)  ((i) >> 32)
 #define ELF64_R_TYPE(i) ((i) & 0xffffffff)
@@ -388,8 +397,8 @@ long elf_get_segment_file_len(void *elf_info, int index);
  * return length of copied data for success, negative value for failure
  */
 long elf_copy_segment(void *elf_info, struct image_store_ops *ops,
-			 void *store,
-			 int index, void *dest);
+		      void *store,
+		      int index, void *dest);
 
 /**
  * elf_get_section_len - Get ELF section length
