@@ -1,5 +1,5 @@
 /*
- * Remoteproc Virtio Framwork Implementation
+ * Remoteproc Virtio Framework Implementation
  *
  * Copyright(c) 2018 Xilinx Ltd.
  * Copyright(c) 2011 Texas Instruments, Inc.
@@ -96,8 +96,8 @@ static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
 	io = rpvdev->vdev_rsc_io;
 	/* TODO: shall we get features based on the role ? */
 	features = metal_io_read32(io,
-				  metal_io_virt_to_offset(io,
-				  &vdev_rsc->dfeatures));
+			metal_io_virt_to_offset(io, &vdev_rsc->dfeatures));
+
 	return features;
 }
 
@@ -259,7 +259,7 @@ int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
 			    unsigned int num_descs, unsigned int align)
 {
 	struct virtio_vring_info *vring_info;
-	unsigned int num_vrings;;
+	unsigned int num_vrings;
 
 	num_vrings = vdev->vrings_num;
 	if (index >= num_vrings)

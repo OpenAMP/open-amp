@@ -22,9 +22,9 @@ static int elf_is_64(const void *elf_info)
 }
 
 static long elf_load_data(struct image_store_ops *ops, void *store,
-			     size_t offset, void *dest,
-			     size_t size, struct metal_io_region *io,
-			     int block)
+			  size_t offset, void *dest,
+			  size_t size, struct metal_io_region *io,
+			  int block)
 {
 	long lsize;
 	long total_lsize;
@@ -34,7 +34,7 @@ static long elf_load_data(struct image_store_ops *ops, void *store,
 		do {
 			lsize = ops->load(store, offset, dest, size, io, block);
 			if (lsize == -RPROC_EAGAIN && ops->load_finish)
-				while(!ops->load_finish(store));
+				while (!ops->load_finish(store));
 		} while (lsize == -RPROC_EAGAIN);
 		if (lsize < 0)
 			return lsize;
@@ -117,7 +117,7 @@ static void *elf32_get_section(void *elf_info, const char *name)
 }
 
 static long elf_load_sections_headers(void *elf_info, void *store,
-					 struct image_store_ops *ops)
+				      struct image_store_ops *ops)
 {
 	void *dest;
 	size_t offset, size;
@@ -146,32 +146,37 @@ static long elf_load_sections_headers(void *elf_info, void *store,
 	lsize = elf_load_data(ops, store, offset, dest, size, NULL,
 			      SYNC_LOAD);
 	if (lsize != (long)size) {
-		metal_log(METAL_LOG_ERROR, "Elf load shd: Failed to load section hds.\n");
+		metal_log(METAL_LOG_ERROR,
+			  "Elf load shd: Failed to load section hds.\n");
 		return -RPROC_EINVAL;
 	}
 
 	/* Load section header names */
 	if (is_elf64) {
 		Elf64_Shdr *shdr = &elf64_info->shdrs[elf64_ehdr->e_shstrndx];
+
 		offset = shdr->sh_offset;
 		size = shdr->sh_size;
 		elf64_info->shstrtab = metal_allocate_memory(size);
 		dest = elf64_info->shstrtab;
 	} else {
 		Elf32_Shdr *shdr = &elf32_info->shdrs[elf32_ehdr->e_shstrndx];
+
 		offset = shdr->sh_offset;
 		size = shdr->sh_size;
 		elf32_info->shstrtab = metal_allocate_memory(size);
 		dest = elf32_info->shstrtab;
 	}
 	if (!dest) {
-		metal_log(METAL_LOG_ERROR, "Elf load shd: Failed to allocate memory.\n");
+		metal_log(METAL_LOG_ERROR,
+			  "Elf load shd: Failed to allocate memory.\n");
 		return -RPROC_ENOMEM;
 	}
 	lsize = elf_load_data(ops, store, offset, dest, size, NULL,
 			      SYNC_LOAD);
 	if (lsize != (long)size) {
-		metal_log(METAL_LOG_ERROR, "Elf Open: Failed to load section names.\n");
+		metal_log(METAL_LOG_ERROR,
+			  "Elf Open: Failed to load section names.\n");
 		metal_free_memory(dest);
 		if (is_elf64)
 			elf64_info->shstrtab = NULL;
@@ -209,7 +214,8 @@ void *elf_parse(void *store, struct image_store_ops *ops)
 		return NULL;
 	metal_log(METAL_LOG_DEBUG, "%s: open image file\n", __func__);
 	if (ops->open(store)) {
-		metal_log(METAL_LOG_ERROR, "ELF Open: failed to open firmware\n");
+		metal_log(METAL_LOG_ERROR,
+			  "ELF Open: failed to open firmware\n");
 		return NULL;
 	}
 	metal_log(METAL_LOG_DEBUG, "%s: load image header EIDENT\n", __func__);
@@ -231,11 +237,13 @@ void *elf_parse(void *store, struct image_store_ops *ops)
 		size = sizeof(elf32_ehdr) + EI_NIDENT;
 	}
 	/* Load ELF header */
-	metal_log(METAL_LOG_DEBUG, "%s: load the rest of image header\n", __func__);
+	metal_log(METAL_LOG_DEBUG, "%s: load the rest of image header\n",
+		  __func__);
 	lsize = elf_load_data(ops, store, EI_NIDENT, dest, size, NULL,
 			      SYNC_LOAD);
 	if (lsize != (long)size) {
-		metal_log(METAL_LOG_ERROR, "Elf Open: Failed to load ELF header.\n");
+		metal_log(METAL_LOG_ERROR,
+			  "Elf Open: Failed to load ELF header.\n");
 		goto error;
 	}
 
@@ -251,7 +259,8 @@ void *elf_parse(void *store, struct image_store_ops *ops)
 	size = elf_info_size + phdrs_size + shdrs_size;
 	elf_info = metal_allocate_memory(size);
 	if (!elf_info) {
-		metal_log(METAL_LOG_ERROR, "Elf Open: Failed to alloc memory.\n");
+		metal_log(METAL_LOG_ERROR,
+			  "Elf Open: Failed to alloc memory.\n");
 		return NULL;
 	}
 
@@ -278,20 +287,24 @@ void *elf_parse(void *store, struct image_store_ops *ops)
 		dest = elf32_info->phdrs;
 		offset = elf32_ehdr.e_phoff;
 	}
-	metal_log(METAL_LOG_DEBUG, "%s: load program header\n", __func__);
+	metal_log(METAL_LOG_DEBUG,
+		  "%s: load program header\n", __func__);
 	lsize = elf_load_data(ops, store, offset, dest, phdrs_size, NULL,
 			      SYNC_LOAD);
 	if (lsize < 0 || (size_t)lsize != phdrs_size) {
-		metal_log(METAL_LOG_ERROR, "Elf Open: Failed to load program headers.\n");
+		metal_log(METAL_LOG_ERROR,
+			  "Elf Open: Failed to load program headers.\n");
 		goto error;
 	}
 
 	/* Load ELF sections headers */
 	if (shdrs_size && (ops->features & SUPPORT_SEEK)) {
-		metal_log(METAL_LOG_DEBUG, "%s: load section header\n", __func__);
+		metal_log(METAL_LOG_DEBUG,
+			  "%s: load section header\n", __func__);
 		lsize = elf_load_sections_headers(elf_info, store, ops);
-		if (lsize <0 ) {
-			metal_log(METAL_LOG_ERROR, "Elf Open: Failed to load section headers.\n");
+		if (lsize < 0) {
+			metal_log(METAL_LOG_ERROR,
+				  "Elf Open: Failed to load section headers.\n");
 			goto error;
 		}
 	}
@@ -333,7 +346,8 @@ int elf_load(void *store, void *elf_info, struct remoteproc *rproc,
 		struct metal_io_region *io = NULL;
 		size_t size;
 
-		metal_log(METAL_LOG_DEBUG, "%s: parse segment %d\n", __func__, i);
+		metal_log(METAL_LOG_DEBUG,
+			  "%s: parse segment %d\n", __func__, i);
 		if (elf64_info) {
 			elf64_parse_segment(elf_phdr, &p_type, &p_offset,
 					    &p_vaddr, &p_paddr, &p_filesz,
@@ -345,19 +359,22 @@ int elf_load(void *store, void *elf_info, struct remoteproc *rproc,
 					    &p_memsz);
 			elf_phdr += sizeof(Elf32_Phdr);
 		}
-		metal_log(METAL_LOG_DEBUG, "%s: parse segment %d 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x.\n",
-			   __func__, i, p_type, p_offset, p_vaddr, p_paddr,
+		metal_log(METAL_LOG_DEBUG,
+			  "%s: parse segment %d 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x.\n",
+			  __func__, i, p_type, p_offset, p_vaddr, p_paddr,
 			   p_filesz, p_memsz);
 		if (!(p_type && PT_LOAD))
 			continue;
 		da = p_paddr;
 		dest = remoteproc_mmap(rproc, NULL, &da, p_memsz, 0, &io);
-		if (dest == NULL) {
-			metal_log(METAL_LOG_ERROR, "Elf Load: mmap da 0x%lx failed.\n", da);
+		if (!dest) {
+			metal_log(METAL_LOG_ERROR,
+				  "Elf Load: mmap da 0x%lx failed.\n", da);
 			return -RPROC_EINVAL;
 		}
-		metal_log(METAL_LOG_DEBUG, "%s: load segment %d, offset 0x%x to %p\n",
-			    __func__, i, p_offset, dest);
+		metal_log(METAL_LOG_DEBUG,
+			  "%s: load segment %d, offset 0x%x to %p\n",
+			  __func__, i, p_offset, dest);
 		lsize = elf_load_data(ops, store, p_offset, dest,
 				      p_filesz, io, ASYNC_LOAD);
 		if (lsize < 0 || (size_t)lsize != p_filesz) {
@@ -380,7 +397,7 @@ int elf_load(void *store, void *elf_info, struct remoteproc *rproc,
 	}
 	/* Check if all the segements have been loaded successfully */
 	if (ops->load_finish)
-		while(!ops->load_finish(store));
+		while (!ops->load_finish(store));
 
 	/* Load sections headers if it is not loaded yet */
 	if (!(ops->features & SUPPORT_SEEK)) {
@@ -392,7 +409,8 @@ int elf_load(void *store, void *elf_info, struct remoteproc *rproc,
 		 */
 		lsize = elf_load_sections_headers(elf_info, store, ops);
 		if (lsize < 0) {
-			metal_log(METAL_LOG_ERROR, "Elf Load: Failed to load section headers.\n");
+			metal_log(METAL_LOG_ERROR,
+				"Elf Load: Failed to load section headers.\n");
 			return -RPROC_EINVAL;
 		}
 	}
@@ -419,12 +437,12 @@ void elf_close(void *store, void *elf_info, struct image_store_ops *ops)
 
 metal_phys_addr_t elf_get_entry(void *elf_info)
 {
-
 	if (!elf_info)
 		return -RPROC_EINVAL;
 
 	if (elf_is_64(elf_info)) {
 		Elf64_Ehdr *elf64_ehdr;
+
 		elf64_ehdr = elf_info;
 		return elf64_ehdr->e_entry;
 	} else {
@@ -460,7 +478,7 @@ long elf_get_segment_file_len(void *elf_info, int index)
 }
 
 long elf_copy_segment(void *elf_info, struct image_store_ops *ops,
-			 void *store, int index, void *dest)
+		      void *store, int index, void *dest)
 {
 	struct elf64_info *elf64_info;
 	struct elf32_info *elf32_info;
@@ -509,10 +527,12 @@ long elf_get_section_size(void *elf_info, const char *name)
 		return -RPROC_EINVAL;
 	if (elf_is_64(elf_info)) {
 		Elf64_Shdr *shdr = elf64_get_section(elf_info, name);
+
 		if (shdr)
 			return shdr->sh_size;
 	} else {
 		Elf32_Shdr *shdr = elf32_get_section(elf_info, name);
+
 		if (shdr)
 			return shdr->sh_size;
 	}
@@ -520,18 +540,20 @@ long elf_get_section_size(void *elf_info, const char *name)
 }
 
 long elf_get_section_da(void *elf_info, const char *name,
-			   metal_phys_addr_t *da)
+			metal_phys_addr_t *da)
 {
 	if (!elf_info)
 		return -RPROC_EINVAL;
 	if (elf_is_64(elf_info)) {
 		Elf64_Shdr *shdr = elf64_get_section(elf_info, name);
+
 		if (shdr) {
 			*da = shdr->sh_addr;
 			return (long)shdr->sh_size;
 		}
 	} else {
 		Elf32_Shdr *shdr = elf32_get_section(elf_info, name);
+
 		if (shdr) {
 			*da = shdr->sh_addr;
 			return (long)shdr->sh_size;
@@ -541,7 +563,7 @@ long elf_get_section_da(void *elf_info, const char *name,
 }
 
 long elf_copy_section_from_file(void *elf_info, struct image_store_ops *ops,
-				   void *store, const char *name, void *dest)
+				void *store, const char *name, void *dest)
 {
 	size_t size = 0;
 	size_t offset;
@@ -551,12 +573,14 @@ long elf_copy_section_from_file(void *elf_info, struct image_store_ops *ops,
 		return -RPROC_EINVAL;
 	if (elf_is_64(elf_info)) {
 		Elf64_Shdr *shdr = elf64_get_section(elf_info, name);
+
 		if (shdr) {
 			size = shdr->sh_size;
 			offset = shdr->sh_offset;
 		}
 	} else {
 		Elf32_Shdr *shdr = elf32_get_section(elf_info, name);
+
 		if (shdr) {
 			size = shdr->sh_size;
 			offset = shdr->sh_offset;
@@ -570,7 +594,6 @@ long elf_copy_section_from_file(void *elf_info, struct image_store_ops *ops,
 		return -RPROC_EINVAL;
 	else
 		return lsize;
-
 }
 
 long elf_get_rsc_table(void *elf_info, metal_phys_addr_t *da_ptr)

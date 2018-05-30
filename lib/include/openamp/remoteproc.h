@@ -423,7 +423,7 @@ struct remoteproc {
  * @init: initialize the remoteproc instance
  * @remove: remove the remoteproc instance
  * @mmap: memory mapped the mempory with physical address or destination
- *        adress as input.
+ *        address as input.
  * @handle_rsc: handle the vendor specific resource
  * @start: kick the remoteproc to run application
  * @stop: stop the remoteproc from running application, the resource such as
@@ -458,8 +458,8 @@ struct remoteproc_ops {
 #define RPROC_ERR_RSC_TAB_NP          (RPROC_EBASE + 10)
 #define RPROC_ERR_RSC_TAB_NS          (RPROC_EBASE + 11)
 #define RPROC_EMAX	(RPROC_EBASE + 16)
-#define RPROC_EPTR	(void*)(-1)
-#define RPROC_EOF	(void*)(-1)
+#define RPROC_EPTR	(void *)(-1)
+#define RPROC_EOF	(void *)(-1)
 
 static inline long RPROC_PTR_ERR(const void *ptr)
 {
@@ -474,7 +474,7 @@ static inline int RPROC_IS_ERR(const void *ptr)
 		return 0;
 }
 
-static inline void * RPROC_ERR_PTR(long error)
+static inline void *RPROC_ERR_PTR(long error)
 {
 	return (void *)error;
 }
@@ -596,9 +596,9 @@ remoteproc_get_io_with_va(struct remoteproc *rproc,
  * returns pointer to the memory
  */
 void *remoteproc_mmap(struct remoteproc *rproc,
-		    metal_phys_addr_t *pa, metal_phys_addr_t *da,
-		    size_t size, unsigned int attribute,
-		    struct metal_io_region **io);
+		      metal_phys_addr_t *pa, metal_phys_addr_t *da,
+		      size_t size, unsigned int attribute,
+		      struct metal_io_region **io);
 
 /**
  * remoteproc_parse_rsc_table
@@ -761,7 +761,7 @@ void remoteproc_remove_virtio(struct remoteproc *rproc,
  * return 0 for succeed, negative value for failure
  */
 int remoteproc_get_notification(struct remoteproc *rproc,
-				 uint32_t notifyid);
+				uint32_t notifyid);
 #if defined __cplusplus
 }
 #endif
