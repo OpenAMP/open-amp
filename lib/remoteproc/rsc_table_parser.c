@@ -36,10 +36,9 @@ rsc_handler rsc_handler_table[] = {
 int handle_rsc_table(struct remoteproc *rproc,
 		     struct resource_table *rsc_table, int size)
 {
-
 	void *rsc_start;
 	unsigned int rsc_type;
-	unsigned int idx;
+	unsigned int idx, offset;
 	int status = 0;
 
 	/* Validate rsc table header fields */
@@ -55,8 +54,10 @@ int handle_rsc_table(struct remoteproc *rproc,
 	}
 
 	/* Offset array */
-	if (sizeof(struct resource_table)
-	    + rsc_table->num * sizeof(rsc_table->offset[0]) > (unsigned int)size) {
+	offset = sizeof(struct resource_table)
+		 + rsc_table->num * sizeof(rsc_table->offset[0]);
+
+	if (offset > (unsigned int)size) {
 		return -RPROC_ERR_RSC_TAB_TRUNC;
 	}
 
@@ -179,10 +180,10 @@ int handle_trace_rsc(struct remoteproc *rproc, void *rsc)
 	struct fw_rsc_trace *vdev_rsc = (struct fw_rsc_trace *)rsc;
 	(void)rproc;
 
-	if( vdev_rsc->da != FW_RSC_U32_ADDR_ANY && vdev_rsc->len != 0)
+	if (vdev_rsc->da != FW_RSC_U32_ADDR_ANY && vdev_rsc->len != 0)
 		return 0;
-	/* FIXME: master should allocated a memory used by slave */ 
-			
+	/* FIXME: master should allocated a memory used by slave */
+
 	return -RPROC_ERR_RSC_TAB_NS;
 }
 
