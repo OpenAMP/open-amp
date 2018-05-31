@@ -173,23 +173,21 @@ struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv)
 	return rproc;
 }
 
-void remoteproc_remove(struct remoteproc *rproc)
+int remoteproc_remove(struct remoteproc *rproc)
 {
+	int ret;
+
 	if (rproc) {
 		metal_mutex_acquire(&rproc->lock);
-		if (rproc->state != RPROC_OFFLINE) {
-			metal_mutex_release(&rproc->lock);
-			(void)remoteproc_shutdown(rproc);
-			metal_mutex_acquire(&rproc->lock);
-			rproc->state = RPROC_OFFLINE;
-		}
+		if (rproc->state == RPROC_OFFLINE)
+			rproc->ops->remove(rproc);
+		else
+			ret = -EBUSY;
 		metal_mutex_release(&rproc->lock);
-
-		/* After this call, the rproc pointer is suposed to be
-		 * already freed.
-		 */
-		rproc->ops->remove(rproc);
+	} else {
+		ret = -EINVAL;
 	}
+	return ret;
 }
 
 int remoteproc_set_bootaddr(struct remoteproc *rproc,
