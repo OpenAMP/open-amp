@@ -123,7 +123,7 @@ struct virtio_device {
 	unsigned int role; /**< if it is virtio backend or front end. */
 	virtio_dev_reset_cb reset_cb; /**< user registered virtio
 					   device callback */
-	virtio_dispatch *func;/**< Virtio dispatch table */
+	const virtio_dispatch *func; /**< Virtio dispatch table */
 	void *priv; /**< TODO: remove pointer to virtio_device private
 			 data */
 	unsigned int vrings_num; /**< number of vrings */
