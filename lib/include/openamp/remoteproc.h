@@ -518,8 +518,9 @@ struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv);
  *
  * @rproc - pointer to remoteproc instance
  *
+ * returns 0 for success, negative value for failure
  */
-void remoteproc_remove(struct remoteproc *rproc);
+int remoteproc_remove(struct remoteproc *rproc);
 
 /**
  * remoteproc_get_io_with_name
