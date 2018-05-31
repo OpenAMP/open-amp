@@ -113,7 +113,7 @@ static void rproc_virtio_set_features(struct virtio_device *vdev,
 	io = rpvdev->vdev_rsc_io;
 	/* TODO: shall we set features based on the role ? */
 	metal_io_write32(io,
-			 metal_io_virt_to_offset(io, &vdev_rsc->status),
+			 metal_io_virt_to_offset(io, &vdev_rsc->dfeatures),
 			 features);
 	rpvdev->notify(rpvdev->priv, vdev->index);
 }
