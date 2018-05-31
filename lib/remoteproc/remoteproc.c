@@ -579,6 +579,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
 	metal_list_add_tail(&rproc->vdevs, &rpvdev->node);
 
+	metal_mutex_release(&rproc->lock);
 	return vdev;
 
 err1:
