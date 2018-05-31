@@ -490,6 +490,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	unsigned int i, role;
 
 	rdev = &rvdev->rdev;
+	memset(rdev, 0, sizeof(*rdev));
 	metal_mutex_init(&rdev->lock);
 	rvdev->vdev = vdev;
 	rdev->new_endpoint_cb = new_endpoint_cb;
