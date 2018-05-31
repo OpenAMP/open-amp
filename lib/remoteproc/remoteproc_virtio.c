@@ -152,7 +152,7 @@ static void rproc_virtio_reset_device(struct virtio_device *vdev)
 					VIRTIO_CONFIG_STATUS_NEEDS_RESET);
 }
 
-virtio_dispatch remoteproc_virtio_dispatch_funcs = {
+const virtio_dispatch remoteproc_virtio_dispatch_funcs = {
 	.get_status =  rproc_virtio_get_status,
 	.set_status = rproc_virtio_set_status,
 	.get_features = rproc_virtio_get_features,
