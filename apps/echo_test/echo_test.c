@@ -71,13 +71,14 @@ static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len
 static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
-	LPERROR("Endpoint is destroyed\n");
+	LPRINTF("Endpoint is destroyed\n");
 	ept_deleted = 1;
 }
 
 static void rpmsg_new_endpoint_cb(struct rpmsg_device *rdev, const char *name,
 				  uint32_t src)
 {
+	LPRINTF("new endpoint notification is received.\n");
 	if (strcmp(name, RPMSG_CHAN_NAME))
 		LPERROR("Unexpected name service %s.\n", name);
 	else
@@ -145,7 +146,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 				 (2 * sizeof(unsigned long)) + size);
 
 		if (ret < 0) {
-			LPRINTF("Error sending data...\n");
+			LPERROR("Failed to send data...\n");
 			break;
 		}
 		LPRINTF("echo test: sent : %d\n",
