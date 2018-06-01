@@ -12,10 +12,6 @@
 #include <openamp/open_amp.h>
 #include "rsc_table.h"
 
-/* Place resource table in special ELF section */
-#define __section_t(S)          __attribute__((__section__(#S)))
-#define __resource              __section_t(.resource_table)
-
 #define RPMSG_IPU_C0_FEATURES        1
 
 /* VirtIO rpmsg device id */
@@ -26,13 +22,13 @@
 
 #define NUM_VRINGS                  0x02
 #define VRING_ALIGN                 0x1000
-#define RING_TX                     0x00000000
-#define RING_RX                     0x00004000
+#define RING_TX                     0x00004000
+#define RING_RX                     0x00008000
 #define VRING_SIZE                  256
 
 #define NUM_TABLE_ENTRIES           1
 
-struct remote_resource_table __resource resources = {
+struct remote_resource_table resources = {
 	/* Version */
 	1,
 
@@ -48,7 +44,7 @@ struct remote_resource_table __resource resources = {
 
 	/* Virtio device entry */
 	{
-	 RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, VIRTIO_CONFIG_STATUS_DRIVER_OK,
+	 RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,
 	 NUM_VRINGS, {0, 0},
 	 },
 
