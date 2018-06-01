@@ -263,8 +263,6 @@ static inline int rpmsg_trysend_offchannel(struct rpmsg_endpoint *ept,
 	return rpmsg_send_offchannel_raw(ept, src, dst, data, len, false);
 }
 
-void (*rpmsg_endpoint_destroy_callback)(struct rpmsg_endpoint *ept, void *priv);
-
 /**
  * rpmsg_init_ept - initialize rpmsg endpoint
  *
