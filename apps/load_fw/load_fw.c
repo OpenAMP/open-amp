@@ -36,7 +36,6 @@
 #include <openamp/elf_loader.h>
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
-#include <openamp/sh_mem.h>
 #include <stdio.h>
 /* Xilinx headers */
 #include <pm_api_sys.h>

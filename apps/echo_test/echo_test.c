@@ -71,13 +71,14 @@ static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len
 static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
-	LPERROR("Endpoint is destroyed\n");
+	LPRINTF("Endpoint is destroyed\n");
 	ept_deleted = 1;
 }
 
 static void rpmsg_new_endpoint_cb(struct rpmsg_device *rdev, const char *name,
 				  uint32_t src)
 {
+	LPRINTF("new endpoint notification is received.\n");
 	if (strcmp(name, RPMSG_CHAN_NAME))
 		LPERROR("Unexpected name service %s.\n", name);
 	else
@@ -117,13 +118,13 @@ int app (struct rpmsg_device *rdev, void *priv)
 		return -1;
 	}
 
-	/* Initialize RPMSG framework */
+	/* Create RPMsg endpoint */
 	ret = rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME, APP_EPT_ADDR,
 			       RPMSG_ADDR_ANY,
 			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
 
 	if (ret) {
-		LPERROR("Failed to initialize remoteproc resource.\n");
+		LPERROR("Failed to create RPMsg endpoint.\n");
 		return ret;
 	}
 
@@ -145,7 +146,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 				 (2 * sizeof(unsigned long)) + size);
 
 		if (ret < 0) {
-			LPRINTF("Error sending data...\n");
+			LPERROR("Failed to send data...\n");
 			break;
 		}
 		LPRINTF("echo test: sent : %d\n",
@@ -163,6 +164,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 	LPRINTF("**********************************\n");
 	/* Send shutdown message to remote */
 	rpmsg_send(&lept, &shutdown_msg, sizeof(int));
+	rpmsg_destroy_ept(&lept);
 	while(!ept_deleted)
 		platform_poll(priv);
 	LPRINTF("Quitting application .. Echo test end\n");

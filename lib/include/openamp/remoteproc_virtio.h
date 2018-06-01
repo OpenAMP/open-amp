@@ -1,5 +1,5 @@
 /*
- * Remoteproc Virtio Framwork
+ * Remoteproc Virtio Framework
  *
  * Copyright(c) 2018 Xilinx Ltd.
  * Copyright(c) 2011 Texas Instruments, Inc.

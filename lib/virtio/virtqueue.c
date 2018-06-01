@@ -23,10 +23,11 @@ static void vq_ring_notify_host(struct virtqueue *vq);
 static int virtqueue_nused(struct virtqueue *vq);
 
 /* Default implementation of P2V based on libmetal */
-static inline void * virtqueue_phys_to_virt(struct virtqueue *vq,
-					    metal_phys_addr_t phys)
+static inline void *virtqueue_phys_to_virt(struct virtqueue *vq,
+					   metal_phys_addr_t phys)
 {
 	struct metal_io_region *io = vq->shm_io;
+
 	return metal_io_phys_to_virt(io, phys);
 }
 
@@ -35,6 +36,7 @@ static inline metal_phys_addr_t virtqueue_virt_to_phys(struct virtqueue *vq,
 						       void *buf)
 {
 	struct metal_io_region *io = vq->shm_io;
+
 	return metal_io_virt_to_phys(io, buf);
 }
 
@@ -55,8 +57,8 @@ static inline metal_phys_addr_t virtqueue_virt_to_phys(struct virtqueue *vq,
  */
 int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     const char *name, struct vring_alloc_info *ring,
-		     void (*callback) (struct virtqueue * vq),
-		     void (*notify) (struct virtqueue * vq),
+		     void (*callback)(struct virtqueue *vq),
+		     void (*notify)(struct virtqueue *vq),
 		     struct virtqueue *vq)
 {
 	int status = VQUEUE_SUCCESS;
@@ -119,14 +121,13 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
 	VQUEUE_BUSY(vq);
 
 	if (status == VQUEUE_SUCCESS) {
-
 		VQASSERT(vq, cookie != NULL, "enqueuing with no cookie");
 
 		head_idx = vq->vq_desc_head_idx;
 		VQ_RING_ASSERT_VALID_IDX(vq, head_idx);
 		dxp = &vq->vq_descx[head_idx];
 
-		VQASSERT(vq, (dxp->cookie == NULL),
+		VQASSERT(vq, dxp->cookie == NULL,
 			 "cookie already exists for index");
 
 		dxp->cookie = cookie;
@@ -154,7 +155,7 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
 
 	VQUEUE_IDLE(vq);
 
-	return (status);
+	return status;
 }
 
 /**
@@ -166,13 +167,13 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
  *
  * @return              - Pointer to used buffer
  */
-void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len, uint16_t * idx)
+void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 {
 	struct vring_used_elem *uep;
 	void *cookie;
 	uint16_t used_idx, desc_idx;
 
-	if ((vq == NULL) || (vq->vq_used_cons_idx == vq->vq_ring.used->idx))
+	if (!vq || (vq->vq_used_cons_idx == vq->vq_ring.used->idx))
 		return (NULL);
 
 	VQUEUE_BUSY(vq);
@@ -182,8 +183,8 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len, uint16_t * idx)
 
 	atomic_thread_fence(memory_order_seq_cst);
 
-	desc_idx = (uint16_t) uep->id;
-	if (len != NULL)
+	desc_idx = (uint16_t)uep->id;
+	if (len)
 		*len = uep->len;
 
 	vq_ring_free_chain(vq, desc_idx);
@@ -191,11 +192,11 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t * len, uint16_t * idx)
 	cookie = vq->vq_descx[desc_idx].cookie;
 	vq->vq_descx[desc_idx].cookie = NULL;
 
-	if (idx != NULL)
+	if (idx)
 		*idx = used_idx;
 	VQUEUE_IDLE(vq);
 
-	return (cookie);
+	return cookie;
 }
 
 uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx)
@@ -211,8 +212,7 @@ uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx)
  */
 void virtqueue_free(struct virtqueue *vq)
 {
-	if (vq != NULL) {
-
+	if (vq) {
 		if (vq->vq_free_cnt != vq->vq_nentries) {
 			metal_log(METAL_LOG_WARNING,
 				  "%s: freeing non-empty virtqueue\r\n",
@@ -233,15 +233,15 @@ void virtqueue_free(struct virtqueue *vq)
  *
  * @return                          - Pointer to available buffer
  */
-void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
-				     uint32_t * len)
+void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
+				     uint32_t *len)
 {
 	uint16_t head_idx = 0;
 	void *buffer;
 
 	atomic_thread_fence(memory_order_seq_cst);
 	if (vq->vq_available_idx == vq->vq_ring.avail->idx) {
-		return (NULL);
+		return NULL;
 	}
 
 	VQUEUE_BUSY(vq);
@@ -254,7 +254,7 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
 
 	VQUEUE_IDLE(vq);
 
-	return (buffer);
+	return buffer;
 }
 
 /**
@@ -273,13 +273,13 @@ int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 	uint16_t used_idx;
 
 	if (head_idx > vq->vq_nentries) {
-		return (ERROR_VRING_NO_BUFF);
+		return ERROR_VRING_NO_BUFF;
 	}
 
 	VQUEUE_BUSY(vq);
 
 	used_idx = vq->vq_ring.used->idx & (vq->vq_nentries - 1);
-	used_desc = &(vq->vq_ring.used->ring[used_idx]);
+	used_desc = &vq->vq_ring.used->ring[used_idx];
 	used_desc->id = head_idx;
 	used_desc->len = len;
 
@@ -289,7 +289,7 @@ int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 
 	VQUEUE_IDLE(vq);
 
-	return (VQUEUE_SUCCESS);
+	return VQUEUE_SUCCESS;
 }
 
 /**
@@ -301,7 +301,7 @@ int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
  */
 int virtqueue_enable_cb(struct virtqueue *vq)
 {
-	return (vq_ring_enable_interrupt(vq, 0));
+	return vq_ring_enable_interrupt(vq, 0);
 }
 
 /**
@@ -351,7 +351,7 @@ void virtqueue_kick(struct virtqueue *vq)
  */
 void virtqueue_dump(struct virtqueue *vq)
 {
-	if (vq == NULL)
+	if (!vq)
 		return;
 
 	metal_log(METAL_LOG_DEBUG,
@@ -372,7 +372,7 @@ void virtqueue_dump(struct virtqueue *vq)
  *
  * @return              - Descriptor length
  */
-uint32_t virtqueue_get_desc_size(struct virtqueue * vq)
+uint32_t virtqueue_get_desc_size(struct virtqueue *vq)
 {
 	uint16_t head_idx = 0;
 	uint16_t avail_idx = 0;
@@ -390,7 +390,7 @@ uint32_t virtqueue_get_desc_size(struct virtqueue * vq)
 
 	VQUEUE_IDLE(vq);
 
-	return (len);
+	return len;
 }
 
 /**************************************************************************
@@ -416,7 +416,6 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 	needed = readable + writable;
 
 	for (i = 0, idx = head_idx; i < needed; i++, idx = dp->next) {
-
 		VQASSERT(vq, idx != VQ_RING_DESC_CHAIN_END,
 			 "premature end of free desc chain");
 
@@ -428,7 +427,10 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 		if (i < needed - 1)
 			dp->flags |= VRING_DESC_F_NEXT;
 
-		/* Readable buffers are inserted into vring before the writable buffers. */
+		/*
+		 * Readable buffers are inserted  into vring before the
+		 * writable buffers.
+		 */
 		if (i >= readable)
 			dp->flags |= VRING_DESC_F_WRITE;
 	}
@@ -549,10 +551,10 @@ static int vq_ring_enable_interrupt(struct virtqueue *vq, uint16_t ndesc)
 	 * entries.
 	 */
 	if (virtqueue_nused(vq) > ndesc) {
-		return (1);
+		return 1;
 	}
 
-	return (0);
+	return 0;
 }
 
 /**
@@ -563,7 +565,7 @@ static int vq_ring_enable_interrupt(struct virtqueue *vq, uint16_t ndesc)
 void virtqueue_notification(struct virtqueue *vq)
 {
 	atomic_thread_fence(memory_order_seq_cst);
-	if (vq->callback != NULL)
+	if (vq->callback)
 		vq->callback(vq);
 }
 
@@ -594,7 +596,7 @@ static int vq_ring_must_notify_host(struct virtqueue *vq)
  */
 static void vq_ring_notify_host(struct virtqueue *vq)
 {
-	if (vq->notify != NULL)
+	if (vq->notify)
 		vq->notify(vq);
 }
 
@@ -609,8 +611,8 @@ static int virtqueue_nused(struct virtqueue *vq)
 
 	used_idx = vq->vq_ring.used->idx;
 
-	nused = (uint16_t) (used_idx - vq->vq_used_cons_idx);
+	nused = (uint16_t)(used_idx - vq->vq_used_cons_idx);
 	VQASSERT(vq, nused <= vq->vq_nentries, "used more than available");
 
-	return (nused);
+	return nused;
 }

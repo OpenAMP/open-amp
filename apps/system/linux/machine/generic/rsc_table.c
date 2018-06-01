@@ -26,8 +26,8 @@
 
 #define NUM_VRINGS                  0x02
 #define VRING_ALIGN                 0x1000
-#define RING_TX                     0x00000000
-#define RING_RX                     0x00004000
+#define RING_TX                     0x00004000
+#define RING_RX                     0x00008000
 #define VRING_SIZE                  256
 
 #define NUM_TABLE_ENTRIES           1
@@ -48,7 +48,7 @@ struct remote_resource_table __resource resources = {
 
 	/* Virtio device entry */
 	{
-	 RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, VIRTIO_CONFIG_STATUS_DRIVER_OK,
+	 RSC_VDEV, VIRTIO_ID_RPMSG_, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,
 	 NUM_VRINGS, {0, 0},
 	 },
 

@@ -19,7 +19,7 @@ extern "C" {
 #define RSC_TAB_MAX_VRINGS                  2
 
 /* Standard control request handling. */
-typedef int (*rsc_handler) (struct remoteproc * rproc, void *rsc);
+typedef int (*rsc_handler) (struct remoteproc *rproc, void *rsc);
 
 /* Function prototypes */
 int handle_rsc_table(struct remoteproc *rproc,

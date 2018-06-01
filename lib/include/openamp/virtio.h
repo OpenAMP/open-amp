@@ -118,14 +118,14 @@ struct virtio_vring_info {
 struct virtio_device {
 	uint32_t index; /**< unique position on the virtio bus */
 	struct virtio_device_id id; /**< the device type identification
-				         (used to match it with a driver). */
+					 (used to match it with a driver). */
 	uint64_t features; /**< the features supported by both ends. */
 	unsigned int role; /**< if it is virtio backend or front end. */
 	virtio_dev_reset_cb reset_cb; /**< user registered virtio
-						         device callback */
-	virtio_dispatch *func;/**< Virtio dispatch table */
-	void *priv; /**< TODO: should remove pointer to virtio_device private
-		         data */
+					   device callback */
+	const virtio_dispatch *func; /**< Virtio dispatch table */
+	void *priv; /**< TODO: remove pointer to virtio_device private
+			 data */
 	unsigned int vrings_num; /**< number of vrings */
 	struct virtio_vring_info *vrings_info;
 };
@@ -145,11 +145,11 @@ void virtio_describe(struct virtio_device *dev, const char *msg,
  */
 
 struct _virtio_dispatch_ {
-	uint8_t(*get_status) (struct virtio_device * dev);
-	void (*set_status) (struct virtio_device * dev, uint8_t status);
-	uint32_t(*get_features) (struct virtio_device * dev);
-	void (*set_features) (struct virtio_device * dev, uint32_t feature);
-	uint32_t(*negotiate_features) (struct virtio_device * dev,
+	uint8_t (*get_status)(struct virtio_device *dev);
+	void (*set_status)(struct virtio_device *dev, uint8_t status);
+	uint32_t (*get_features)(struct virtio_device *dev);
+	void (*set_features)(struct virtio_device *dev, uint32_t feature);
+	uint32_t (*negotiate_features)(struct virtio_device *dev,
 				       uint32_t features);
 
 	/*
@@ -157,12 +157,12 @@ struct _virtio_dispatch_ {
 	 * configuration region. This region is encoded in the same endian as
 	 * the guest.
 	 */
-	void (*read_config) (struct virtio_device * dev, uint32_t offset,
-			     void *dst, int length);
-	void (*write_config) (struct virtio_device * dev, uint32_t offset,
-			      void *src, int length);
-	void (*reset_device) (struct virtio_device * dev);
-	void (*notify) (struct virtqueue *vq);
+	void (*read_config)(struct virtio_device *dev, uint32_t offset,
+			    void *dst, int length);
+	void (*write_config)(struct virtio_device *dev, uint32_t offset,
+			     void *src, int length);
+	void (*reset_device)(struct virtio_device *dev);
+	void (*notify)(struct virtqueue *vq);
 };
 
 int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,

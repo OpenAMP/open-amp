@@ -243,6 +243,8 @@ static struct remoteproc_ops zynqmp_r5_a53_proc_ops = {
 	.shutdown = NULL,
 };
 
+/* RPMsg virtio shared buffer pool */
+static struct rpmsg_virtio_shm_pool shpool;
 
 struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 {
@@ -287,7 +289,7 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 		remoteproc_remove(rproc);
 		return NULL;
 	}
-	xil_printf("Failed to intialize remoteproc\r\n");
+	xil_printf("Initialize remoteproc successfully.\r\n");
 
 	return rproc;
 }
@@ -321,10 +323,16 @@ platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
 		goto err1;
 	}
 
+	xil_printf("initializing rpmsg shared buffer pool\r\n");
+	/* Only RPMsg virtio master needs to initialize the shared buffers pool */
+	rpmsg_virtio_init_shm_pool(&shpool, shbuf,
+				   (SHARED_MEM_SIZE - SHARED_BUF_OFFSET));
+
 	xil_printf("initializing rpmsg vdev\r\n");
+	/* RPMsg virtio slave can set shared buffers pool argument to NULL */
 	ret =  rpmsg_init_vdev(rpmsg_vdev, vdev, new_endpoint_cb,
-			       shbuf_io, shbuf,
-			       (SHARED_MEM_SIZE - SHARED_BUF_OFFSET));
+			       shbuf_io,
+			       &shpool);
 	if (ret) {
 		xil_printf("failed rpmsg_init_vdev\r\n");
 		goto err2;

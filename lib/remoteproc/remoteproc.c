@@ -14,7 +14,6 @@
 #include <openamp/remoteproc_loader.h>
 #include <openamp/remoteproc_virtio.h>
 #include <openamp/rsc_table_parser.h>
-#include <openamp/sh_mem.h>
 
 /******************************************************************************
  *  static functions
@@ -144,8 +143,8 @@ int remoteproc_parse_rsc_table(struct remoteproc *rproc,
 }
 
 int remoteproc_set_rsc_table(struct remoteproc *rproc,
-			       struct resource_table *rsc_table,
-			       size_t rsc_size)
+			     struct resource_table *rsc_table,
+			     size_t rsc_size)
 {
 	struct metal_io_region *io;
 
@@ -174,23 +173,21 @@ struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv)
 	return rproc;
 }
 
-void remoteproc_remove(struct remoteproc *rproc)
+int remoteproc_remove(struct remoteproc *rproc)
 {
+	int ret;
+
 	if (rproc) {
 		metal_mutex_acquire(&rproc->lock);
-		if (rproc->state != RPROC_OFFLINE) {
-			metal_mutex_release(&rproc->lock);
-			(void)remoteproc_shutdown(rproc);
-			metal_mutex_acquire(&rproc->lock);
-			rproc->state = RPROC_OFFLINE;
-		}
+		if (rproc->state == RPROC_OFFLINE)
+			rproc->ops->remove(rproc);
+		else
+			ret = -EBUSY;
 		metal_mutex_release(&rproc->lock);
-
-		/* After this call, the rproc pointer is suposed to be
-		 * already freed.
-		 */
-		rproc->ops->remove(rproc);
+	} else {
+		ret = -EINVAL;
 	}
+	return ret;
 }
 
 int remoteproc_set_bootaddr(struct remoteproc *rproc,
@@ -361,8 +358,8 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 			*pa  = lpa;
 		if (da)
 			*da = lda;
-
 	}
+
 	return va;
 }
 
@@ -384,13 +381,15 @@ int remoteproc_load(struct remoteproc *rproc, void *store, void **loader_data,
 	metal_log(METAL_LOG_DEBUG, "%s: check remoteproc status\n\r", __func__);
 	/* If remoteproc is running, cannot load firmware */
 	if (rproc->state == RPROC_RUNNING || rproc->state == RPROC_ERROR) {
-		metal_log(METAL_LOG_ERROR, "load store failure: invalid rproc state %d.\n",
-			      rproc->state);
+		metal_log(METAL_LOG_ERROR,
+			  "load store failure: invalid rproc state %d.\n",
+			  rproc->state);
 		return -RPROC_EINVAL;
 	}
 
 	if (!store_ops) {
-		metal_log(METAL_LOG_ERROR, "load store failure: loader ops is not set.\n");
+		metal_log(METAL_LOG_ERROR,
+			  "load store failure: loader ops is not set.\n");
 		return -RPROC_EINVAL;
 	}
 
@@ -398,17 +397,19 @@ int remoteproc_load(struct remoteproc *rproc, void *store, void **loader_data,
 	metal_log(METAL_LOG_DEBUG, "%s: open firmware image\n\r", __func__);
 	ret = store_ops->open(store);
 	if (ret) {
-		metal_log(METAL_LOG_ERROR, "load store failure: failed to open firmware.\n");
+		metal_log(METAL_LOG_ERROR,
+			  "load store failure: failed to open firmware.\n");
 		return ret;
 	}
 
 	/* Check firmware format to select a parser */
 	loader_ops = rproc->loader_ops;
 	if (!loader_ops) {
-		metal_log(METAL_LOG_DEBUG, "%s: check loader \n\r", __func__);
+		metal_log(METAL_LOG_DEBUG, "%s: check loader\n\r", __func__);
 		loader_ops = remoteproc_check_fw_format(store, store_ops);
 		if (!loader_ops) {
-			metal_log(METAL_LOG_ERROR, "load store failure: failed to get store ops.\n");
+			metal_log(METAL_LOG_ERROR,
+			       "load store failure: failed to get store ops.\n");
 			ret = -RPROC_EINVAL;
 			goto error1;
 		}
@@ -419,7 +420,8 @@ int remoteproc_load(struct remoteproc *rproc, void *store, void **loader_data,
 	metal_log(METAL_LOG_DEBUG, "%s: parse firmware\n\r", __func__);
 	ldata = loader_ops->parse(store, store_ops);
 	if (!ldata) {
-		metal_log(METAL_LOG_ERROR, "load store failure: failed to parse firmware.\n");
+		metal_log(METAL_LOG_ERROR,
+			  "load store failure: failed to parse firmware.\n");
 		ret = -RPROC_EINVAL;
 		goto error2;
 	}
@@ -439,7 +441,8 @@ int remoteproc_load(struct remoteproc *rproc, void *store, void **loader_data,
 	metal_log(METAL_LOG_DEBUG, "%s: load firmware data\n\r", __func__);
 	ret = loader_ops->load(store, ldata, rproc, store_ops);
 	if (ret) {
-		metal_log(METAL_LOG_ERROR, "load store failure: failed to load firmware.\n");
+		metal_log(METAL_LOG_ERROR,
+			  "load store failure: failed to load firmware.\n");
 		goto error3;
 	}
 
@@ -448,7 +451,8 @@ int remoteproc_load(struct remoteproc *rproc, void *store, void **loader_data,
 		void *rsc_table_cp = rsc_table;
 		struct metal_io_region *io;
 
-		metal_log(METAL_LOG_DEBUG, "%s: update resource table\n\r", __func__);
+		metal_log(METAL_LOG_DEBUG,
+			  "%s: update resource table\n\r", __func__);
 		rsc_table = remoteproc_mmap(rproc, NULL, &rsc_da,
 					    rsc_len, 0, &io);
 		if (rsc_table) {
@@ -457,14 +461,16 @@ int remoteproc_load(struct remoteproc *rproc, void *store, void **loader_data,
 			rproc->rsc_table = rsc_table;
 			rproc->rsc_len = rsc_len;
 		} else {
-			metal_log(METAL_LOG_WARNING, "load store: not able to update rsc table.\n");
+			metal_log(METAL_LOG_WARNING,
+				  "load store: not able to update rsc table.\n");
 		}
 		metal_free_memory(rsc_table_cp);
 		/* So that the rsc_table will not get released */
 		rsc_table = NULL;
 	}
 
-	metal_log(METAL_LOG_DEBUG, "%s: successfully load firmware\n\r", __func__);
+	metal_log(METAL_LOG_DEBUG, "%s: successfully load firmware\n\r",
+		  __func__);
 	/* get entry point from the firmware */
 	entry = loader_ops->get_entry(ldata);
 	rproc->bootaddr = entry;
@@ -575,11 +581,11 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 					      va, io, num_descs, align);
 		if (ret)
 			goto err1;
-
 	}
 	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
 	metal_list_add_tail(&rproc->vdevs, &rpvdev->node);
 
+	metal_mutex_release(&rproc->lock);
 	return vdev;
 
 err1:
@@ -600,8 +606,7 @@ void remoteproc_remove_virtio(struct remoteproc *rproc,
 	rproc_virtio_remove_vdev(&rpvdev->vdev);
 }
 
-int remoteproc_get_notification(struct remoteproc *rproc,
-				 uint32_t notifyid)
+int remoteproc_get_notification(struct remoteproc *rproc, uint32_t notifyid)
 {
 	struct remoteproc_virtio *rpvdev;
 	struct metal_list *node;
