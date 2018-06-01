@@ -43,11 +43,15 @@ extern "C" {
 #define RPMSG_ERR_ADDR		(RPMSG_ERROR_BASE - 7)
 #define RPMSG_ERR_UNEXPECTED	(RPMSG_ERROR_BASE - 8)
 
+/* RPMsg endpoint callback returns */
+#define RPMSG_EPT_CB_HANDLED    0x0UL
+#define RPMSG_EPT_CB_NOTHANDLED 0x1UL
+
 struct rpmsg_endpoint;
 struct rpmsg_device;
 
-typedef void (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
-			     size_t len, uint32_t src, void *priv);
+typedef int (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
+			    size_t len, uint32_t src, void *priv);
 typedef void (*rpmsg_ept_destroy_cb)(struct rpmsg_endpoint *ept);
 typedef void (*rpmsg_ept_create_cb)(struct rpmsg_device *rdev,
 				    const char *name, uint32_t dest);

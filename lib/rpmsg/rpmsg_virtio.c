@@ -450,10 +450,10 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
  * @param priv        - any private data
  * @param src         - source address
  *
- * @return - none
+ * @return - rpmag endpoint callback handled
  */
-static void rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
-				     size_t len, uint32_t src, void *priv)
+static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
+				    size_t len, uint32_t src, void *priv)
 {
 	struct rpmsg_device *rdev = ept->rdev;
 	struct rpmsg_virtio_device *rvdev = (struct rpmsg_virtio_device *)rdev;
@@ -490,11 +490,12 @@ static void rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			metal_mutex_release(&rdev->lock);
 			if (rdev->new_endpoint_cb)
 				rdev->new_endpoint_cb(rdev, name, dest);
-			return;
+			return RPMSG_EPT_CB_HANDLED;
 		}
 		_ept->dest_addr = dest;
 	}
 	metal_mutex_release(&rdev->lock);
+	return RPMSG_EPT_CB_HANDLED;
 }
 
 int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev)
