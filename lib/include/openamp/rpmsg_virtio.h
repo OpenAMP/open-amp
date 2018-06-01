@@ -38,7 +38,6 @@ struct rpmsg_virtio_shm_pool;
  * @size: total pool size
  */
 struct rpmsg_virtio_shm_pool {
-	void *(*get_buffer)(struct rpmsg_virtio_shm_pool *shpool, size_t size);
 	void *base;
 	size_t avail;
 	size_t size;
