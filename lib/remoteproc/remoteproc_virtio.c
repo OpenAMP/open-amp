@@ -120,6 +120,7 @@ static void rproc_virtio_set_features(struct virtio_device *vdev,
 			 features);
 	rpvdev->notify(rpvdev->priv, vdev->index);
 }
+#endif
 
 static uint32_t rproc_virtio_negotiate_features(struct virtio_device *vdev,
 						uint32_t features)
@@ -129,7 +130,6 @@ static uint32_t rproc_virtio_negotiate_features(struct virtio_device *vdev,
 
 	return 0;
 }
-#endif
 
 static void rproc_virtio_read_config(struct virtio_device *vdev,
 				     uint32_t offset, void *dst, int length)
