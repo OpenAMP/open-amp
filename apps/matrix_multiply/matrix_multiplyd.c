@@ -67,6 +67,7 @@ static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len
 
 	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
 		LPRINTF("shutdown message is received.\n");
+		rpmsg_destroy_ept(&lept);
 		return;
 	}
 
