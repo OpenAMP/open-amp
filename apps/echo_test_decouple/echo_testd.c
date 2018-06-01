@@ -4,75 +4,75 @@ This application echoes back data that was sent to it by the master core. */
 
 #include <stdio.h>
 #include <openamp/open_amp.h>
-#include <metal/alloc.h>
+#include <openamp/virtio.h>
 #include "rsc_table.h"
 #include "platform_info.h"
 
 #define SHUTDOWN_MSG	0xEF56A55A
 
-#define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
-//#define LPRINTF(format, ...)
+//#define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
+#define LPRINTF(format, ...)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
-
-static struct rpmsg_endpoint lept;
-static int ept_deleted = 0;
 
 /* External functions */
 extern int init_system(void);
 extern void cleanup_system(void);
 
+/* Local variables */
+static struct remoteproc *rproc;
+static struct rpmsg_virtio_device *rpmsg_vdev;
+static struct rsc_table_info rsc_info;
+
+static void virtio_rst_cb(struct virtio_device *vdev)
+{
+	/* TODO: need to be implemented */
+	(void)id;
+}
+
 /*-----------------------------------------------------------------------------*
- *  RPMSG endpoint callbacks
+ *  RPMSG callbacks setup by remoteproc_resource_init()
  *-----------------------------------------------------------------------------*/
-static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
-			      uint32_t src, void *priv)
+static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
+			  void *priv, unsigned long src)
 {
 	(void)priv;
 	(void)src;
 
 	/* On reception of a shutdown we signal the application to terminate */
 	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
-		ept_deleted = 1;
+		evt_chnl_deleted = 1;
 		return;
 	}
 
 	/* Send data back to master */
-	if (rpmsg_send(ept, data, len) < 0) {
+	if (rpmsg_send(rp_chnl, data, len) < 0) {
 		LPERROR("rpmsg_send failed\n");
 	}
 }
 
-static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
+static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
 {
-	(void)ept;
-	LPERROR("Endpoint is destroyed\n");
-	ept_deleted = 1;
+	(void)rp_chnl;
+}
+
+static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
+{
+	(void)rp_chnl;
+
+	evt_chnl_deleted = 1;
 }
 
 /*-----------------------------------------------------------------------------*
  *  Application
  *-----------------------------------------------------------------------------*/
-int app(struct rpmsg_device *rdev, void *priv)
+int app(struct rpmsg_virtio_device *rpmsg_vdev)
 {
-	int ret;
+	int status = 0;
 
-	/* Initialize RPMSG framework */
-	LPRINTF("Try to create rpmsg endpoint.\n");
 
-	ret = rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME, 0, RPMSG_ADDR_ANY,
-			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
-	if (ret) {
-		LPERROR("Failed to create endpoint.\n");
-		return -1;
-	}
-
-	while(1) {
-		platform_poll(priv);
-		/* we got a shutdown request, exit */
-		if (ept_deleted) {
-			break;
-		}
-	}
+	/* disable interrupts and free resources */
+	LPRINTF("De-initializating remoteproc resource\n");
+	remoteproc_resource_deinit(proc);
 
 	return 0;
 }
@@ -84,9 +84,7 @@ int main(int argc, char *argv[])
 {
 	unsigned long proc_id = 0;
 	unsigned long rsc_id = 0;
-	struct remoteproc *rproc;
-	struct rpmsg_device *rdev;
-	int ret;
+	int status = -1;
 
 	LPRINTF("Starting application...\n");
 
@@ -102,26 +100,20 @@ int main(int argc, char *argv[])
 	}
 
 	rproc = platform_create_proc(proc_id, rsc_id);
-	if (!rproc) {
-		LPERROR("Failed to create remoteproc device.\n");
-		ret = -1;
-	} else {
-		rdev = platform_create_rpmsg_vdev(rproc, 0,
-						   VIRTIO_DEV_SLAVE,
-						   NULL, NULL);
-		if (!rdev) {
-			LPERROR("Failed to create rpmsg virtio device.\n");
-			ret = -1;
-		} else {
-			app(rdev, (void *)rproc);
-			ret = 0;
-		}
+	if (!rproc)
+		return -1;
+	rpmsg_vdev = platform_create_rpmsg_vdev(rproc,
+						0, VIRTIO_DEV_HOST,
+						virtio_rst_cb);
+	if (!rpmsg_vdev) {
+		remoteproc_remove(rproc);
+		status = -1;
 	}
+	app(rpmsg_vdev);
 
 	LPRINTF("Stopping application...\n");
-	remoteproc_remove(rproc);
 	cleanup_system();
 
-	return ret;
+	return status;
 }
 
