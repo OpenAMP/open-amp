@@ -45,7 +45,7 @@ static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len
 static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
-	LPERROR("Endpoint is destroyed\n");
+	LPRINTF("Endpoint is destroyed\n");
 	ept_deleted = 1;
 }
 
@@ -66,6 +66,7 @@ int app(struct rpmsg_device *rdev, void *priv)
 		return -1;
 	}
 
+	LPRINTF("Successfully created rpmsg endpoint.\n");
 	while(1) {
 		platform_poll(priv);
 		/* we got a shutdown request, exit */
