@@ -46,8 +46,8 @@ extern "C" {
 struct rpmsg_endpoint;
 struct rpmsg_device;
 
-typedef void (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
-			     size_t len, uint32_t src, void *priv);
+typedef int (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
+			    size_t len, uint32_t src, void *priv);
 typedef void (*rpmsg_ept_destroy_cb)(struct rpmsg_endpoint *ept);
 typedef void (*rpmsg_ept_create_cb)(struct rpmsg_device *rdev,
 				    const char *name, uint32_t dest);
@@ -58,7 +58,8 @@ typedef void (*rpmsg_ept_create_cb)(struct rpmsg_device *rdev,
  * @rdev: pointer to the rpmsg device
  * @addr: local address of the endpoint
  * @dest_addr: address of the default remote endpoint binded.
- * @cb: user rx callback
+ * @cb: user rx callback, return value of this callback is reserved
+ *      for future use, for now, only allow RPMSG_SUCCESS as return value.
  * @destroy_cb: user end point detsroy callback
  * @node: end point node.
  * @addr: local rpmsg address
