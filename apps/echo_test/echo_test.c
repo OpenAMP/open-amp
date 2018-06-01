@@ -164,6 +164,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 	LPRINTF("**********************************\n");
 	/* Send shutdown message to remote */
 	rpmsg_send(&lept, &shutdown_msg, sizeof(int));
+	rpmsg_destroy_ept(&lept);
 	while(!ept_deleted)
 		platform_poll(priv);
 	LPRINTF("Quitting application .. Echo test end\n");
