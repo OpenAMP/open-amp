@@ -190,19 +190,16 @@ zynqmp_r5_a53_proc_mmap(struct remoteproc *rproc, metal_phys_addr_t *pa,
 	mem = metal_allocate_memory(sizeof(*mem));
 	if (!mem)
 		return NULL;
-	mem->pa = lpa;
-	mem->da = lda;
-	mem->size = size;
 	tmpio = metal_allocate_memory(sizeof(*tmpio));
 	if (!tmpio) {
 		metal_free_memory(mem);
 		return NULL;
 	}
+	remoteproc_init_mem(mem, NULL, lpa, lda, size, tmpio);
 	/* va is the same as pa in this platform */
-	metal_io_init(tmpio, (void *)mem->pa, &mem->pa, size,
+	metal_io_init(tmpio, (void *)lpa, &mem->pa, size,
 		      sizeof(metal_phys_addr_t)<<3, attribute, NULL);
-	mem->io = tmpio;
-	metal_list_add_tail(&rproc->mems, &mem->node);
+	remoteproc_add_mem(rproc, mem);
 	*pa = lpa;
 	*da = lda;
 	*io = tmpio;
