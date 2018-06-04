@@ -56,8 +56,8 @@ static void Matrix_Multiply(const matrix *m, const matrix *n, matrix *r)
 /*-----------------------------------------------------------------------------*
  *  RPMSG callbacks setup by remoteproc_resource_init()
  *-----------------------------------------------------------------------------*/
-static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
-			      uint32_t src, void *priv)
+static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
+			     uint32_t src, void *priv)
 {
 	matrix matrix_array[NUM_MATRIX];
 	matrix matrix_result;
@@ -68,7 +68,7 @@ static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len
 	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
 		LPRINTF("shutdown message is received.\n");
 		rpmsg_destroy_ept(&lept);
-		return;
+		return RPMSG_EPT_CB_HANDLED;
 	}
 
 	memcpy(matrix_array, data, len);
@@ -79,6 +79,7 @@ static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len
 	if (rpmsg_send(ept, &matrix_result, sizeof(matrix)) < 0) {
 		LPERROR("rpmsg_send failed\n");
 	}
+	return RPMSG_EPT_CB_HANDLED;
 }
 
 static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)

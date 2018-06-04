@@ -24,8 +24,8 @@ extern void cleanup_system(void);
 /*-----------------------------------------------------------------------------*
  *  RPMSG endpoint callbacks
  *-----------------------------------------------------------------------------*/
-static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
-			      uint32_t src, void *priv)
+static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
+			     uint32_t src, void *priv)
 {
 	(void)priv;
 	(void)src;
@@ -34,13 +34,14 @@ static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len
 	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
 		LPRINTF("shutdown message is received.\n");
 		rpmsg_destroy_ept(ept);
-		return;
+		return RPMSG_EPT_CB_HANDLED;
 	}
 
 	/* Send data back to master */
 	if (rpmsg_send(ept, data, len) < 0) {
 		LPERROR("rpmsg_send failed\n");
 	}
+	return RPMSG_EPT_CB_HANDLED;
 }
 
 static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)

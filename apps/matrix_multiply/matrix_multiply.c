@@ -112,8 +112,8 @@ static void matrix_multiply(const matrix * m, const matrix * n, matrix * r)
 /*-----------------------------------------------------------------------------*
  *  RPMSG endpoint callbacks
  *-----------------------------------------------------------------------------*/
-static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data,
-			      size_t len, uint32_t src, void *priv)
+static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data,
+			     size_t len, uint32_t src, void *priv)
 {
 	struct _matrix *r_matrix = (struct _matrix *)data;
 	int i, j;
@@ -125,7 +125,7 @@ static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data,
 		LPERROR("Received matrix is of invalid len: %d:%d\n",
 			(int)sizeof(struct _matrix), len);
 		err_cnt++;
-		return;
+		return RPMSG_EPT_CB_HANDLED;
 	}
 	for (i = 0; i < MAX_SIZE; i++) {
 		for (j = 0; j < MAX_SIZE; j++) {
@@ -145,6 +145,7 @@ static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data,
 	} else {
 		result_returned = 1;
 	}
+	return RPMSG_EPT_CB_HANDLED;
 }
 
 static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
