@@ -41,8 +41,8 @@
 #define IPI_IDR_OFFSET           0x0000001C    /* IPI interrupt disable register offset */
 
 /* Cortex R5 memory attributes */
-#define DEVICE_SHARED		0x00000001U /*device, shareable*/
-#define DEVICE_NONSHARED	0x00000010U /*device, non shareable*/
+#define DEVICE_SHARED		0x00000001U /* device, shareable */
+#define DEVICE_NONSHARED	0x00000010U /* device, non shareable */
 #define NORM_NSHARED_NCACHE	0x00000008U /* Non cacheable  non shareable */
 #define NORM_SHARED_NCACHE	0x0000000CU /* Non cacheable shareable */
 #define	PRIV_RW_USER_RW		(0x00000003U<<8U) /* Full Access */
@@ -76,34 +76,33 @@ struct metal_device ipi_device = {
 	.irq_info = (void *)IPI_IRQ_VECT_ID,
 };
 
-struct ipi_info {
-	const char *name; /* IPI device name */
-	const char *bus_name; /* IPI bus name */
-	uint32_t ipi_chn_mask; /* IPI channel mask */
-};
-
-struct ipi_info ipi_info = {
-	.name = IPI_DEV_NAME,
-	.bus_name = IPI_BUS_NAME,
-	.ipi_chn_mask = IPI_CHN_BITMASK,
-};
-
 struct remoteproc_priv {
-	struct remoteproc rproc;
-	struct metal_device *ipi_dev;
-	struct metal_io_region *ipi_io;
-	unsigned int ipi_chn_mask;
+	const char *ipi_name; /**< IPI device name */
+	const char *ipi_bus_name; /**< IPI bus name */
+	struct metal_device *ipi_dev; /**< pointer to IPI device */
+	struct metal_io_region *ipi_io; /**< pointer to IPI i/o region */
+	unsigned int ipi_chn_mask; /**< IPI channel mask */
 	atomic_int ipi_nokick;
 };
 
+struct remoteproc_priv rproc_priv = {
+	.ipi_name = IPI_DEV_NAME,
+	.ipi_bus_name = IPI_BUS_NAME,
+	.ipi_chn_mask = IPI_CHN_BITMASK,
+};
+
+static struct remoteproc rproc_inst;
+
 static int zynqmp_r5_a53_proc_irq_handler(int vect_id, void *data)
 {
-	struct remoteproc_priv *prproc = data;
+	struct remoteproc *rproc = data;
+	struct remoteproc_priv *prproc;
 	unsigned int ipi_intr_status;
 
 	(void)vect_id;
-	if (!prproc)
+	if (!rproc)
 		return METAL_IRQ_NOT_HANDLED;
+	prproc = rproc->priv;
 	ipi_intr_status = (unsigned int)metal_io_read32(prproc->ipi_io,
 							IPI_ISR_OFFSET);
 	if (ipi_intr_status & prproc->ipi_chn_mask) {
@@ -116,45 +115,40 @@ static int zynqmp_r5_a53_proc_irq_handler(int vect_id, void *data)
 }
 
 static struct remoteproc *
-zynqmp_r5_a53_proc_init(struct remoteproc_ops *ops, void *arg)
+zynqmp_r5_a53_proc_init(struct remoteproc *rproc,
+			struct remoteproc_ops *ops, void *arg)
 {
-	struct ipi_info *ipi = arg;
-	struct remoteproc_priv *prproc;
+	struct remoteproc_priv *prproc = arg;
 	struct metal_device *ipi_dev;
 	unsigned int irq_vect;
 	int ret;
 
-	if (!ipi || !ops)
+	if (!rproc || !prproc || !ops)
 		return NULL;
-	prproc = metal_allocate_memory(sizeof(*prproc));
-	if (!prproc)
-		return NULL;
-	memset(prproc, 0, sizeof(*prproc));
-	ret = metal_device_open(ipi->bus_name, ipi->name, &ipi_dev);
+	ret = metal_device_open(prproc->ipi_bus_name, prproc->ipi_name,
+				&ipi_dev);
 	if (ret) {
 		xil_printf("failed to open ipi device: %d.\r\n", ret);
-		goto err1;
+		return NULL;
 	}
+	rproc->priv = prproc;
 	prproc->ipi_dev = ipi_dev;
 	prproc->ipi_io = metal_device_io_region(ipi_dev, 0);
 	if (!prproc->ipi_io)
-		goto err2;
-	prproc->ipi_chn_mask = ipi->ipi_chn_mask;
+		goto err1;
 	atomic_store(&prproc->ipi_nokick, 1);
-	prproc->rproc.ops = ops;
+	rproc->ops = ops;
 
 	/* Register interrupt handler and enable interrupt */
 	irq_vect = IPI_IRQ_VECT_ID;
 	metal_irq_register(irq_vect, zynqmp_r5_a53_proc_irq_handler,
-			   ipi_dev, prproc);
+			   ipi_dev, rproc);
 	metal_irq_enable(irq_vect);
 	metal_io_write32(prproc->ipi_io, IPI_IER_OFFSET,
 			 prproc->ipi_chn_mask);
-	return &prproc->rproc;
-err2:
-	metal_device_close(ipi_dev);
+	return rproc;
 err1:
-	metal_free_memory(prproc);
+	metal_device_close(ipi_dev);
 	return NULL;
 }
 
@@ -164,13 +158,12 @@ static void zynqmp_r5_a53_proc_remove(struct remoteproc *rproc)
 
 	if (!rproc)
 		return;
-	prproc = metal_container_of(rproc, struct remoteproc_priv, rproc);
+	prproc = rproc->priv;
 	metal_io_write32(prproc->ipi_io, IPI_IDR_OFFSET, prproc->ipi_chn_mask);
 	metal_irq_disable(IPI_IRQ_VECT_ID);
 	metal_irq_unregister(IPI_IRQ_VECT_ID, NULL, NULL, NULL);
 	if (prproc->ipi_dev)
 		metal_device_close(prproc->ipi_dev);
-	metal_free_memory(prproc);
 }
 
 static void *
@@ -223,7 +216,7 @@ static int zynqmp_r5_a53_proc_notify(struct remoteproc *rproc, uint32_t id)
 	(void)id;
 	if (!rproc)
 		return -1;
-	prproc = metal_container_of(rproc, struct remoteproc_priv, rproc);
+	prproc = rproc->priv;
 
 	/* TODO: use IPI driver instead and pass ID */
 	metal_io_write32(prproc->ipi_io, IPI_TRIG_OFFSET,
@@ -248,7 +241,6 @@ static struct rpmsg_virtio_shm_pool shpool;
 
 struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 {
-	struct remoteproc *rproc;
 	void *rsc_table;
 	int rsc_size;
 	int ret;
@@ -260,8 +252,7 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 	/* Register IPI device */
 	(void)metal_register_generic_device(&ipi_device);
 	/* Initialize remoteproc instance */
-	rproc = remoteproc_init(&zynqmp_r5_a53_proc_ops, &ipi_info);
-	if (!rproc)
+	if (!remoteproc_init(&rproc_inst, &zynqmp_r5_a53_proc_ops, &rproc_priv))
 		return NULL;
 
 	/*
@@ -271,27 +262,27 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 	 */
 	/* mmap resource table */
 	pa = (metal_phys_addr_t)rsc_table;
-	(void *)remoteproc_mmap(rproc, &pa,
+	(void *)remoteproc_mmap(&rproc_inst, &pa,
 				NULL, rsc_size,
 				NORM_NSHARED_NCACHE|PRIV_RW_USER_RW,
-				&rproc->rsc_io);
+				&rproc_inst.rsc_io);
 	/* mmap shared memory */
 	pa = SHARED_MEM_PA;
-	(void *)remoteproc_mmap(rproc, &pa,
+	(void *)remoteproc_mmap(&rproc_inst, &pa,
 				NULL, SHARED_MEM_SIZE,
 				NORM_NSHARED_NCACHE|PRIV_RW_USER_RW,
 				NULL);
 
 	/* parse resource table to remoteproc */
-	ret = remoteproc_set_rsc_table(rproc, rsc_table, rsc_size);
+	ret = remoteproc_set_rsc_table(&rproc_inst, rsc_table, rsc_size);
 	if (ret) {
 		xil_printf("Failed to intialize remoteproc\r\n");
-		remoteproc_remove(rproc);
+		remoteproc_remove(&rproc_inst);
 		return NULL;
 	}
 	xil_printf("Initialize remoteproc successfully.\r\n");
 
-	return rproc;
+	return &rproc_inst;
 }
 
 struct  rpmsg_device *
@@ -352,7 +343,7 @@ int platform_poll(void *priv)
 	struct remoteproc_priv *prproc;
 	unsigned int flags;
 
-	prproc = metal_container_of(rproc, struct remoteproc_priv, rproc);
+	prproc = rproc->priv;
 	while(1) {
 		flags = metal_irq_save_disable();
 		if (!(atomic_flag_test_and_set(&prproc->ipi_nokick))) {
