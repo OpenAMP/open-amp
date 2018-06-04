@@ -526,6 +526,51 @@ struct remoteproc *remoteproc_init(struct remoteproc *rproc,
 int remoteproc_remove(struct remoteproc *rproc);
 
 /**
+ * remoteproc_init_mem
+ *
+ * Initialize remoteproc memory
+ *
+ * @mem - pointer to remoteproc memory
+ * @char - memory name
+ * @pa - physcial address
+ * @da - device address
+ * @size - memory size
+ * @io - pointer to the I/O region
+ */
+static inline void
+remoteproc_init_mem(struct remoteproc_mem *mem, const char *name,
+		    metal_phys_addr_t pa, metal_phys_addr_t da,
+		    size_t size, struct metal_io_region *io)
+{
+	if (!mem)
+		return;
+	if (name)
+		strncpy(mem->name, name, sizeof(mem->name));
+	else
+		mem->name[0] = 0;
+	mem->pa = pa;
+	mem->da = da;
+	mem->io = io;
+	mem->size = size;
+}
+
+/**
+ * remoteproc_add_mem
+ *
+ * Add remoteproc memory
+ *
+ * @rproc - pointer to remoteproc
+ * @mem - pointer to remoteproc memory
+ */
+static inline void
+remoteproc_add_mem(struct remoteproc *rproc, struct remoteproc_mem *mem)
+{
+	if (!rproc || !mem)
+		return;
+	metal_list_add_tail(&rproc->mems, &mem->node);
+}
+
+/**
  * remoteproc_get_io_with_name
  *
  * get remoteproc memory I/O region with name
