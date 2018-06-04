@@ -432,7 +432,8 @@ struct remoteproc {
  * @notify: notify the remote
  */
 struct remoteproc_ops {
-	struct remoteproc *(*init)(struct remoteproc_ops *ops, void *arg);
+	struct remoteproc *(*init)(struct remoteproc *rproc,
+				   struct remoteproc_ops *ops, void *arg);
 	void (*remove)(struct remoteproc *rproc);
 	void *(*mmap)(struct remoteproc *rproc,
 		      metal_phys_addr_t *pa, metal_phys_addr_t *da,
@@ -504,12 +505,14 @@ enum remoteproc_state {
  *
  * Initializes remoteproc resource.
  *
+ * @rproc - pointer to remoteproc instance
  * @ops - pointer to remoteproc operations
  * @priv - pointer to private data
  *
  * @returns created remoteproc pointer
  */
-struct remoteproc *remoteproc_init(struct remoteproc_ops *ops, void *priv);
+struct remoteproc *remoteproc_init(struct remoteproc *rproc,
+				   struct remoteproc_ops *ops, void *priv);
 
 /**
  * remoteproc_remove
