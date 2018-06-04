@@ -53,32 +53,33 @@ struct vring_ipi_info {
 	atomic_int sync;
 };
 
-struct remote_info {
+struct remoteproc_priv {
 	const char *shm_file;
 	int shm_size;
-	const char *ipi;
-};
-
-struct remoteproc_priv {
-	struct remoteproc rproc;
 	struct metal_io_region *shm_old_io;
 	struct metal_io_region shm_new_io;
 	struct remoteproc_mem shm;
 	struct vring_ipi_info ipi;
 };
 
-static struct remote_info remote_info_table [] = {
+static struct remoteproc_priv rproc_priv_table [] = {
 	{
 		.shm_file = "openamp.shm",
 		.shm_size = 0x100000,
-		.ipi = "unixs:/tmp/openamp.event.0",
+		.ipi = {
+			.path = "unixs:/tmp/openamp.event.0",
+		},
 	},
 	{
 		.shm_file = "openamp.shm",
 		.shm_size = 0x100000,
-		.ipi = "unix:/tmp/openamp.event.0",
+		.ipi = {
+			.path = "unix:/tmp/openamp.event.0",
+		},
 	},
 };
+
+static struct remoteproc rproc_inst;
 
 static int linux_proc_block_read(struct metal_io_region *io,
 				 unsigned long offset,
@@ -217,41 +218,41 @@ static int linux_proc_irq_handler(int vect_id, void *data)
 }
 
 static struct remoteproc *
-linux_proc_init(struct remoteproc_ops *ops, void *arg)
+linux_proc_init(struct remoteproc *rproc,
+		struct remoteproc_ops *ops, void *arg)
 {
-	struct remote_info *rinfo = arg;
-	struct remoteproc_priv *prproc;
+	struct remoteproc_priv *prproc = arg;
 	struct metal_io_region *io;
 	struct remoteproc_mem *shm;
 	struct vring_ipi_info *ipi;
 	int ret;
 
-	if (!rinfo)
+	if (!rproc || !prproc)
 		return NULL;
-	prproc = metal_allocate_memory(sizeof(*prproc));
-	if (!prproc) {
-		fprintf(stderr, "Failed to allocate memory for rproc.\r\n");
-		return NULL;
-	}
+	rproc->priv = prproc;
 	/* Create shared memory io */
-	ret = metal_shmem_open(rinfo->shm_file, rinfo->shm_size, &io);
+	ret = metal_shmem_open(prproc->shm_file, prproc->shm_size, &io);
 	if (ret) {
 		printf("Failed to init rproc, failed to open shm %s.\n",
-		       rinfo->shm_file);
+		       prproc->shm_file);
 		return NULL;
 	}
 	prproc->shm_old_io = io;
 	shm = &prproc->shm;
 	shm->pa = 0;
 	shm->da = 0;
-	shm->size = rinfo->shm_size;
+	shm->size = prproc->shm_size;
 	metal_io_init(&prproc->shm_new_io, io->virt, &shm->pa,
 		      shm->size, -1, 0, &linux_proc_io_ops);
 	shm->io = &prproc->shm_new_io;
 
 	/* Open IPI */
-	prproc->ipi.path = rinfo->ipi;
 	ipi = &prproc->ipi;
+	if (!ipi->path) {
+		fprintf(stderr,
+			"ERROR: No IPI sock path specified.\n");
+		goto err;
+	}
 	ipi->fd = event_open(ipi->path);
 	if (ipi->fd < 0) {
 		fprintf(stderr,
@@ -260,11 +261,10 @@ linux_proc_init(struct remoteproc_ops *ops, void *arg)
 		goto err;
 	}
 	metal_irq_register(ipi->fd, linux_proc_irq_handler, NULL, ipi);
-	prproc->rproc.ops = ops;
-	return &prproc->rproc;
+	rproc->ops = ops;
+	return rproc;
 
 err:
-	metal_free_memory(prproc);
 	return NULL;
 }
 
@@ -277,7 +277,7 @@ static void linux_proc_remove(struct remoteproc *rproc)
 
 	if (!rproc)
 		return;
-	prproc = metal_container_of(rproc, struct remoteproc_priv, rproc);
+	prproc = rproc->priv;
 
 	/* Close IPI */
 	ipi = &prproc->ipi;
@@ -292,7 +292,6 @@ static void linux_proc_remove(struct remoteproc *rproc)
 		io->ops.close(io);
 		prproc->shm_old_io = NULL;
 	}
-	metal_free_memory(prproc);
 }
 
 static void *
@@ -319,7 +318,7 @@ linux_proc_mmap(struct remoteproc *rproc, metal_phys_addr_t *pa,
 
 	if (!rproc)
 		return NULL;
-	prproc = metal_container_of(rproc, struct remoteproc_priv, rproc);
+	prproc = rproc->priv;
 	mem = &prproc->shm;
 	va = metal_io_phys_to_virt(mem->io, lpa);
 	if (va) {
@@ -339,7 +338,7 @@ static int linux_proc_notify(struct remoteproc *rproc, uint32_t id)
 	(void)id;
 	if (!rproc)
 		return -1;
-	prproc = metal_container_of(rproc, struct remoteproc_priv, rproc);
+	prproc = rproc->priv;
 	ipi = &prproc->ipi;
 	send(ipi->fd, &dummy, 1, MSG_NOSIGNAL);
 	return 0;
@@ -362,8 +361,7 @@ static struct rpmsg_virtio_shm_pool shpool;
 
 struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 {
-	struct remoteproc *rproc;
-	struct remote_info *rinfo;
+	struct remoteproc_priv *prproc;
 	void *rsc_table, *rsc_table_shm;
 	int rsc_size;
 	int ret;
@@ -373,33 +371,32 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 	rsc_table = get_resource_table(rsc_index, &rsc_size);
 
 	/* Initialize remoteproc instance */
-	rinfo = &remote_info_table[proc_index];
-	rproc = remoteproc_init(&linux_proc_ops, rinfo);
-	if (!rproc)
+	prproc = &rproc_priv_table[proc_index];
+	if (!remoteproc_init(&rproc_inst, &linux_proc_ops, prproc))
 		return NULL;
 
 	/* Mmap resource table */
 	pa = RSC_MEM_PA;
-	rsc_table_shm = remoteproc_mmap(rproc, &pa, NULL, rsc_size,
+	rsc_table_shm = remoteproc_mmap(&rproc_inst, &pa, NULL, rsc_size,
 					0, &rproc_inst.rsc_io);
 	/* Setup resource table
 	 * This step can be done out of the application.
 	 * Assumes the unix server side setup resource table. */
-	if (is_sk_unix_server(rinfo->ipi))
+	if (is_sk_unix_server(prproc->ipi.path))
 		memcpy(rsc_table_shm, rsc_table, rsc_size);
 	else
-		/* Sleep to wait for the other side to finish initializing rsc */
+		/* Sleep to wait for other side to finish initializing rsc */
 		sleep(1);
 
 	/* parse resource table to remoteproc */
-	ret = remoteproc_set_rsc_table(rproc, rsc_table_shm, rsc_size);
+	ret = remoteproc_set_rsc_table(&rproc_inst, rsc_table_shm, rsc_size);
 	if (ret) {
 		printf("Failed to set resource table to remoteproc\r\n");
-		remoteproc_remove(rproc);
+		remoteproc_remove(&rproc_inst);
 		return NULL;
 	}
 	printf("Initialize remoteproc successfully.\r\n");
-	return rproc;
+	return &rproc_inst;
 }
 
 struct  rpmsg_device *
@@ -459,7 +456,7 @@ int platform_poll(void *priv)
 	struct vring_ipi_info *ipi;
 	unsigned int flags;
 
-	prproc = metal_container_of(rproc, struct remoteproc_priv, rproc);
+	prproc = rproc->priv;
 	ipi = &prproc->ipi;
 	while(1) {
 		flags = metal_irq_save_disable();
