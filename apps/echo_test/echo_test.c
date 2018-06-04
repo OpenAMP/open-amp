@@ -40,8 +40,8 @@ extern void cleanup_system();
 /*-----------------------------------------------------------------------------*
  *  RPMSG endpoint callbacks
  *-----------------------------------------------------------------------------*/
-static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
-			      uint32_t src, void *priv)
+static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
+			     uint32_t src, void *priv)
 {
 	int i;
 	struct _payload *r_payload = (struct _payload *)data;
@@ -55,7 +55,7 @@ static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len
 	if (r_payload->size == 0) {
 		LPERROR(" Invalid size of package is received.\n");
 		err_cnt++;
-		return;
+		return RPMSG_SUCCESS;
 	}
 	/* Validate data buffer integrity. */
 	for (i = 0; i < (int)r_payload->size; i++) {
@@ -66,6 +66,7 @@ static void rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len
 		}
 	}
 	rnum = r_payload->num + 1;
+	return RPMSG_SUCCESS;
 }
 
 static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
