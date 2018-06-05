@@ -346,19 +346,20 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 	mem = remoteproc_get_mem(rproc, NULL, lpa, lda, NULL, size);
 	if (mem) {
 		if (lpa != METAL_BAD_PHYS)
-			*da = remoteproc_patoda(mem, lpa);
+			lda = remoteproc_patoda(mem, lpa);
 		else if (lda != METAL_BAD_PHYS)
-			*pa = remoteproc_datopa(mem, lda);
-		*io = mem->io;
-		va = metal_io_phys_to_virt(*io, *pa);
+			lpa = remoteproc_datopa(mem, lda);
+		if (io)
+			*io = mem->io;
+		va = metal_io_phys_to_virt(mem->io, lpa);
 	} else if (rproc->ops->mmap) {
 		va = rproc->ops->mmap(rproc, &lpa, &lda, size, attribute, io);
-		if (pa)
-			*pa  = lpa;
-		if (da)
-			*da = lda;
 	}
 
+	if (pa)
+		*pa  = lpa;
+	if (da)
+		*da = lda;
 	return va;
 }
 
