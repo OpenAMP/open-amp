@@ -21,16 +21,27 @@ extern "C" {
 /* Standard control request handling. */
 typedef int (*rsc_handler) (struct remoteproc *rproc, void *rsc);
 
-/* Function prototypes */
+/**
+ * handle_rsc_table
+ *
+ * This function parses resource table.
+ *
+ * @param rproc     - pointer to remote remoteproc
+ * @param rsc_table - resource table to parse
+ * @param size      - size of rsc table
+ * @param io        - pointer to the resource table I/O region
+ *                    It can be NULL if the resource table
+ *                    is in the local memory.
+ *
+ * @returns - execution status
+ *
+ */
 int handle_rsc_table(struct remoteproc *rproc,
-		     struct resource_table *rsc_table, int len);
+		     struct resource_table *rsc_table, int len,
+		     struct metal_io_region *io);
 int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc);
 int handle_trace_rsc(struct remoteproc *rproc, void *rsc);
-int handle_dev_mem_rsc(struct remoteproc *rproc, void *rsc);
 int handle_vdev_rsc(struct remoteproc *rproc, void *rsc);
-int handle_rproc_mem_rsc(struct remoteproc *rproc, void *rsc);
-int handle_fw_chksum_rsc(struct remoteproc *rproc, void *rsc);
-int handle_mmu_rsc(struct remoteproc *rproc, void *rsc);
 int handle_vendor_rsc(struct remoteproc *rproc, void *rsc);
 
 /**
