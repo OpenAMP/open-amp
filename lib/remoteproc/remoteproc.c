@@ -123,7 +123,7 @@ static void *remoteproc_get_rsc_table(struct remoteproc *rproc,
 		goto error;
 	}
 
-	ret = handle_rsc_table(rproc, rsc_table, rsc_len);
+	ret = handle_rsc_table(rproc, rsc_table, rsc_len, NULL);
 	if (ret < 0) {
 		rsc_table = RPROC_ERR_PTR(ret);
 		goto error;
@@ -139,24 +139,30 @@ int remoteproc_parse_rsc_table(struct remoteproc *rproc,
 			       struct resource_table *rsc_table,
 			       size_t rsc_size)
 {
-	return handle_rsc_table(rproc, rsc_table, rsc_size);
+	struct metal_io_region *io;
+
+	io = remoteproc_get_io_with_va(rproc, (void *)rsc_table);
+	return handle_rsc_table(rproc, rsc_table, rsc_size, io);
 }
 
 int remoteproc_set_rsc_table(struct remoteproc *rproc,
 			     struct resource_table *rsc_table,
 			     size_t rsc_size)
 {
+	int ret;
 	struct metal_io_region *io;
 
 	io = remoteproc_get_io_with_va(rproc, (void *)rsc_table);
 	if (!io)
 		return -EINVAL;
-	rproc->rsc_table = rsc_table;
-	rproc->rsc_len = rsc_size;
-	rproc->rsc_io = io;
+	ret = remoteproc_parse_rsc_table(rproc, rsc_table, rsc_size);
+	if (!ret) {
+		rproc->rsc_table = rsc_table;
+		rproc->rsc_len = rsc_size;
+		rproc->rsc_io = io;
+	}
+	return ret;
 
-	remoteproc_parse_rsc_table(rproc, rsc_table, rsc_size);
-	return 0;
 }
 
 struct remoteproc *remoteproc_init(struct remoteproc *rproc,

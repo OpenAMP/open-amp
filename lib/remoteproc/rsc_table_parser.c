@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <openamp/rsc_table_parser.h>
 #include <metal/io.h>
+#include <openamp/rsc_table_parser.h>
 
 static int handle_dummy_rsc(struct remoteproc *rproc, void *rsc);
 
@@ -21,20 +21,9 @@ rsc_handler rsc_handler_table[] = {
 	handle_dummy_rsc, /**< firmware checksum resource */
 };
 
-/**
- * handle_rsc_table
- *
- * This function parses resource table.
- *
- * @param rproc     - pointer to remote remoteproc
- * @param rsc_table - resource table to parse
- * @param size      -  size of rsc table
- *
- * @returns - execution status
- *
- */
 int handle_rsc_table(struct remoteproc *rproc,
-		     struct resource_table *rsc_table, int size)
+		     struct resource_table *rsc_table, int size,
+		     struct metal_io_region *io)
 {
 	void *rsc_start;
 	unsigned int rsc_type;
@@ -70,6 +59,9 @@ int handle_rsc_table(struct remoteproc *rproc,
 	for (idx = 0; idx < rsc_table->num; idx++) {
 		rsc_start = rsc_table;
 		rsc_start += rsc_table->offset[idx];
+		if (io &&
+		    metal_io_virt_to_offset(io, rsc_start) == METAL_BAD_OFFSET)
+			return -RPROC_ERR_RSC_TAB_TRUNC;
 		rsc_type = *((uint32_t *)rsc_start);
 		if (rsc_type < RSC_LAST)
 			status = rsc_handler_table[rsc_type](rproc,
@@ -77,8 +69,10 @@ int handle_rsc_table(struct remoteproc *rproc,
 		else if (rsc_type >= RSC_VENDOR_START &&
 			 rsc_type <= RSC_VENDOR_END)
 			status = handle_vendor_rsc(rproc, rsc_start);
-		if (status == -RPROC_ERR_RSC_TAB_NS)
+		if (status == -RPROC_ERR_RSC_TAB_NS) {
+			status = 0;
 			continue;
+		}
 		else if (status)
 			break;
 	}
