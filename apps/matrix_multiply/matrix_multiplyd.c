@@ -7,7 +7,6 @@ multiplies them and returns the result to the master core. */
 #include <stdlib.h>
 #include <string.h>
 #include <openamp/open_amp.h>
-#include "rsc_table.h"
 #include "platform_info.h"
 
 #define	MAX_SIZE		6
