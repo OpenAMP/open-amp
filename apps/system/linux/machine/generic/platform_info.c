@@ -65,14 +65,14 @@ struct remoteproc_priv {
 static struct remoteproc_priv rproc_priv_table [] = {
 	{
 		.shm_file = "openamp.shm",
-		.shm_size = 0x100000,
+		.shm_size = 0x80000,
 		.ipi = {
 			.path = "unixs:/tmp/openamp.event.0",
 		},
 	},
 	{
 		.shm_file = "openamp.shm",
-		.shm_size = 0x100000,
+		.shm_size = 0x80000,
 		.ipi = {
 			.path = "unix:/tmp/openamp.event.0",
 		},
@@ -359,6 +359,28 @@ static struct remoteproc_ops linux_proc_ops = {
 /* RPMsg virtio shared buffer pool */
 static struct rpmsg_virtio_shm_pool shpool;
 
+static int platform_slave_setup_resource_table(const char *shm_file,
+					       int shm_size,
+					       void *rsc_table, int rsc_size,
+					       metal_phys_addr_t rsc_pa)
+{
+	struct metal_io_region *io;
+	void *rsc_shm;
+	int ret;
+
+	ret = metal_shmem_open(shm_file, shm_size, &io);
+	if (ret) {
+		printf("Failed to init rproc, failed to open shm %s.\n",
+		       shm_file);
+		return -1;
+	}
+	rsc_shm = metal_io_virt(io, rsc_pa);
+	memcpy(rsc_shm, rsc_table, rsc_size);
+	io->ops.close(io);
+	free(io);
+	return 0;
+}
+
 struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 {
 	struct remoteproc_priv *prproc;
@@ -370,8 +392,22 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 	(void)proc_index;
 	rsc_table = get_resource_table(rsc_index, &rsc_size);
 
-	/* Initialize remoteproc instance */
 	prproc = &rproc_priv_table[proc_index];
+	/* Setup resource table
+	 * This step can be done out of the application.
+	 * Assumes the unix server side setup resource table. */
+	if (is_sk_unix_server(prproc->ipi.path)) {
+		ret = platform_slave_setup_resource_table(prproc->shm_file,
+							  prproc->shm_size,
+							  rsc_table, rsc_size,
+							  RSC_MEM_PA);
+		if (ret) {
+			printf("Failed to initialize resource table\n");
+			return NULL;
+		}
+	}
+
+	/* Initialize remoteproc instance */
 	if (!remoteproc_init(&rproc_inst, &linux_proc_ops, prproc))
 		return NULL;
 
@@ -379,14 +415,6 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 	pa = RSC_MEM_PA;
 	rsc_table_shm = remoteproc_mmap(&rproc_inst, &pa, NULL, rsc_size,
 					0, &rproc_inst.rsc_io);
-	/* Setup resource table
-	 * This step can be done out of the application.
-	 * Assumes the unix server side setup resource table. */
-	if (is_sk_unix_server(prproc->ipi.path))
-		memcpy(rsc_table_shm, rsc_table, rsc_size);
-	else
-		/* Sleep to wait for other side to finish initializing rsc */
-		sleep(1);
 
 	/* parse resource table to remoteproc */
 	ret = remoteproc_set_rsc_table(&rproc_inst, rsc_table_shm, rsc_size);
