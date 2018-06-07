@@ -307,5 +307,5 @@ int rproc_virtio_notified(struct virtio_device *vdev, uint32_t notifyid)
 			virtqueue_notification(vq);
 		}
 	}
-	return -EINVAL;
+	return 0;
 }
