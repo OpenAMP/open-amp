@@ -616,12 +616,14 @@ int remoteproc_get_notification(struct remoteproc *rproc, uint32_t notifyid)
 {
 	struct remoteproc_virtio *rpvdev;
 	struct metal_list *node;
+	int ret;
 
 	metal_list_for_each(&rproc->vdevs, node) {
 		rpvdev = metal_container_of(node, struct remoteproc_virtio,
 					    node);
-		if (!rproc_virtio_notified(&rpvdev->vdev, notifyid))
-			return 0;
+		ret = rproc_virtio_notified(&rpvdev->vdev, notifyid);
+		if (ret)
+			return ret;
 	}
-	return -EINVAL;
+	return 0;
 }
