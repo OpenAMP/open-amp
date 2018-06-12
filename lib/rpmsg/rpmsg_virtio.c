@@ -34,7 +34,7 @@ rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
 {
 	void *buffer;
 
-	if(shpool->avail < size)
+	if (shpool->avail < size)
 		return NULL;
 	buffer =  shpool->base + shpool->size - shpool->avail;
 	shpool->avail -= size;
@@ -150,7 +150,7 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 		data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
 		if (data == NULL) {
 			data = rpmsg_virtio_shm_pool_get_buffer(rvdev->shpool,
-							     RPMSG_BUFFER_SIZE);
+							RPMSG_BUFFER_SIZE);
 			*len = RPMSG_BUFFER_SIZE;
 		}
 	}
@@ -349,8 +349,9 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 		return RPMSG_ERR_UNEXPECTED;
 
 	status = metal_io_block_write(io,
-			metal_io_virt_to_offset(io, RPMSG_LOCATE_DATA(buffer)),
-			data, size);
+				      metal_io_virt_to_offset(io,
+				      RPMSG_LOCATE_DATA(buffer)),
+				      data, size);
 	if (status != size)
 		return RPMSG_ERR_UNEXPECTED;
 
@@ -520,7 +521,8 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 {
 	struct rpmsg_device *rdev;
 	const char *vq_names[RPMSG_NUM_VRINGS];
-	void (*callback[RPMSG_NUM_VRINGS]) (struct virtqueue *vq);
+	typedef void (*vqcallback)(struct virtqueue *vq);
+	vqcallback callback[RPMSG_NUM_VRINGS];
 	unsigned long dev_features;
 	int status;
 	unsigned int i, role;
@@ -597,10 +599,9 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 
 		vqbuf.len = RPMSG_BUFFER_SIZE;
 		for (idx = 0; idx < rvdev->rvq->vq_nentries; idx++) {
-
-                        /* Initialize TX virtqueue buffers for remote device */
+			/* Initialize TX virtqueue buffers for remote device */
 			buffer = rpmsg_virtio_shm_pool_get_buffer(shpool,
-							     RPMSG_BUFFER_SIZE);
+							RPMSG_BUFFER_SIZE);
 
 			if (!buffer) {
 				return RPMSG_ERR_NO_BUFF;
@@ -609,8 +610,9 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 			vqbuf.buf = buffer;
 
 			metal_io_block_set(shm_io,
-				metal_io_virt_to_offset(shm_io, buffer),
-				0x00, RPMSG_BUFFER_SIZE);
+					   metal_io_virt_to_offset(shm_io,
+								   buffer),
+					   0x00, RPMSG_BUFFER_SIZE);
 			status =
 				virtqueue_add_buffer(rvdev->rvq, &vqbuf, 0, 1,
 						     buffer);

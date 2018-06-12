@@ -18,17 +18,21 @@ extern "C" {
 #define RPMSG_ASSERT(_exp, _msg) do { \
 		if (!(_exp)) { \
 			openamp_print("FATAL: %s - _msg", __func__); \
-			while (1); \
+			while (1) { \
+				; \
+			} \
 		} \
 	} while (0)
 #else
 #define RPMSG_ASSERT(_exp, _msg) do { \
 		if (!(_exp)) \
-			while (1); \
+			while (1) { \
+				; \
+			} \
 	} while (0)
 #endif
 
-#define RPMSG_LOCATE_DATA(p) ((unsigned char *)p + sizeof(struct rpmsg_hdr))
+#define RPMSG_LOCATE_DATA(p) ((unsigned char *)(p) + sizeof(struct rpmsg_hdr))
 /**
  * enum rpmsg_ns_flags - dynamic name service announcement flags
  *
