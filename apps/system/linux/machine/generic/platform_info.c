@@ -81,6 +81,10 @@ static struct remoteproc_priv rproc_priv_table [] = {
 
 static struct remoteproc rproc_inst;
 
+/* External functions */
+extern int init_system(void);
+extern void cleanup_system(void);
+
 static int linux_proc_block_read(struct metal_io_region *io,
 				 unsigned long offset,
 				 void *restrict dst,
@@ -381,7 +385,8 @@ static int platform_slave_setup_resource_table(const char *shm_file,
 	return 0;
 }
 
-struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
+static struct remoteproc *
+platform_create_proc(int proc_index, int rsc_index)
 {
 	struct remoteproc_priv *prproc;
 	void *rsc_table, *rsc_table_shm;
@@ -427,12 +432,44 @@ struct remoteproc *platform_create_proc(int proc_index, int rsc_index)
 	return &rproc_inst;
 }
 
+int platform_init(int argc, char *argv[], void **platform)
+{
+	unsigned long proc_id = 0;
+	unsigned long rsc_id = 0;
+	struct remoteproc *rproc;
+
+	if (!platform) {
+		fprintf(stderr, "Failed to initialize platform, NULL pointer"
+			"to store platform data.\n");
+		return -EINVAL;
+	}
+	/* Initialize HW system components */
+	init_system();
+
+	if (argc >= 2) {
+		proc_id = strtoul(argv[1], NULL, 0);
+	}
+
+	if (argc >= 3) {
+		rsc_id = strtoul(argv[2], NULL, 0);
+	}
+
+	rproc = platform_create_proc(proc_id, rsc_id);
+	if (!rproc) {
+		fprintf(stderr, "Failed to create remoteproc device.\n");
+		return -EINVAL;
+	}
+	*platform = rproc;
+	return 0;
+}
+
 struct  rpmsg_device *
-platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
+platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 			   unsigned int role,
 			   void (*rst_cb)(struct virtio_device *vdev),
-			   rpmsg_ept_create_cb new_endpoint_cb)
+			   rpmsg_unbound_service_cb unbound_svc_cb)
 {
+	struct remoteproc *rproc = platform;
 	struct rpmsg_virtio_device *rpmsg_vdev;
 	struct virtio_device *vdev;
 	void *shbuf;
@@ -462,7 +499,7 @@ platform_create_rpmsg_vdev(struct remoteproc *rproc, unsigned int vdev_index,
 
 	printf("initializing rpmsg vdev\r\n");
 	/* RPMsg virtio slave can set shared buffers pool argument to NULL */
-	ret =  rpmsg_init_vdev(rpmsg_vdev, vdev, new_endpoint_cb,
+	ret =  rpmsg_init_vdev(rpmsg_vdev, vdev, unbound_svc_cb,
 			       shbuf_io,
 			       &shpool);
 	if (ret) {
@@ -497,4 +534,18 @@ int platform_poll(void *priv)
 		metal_irq_restore_enable(flags);
 	}
 	return 0;
+}
+
+void platform_release_rpmsg_vdev(struct rpmsg_device *rpdev)
+{
+	(void)rpdev;
+}
+
+void platform_cleanup(void *platform)
+{
+	struct remoteproc *rproc = platform;
+
+	if (rproc)
+		remoteproc_remove(rproc);
+	cleanup_system();
 }

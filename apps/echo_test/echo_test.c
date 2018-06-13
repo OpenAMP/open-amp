@@ -175,44 +175,32 @@ int app (struct rpmsg_device *rdev, void *priv)
 
 int main(int argc, char *argv[])
 {
-	unsigned long proc_id = 0;
-	unsigned long rsc_id = 0;
-	struct remoteproc *rproc;
-	struct rpmsg_device *rdev;
+	void *platform;
+	struct rpmsg_device *rpdev;
 	int ret;
 
-	/* Initialize HW system components */
-	init_system();
-
-	if (argc >= 2) {
-		proc_id = strtoul(argv[1], NULL, 0);
-	}
-
-	if (argc >= 3) {
-		rsc_id = strtoul(argv[2], NULL, 0);
-	}
-
-	rproc = platform_create_proc(proc_id, rsc_id);
-	if (!rproc) {
-		LPERROR("Failed to create remoteproc device.\n");
+	/* Initialize platform */
+	ret = platform_init(argc, argv, &platform);
+	if (ret) {
+		LPERROR("Failed to initialize platform.\n");
 		ret = -1;
 	} else {
-		rdev = platform_create_rpmsg_vdev(rproc, 0,
+		rpdev = platform_create_rpmsg_vdev(platform, 0,
 						  VIRTIO_DEV_MASTER,
 						  NULL,
 						  rpmsg_new_endpoint_cb);
-		if (!rdev) {
+		if (!rpdev) {
 			LPERROR("Failed to create rpmsg virtio device.\n");
 			ret = -1;
 		} else {
-			app(rdev, (void *)rproc);
+			app(rpdev, platform);
+			platform_release_rpmsg_vdev(rpdev);
 			ret = 0;
 		}
 	}
 
 	LPRINTF("Stopping application...\n");
-	remoteproc_remove(rproc);
-	cleanup_system();
+	platform_cleanup(platform);
 
 	return ret;
 }
