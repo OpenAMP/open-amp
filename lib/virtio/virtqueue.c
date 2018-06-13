@@ -8,8 +8,6 @@
 #include <string.h>
 #include <openamp/virtqueue.h>
 #include <metal/atomic.h>
-#include <metal/dma.h>
-#include <metal/io.h>
 #include <metal/log.h>
 #include <metal/alloc.h>
 
@@ -17,12 +15,28 @@
 static void vq_ring_init(struct virtqueue *, void *, int);
 static void vq_ring_update_avail(struct virtqueue *, uint16_t);
 static uint16_t vq_ring_add_buffer(struct virtqueue *, struct vring_desc *,
-				   uint16_t, struct metal_sg *, int, int);
+				   uint16_t, struct virtqueue_buf *, int, int);
 static int vq_ring_enable_interrupt(struct virtqueue *, uint16_t);
 static void vq_ring_free_chain(struct virtqueue *, uint16_t);
 static int vq_ring_must_notify_host(struct virtqueue *vq);
 static void vq_ring_notify_host(struct virtqueue *vq);
 static int virtqueue_nused(struct virtqueue *vq);
+
+/* Default implementation of P2V based on libmetal */
+static inline void * virtqueue_phys_to_virt(struct virtqueue *vq,
+					    metal_phys_addr_t phys)
+{
+	struct metal_io_region *io = vq->shm_io;
+	return metal_io_phys_to_virt(io, phys);
+}
+
+/* Default implementation of V2P based on libmetal */
+static inline metal_phys_addr_t virtqueue_virt_to_phys(struct virtqueue *vq,
+						       void *buf)
+{
+	struct metal_io_region *io = vq->shm_io;
+	return metal_io_virt_to_phys(io, buf);
+}
 
 /**
  * virtqueue_create - Creates new VirtIO queue
@@ -35,8 +49,7 @@ static int virtqueue_nused(struct virtqueue *vq);
  *                    when message is available on VirtIO queue
  * @param notify    - Pointer to notify function, used to notify
  *                    other side that there is job available for it
- * @param shm_io    - shared memory I/O region of the virtqueue
- * @param v_queue   - Created VirtIO queue.
+ * @param vq        - Created VirtIO queue.
  *
  * @return          - Function status
  */
@@ -44,29 +57,17 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     const char *name, struct vring_alloc_info *ring,
 		     void (*callback) (struct virtqueue * vq),
 		     void (*notify) (struct virtqueue * vq),
-		     struct metal_io_region *shm_io,
-		     struct virtqueue **v_queue)
+		     struct virtqueue *vq)
 {
-	struct virtqueue *vq = NULL;
 	int status = VQUEUE_SUCCESS;
-	uint32_t vq_size = 0;
 
 	VQ_PARAM_CHK(ring == NULL, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(ring->num_descs == 0, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(ring->num_descs & (ring->num_descs - 1), status,
 		     ERROR_VRING_ALIGN);
+	VQ_PARAM_CHK(vq == NULL, status, ERROR_NO_MEM);
 
 	if (status == VQUEUE_SUCCESS) {
-		vq_size = sizeof(struct virtqueue)
-		    + (ring->num_descs) * sizeof(struct vq_desc_extra);
-		vq = (struct virtqueue *)metal_allocate_memory(vq_size);
-
-		if (vq == NULL) {
-			return (ERROR_NO_MEM);
-		}
-
-		memset(vq, 0x00, vq_size);
-
 		vq->vq_dev = virt_dev;
 		strncpy(vq->vq_name, name, VIRTQUEUE_MAX_NAME_SZ);
 		vq->vq_queue_index = id;
@@ -74,7 +75,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		vq->vq_free_cnt = vq->vq_nentries;
 		vq->callback = callback;
 		vq->notify = notify;
-		vq->shm_io = shm_io;
 
 		/* Initialize vring control block in virtqueue. */
 		vq_ring_init(vq, (void *)ring->vaddr, ring->align);
@@ -83,8 +83,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		 * once initialization is completed.
 		 */
 		virtqueue_disable_cb(vq);
-
-		*v_queue = vq;
 	}
 
 	return (status);
@@ -96,14 +94,14 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
  *                            inserted before writable buffers
  *
  * @param vq                - Pointer to VirtIO queue control block.
- * @param sg                - Pointer to buffer scatter/gather list
+ * @param buf_list          - Pointer to a list of virtqueue buffers.
  * @param readable          - Number of readable buffers
  * @param writable          - Number of writable buffers
  * @param cookie            - Pointer to hold call back data
  *
  * @return                  - Function status
  */
-int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
+int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
 			 int readable, int writable, void *cookie)
 {
 	struct vq_desc_extra *dxp = NULL;
@@ -135,8 +133,8 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 		dxp->ndescs = needed;
 
 		/* Enqueue buffer onto the ring. */
-		idx = vq_ring_add_buffer(vq, vq->vq_ring.desc, head_idx, sg,
-					 readable, writable);
+		idx = vq_ring_add_buffer(vq, vq->vq_ring.desc, head_idx,
+					 buf_list, readable, writable);
 
 		vq->vq_desc_head_idx = idx;
 		vq->vq_free_cnt -= needed;
@@ -151,73 +149,6 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct metal_sg *sg,
 		 * Update vring_avail control block fields so that other
 		 * side can get buffer using it.
 		 */
-		vq_ring_update_avail(vq, head_idx);
-	}
-
-	VQUEUE_IDLE(vq);
-
-	return (status);
-}
-
-/**
- * virtqueue_add_single_buffer - Enqueues single buffer in vring
- *
- * @param vq                    - Pointer to VirtIO queue control block
- * @param cookie                - Pointer to hold call back data
- * @param sg                    - metal_scatter/gather struct element
- * @param writable              - If buffer writable
- * @param has_next              - If buffers for subsequent call are
- *                                to be chained
- *
- * @return                      - Function status
- */
-int virtqueue_add_single_buffer(struct virtqueue *vq, void *cookie,
-				struct metal_sg *sg, int writable,
-				boolean has_next)
-{
-
-	struct vq_desc_extra *dxp;
-	struct vring_desc *dp;
-	uint16_t head_idx;
-	uint16_t idx;
-	int status = VQUEUE_SUCCESS;
-
-	VQ_PARAM_CHK(vq == NULL, status, ERROR_VQUEUE_INVLD_PARAM);
-	VQ_PARAM_CHK(vq->vq_free_cnt == 0, status, ERROR_VRING_FULL);
-
-	VQUEUE_BUSY(vq);
-
-	if (status == VQUEUE_SUCCESS) {
-
-		VQASSERT(vq, cookie != NULL, "enqueuing with no cookie");
-
-		head_idx = vq->vq_desc_head_idx;
-		dxp = &vq->vq_descx[head_idx];
-
-		dxp->cookie = cookie;
-		dxp->ndescs = 1;
-		idx = head_idx;
-
-		dp = &vq->vq_ring.desc[idx];
-		dp->addr = metal_io_virt_to_phys(sg->io, sg->virt);
-		dp->len = sg->len;
-		dp->flags = 0;
-		idx = dp->next;
-
-		if (has_next)
-			dp->flags |= VRING_DESC_F_NEXT;
-		if (writable)
-			dp->flags |= VRING_DESC_F_WRITE;
-
-		vq->vq_desc_head_idx = idx;
-		vq->vq_free_cnt--;
-
-		if (vq->vq_free_cnt == 0) {
-			VQ_RING_ASSERT_CHAIN_TERM(vq);
-		} else {
-			VQ_RING_ASSERT_VALID_IDX(vq, idx);
-		}
-
 		vq_ring_update_avail(vq, head_idx);
 	}
 
@@ -318,7 +249,7 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t * avail_idx,
 	head_idx = vq->vq_available_idx++ & (vq->vq_nentries - 1);
 	*avail_idx = vq->vq_ring.avail->ring[head_idx];
 
-	buffer = metal_io_phys_to_virt(vq->shm_io, vq->vq_ring.desc[*avail_idx].addr);
+	buffer = virtqueue_phys_to_virt(vq, vq->vq_ring.desc[*avail_idx].addr);
 	*len = vq->vq_ring.desc[*avail_idx].len;
 
 	VQUEUE_IDLE(vq);
@@ -473,7 +404,7 @@ uint32_t virtqueue_get_desc_size(struct virtqueue * vq)
  */
 static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 				   struct vring_desc *desc, uint16_t head_idx,
-				   struct metal_sg *sg, int readable,
+				   struct virtqueue_buf *buf_list, int readable,
 				   int writable)
 {
 	struct vring_desc *dp;
@@ -490,8 +421,8 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 			 "premature end of free desc chain");
 
 		dp = &desc[idx];
-		dp->addr = metal_io_virt_to_phys(sg[i].io, sg[i].virt);
-		dp->len = sg[i].len;
+		dp->addr = virtqueue_virt_to_phys(vq, buf_list[i].buf);
+		dp->len = buf_list[i].len;
 		dp->flags = 0;
 
 		if (i < needed - 1)

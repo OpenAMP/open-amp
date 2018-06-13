@@ -399,7 +399,7 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 	struct virtqueue *vqs[RPMSG_MAX_VQ_PER_RDEV];
 	struct proc_vring *vring_table;
 	void *buffer;
-	struct metal_sg sg;
+	struct virtqueue_buf vqbuf;
 	int idx, num_vrings, status;
 
 	(void)flags;
@@ -428,11 +428,17 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 				vring_table[idx].align));
 		}
 
+		vqs[idx] = virtqueue_allocate(ring_info.num_descs);
+		if (vqs[idx] == NULL) {
+			return RPMSG_ERR_NO_MEM;
+		}
+
 		status =
 		    virtqueue_create(dev, idx, (char *)names[idx], &ring_info,
 				     callbacks[idx], hil_vring_notify,
-				     rdev->proc->sh_buff.io,
-				     &vqs[idx]);
+				     vqs[idx]);
+
+		virtqueue_set_shmem_io(vqs[idx], rdev->proc->sh_buff.io);
 
 		if (status != RPMSG_SUCCESS) {
 			return status;
@@ -449,11 +455,11 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 	}
 
 	if (rdev->role == RPMSG_REMOTE) {
-		sg.io = rdev->proc->sh_buff.io;
-		sg.len = RPMSG_BUFFER_SIZE;
+		vqbuf.len = RPMSG_BUFFER_SIZE;
 		for (idx = 0; ((idx < rdev->rvq->vq_nentries)
 			       && ((unsigned)idx < rdev->mem_pool->total_buffs / 2));
 		     idx++) {
+			unsigned long off;
 
 			/* Initialize TX virtqueue buffers for remote device */
 			buffer = sh_mem_get_buffer(rdev->mem_pool);
@@ -462,14 +468,13 @@ int rpmsg_rdev_create_virtqueues(struct virtio_device *dev, int flags, int nvqs,
 				return RPMSG_ERR_NO_BUFF;
 			}
 
-			sg.virt = buffer;
-
-			metal_io_block_set(sg.io,
-				metal_io_virt_to_offset(sg.io, buffer),
-				0x00,
-				RPMSG_BUFFER_SIZE);
+			vqbuf.buf = buffer;
+			off = metal_io_virt_to_offset(rdev->proc->sh_buff.io,
+						      buffer);
+			metal_io_block_set(rdev->proc->sh_buff.io, off, 0x00,
+					   RPMSG_BUFFER_SIZE);
 			status =
-			    virtqueue_add_buffer(rdev->rvq, &sg, 0, 1,
+			    virtqueue_add_buffer(rdev->rvq, &vqbuf, 0, 1,
 						 buffer);
 
 			if (status != RPMSG_SUCCESS) {
