@@ -58,7 +58,7 @@ void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
  *
  * Places the used buffer back on the virtqueue.
  *
- * @param rvdev   - pointer to remote core
+ * @param rvdev  - pointer to remote core
  * @param buffer - buffer pointer
  * @param len    - buffer length
  * @param idx    - buffer index
@@ -94,10 +94,10 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
  *
  * Places buffer on the virtqueue for consumption by the other side.
  *
- * @param rvdev   - pointer to rpmsg virtio
+ * @param rvdev  - pointer to rpmsg virtio
  * @param buffer - buffer pointer
  * @param len    - buffer length
- * @idx          - buffer index
+ * @param idx    - buffer index
  *
  * @return - status of function execution
  */
