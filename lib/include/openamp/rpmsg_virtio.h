@@ -121,7 +121,8 @@ int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev);
  * @param vdev   - pointer to the virtio device
  * @param new_endpoint_cb - pointer to callback on creation of a new endpoint
  * @param shm_io - pointer to the share memory I/O region.
- * @param shpool - pointer to shared memory pool.
+ * @param shpool - pointer to shared memory pool. rpmsg_virtio_init_shm_pool has
+ *                 to be called first to fill this structure.
  *
  * @return - status of function execution
  */
@@ -143,21 +144,36 @@ void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev);
  *
  * RPMsg virtio has default shared buffers pool implementation.
  * The memory assigned to this pool will be dedicated to the RPMsg
- * virtio. If you prefer to have other shared buffers allocation,
- * you can implement your rpmsg virtio shared buffers pool.
+ * virtio. This function has to be called before calling rpmsg_init_vdev,
+ * to initialize the rpmsg_virtio_shm_pool structure.
  *
- * @param shpool - pointer to the shared buffers pool
+ * @param shpool - pointer to the shared buffers pool structure
  * @param shbuf - pointer to the beginning of shared buffers
  * @param size - shared buffers total size
  */
 void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
-				void *shb, size_t size);
+				void *shbuf, size_t size);
 
 static inline struct rpmsg_device *
 rpmsg_virtio_get_rpmsg_device(struct rpmsg_virtio_device *rvdev)
 {
 	return &rvdev->rdev;
 }
+
+/**
+ * rpmsg_virtio_shm_pool_get_buffer - get buffer in the shared memory pool
+ *
+ * RPMsg virtio has default shared buffers pool implementation.
+ * The memory assigned to this pool will be dedicated to the RPMsg
+ * virtio. If you prefer to have other shared buffers allocation,
+ * you can implement your rpmsg_virtio_shm_pool_get_buffer function.
+ *
+ * @param shpool - pointer to the shared buffers pool
+ * @param size - shared buffers total size
+ */
+metal_weak void *
+rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
+				 size_t size);
 
 #if defined __cplusplus
 }
