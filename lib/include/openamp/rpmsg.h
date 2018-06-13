@@ -41,7 +41,6 @@ extern "C" {
 #define RPMSG_ERR_BUFF_SIZE	(RPMSG_ERROR_BASE - 5)
 #define RPMSG_ERR_INIT		(RPMSG_ERROR_BASE - 6)
 #define RPMSG_ERR_ADDR		(RPMSG_ERROR_BASE - 7)
-#define RPMSG_ERR_UNEXPECTED	(RPMSG_ERROR_BASE - 8)
 
 /* RPMsg endpoint callback returns */
 #define RPMSG_EPT_CB_HANDLED    0x0UL
