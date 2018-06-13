@@ -35,7 +35,6 @@ typedef uint8_t boolean;
 #define ERROR_VQUEUE_INVLD_PARAM                      (VQ_ERROR_BASE - 8)
 
 #define VQUEUE_SUCCESS                                0
-#define VQUEUE_DEBUG                                  false
 
 /* The maximum virtqueue size is 2^15. Use that value as the end of
  * descriptor chain terminator since it will never be a valid index
@@ -52,16 +51,6 @@ typedef uint8_t boolean;
 
 /* Support to suppress interrupt until specific index is reached. */
 #define VIRTIO_RING_F_EVENT_IDX        (1 << 29)
-
-/*
- * Hint on how long the next interrupt should be postponed. This is
- * only used when the EVENT_IDX feature is negotiated.
- */
-typedef enum {
-	VQ_POSTPONE_SHORT,
-	VQ_POSTPONE_LONG,
-	VQ_POSTPONE_EMPTIED	/* Until all available desc are used. */
-} vq_postpone_t;
 
 struct virtqueue_buf {
 	void *buf;
@@ -100,7 +89,7 @@ struct virtqueue {
 	 */
 	uint16_t vq_available_idx;
 
-#if (VQUEUE_DEBUG == true)
+#ifdef VQUEUE_DEBUG
 	boolean vq_inuse;
 #endif
 
@@ -127,7 +116,7 @@ struct vring_alloc_info {
 typedef void vq_callback(struct virtqueue *);
 typedef void vq_notify(struct virtqueue *);
 
-#if (VQUEUE_DEBUG == true)
+#ifdef VQUEUE_DEBUG
 #include <metal/log.h>
 #include <metal/assert.h>
 
@@ -145,21 +134,22 @@ typedef void vq_notify(struct virtqueue *);
 
 #define VQ_RING_ASSERT_CHAIN_TERM(_vq)                \
 	VQASSERT((_vq), (_vq)->vq_desc_head_idx ==            \
-	VQ_RING_DESC_CHAIN_END, "full ring terminated incorrectly: invalid head")
+	VQ_RING_DESC_CHAIN_END, \
+	"full ring terminated incorrectly: invalid head")
 
 #define VQ_PARAM_CHK(condition, status_var, status_err) \
 	do {						\
-		if ((status_var == 0) && (condition)) { \
+		if (((status_var) == 0) && (condition)) { \
 			status_var = status_err;        \
 		}					\
 	} while (0)
 
 #define VQUEUE_BUSY(vq) \
 	do {						     \
-		if ((vq)->vq_inuse == false)                 \
+		if (!(vq)->vq_inuse)                 \
 			(vq)->vq_inuse = true;               \
 		else                                         \
-			VQASSERT(vq, (vq)->vq_inuse == false,\
+			VQASSERT(vq, !(vq)->vq_inuse,\
 				"VirtQueue already in use")  \
 	} while (0)
 
