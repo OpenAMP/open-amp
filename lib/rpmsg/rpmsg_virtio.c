@@ -345,16 +345,13 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 	io = rvdev->shbuf_io;
 	status = metal_io_block_write(io, metal_io_virt_to_offset(io, buffer),
 				      &rp_hdr, sizeof(rp_hdr));
-	if (status != sizeof(rp_hdr))
-		return RPMSG_ERR_UNEXPECTED;
+	RPMSG_ASSERT(status == sizeof(rp_hdr), "failed to write header\n");
 
 	status = metal_io_block_write(io,
 				      metal_io_virt_to_offset(io,
 				      RPMSG_LOCATE_DATA(buffer)),
 				      data, size);
-	if (status != size)
-		return RPMSG_ERR_UNEXPECTED;
-
+	RPMSG_ASSERT(status == size, "failed to write buffer\n");
 	metal_mutex_acquire(&rdev->lock);
 
 	/* Enqueue buffer on virtqueue. */
