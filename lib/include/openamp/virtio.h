@@ -20,15 +20,16 @@ extern "C" {
 #endif
 
 /* VirtIO device IDs. */
-#define VIRTIO_ID_NETWORK    0x01
-#define VIRTIO_ID_BLOCK      0x02
-#define VIRTIO_ID_CONSOLE    0x03
-#define VIRTIO_ID_ENTROPY    0x04
-#define VIRTIO_ID_BALLOON    0x05
-#define VIRTIO_ID_IOMEMORY   0x06
-#define VIRTIO_ID_RPMSG	     0x07 /* virtio remote remote_proc messaging */
-#define VIRTIO_ID_SCSI       0x08
-#define VIRTIO_ID_9P         0x09
+#define VIRTIO_ID_NETWORK    0x01UL
+#define VIRTIO_ID_BLOCK      0x02UL
+#define VIRTIO_ID_CONSOLE    0x03UL
+#define VIRTIO_ID_ENTROPY    0x04UL
+#define VIRTIO_ID_BALLOON    0x05UL
+#define VIRTIO_ID_IOMEMORY   0x06UL
+#define VIRTIO_ID_RPMSG	     0x07UL /* remote processor messaging */
+#define VIRTIO_ID_SCSI       0x08UL
+#define VIRTIO_ID_9P         0x09UL
+#define VIRTIO_DEV_ANY_ID    (-1)UL
 
 /* Status byte for guest to report progress. */
 #define VIRTIO_CONFIG_STATUS_ACK       0x01
@@ -45,7 +46,6 @@ struct virtio_device_id {
 	uint32_t device;
 	uint32_t vendor;
 };
-#define VIRTIO_DEV_ANY_ID	((unsigned int)-1)
 
 /*
  * Generate interrupt when the virtqueue ring is
@@ -67,8 +67,9 @@ struct virtio_device_id {
 #define VIRTIO_TRANSPORT_F_START      28
 #define VIRTIO_TRANSPORT_F_END        32
 
-typedef struct _virtio_dispatch_ virtio_dispatch;
 typedef void (*virtio_dev_reset_cb)(struct virtio_device *vdev);
+
+struct virtio_dispatch;
 
 struct virtio_feature_desc {
 	uint32_t vfd_val;
@@ -118,14 +119,13 @@ struct virtio_vring_info {
 struct virtio_device {
 	uint32_t index; /**< unique position on the virtio bus */
 	struct virtio_device_id id; /**< the device type identification
-					 (used to match it with a driver). */
+				      *  (used to match it with a driver
+				      */
 	uint64_t features; /**< the features supported by both ends. */
 	unsigned int role; /**< if it is virtio backend or front end. */
-	virtio_dev_reset_cb reset_cb; /**< user registered virtio
-					   device callback */
-	const virtio_dispatch *func; /**< Virtio dispatch table */
-	void *priv; /**< TODO: remove pointer to virtio_device private
-			 data */
+	virtio_dev_reset_cb reset_cb; /**< user registered device callback */
+	const struct virtio_dispatch *func; /**< Virtio dispatch table */
+	void *priv; /**< TODO: remove pointer to virtio_device private data */
 	unsigned int vrings_num; /**< number of vrings */
 	struct virtio_vring_info *vrings_info;
 };
@@ -144,7 +144,7 @@ void virtio_describe(struct virtio_device *dev, const char *msg,
  * Drivers are expected to implement these functions in their respective codes.
  */
 
-struct _virtio_dispatch_ {
+struct virtio_dispatch {
 	uint8_t (*get_status)(struct virtio_device *dev);
 	void (*set_status)(struct virtio_device *dev, uint8_t status);
 	uint32_t (*get_features)(struct virtio_device *dev);

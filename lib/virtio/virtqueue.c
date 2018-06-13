@@ -173,7 +173,7 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 	void *cookie;
 	uint16_t used_idx, desc_idx;
 
-	if (!vq || (vq->vq_used_cons_idx == vq->vq_ring.used->idx))
+	if (!vq || vq->vq_used_cons_idx == vq->vq_ring.used->idx)
 		return (NULL);
 
 	VQUEUE_BUSY(vq);
