@@ -158,7 +158,7 @@ static void rproc_virtio_reset_device(struct virtio_device *vdev)
 }
 #endif
 
-const virtio_dispatch remoteproc_virtio_dispatch_funcs = {
+const struct virtio_dispatch remoteproc_virtio_dispatch_funcs = {
 	.get_status =  rproc_virtio_get_status,
 	.get_features = rproc_virtio_get_features,
 	.read_config = rproc_virtio_read_config,

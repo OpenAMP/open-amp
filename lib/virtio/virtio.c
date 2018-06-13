@@ -112,7 +112,7 @@ int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 #endif
 		ret = virtqueue_create(vdev, i, names[i], vring_alloc,
 				       callbacks[i], vdev->func->notify,
-			               vring_info->vq);
+				       vring_info->vq);
 		if (ret)
 			return ret;
 	}
