@@ -337,10 +337,10 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept);
  * Returns 1 if the rpmsg endpoint has both local addr and destination
  * addr set, 0 otherwise
  */
-static inline uint32_t is_rpmsg_ept_ready(struct rpmsg_endpoint *ept)
+static inline unsigned int is_rpmsg_ept_ready(struct rpmsg_endpoint *ept)
 {
-	return (ept->dest_addr == RPMSG_ADDR_ANY ||
-		ept->addr == RPMSG_ADDR_ANY) ? 0 : 1;
+	return (ept->dest_addr != RPMSG_ADDR_ANY &&
+		ept->addr != RPMSG_ADDR_ANY);
 }
 
 #if defined __cplusplus
