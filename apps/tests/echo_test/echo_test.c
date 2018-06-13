@@ -108,6 +108,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 		LPERROR("No avaiable buffer size.\n");
 		return -1;
 	}
+	max_size -= sizeof(struct _payload);
 	num_payloads = max_size - PAYLOAD_MIN_SIZE + 1;
 	i_payload =
 	    (struct _payload *)metal_allocate_memory(2 * sizeof(unsigned long) +
