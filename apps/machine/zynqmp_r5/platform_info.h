@@ -38,7 +38,7 @@ int platform_init(int argc, char *argv[], void **platform);
  *              on the platform.
  * @role: virtio master or virtio slave of the vdev
  * @rst_cb: virtio device reset callback
- * @unbound_svc_cb: rpmsg unbound name service callback
+ * @ns_bind_cb: rpmsg name service bind callback
  *
  * return pointer to the rpmsg virtio device
  */
@@ -46,7 +46,7 @@ struct rpmsg_device *
 platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 			   unsigned int role,
 			   void (*rst_cb)(struct virtio_device *vdev),
-			   rpmsg_unbound_service_cb unbound_svc_cb);
+			   rpmsg_ns_bind_cb ns_bind_cb);
 
 /**
  * platform_poll - platform poll function
