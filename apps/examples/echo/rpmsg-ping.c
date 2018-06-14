@@ -75,8 +75,8 @@ static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
 	ept_deleted = 1;
 }
 
-static void rpmsg_new_endpoint_cb(struct rpmsg_device *rdev, const char *name,
-				  uint32_t src)
+static void rpmsg_name_service_bind_cb(struct rpmsg_device *rdev,
+				       const char *name, uint32_t src)
 {
 	LPRINTF("new endpoint notification is received.\n");
 	if (strcmp(name, RPMSG_CHAN_NAME))
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 		rpdev = platform_create_rpmsg_vdev(platform, 0,
 						  VIRTIO_DEV_MASTER,
 						  NULL,
-						  rpmsg_new_endpoint_cb);
+						  rpmsg_name_service_bind_cb);
 		if (!rpdev) {
 			LPERROR("Failed to create rpmsg virtio device.\n");
 			ret = -1;
