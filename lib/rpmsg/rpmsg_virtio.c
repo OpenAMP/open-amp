@@ -396,7 +396,6 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 	struct rpmsg_hdr *rp_hdr;
 	unsigned long len;
 	unsigned short idx;
-	int status;
 
 	metal_mutex_acquire(&rdev->lock);
 
@@ -423,11 +422,9 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 			 */
 			ept->dest_addr = rp_hdr->src;
 		}
-		status = ept->cb(ept, (void *)RPMSG_LOCATE_DATA(rp_hdr),
+		ept->cb(ept, (void *)RPMSG_LOCATE_DATA(rp_hdr),
 				   rp_hdr->len, ept->addr, ept->priv);
 
-		RPMSG_ASSERT(status == RPMSG_SUCCESS,
-			     "unexpected callback status\n");
 		metal_mutex_acquire(&rdev->lock);
 
 		/* Return used buffers. */
