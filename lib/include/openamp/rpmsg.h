@@ -41,6 +41,7 @@ extern "C" {
 #define RPMSG_ERR_BUFF_SIZE	(RPMSG_ERROR_BASE - 5)
 #define RPMSG_ERR_INIT		(RPMSG_ERROR_BASE - 6)
 #define RPMSG_ERR_ADDR		(RPMSG_ERROR_BASE - 7)
+#define RPMSG_ERR_UNEXPECTED	(RPMSG_ERROR_BASE - 8)
 
 /* RPMsg endpoint callback returns */
 #define RPMSG_EPT_CB_HANDLED    0x0UL
@@ -52,7 +53,7 @@ struct rpmsg_device;
 typedef int (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
 			    size_t len, uint32_t src, void *priv);
 typedef void (*rpmsg_ept_destroy_cb)(struct rpmsg_endpoint *ept);
-typedef void (*rpmsg_unbound_service_cb)(struct rpmsg_device *rdev,
+typedef void (*rpmsg_ept_create_cb)(struct rpmsg_device *rdev,
 				    const char *name, uint32_t dest);
 
 /**
@@ -97,8 +98,8 @@ struct rpmsg_device_ops {
  * @ns_ept: name service endpoint
  * @bitmap: table endpoin address allocation.
  * @lock: mutex lock for rpmsg management
- * @service_cb: callback handler for new service announcement without
- *                     local endpoints waiting to bind.
+ * @new_endpoint_cb: callback handler for new service announcement without local
+ *                   endpoints waiting to bind.
  * @ops: RPMsg device operations
  */
 struct rpmsg_device {
@@ -106,7 +107,7 @@ struct rpmsg_device {
 	struct rpmsg_endpoint ns_ept;
 	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
 	metal_mutex_t lock;
-	rpmsg_unbound_service_cb service_cb;
+	rpmsg_ept_create_cb new_endpoint_cb;
 	struct rpmsg_device_ops ops;
 };
 
@@ -340,10 +341,10 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept);
  * Returns 1 if the rpmsg endpoint has both local addr and destination
  * addr set, 0 otherwise
  */
-static inline unsigned int is_rpmsg_ept_ready(struct rpmsg_endpoint *ept)
+static inline uint32_t is_rpmsg_ept_ready(struct rpmsg_endpoint *ept)
 {
-	return (ept->dest_addr != RPMSG_ADDR_ANY &&
-		ept->addr != RPMSG_ADDR_ANY);
+	return (ept->dest_addr == RPMSG_ADDR_ANY ||
+		ept->addr == RPMSG_ADDR_ANY) ? 0 : 1;
 }
 
 #if defined __cplusplus

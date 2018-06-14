@@ -113,11 +113,13 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 {
 	struct rpmsg_device *rdev;
 
-	if (!ept || !ept->rdev || !data || dst == RPMSG_ADDR_ANY)
+	if (!ept || !data || dst == RPMSG_ADDR_ANY)
 		return RPMSG_ERR_PARAM;
 
+	/* Get the associated rpmsg device for endpoint. */
 	rdev = ept->rdev;
-
+	if (!rdev)
+		return RPMSG_ERR_UNEXPECTED;
 	if (rdev->ops.send_offchannel_raw)
 		return rdev->ops.send_offchannel_raw(rdev, src, dst, data,
 						      size, wait);

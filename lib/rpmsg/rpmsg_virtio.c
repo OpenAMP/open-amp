@@ -58,7 +58,7 @@ void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
  *
  * Places the used buffer back on the virtqueue.
  *
- * @param rvdev  - pointer to remote core
+ * @param rvdev   - pointer to remote core
  * @param buffer - buffer pointer
  * @param len    - buffer length
  * @param idx    - buffer index
@@ -94,10 +94,10 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
  *
  * Places buffer on the virtqueue for consumption by the other side.
  *
- * @param rvdev  - pointer to rpmsg virtio
+ * @param rvdev   - pointer to rpmsg virtio
  * @param buffer - buffer pointer
  * @param len    - buffer length
- * @param idx    - buffer index
+ * @idx          - buffer index
  *
  * @return - status of function execution
  */
@@ -345,13 +345,16 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 	io = rvdev->shbuf_io;
 	status = metal_io_block_write(io, metal_io_virt_to_offset(io, buffer),
 				      &rp_hdr, sizeof(rp_hdr));
-	RPMSG_ASSERT(status == sizeof(rp_hdr), "failed to write header\n");
+	if (status != sizeof(rp_hdr))
+		return RPMSG_ERR_UNEXPECTED;
 
 	status = metal_io_block_write(io,
 				      metal_io_virt_to_offset(io,
 				      RPMSG_LOCATE_DATA(buffer)),
 				      data, size);
-	RPMSG_ASSERT(status == size, "failed to write buffer\n");
+	if (status != size)
+		return RPMSG_ERR_UNEXPECTED;
+
 	metal_mutex_acquire(&rdev->lock);
 
 	/* Enqueue buffer on virtqueue. */
@@ -396,7 +399,6 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 	struct rpmsg_hdr *rp_hdr;
 	unsigned long len;
 	unsigned short idx;
-	int status;
 
 	metal_mutex_acquire(&rdev->lock);
 
@@ -423,11 +425,9 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 			 */
 			ept->dest_addr = rp_hdr->src;
 		}
-		status = ept->cb(ept, (void *)RPMSG_LOCATE_DATA(rp_hdr),
+		ept->cb(ept, (void *)RPMSG_LOCATE_DATA(rp_hdr),
 				   rp_hdr->len, ept->addr, ept->priv);
 
-		RPMSG_ASSERT(status == RPMSG_SUCCESS,
-			     "unexpected callback status\n");
 		metal_mutex_acquire(&rdev->lock);
 
 		/* Return used buffers. */
@@ -489,8 +489,8 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			 * - just ignore the requet as service not supported.
 			 */
 			metal_mutex_release(&rdev->lock);
-			if (rdev->service_cb)
-				rdev->service_cb(rdev, name, dest);
+			if (rdev->new_endpoint_cb)
+				rdev->new_endpoint_cb(rdev, name, dest);
 			return RPMSG_EPT_CB_HANDLED;
 		}
 		_ept->dest_addr = dest;
@@ -515,7 +515,7 @@ int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev)
 
 int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev,
-		    rpmsg_unbound_service_cb unbound_service_cb,
+		    rpmsg_ept_create_cb new_endpoint_cb,
 		    struct metal_io_region *shm_io,
 		    struct rpmsg_virtio_shm_pool *shpool)
 {
@@ -531,7 +531,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	memset(rdev, 0, sizeof(*rdev));
 	metal_mutex_init(&rdev->lock);
 	rvdev->vdev = vdev;
-	rdev->service_cb = unbound_service_cb;
+	rdev->new_endpoint_cb = new_endpoint_cb;
 	vdev->priv = rvdev;
 	rdev->ops.send_offchannel_raw = rpmsg_virtio_send_offchannel_raw;
 	role = rpmsg_virtio_get_role(rvdev);
