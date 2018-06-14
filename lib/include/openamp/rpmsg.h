@@ -42,10 +42,6 @@ extern "C" {
 #define RPMSG_ERR_INIT		(RPMSG_ERROR_BASE - 6)
 #define RPMSG_ERR_ADDR		(RPMSG_ERROR_BASE - 7)
 
-/* RPMsg endpoint callback returns */
-#define RPMSG_EPT_CB_HANDLED    0x0UL
-#define RPMSG_EPT_CB_NOTHANDLED 0x1UL
-
 struct rpmsg_endpoint;
 struct rpmsg_device;
 

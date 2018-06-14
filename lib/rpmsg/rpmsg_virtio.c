@@ -491,12 +491,12 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			metal_mutex_release(&rdev->lock);
 			if (rdev->new_endpoint_cb)
 				rdev->new_endpoint_cb(rdev, name, dest);
-			return RPMSG_EPT_CB_HANDLED;
+			return RPMSG_SUCCESS;
 		}
 		_ept->dest_addr = dest;
 	}
 	metal_mutex_release(&rdev->lock);
-	return RPMSG_EPT_CB_HANDLED;
+	return RPMSG_SUCCESS;
 }
 
 int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev)
