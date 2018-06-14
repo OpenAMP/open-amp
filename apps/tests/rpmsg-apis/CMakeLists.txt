@@ -1,5 +1,5 @@
 
-set (_app "func_test_suite")
+set (_app "rpmsg-apis-verify")
 set (_cflags "${CMAKE_C_FLAGS} ${APP_EXTRA_C_FLAGS}")
 set (_fw_dir "${APPS_SHARE_DIR}")
 
@@ -12,12 +12,8 @@ collector_list (_app_list APP_LIB_DIRS)
 link_directories (${_list} ${_app_list})
 
 collector_list (_list APP_COMMON_SOURCES)
-if (WITH_REMOTEPROC_MASTER)
-list (APPEND _list "${CMAKE_CURRENT_SOURCE_DIR}/func_test_suite_remoteproc_master.c")
-set (_cflags "${_cflags} -DBAREMETAL_MASTER=1")
-else (WITH_REMOTEPROC_MASTER)
-list (APPEND _list "${CMAKE_CURRENT_SOURCE_DIR}/func_test_suite.c")
-endif (WITH_REMOTEPROC_MASTER)
+list (APPEND _list "${CMAKE_CURRENT_SOURCE_DIR}/rpmsg-apis-vdev-master.c")
+list (APPEND _list "${CMAKE_CURRENT_SOURCE_DIR}/rpmsg-apis-vdev-slave.c")
 add_executable (${_app}.out ${_list})
 
 set_source_files_properties(${_list} PROPERTIES COMPILE_FLAGS "${_cflags}")
