@@ -366,7 +366,7 @@ struct  rpmsg_device *
 platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 			   unsigned int role,
 			   void (*rst_cb)(struct virtio_device *vdev),
-			   rpmsg_unbound_service_cb unbound_svc_cb)
+			   rpmsg_ns_bind_cb ns_bind_cb)
 {
 	struct remoteproc *rproc = platform;
 	struct rpmsg_virtio_device *rpmsg_vdev;
@@ -398,7 +398,7 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 
 	printf("initializing rpmsg vdev\r\n");
 	/* RPMsg virtio slave can set shared buffers pool argument to NULL */
-	ret = rpmsg_init_vdev(rpmsg_vdev, vdev, unbound_svc_cb,
+	ret = rpmsg_init_vdev(rpmsg_vdev, vdev, ns_bind_cb,
 			      shbuf_io, &shpool);
 	if (ret) {
 		printf("failed rpmsg_init_vdev\r\n");
