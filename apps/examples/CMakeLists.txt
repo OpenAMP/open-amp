@@ -1,6 +1,7 @@
 
 option (WITH_LOAD_FW "Include loading firmware example" OFF)
 
+add_subdirectory (echo)
 add_subdirectory (matrix_multiply)
 if (WITH_LOAD_FW)
   add_subdirectory (load_fw)
