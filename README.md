@@ -130,10 +130,10 @@ directory.
     ```
     # Start echo test server to wait for message to echo
     $ sudo LD_LIBRARY_PATH=<openamp_built>/usr/local/lib:<libmetal_built>/usr/local/lib \
-       build/usr/local/bin/echo_testd-shared
+       build/usr/local/bin/rpmsg-echo-shared
     # Run echo test to send message to echo test server
     $ sudo LD_LIBRARY_PATH=<openamp_built>/usr/local/lib:<libmetal_built>/usr/local/lib \
-       build/usr/local/bin/echo_test-shared 1
+       build/usr/local/bin/rpmsg-echo-ping-shared 1
     ```
 
 ###  Example to compile Zynq UltraScale+ MPSoC R5 generic(baremetal) remote:
