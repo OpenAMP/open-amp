@@ -1,7 +1,7 @@
 
-option (WITH_FUNCTION_TEST_SUITE "Include function test suite" OFF)
+option (WITH_RPMSG_APIS_VERIFY "Include RPMsg APIs verification" OFF)
 
 add_subdirectory (msg)
-if (WITH_FUNCTION_TEST_SUITE)
-  add_subdirectory (func_test_suite)
-endif (WITH_FUNCTION_TEST_SUITE)
+if (WITH_RPMSG_APIS_VERIFY)
+  add_subdirectory (rpmsg-apis)
+endif (WITH_RPMSG_APIS_VERIFY)
