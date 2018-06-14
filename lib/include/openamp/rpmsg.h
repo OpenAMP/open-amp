@@ -52,7 +52,7 @@ struct rpmsg_device;
 typedef int (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
 			    size_t len, uint32_t src, void *priv);
 typedef void (*rpmsg_ept_destroy_cb)(struct rpmsg_endpoint *ept);
-typedef void (*rpmsg_unbound_service_cb)(struct rpmsg_device *rdev,
+typedef void (*rpmsg_ept_create_cb)(struct rpmsg_device *rdev,
 				    const char *name, uint32_t dest);
 
 /**
@@ -97,8 +97,8 @@ struct rpmsg_device_ops {
  * @ns_ept: name service endpoint
  * @bitmap: table endpoin address allocation.
  * @lock: mutex lock for rpmsg management
- * @service_cb: callback handler for new service announcement without
- *                     local endpoints waiting to bind.
+ * @new_endpoint_cb: callback handler for new service announcement without local
+ *                   endpoints waiting to bind.
  * @ops: RPMsg device operations
  */
 struct rpmsg_device {
@@ -106,7 +106,7 @@ struct rpmsg_device {
 	struct rpmsg_endpoint ns_ept;
 	unsigned long bitmap[RPMSG_ADDR_BMP_SIZE];
 	metal_mutex_t lock;
-	rpmsg_unbound_service_cb service_cb;
+	rpmsg_ept_create_cb new_endpoint_cb;
 	struct rpmsg_device_ops ops;
 };
 

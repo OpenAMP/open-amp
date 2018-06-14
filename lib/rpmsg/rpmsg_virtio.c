@@ -489,8 +489,8 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			 * - just ignore the requet as service not supported.
 			 */
 			metal_mutex_release(&rdev->lock);
-			if (rdev->service_cb)
-				rdev->service_cb(rdev, name, dest);
+			if (rdev->new_endpoint_cb)
+				rdev->new_endpoint_cb(rdev, name, dest);
 			return RPMSG_EPT_CB_HANDLED;
 		}
 		_ept->dest_addr = dest;
@@ -515,7 +515,7 @@ int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev)
 
 int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev,
-		    rpmsg_unbound_service_cb unbound_service_cb,
+		    rpmsg_ept_create_cb new_endpoint_cb,
 		    struct metal_io_region *shm_io,
 		    struct rpmsg_virtio_shm_pool *shpool)
 {
@@ -531,7 +531,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	memset(rdev, 0, sizeof(*rdev));
 	metal_mutex_init(&rdev->lock);
 	rvdev->vdev = vdev;
-	rdev->service_cb = unbound_service_cb;
+	rdev->new_endpoint_cb = new_endpoint_cb;
 	vdev->priv = rvdev;
 	rdev->ops.send_offchannel_raw = rpmsg_virtio_send_offchannel_raw;
 	role = rpmsg_virtio_get_role(rvdev);

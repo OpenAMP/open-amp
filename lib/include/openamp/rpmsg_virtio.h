@@ -119,8 +119,7 @@ int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev);
  *
  * @param rvdev  - pointer to the rpmsg virtio device
  * @param vdev   - pointer to the virtio device
- * @param unbound_service_cb  - callback handler for new service announcement
- *                              without local endpoints waiting to bind.
+ * @param new_endpoint_cb - pointer to callback on creation of a new endpoint
  * @param shm_io - pointer to the share memory I/O region.
  * @param shpool - pointer to shared memory pool. rpmsg_virtio_init_shm_pool has
  *                 to be called first to fill this structure.
@@ -129,7 +128,7 @@ int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev);
  */
 int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct virtio_device *vdev,
-		    rpmsg_unbound_service_cb unbound_service_cb,
+		    rpmsg_ept_create_cb new_endpoint_cb,
 		    struct metal_io_region *shm_io,
 		    struct rpmsg_virtio_shm_pool *shpool);
 
