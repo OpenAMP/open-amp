@@ -6,6 +6,7 @@ This application echoes back data that was sent to it by the master core. */
 #include <openamp/open_amp.h>
 #include <metal/alloc.h>
 #include "platform_info.h"
+#include "rpmsg-ping.h"
 
 #define SHUTDOWN_MSG	0xEF56A55A
 
@@ -60,8 +61,9 @@ int app(struct rpmsg_device *rdev, void *priv)
 	/* Initialize RPMSG framework */
 	LPRINTF("Try to create rpmsg endpoint.\n");
 
-	ret = rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME, 0, RPMSG_ADDR_ANY,
-			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
+	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
+			       0, RPMSG_ADDR_ANY, rpmsg_endpoint_cb,
+			       rpmsg_endpoint_destroy);
 	if (ret) {
 		LPERROR("Failed to create endpoint.\n");
 		return -1;

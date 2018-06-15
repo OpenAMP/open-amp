@@ -18,8 +18,6 @@
 extern "C" {
 #endif
 
-#define RPMSG_CHAN_NAME              "rpmsg-openamp-demo-channel"
-
 /**
  * platform_init - initialize the platform
  *
