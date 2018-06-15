@@ -12,8 +12,6 @@ extern "C" {
 /* Interrupt vectors */
 #define IPI_IRQ_VECT_ID         XPAR_XIPIPSU_0_INT_ID
 
-#define RPMSG_CHAN_NAME         "rpmsg-openamp-demo-channel"
-
 /**
  * platform_init - initialize the platform
  *

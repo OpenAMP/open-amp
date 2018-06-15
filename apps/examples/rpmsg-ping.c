@@ -79,10 +79,10 @@ static void rpmsg_new_endpoint_cb(struct rpmsg_device *rdev, const char *name,
 				  uint32_t src)
 {
 	LPRINTF("new endpoint notification is received.\n");
-	if (strcmp(name, RPMSG_CHAN_NAME))
+	if (strcmp(name, RPMSG_SERVICE_NAME))
 		LPERROR("Unexpected name service %s.\n", name);
 	else
-		(void)rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME,
+		(void)rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
 				       APP_EPT_ADDR, src,
 				       rpmsg_endpoint_cb,
 				       rpmsg_endpoint_destroy);
@@ -120,7 +120,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 	}
 
 	/* Create RPMsg endpoint */
-	ret = rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME, APP_EPT_ADDR,
+	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME, APP_EPT_ADDR,
 			       RPMSG_ADDR_ANY,
 			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
 
