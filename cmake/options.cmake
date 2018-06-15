@@ -33,12 +33,6 @@ string (TOUPPER ${CMAKE_SYSTEM_PROCESSOR} PROJECT_PROCESSOR_UPPER)
 string (TOLOWER ${MACHINE}                PROJECT_MACHINE)
 string (TOUPPER ${MACHINE}                PROJECT_MACHINE_UPPER)
 
-# Select to build Remote proc master
-option (WITH_REMOTEPROC_MASTER "Build as remoteproc master" OFF)
-if (WITH_REMOTEPROC_MASTER)
-  option (WITH_LINUXREMOTE  "The remote is Linux" ON)
-endif (WITH_REMOTEPROC_MASTER)
-
 # Select which components are in the openamp lib
 option (WITH_PROXY          "Build with proxy(access device controlled by other processor)" ON)
 option (WITH_APPS           "Build with sample applicaitons" OFF)
@@ -47,20 +41,10 @@ if (WITH_APPS)
   if (WITH_PROXY)
     set (WITH_PROXY_APPS ON)
   endif (WITH_PROXY)
-  option (WITH_BENCHMARK    "Build benchmark app" OFF)
 endif (WITH_APPS)
-option (WITH_OBSOLETE       "Build obsolete system libs" OFF)
 
 # Set the complication flags
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
-
-if (WITH_LINUXREMOTE)
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOPENAMP_REMOTE_LINUX_ENABLE")
-endif (WITH_LINUXREMOTE)
-
-if (WITH_BENCHMARK)
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOPENAMP_BENCHMARK_ENABLE")
-endif (WITH_BENCHMARK)
 
 option (WITH_STATIC_LIB "Build with a static library" ON)
 
