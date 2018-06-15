@@ -9,6 +9,7 @@ multiplies them and returns the result to the master core. */
 #include <time.h>
 #include <unistd.h>
 #include <openamp/open_amp.h>
+#include "matrix_multiply.h"
 #include "platform_info.h"
 
 #define	MAX_SIZE      6
@@ -157,10 +158,10 @@ static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
 static void rpmsg_name_service_bind_cb(struct rpmsg_device *rdev,
 				       const char *name, uint32_t src)
 {
-	if (strcmp(name, RPMSG_CHAN_NAME))
+	if (strcmp(name, RPMSG_SERVICE_NAME))
 		LPERROR("Unexpected name service %s.\n", name);
 	else
-		(void)rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME,
+		(void)rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
 				       APP_EPT_ADDR, src,
 				       rpmsg_endpoint_cb,
 				       rpmsg_endpoint_destroy);
@@ -182,7 +183,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 	LPRINTF("It will then check if the result is expected.\n");
 
 	/* Create RPMsg endpoint */
-	ret = rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME, APP_EPT_ADDR,
+	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME, APP_EPT_ADDR,
 			       RPMSG_ADDR_ANY,
 			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
 	if (ret) {

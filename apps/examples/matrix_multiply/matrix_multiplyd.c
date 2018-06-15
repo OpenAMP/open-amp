@@ -7,6 +7,7 @@ multiplies them and returns the result to the master core. */
 #include <stdlib.h>
 #include <string.h>
 #include <openamp/open_amp.h>
+#include "matrix_multiply.h"
 #include "platform_info.h"
 
 #define	MAX_SIZE		6
@@ -95,8 +96,9 @@ int app(struct rpmsg_device *rdev, void *priv)
 {
 	int ret;
 
-	ret = rpmsg_create_ept(&lept, rdev, RPMSG_CHAN_NAME, 0, RPMSG_ADDR_ANY,
-			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
+	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
+			       0, RPMSG_ADDR_ANY, rpmsg_endpoint_cb,
+			       rpmsg_endpoint_destroy);
 	if (ret) {
 		LPERROR("Failed to create endpoint.\n");
 		return -1;
