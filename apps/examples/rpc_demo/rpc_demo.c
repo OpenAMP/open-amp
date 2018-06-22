@@ -11,6 +11,7 @@
 #include <openamp/rpmsg_retarget.h>
 #include "rsc_table.h"
 #include "platform_info.h"
+#include "rpmsg-rpc-demo.h"
 
 #define REDEF_O_CREAT   0000100
 #define REDEF_O_EXCL    0000200
@@ -20,57 +21,23 @@
 #define REDEF_O_APPEND  0002000
 #define REDEF_O_ACCMODE 0000003
 
-#define RPC_CHANNEL_READY_TO_CLOSE "rpc_channel_ready_to_close"
-
-#define LPRINTF(format, ...)
+#define LPRINTF(format, ...) xil_printf(format, ##__VA_ARGS__)
+//#define LPRINTF(format, ...)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
-/* Global functions and variables */
-extern int init_system(void);
-extern void cleanup_system(void);
-
-/* Local variables */
-static struct rpmsg_channel *app_rp_chnl;
-static volatile int chnl_is_alive = 0;
-static struct remote_proc *proc = NULL;
-static struct rsc_table_info rsc_info;
-
-/*-----------------------------------------------------------------------------*
- *  RPMSG callbacks setup by remoteproc_resource_init()
- *-----------------------------------------------------------------------------*/
-static void rpmsg_read_cb(struct rpmsg_channel *rp_chnl, void *data, int len,
-			  void *priv, unsigned long src)
+static void rpmsg_rpc_shutdown(struct rpmsg_rpc_data *rpc)
 {
-	(void)rp_chnl;
-	(void)data;
-	(void)len;
-	(void)priv;
-	(void)src;
-}
-
-static void rpmsg_channel_created(struct rpmsg_channel *rp_chnl)
-{
-	app_rp_chnl = rp_chnl;
-	chnl_is_alive = 1;
-}
-
-static void rpmsg_channel_deleted(struct rpmsg_channel *rp_chnl)
-{
-	(void)rp_chnl;
-	app_rp_chnl = NULL;
-}
-
-static void shutdown_cb(struct rpmsg_channel *rp_chnl)
-{
-	(void)rp_chnl;
-	chnl_is_alive = 0;
+	(void)rpc;
+	LPRINTF("RPMSG RPC is shutting down.\n");
 }
 
 /*-----------------------------------------------------------------------------*
  *  Application specific
  *-----------------------------------------------------------------------------*/
-int app (struct hil_proc *hproc)
+int app(struct rpmsg_device *rdev, void *priv)
 {
+	struct rpmsg_rpc_data rpc;
+	struct rpmsg_rpc_syscall rpccall;
 	int fd, bytes_written, bytes_read;
 	char fname[] = "remote.file";
 	char wbuff[50];
@@ -79,29 +46,17 @@ int app (struct hil_proc *hproc)
 	float fdata;
 	int idata;
 	int ret;
-	int status;
-
-	/* Initialize framework */
-	LPRINTF("Try to init remoteproc resource\n");
-	status = remoteproc_resource_init(&rsc_info, hproc,
-					  rpmsg_channel_created,
-					  rpmsg_channel_deleted, rpmsg_read_cb,
-					  &proc, 0);
-	if (RPROC_SUCCESS != status) {
-		LPERROR("Failed  to initialize remoteproc resource.\n");
-		return -1;
-	}
-
-	LPRINTF("Init remoteproc resource done\n");
-
-	LPRINTF("Waiting for channel creation...\n");
-	while (!chnl_is_alive) {
-		hil_poll(proc->proc, 0);
-	}
 
 	/* redirect I/Os */
 	LPRINTF("Initializating I/Os redirection...\n");
-	rpmsg_retarget_init(app_rp_chnl, shutdown_cb);
+	ret = rpmsg_rpc_init(&rpc, rdev, RPMSG_SERVICE_NAME,
+			     RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			     priv, platform_poll, rpmsg_rpc_shutdown);
+	rpmsg_set_default_rpc(&rpc);
+	if (ret) {
+		LPRINTF("Failed to intialize rpmsg rpc\n");
+		return -1;
+	}
 
 	printf("\r\nRemote>Baremetal Remote Procedure Call (RPC) Demonstration\r\n");
 	printf("\r\nRemote>***************************************************\r\n");
@@ -168,22 +123,12 @@ int app (struct hil_proc *hproc)
 		}
 	}
 
-	printf("\r\nRemote> Firmware's rpmsg-openamp-demo-channel going down! \r\n");
+	printf("\r\nRemote> Firmware's rpmsg-rpc-channel going down! \r\n");
+	rpccall.id = TERM_SYSCALL_ID;
+	(void)rpmsg_rpc_send(&rpc, &rpccall, sizeof(rpccall), NULL, 0);
 
-	sprintf(wbuff, RPC_CHANNEL_READY_TO_CLOSE);
-	rpmsg_retarget_send(wbuff, sizeof (RPC_CHANNEL_READY_TO_CLOSE) + 1);
-
-	LPRINTF("Waiting for channel deletion...\n");
-	while (chnl_is_alive) {
-		hil_poll(proc->proc, 0);
-	}
-
-	LPRINTF("De-initializating rpmsg_retarget\n");
-	rpmsg_retarget_deinit(app_rp_chnl);
-	/* disable interrupts and free resources */
-	LPRINTF("De-initializating remoteproc resource\n");
-	remoteproc_resource_deinit(proc);
-
+	LPRINTF("Release remoteproc procedure call\n");
+	rpmsg_rpc_release(&rpc);
 	return 0;
 }
 
@@ -192,41 +137,33 @@ int app (struct hil_proc *hproc)
  *-----------------------------------------------------------------------------*/
 int main(int argc, char *argv[])
 {
-	unsigned long proc_id = 0;
-	unsigned long rsc_id = 0;
-	struct hil_proc *hproc;
-	int status = -1;
+	void *platform;
+	struct rpmsg_device *rpdev;
+	int ret;
 
 	LPRINTF("Starting application...\n");
 
-	/* Initialize HW system components */
-	init_system();
-
-	if (argc >= 2) {
-		proc_id = strtoul(argv[1], NULL, 0);
-	}
-
-	if (argc >= 3) {
-		rsc_id = strtoul(argv[2], NULL, 0);
-	}
-
-	/* Create HIL proc */
-	hproc = platform_create_proc(proc_id);
-	if (!hproc) {
-		LPERROR("Failed to create hil proc.\n");
+	/* Initialize platform */
+	ret = platform_init(argc, argv, &platform);
+	if (ret) {
+		LPERROR("Failed to initialize platform.\n");
+		ret = -1;
 	} else {
-		rsc_info.rsc_tab =
-			get_resource_table((int)rsc_id, &rsc_info.size);
-		if (!rsc_info.rsc_tab) {
-			LPERROR("Failed to get resource table data.\n");
+		rpdev = platform_create_rpmsg_vdev(platform, 0,
+						   VIRTIO_DEV_SLAVE,
+						   NULL, NULL);
+		if (!rpdev) {
+			LPERROR("Failed to create rpmsg virtio device.\n");
+			ret = -1;
 		} else {
-			status = app(hproc);
+			app(rpdev, platform);
+			platform_release_rpmsg_vdev(rpdev);
+			ret = 0;
 		}
 	}
 
 	LPRINTF("Stopping application...\n");
+	platform_cleanup(platform);
 
-	cleanup_system();
-	return status;
+	return ret;
 }
-
