@@ -43,10 +43,9 @@
  * They are platform devices, you find them in Linux sysfs
  * sys/bus/platform/devices */
 #define IPI_DEV_NAME        "ff340000.ipi" /* IPI device name */
-#define RSC_DEV_NAME        "3ed00000.ddr_fw" /* RSC device name */
-#define SHM_DEV_NAME        "3ed04000.shm" /* shared device name */
+#define SHM_DEV_NAME        "3ed20000.shm" /* shared device name */
 
-#define RSC_MEM_PA 0x3ED02000UL
+#define RSC_MEM_PA 0x3ED20000UL
 #define RSC_MEM_SIZE 0x2000UL
 #define VRING_MEM_PA  0x3ED40000UL
 #define VRING_MEM_SIZE 0x8000UL
@@ -70,10 +69,6 @@ struct remoteproc_priv {
 	const char *shm_bus_name; /**< shared memory bus name */
 	struct metal_device *ipi_dev; /**< pointer to IPI device */
 	struct metal_io_region *ipi_io; /**< pointer to IPI i/o region */
-	struct metal_device *rsc_dev; /**< pointer to rsc memory device */
-	struct metal_io_region *rsc_io; /**< pointer to rsc memory i/o
-					     region */
-	struct remoteproc_mem rsc_mem; /**< rsc memory */
 	struct metal_device *shm_dev; /**< pointer to shared memory device */
 	struct metal_io_region *shm_io; /**< pointer to shared memory i/o
 					     region */
@@ -86,8 +81,6 @@ struct remoteproc_priv rproc_priv = {
 	.ipi_name = IPI_DEV_NAME,
 	.ipi_bus_name = DEV_BUS_NAME,
 	.ipi_chn_mask = IPI_CHN_BITMASK,
-	.rsc_name = RSC_DEV_NAME,
-	.rsc_bus_name = DEV_BUS_NAME,
 	.shm_name = SHM_DEV_NAME,
 	.shm_bus_name = DEV_BUS_NAME,
 };
@@ -136,25 +129,7 @@ zynqmp_linux_r5_proc_init(struct remoteproc *rproc,
 	rproc->priv = prproc;
 	rproc->ops = ops;
 	prproc->ipi_dev = NULL;
-	prproc->rsc_dev = NULL;
 	prproc->shm_dev = NULL;
-	/* Get resource table memory device */
-	ret = metal_device_open(prproc->rsc_bus_name, prproc->rsc_name,
-				&dev);
-	if (ret) {
-		fprintf(stderr, "ERROR: failed to open rsc device: %d.\n", ret);
-		return NULL;
-	}
-	prproc->rsc_dev = dev;
-	prproc->rsc_io = metal_device_io_region(dev, 0);
-	if (!prproc->rsc_io)
-		goto err1;
-	mem_pa = metal_io_phys(prproc->rsc_io, 0);
-	remoteproc_init_mem(&prproc->rsc_mem, "rsc", mem_pa, mem_pa,
-			    metal_io_region_size(prproc->rsc_io),
-			    prproc->rsc_io);
-	remoteproc_add_mem(rproc, &prproc->rsc_mem);
-	printf("Successfully added rsc memory.\n");
 	/* Get shared memory device */
 	ret = metal_device_open(prproc->shm_bus_name, prproc->shm_name,
 				&dev);
@@ -201,7 +176,6 @@ err3:
 err2:
 	metal_device_close(prproc->shm_dev);
 err1:
-	metal_device_close(prproc->rsc_dev);
 	return NULL;
 }
 
@@ -223,8 +197,6 @@ static void zynqmp_linux_r5_proc_remove(struct remoteproc *rproc)
 	}
 	if (prproc->shm_dev)
 		metal_device_close(prproc->shm_dev);
-	if (prproc->rsc_dev)
-		metal_device_close(prproc->rsc_dev);
 }
 
 static void *
