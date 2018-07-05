@@ -18,7 +18,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <sys/types.h>
 
 #if defined __cplusplus
 extern "C" {
