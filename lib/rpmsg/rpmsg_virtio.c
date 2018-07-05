@@ -36,7 +36,7 @@ rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
 
 	if (shpool->avail < size)
 		return NULL;
-	buffer =  shpool->base + shpool->size - shpool->avail;
+	buffer =  (void *)((char *)shpool->base + shpool->size - shpool->avail);
 	shpool->avail -= size;
 
 	return buffer;
