@@ -3,7 +3,7 @@
 
 #include <metal/mutex.h>
 #include <openamp/open_amp.h>
-#include <sys/types.h>
+#include <stdint.h>
 
 #if defined __cplusplus
 extern "C" {
