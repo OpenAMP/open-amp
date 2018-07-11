@@ -479,10 +479,11 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	_ept = rpmsg_get_endpoint(rdev, name, RPMSG_ADDR_ANY, dest);
 
 	if (ns_msg->flags & RPMSG_NS_DESTROY) {
-		if (_ept) {
-			metal_mutex_release(&rdev->lock);
-			rpmsg_destroy_ept(_ept);
-		}
+		if (_ept)
+			_ept->dest_addr = RPMSG_ADDR_ANY;
+		metal_mutex_release(&rdev->lock);
+		if (_ept && _ept->destroy_cb)
+			ept->destroy_cb(ept);
 	} else {
 		if (!_ept) {
 			/*
