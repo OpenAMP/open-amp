@@ -263,10 +263,10 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 		return;
 
 	rdev = ept->rdev;
-	metal_mutex_release(&rdev->lock);
 	(void)rpmsg_send_ns_message(ept, RPMSG_NS_DESTROY);
-	rpmsg_unregister_endpoint(ept);
 	metal_mutex_acquire(&rdev->lock);
+	rpmsg_unregister_endpoint(ept);
+	metal_mutex_release(&rdev->lock);
 	if (ept->destroy_cb)
 		ept->destroy_cb(ept);
 }
