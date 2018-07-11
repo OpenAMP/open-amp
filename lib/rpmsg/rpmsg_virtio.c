@@ -479,8 +479,10 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	_ept = rpmsg_get_endpoint(rdev, name, RPMSG_ADDR_ANY, dest);
 
 	if (ns_msg->flags & RPMSG_NS_DESTROY) {
-		if (_ept)
+		if (_ept) {
+			metal_mutex_release(&rdev->lock);
 			rpmsg_destroy_ept(_ept);
+		}
 	} else {
 		if (!_ept) {
 			/*
@@ -492,11 +494,12 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			metal_mutex_release(&rdev->lock);
 			if (rdev->ns_bind_cb)
 				rdev->ns_bind_cb(rdev, name, dest);
-			return RPMSG_SUCCESS;
+		} else {
+			_ept->dest_addr = dest;
+			metal_mutex_release(&rdev->lock);
 		}
-		_ept->dest_addr = dest;
 	}
-	metal_mutex_release(&rdev->lock);
+
 	return RPMSG_SUCCESS;
 }
 
@@ -656,7 +659,6 @@ void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev)
 	struct rpmsg_endpoint *ept;
 
 	rdev = &rvdev->rdev;
-	metal_mutex_acquire(&rdev->lock);
 	while (!metal_list_is_empty(&rdev->endpoints)) {
 		node = rdev->endpoints.next;
 		ept = metal_container_of(node, struct rpmsg_endpoint, node);
@@ -665,8 +667,6 @@ void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev)
 
 	rvdev->rvq = 0;
 	rvdev->svq = 0;
-
-	metal_mutex_release(&rdev->lock);
 
 	metal_mutex_deinit(&rdev->lock);
 }
