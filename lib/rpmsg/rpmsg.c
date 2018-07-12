@@ -150,24 +150,26 @@ struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_device *rdev,
 	struct rpmsg_endpoint *ept;
 
 	metal_list_for_each(&rdev->endpoints, node) {
-		int name_match = 1;
+		int name_match = 0;
 
 		ept = metal_container_of(node, struct rpmsg_endpoint, node);
+		/* try to get by local address only */
 		if (addr != RPMSG_ADDR_ANY && ept->addr == addr)
 			return ept;
+		/* try to find match on local end remote address */
+		if (addr == ept->addr && dest_addr == ept->dest_addr)
+			return ept;
+		/* else use name service and destination address */
 		if (name)
 			name_match = !strncmp(ept->name, name,
 					      sizeof(ept->name));
-		if (dest_addr == RPMSG_ADDR_ANY &&
-		    ept->addr == RPMSG_ADDR_ANY &&
-		    name_match)
+		if (!name || !name_match)
+			continue;
+		/* destination address is known, equal to ept remote address*/
+		if (dest_addr != RPMSG_ADDR_ANY && ept->dest_addr == dest_addr)
 			return ept;
-		if (addr == RPMSG_ADDR_ANY &&
-		    ept->dest_addr == RPMSG_ADDR_ANY &&
-		    name && name_match)
-			return ept;
-		if (addr == ept->addr && dest_addr == ept->dest_addr &&
-		    name_match)
+		/* ept is registered but not associated to remote ept*/
+		if (addr == RPMSG_ADDR_ANY && ept->dest_addr == RPMSG_ADDR_ANY)
 			return ept;
 	}
 	return NULL;
