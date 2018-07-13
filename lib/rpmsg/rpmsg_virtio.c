@@ -10,6 +10,7 @@
 #include <metal/alloc.h>
 #include <metal/cache.h>
 #include <metal/sleep.h>
+#include <metal/utilities.h>
 #include <openamp/rpmsg_virtio.h>
 #include <openamp/virtqueue.h>
 
