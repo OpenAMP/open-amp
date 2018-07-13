@@ -134,6 +134,9 @@ int rpmsg_start_ipc(struct remote_device *rdev)
 		vqs[1] = rdev->tvq;
 	}
 	for (i = 0; i <= 1; i++) {
+		hil_save_vring_handle(i, vqs[i]);
+	}
+	for (i = 0; i <= 1; i++) {
 		status = hil_enable_vring_notifications(i, vqs[i]);
 		if (status != RPMSG_SUCCESS) {
 			return status;

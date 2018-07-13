@@ -418,15 +418,32 @@ int hil_enable_vdev_notification(struct hil_proc *proc, int id)
 }
 
 /**
- * hil_enable_vring_notifications()
+ * hil_save_vring_handle()
  *
  * This function is called after successful creation of virtqueues.
  * This function saves queue handle in the vring_info_table which
- * will be used during interrupt handling .This function setups
- * interrupt handlers.
+ * will be used during interrupt handling .
  *
  * @param vring_index - index to vring HW table
  * @param vq          - pointer to virtqueue to save in vring HW table
+ *
+ */
+void hil_save_vring_handle(int vring_index, struct virtqueue *vq)
+{
+	struct hil_proc *proc_hw = (struct hil_proc *)vq->vq_dev->device;
+	struct proc_vring *vring_hw = &proc_hw->vdev.vring_info[vring_index];
+	/* Save virtqueue pointer for later reference */
+	vring_hw->vq = vq;
+}
+
+/**
+ * hil_enable_vring_notifications()
+ *
+ * This function is called after saving queue handle. This function setups
+ * interrupt handlers.
+ *
+ * @param vring_index - index to vring HW table
+ * @param vq          - pointer to virtqueue to setup interrupt handlers.
  *
  * @return            - execution status
  */
@@ -434,8 +451,6 @@ int hil_enable_vring_notifications(int vring_index, struct virtqueue *vq)
 {
 	struct hil_proc *proc_hw = (struct hil_proc *)vq->vq_dev->device;
 	struct proc_vring *vring_hw = &proc_hw->vdev.vring_info[vring_index];
-	/* Save virtqueue pointer for later reference */
-	vring_hw->vq = vq;
 
 	if (proc_hw->ops->enable_interrupt) {
 		proc_hw->ops->enable_interrupt(&vring_hw->intr_info);
