@@ -32,10 +32,12 @@
  */
 
 #include <metal/alloc.h>
+#include <metal/sys.h>
 #include <metal/utilities.h>
 #include <openamp/elf_loader.h>
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
+#include <stdarg.h>
 #include <stdio.h>
 /* Xilinx headers */
 #include <pm_api_sys.h>
@@ -416,12 +418,42 @@ static XStatus IpiConfigure(XIpiPsu *const IpiInstPtr)
 	return Status;
 }
 
+static void app_log_handler(enum metal_log_level level,
+			       const char *format, ...)
+{
+	char msg[1024];
+	va_list args;
+	static const char *level_strs[] = {
+		"metal: emergency: ",
+		"metal: alert:     ",
+		"metal: critical:  ",
+		"metal: error:     ",
+		"metal: warning:   ",
+		"metal: notice:    ",
+		"metal: info:      ",
+		"metal: debug:     ",
+	};
+
+	va_start(args, format);
+	vsnprintf(msg, sizeof(msg), format, args);
+	va_end(args);
+
+	if (level <= METAL_LOG_EMERGENCY || level > METAL_LOG_DEBUG)
+		level = METAL_LOG_EMERGENCY;
+
+	xil_printf("%s%s", level_strs[level], msg);
+}
+
 int main(void)
 {
 	struct remoteproc *rproc;
 	void *fw = &image;
 	unsigned int cpu_id = NODE_RPU_1;
 	int ret;
+	struct metal_init_params metal_param = {
+		.log_handler = app_log_handler,
+		.log_level = METAL_LOG_DEBUG,
+	};
 
 	if (XST_SUCCESS != IpiConfigure(&IpiInst)) {
 		LPERROR("Failed to config IPI instance\n\r");
@@ -433,6 +465,8 @@ int main(void)
 	}
 
 	LPRINTF("rproc app\n");
+	/* Initialize libmetal evironment */
+	metal_init(&metal_param);
 	/* Initialize remoteproc instance */
 	rproc = remoteproc_init(&r5_rproc_ops, &cpu_id);
 	if (!rproc) {
