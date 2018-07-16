@@ -8,6 +8,7 @@
 #ifndef ELF_LOADER_H_
 #define ELF_LOADER_H_
 
+#include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
 
 #if defined __cplusplus
@@ -289,19 +290,27 @@ typedef struct elf64_sym {
 /* ELF decoding information */
 struct elf32_info {
 	Elf32_Ehdr ehdr;
+	unsigned int load_state;
 	Elf32_Phdr *phdrs;
 	Elf32_Shdr *shdrs;
 	void *shstrtab;
-	void *rsc_table;
 };
 
 struct elf64_info {
 	Elf64_Ehdr ehdr;
+	unsigned int load_state;
 	Elf64_Phdr *phdrs;
 	Elf64_Shdr *shdrs;
 	void *shstrtab;
-	void *rsc_table;
 };
+
+#define ELF_STATE_INIT              0x0UL
+#define ELF_STATE_WAIT_FOR_PHDRS    0x100UL
+#define ELF_STATE_WAIT_FOR_SHDRS    0x200UL
+#define ELF_STATE_WAIT_FOR_SHSTRTAB 0x400UL
+#define ELF_STATE_HDRS_COMPLETE     0x800UL
+#define ELF_STATE_MASK              0xFF00UL
+#define ELF_NEXT_SEGMENT_MASK       0x00FFUL
 
 extern struct loader_ops elf_ops;
 
@@ -310,172 +319,108 @@ extern struct loader_ops elf_ops;
  *
  * It will check if the input image header is an ELF header.
  *
- * @fw: firmware private data which will be passed to user defined loader
- *      operations
+ * @img_data: firmware private data which will be passed to user defined loader
+ *            operations
+ * @len: firmware header length
  *
- * return pointer to the ELF image information for success, NULL for failure.
+ * return 0 for success or negative value for failure.
  */
-int elf_identify(void *fw_head);
+int elf_identify(const void *img_data, size_t len);
 
 /**
- * elf_open - parse an ELF file
+ * elf_load_header - Load ELF headers
  *
- * It will get the ELF header, the program header, and the section header
- * if seek operation is supported.
+ * It will get the ELF header, the program header, and the section header.
  *
- * @store: private data which will be passed to user defined image store
- *         operations
- * @ops: pointer to user defined image store operations
+ * @img_data: image data
+ * @offset: input image data offset to the start of image file
+ * @len: input image data length
+ * @img_info: pointer to store image information data
+ * @last_load_state: last state return by this function
+ * @noffset: pointer to next offset required by loading ELF header
+ * @nlen: pointer to next data length required by loading ELF header
  *
- * return pointer to the ELF image information for success, NULL for failure.
+ * return ELF loading header state, or negative value for failure
  */
-void *elf_parse(void *store, struct image_store_ops *ops);
+int elf_load_header(const void *img_data, size_t offset, size_t len,
+		    void **img_info, int last_load_state,
+		    size_t *noffset, size_t *nlen);
 
 /**
- * elf_load
+ * elf_load - load ELF data
  *
- * It will load the ELF data to the target.
+ * It will parse the ELF image and return the target device address,
+ * offset to the start of the ELF image of the data to load and the
+ * length of the data to load.
  *
- * @store: private data which will be passed to user defined image store
- *         operations
- * @elf_info: pointer to the ELF information data
- * @rproc: pointer to the remote processor instance
- * @ops: pointer to user defined image store operations
+ * @rproc: pointer to remoteproc instance
+ * @img_data: image data which will passed to the function.
+ *            it can be NULL, if image data doesn't need to be handled
+ *            by the load function. E.g. binary data which was
+ *            loaded to the target memory.
+ * @offset: last loaded image data offset to the start of image file
+ * @len: last loaded image data length
+ * @img_info: pointer to store image information data
+ * @last_load_state: the returned state of the last function call.
+ * @da: target device address, if the data to load is not for target memory
+ *      the da will be set to ANY.
+ * @noffset: pointer to next offset required by loading ELF header
+ * @nlen: pointer to next data length required by loading ELF header
+ * @padding: value to pad it is possible that a size of a segment in memory
+ *           is larger than what it is in the ELF image. e.g. a segment
+ *           can have stack section .bss. It doesn't need to copy image file
+ *           space, in this case, it will be packed with 0.
+ * @nmemsize: pointer to next data target memory size. The size of a segment
+ *            in the target memory can be larger than the its size in the
+ *            image file.
  *
- * return 0 for success, negative value for errors
+ * return 0 for success, otherwise negative value for failure
  */
-int elf_load(void *store, void *elf_info, struct remoteproc *rproc,
-	     struct image_store_ops *ops);
+int elf_load(struct remoteproc *rproc, const void *img_data,
+	     size_t offset, size_t len,
+	     void **img_info, int last_load_state,
+	     metal_phys_addr_t *da,
+	     size_t *noffset, size_t *nlen,
+	     unsigned char *padding, size_t *nmemsize);
 
 /**
- * elf_close - Close an ELF file
+ * elf_release - Release ELF image information
  *
- * It will close the ELF format file.
+ * It will release ELF image information data.
  *
- * @ops: pointer to user defined image store operations
- * @elf_info: pointer to ELF image information
- * @store: private data which will be passed to user defined image store
- *         operations
+ * @img_info: pointer to ELF image information
  */
-void elf_close(void *store, void *elf_info, struct image_store_ops *ops);
+void elf_release(void *img_info);
 
 /**
  * elf_get_entry - Get entry point
  *
  * It will return entry point specified in the ELF file.
  *
- * @elf_info: pointer to ELF image information
+ * @img_info: pointer to ELF image information
  *
  * return entry address
  */
-metal_phys_addr_t elf_get_entry(void *elf_info);
+metal_phys_addr_t elf_get_entry(void *img_info);
 
 /**
- * elf_get_segment_file_len - Get segment data length in ELF file
- *
- * It will return the length of the segment in the ELF file.
- *
- * @elf_info: pointer to ELF image information
- * @index: index of the segment
- *
- * return length of the segment in the ELF file
- */
-long elf_get_segment_file_len(void *elf_info, int index);
-
-/**
- * elf_copy_segment - copy segment data to local memory
- *
- * It will copy the specified segment data to the local memory
- *
- * @elf_info: pointer to ELF image information
- * @ops: pointer to user defined image store operations
- * @store: private data which will be passed to user defined image store
- *         operations
- * @index: index of the segment
- * @dest: destination local memory address
- *
- * return length of copied data for success, negative value for failure
- */
-long elf_copy_segment(void *elf_info, struct image_store_ops *ops,
-		      void *store,
-		      int index, void *dest);
-
-/**
- * elf_get_section_len - Get ELF section length
- *
- * It will return the length of the ELF section
- *
- * @elf_info: pointer to ELF image information
- * @name: section name
- *
- * return length of the ELF section
- */
-long elf_get_section_size(void *elf_info, const char *name);
-
-/**
- * elf_get_section_da - Get ELF section from target memory
- *
- * It will return the length of the ELF section and the pointer
- * to the target address of section in the target memory
- *
- * @elf_info: pointer to ELF image information
- * @name: section name
- * @da: pointer to the target section address in the target memory
- *
- * return length of the ELF section
- */
-long elf_get_section_da(void *elf_info, const char *name,
-			metal_phys_addr_t *da);
-
-/**
- * elf_copy_section_from_file - copy section from ELF file to local memory
- *
- * It will copy the specified section data from ELF file to the specified
- * local memory
- *
- * @elf_info: pointer to ELF image information
- * @ops: pointer to user defined image store operations
- * @store: private data which will be passed to user defined image store
- *         operations
- * @name: section name
- * @dest: destination local memory address
- *
- * return length of copied data for success, negative value for failure
- */
-long elf_copy_section_from_file(void *elf_info,
-				struct image_store_ops *ops,
-				void *store, const char *name,
-				void *dest);
-
-/**
- * elf_get_rsc_table - get the resource table information
+ * elf_locate_rsc_table - locate the resource table information
  *
  * It will return the length of the resource table, and the device address of
  * the resource table.
  *
- * @elf_info: pointer to ELF image information
- * @da_ptr: pointer to the device address
+ * @img_info: pointer to ELF image information
+ * @da: pointer to the device address
+ * @offset: pointer to the offset to in the ELF image of the resource
+ *          table section.
+ * @size: pointer to the size of the resource table section.
  *
- * return length of the resource table
+ * return 0 if successfully locate the resource table, negative value for
+ * failure.
  */
-long elf_get_rsc_table(void *elf_info, metal_phys_addr_t *da_ptr);
+int elf_locate_rsc_table(void *img_info, metal_phys_addr_t *da,
+			 size_t *offset, size_t *size);
 
-/**
- * elf_copy_rsc_table - copy the resource table information to local memory
- *
- * It will copy the resource table from image file to local memory.
- *
- * @store: private data which will be passed to user defined image store
- *         operations
- * @elf_info: pointer to ELF image information
- * @ops: pointer to user defined image store operations
- * @rsc_table: pointer to local memory for the resource table
- *
- * return the pointer to the local memory for the resource table
- */
-void *elf_copy_rsc_table(void *store, void *elf_info,
-			 struct image_store_ops *ops,
-			 void *rsc_table);
 #if defined __cplusplus
 }
 #endif

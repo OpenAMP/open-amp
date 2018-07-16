@@ -25,18 +25,32 @@
 
 #include <metal/io.h>
 #include <metal/list.h>
+#include <metal/sys.h>
 #include <openamp/remoteproc.h>
 
 #if defined __cplusplus
 extern "C" {
 #endif
 
-/* Loader macros */
-#define SYNC_LOAD 1UL
-#define ASYNC_LOAD 0UL
-
 /* Loader feature macros */
 #define SUPPORT_SEEK 1UL
+
+/* Remoteproc loader any address */
+#define RPROC_LOAD_ANYADDR ((metal_phys_addr_t)-1)
+
+/* Remoteproc loader Exectuable Image Parsing States */
+/* Remoteproc loader parser intial state */
+#define RPROC_LOADER_NOT_READY      0x0UL
+/* Remoteproc loader ready to load, even it can be not finish parsing */
+#define RPROC_LOADER_READY_TO_LOAD  0x10000UL
+/* Remoteproc loader post data load */
+#define RPROC_LOADER_POST_DATA_LOAD 0x20000UL
+/* Remoteproc loader finished loading */
+#define RPROC_LOADER_LOAD_COMPLETE  0x40000UL
+/* Remoteproc loader state mask */
+#define RPROC_LOADER_MASK           0x0FFF0000UL
+/* Remoteproc loader private mask */
+#define RPROC_LOADER_PRIVATE_MASK   0x0000FFFFUL
 
 /**
  * struct image_store_ops - user defined image store operations
@@ -50,36 +64,39 @@ extern "C" {
  * @features: loader supported features. e.g. seek
  */
 struct image_store_ops {
-	int (*open)(void *store);
+	int (*open)(void *store, const char *path, const void **img_data);
 	void (*close)(void *store);
-	long (*load)(void *store, size_t offset, void *dest,
-		     size_t size, struct metal_io_region *io, int sync);
-	int (*load_finish)(void *store);
+	int (*load)(void *store, size_t offset, size_t size,
+		    const void **data,
+		    metal_phys_addr_t pa,
+		    struct metal_io_region *io, char is_blocking);
 	unsigned int features;
 };
 
 /**
  * struct loader_ops - loader oeprations
- * @identify: identify the firmware
- * @parse: define how to parse firmware and get the headers information
- * @get_rsc_table: define get the resource table length and target device
- * @copy_rsc_table: define how to copy the resource table from firmware to
- *                  local memory.
- * @load: define how to load the firmware
- * @close: define how to close the firmware
+ * @load_header: define how to get the executable headers
+ * @load_data: define how to load the target data
+ * @locate_rsc_table: define how to get the resource table target address,
+ *                    offset to the ELF image file and size of the resource
+ *                    table.
+ * @release: define how to release the loader
  * @get_entry: get entry address
  */
 struct loader_ops {
-	void *(*parse)(void *store, struct image_store_ops *ops);
-	long (*get_rsc_table)(void *loader_info,
-			      metal_phys_addr_t *da_ptr);
-	void *(*copy_rsc_table)(void *fw, void *loader_info,
-				struct image_store_ops *ops, void *rsc_table);
-	int (*load)(void *fw, void *fw_info, struct remoteproc *rproc,
-		    struct image_store_ops *ops);
-	void (*close)(void *fw, void *loader_info,
-		      struct image_store_ops *ops);
-	metal_phys_addr_t (*get_entry)(void *loader_info);
+	int (*load_header)(const void *img_data, size_t offset, size_t len,
+			   void **img_info, int last_state,
+			   size_t *noffset, size_t *nlen);
+	int (*load_data)(struct remoteproc *rproc,
+			 const void *img_data, size_t offset, size_t len,
+			 void **img_info, int last_load_state,
+			 metal_phys_addr_t *da,
+			 size_t *noffset, size_t *nlen,
+			 unsigned char *padding, size_t *nmemsize);
+	int (*locate_rsc_table)(void *img_info, metal_phys_addr_t *da,
+				size_t *offset, size_t *size);
+	void (*release)(void *img_info);
+	metal_phys_addr_t (*get_entry)(void *img_info);
 };
 
 #if defined __cplusplus

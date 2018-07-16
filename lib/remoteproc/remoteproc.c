@@ -19,16 +19,11 @@
  *  static functions
  *****************************************************************************/
 static struct loader_ops *
-remoteproc_check_fw_format(void *fw, struct image_store_ops *store_ops)
+remoteproc_check_fw_format(const void *img_data, size_t img_len)
 {
-	unsigned char header[64];
-	long lsize;
-
-	lsize = store_ops->load(fw, 0, header, sizeof(header), NULL,
-				SYNC_LOAD);
-	if (lsize <= 0)
+	if (img_len <= 0)
 		return NULL;
-	else if (elf_identify(header))
+	else if (elf_identify(img_data, img_len) == 0)
 		return &elf_ops;
 	else
 		return NULL;
@@ -92,38 +87,33 @@ remoteproc_patoda(struct remoteproc_mem *mem, metal_phys_addr_t pa)
 }
 
 static void *remoteproc_get_rsc_table(struct remoteproc *rproc,
-				      void *store, void *loader_info,
-				      struct loader_ops *loader_ops,
+				      void *store,
 				      struct image_store_ops *store_ops,
-				      size_t *rsc_len_ptr,
-				      metal_phys_addr_t *rsc_da_ptr)
+				      size_t offset,
+				      size_t len)
 {
-	long rsc_len;
 	int ret;
 	void *rsc_table = NULL;
-
-	/* no resource table is found */
-	rsc_len = loader_ops->get_rsc_table(loader_info, rsc_da_ptr);
-	if (rsc_len <= 0) {
-		*rsc_len_ptr = 0;
-		return NULL;
-	}
-	*rsc_len_ptr = (size_t)rsc_len;
+	const void *img_data;
 
 	/* Copy the resource table to local memory,
 	 * the caller should be responsible to release the memory
 	 */
-	rsc_table = metal_allocate_memory(rsc_len);
+	rsc_table = metal_allocate_memory(len);
 	if (!rsc_table) {
 		return RPROC_ERR_PTR(-RPROC_ENOMEM);
 	}
-	if (!loader_ops->copy_rsc_table(store, loader_info, store_ops,
-					rsc_table)) {
+	ret = store_ops->load(store, offset, len, &img_data, RPROC_LOAD_ANYADDR,
+			      NULL, 1);
+	if (ret < 0 || ret < (int)len || img_data == NULL) {
+		metal_log(METAL_LOG_ERROR,
+			  "get rsc failed: 0x%llx, 0x%llx\r\n", offset, len);
 		rsc_table = RPROC_ERR_PTR(-RPROC_EINVAL);
 		goto error;
 	}
+	memcpy(rsc_table, img_data, len);
 
-	ret = handle_rsc_table(rproc, rsc_table, rsc_len, NULL);
+	ret = handle_rsc_table(rproc, rsc_table, len, NULL);
 	if (ret < 0) {
 		rsc_table = RPROC_ERR_PTR(ret);
 		goto error;
@@ -370,135 +360,277 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 	return va;
 }
 
-int remoteproc_load(struct remoteproc *rproc, void *store, void **loader_data,
-		    struct image_store_ops *store_ops)
+int remoteproc_load(struct remoteproc *rproc, const char *path,
+		    void *store, struct image_store_ops *store_ops,
+		    void **img_info)
 {
 	int ret;
-	struct loader_ops *loader_ops;
-	void *ldata;
-	metal_phys_addr_t entry;
-	metal_phys_addr_t rsc_da;
-	size_t rsc_len;
-	void *rsc_table;
+	struct loader_ops *loader;
+	const void *img_data;
+	void *limg_info = NULL;
+	size_t offset, noffset;
+	size_t len, nlen;
+	int last_load_state;
+	metal_phys_addr_t da, rsc_da;
+	int rsc_len;
+	size_t rsc_size;
+	void *rsc_table = NULL;
+	struct metal_io_region *io = NULL;
 
 	if (!rproc)
 		return -RPROC_ENODEV;
 
 	metal_mutex_acquire(&rproc->lock);
-	metal_log(METAL_LOG_DEBUG, "%s: check remoteproc status\n\r", __func__);
-	/* If remoteproc is running, cannot load firmware */
-	if (rproc->state == RPROC_RUNNING || rproc->state == RPROC_ERROR) {
+	metal_log(METAL_LOG_DEBUG, "%s: check remoteproc status\r\n", __func__);
+	/* If remoteproc is not in ready state, cannot load executable */
+	if (rproc->state != RPROC_READY) {
 		metal_log(METAL_LOG_ERROR,
-			  "load store failure: invalid rproc state %d.\n",
+			  "load failure: invalid rproc state %d.\r\n",
 			  rproc->state);
+		metal_mutex_release(&rproc->lock);
 		return -RPROC_EINVAL;
 	}
 
 	if (!store_ops) {
 		metal_log(METAL_LOG_ERROR,
-			  "load store failure: loader ops is not set.\n");
+			  "load failure: loader ops is not set.\r\n");
+		metal_mutex_release(&rproc->lock);
 		return -RPROC_EINVAL;
 	}
 
-	/* Open firmware to get ready to parse */
-	metal_log(METAL_LOG_DEBUG, "%s: open firmware image\n\r", __func__);
-	ret = store_ops->open(store);
-	if (ret) {
+	/* Open exectuable to get ready to parse */
+	metal_log(METAL_LOG_DEBUG, "%s: open exectuable image\r\n", __func__);
+	ret = store_ops->open(store, path, &img_data);
+	if (ret <= 0) {
 		metal_log(METAL_LOG_ERROR,
-			  "load store failure: failed to open firmware.\n");
-		return ret;
+			  "load failure: failed to open firmware %d.\n",
+			  ret);
+		metal_mutex_release(&rproc->lock);
+		return -RPROC_EINVAL;
 	}
+	len = ret;
+	metal_assert(img_data != NULL);
 
-	/* Check firmware format to select a parser */
-	loader_ops = rproc->loader_ops;
-	if (!loader_ops) {
-		metal_log(METAL_LOG_DEBUG, "%s: check loader\n\r", __func__);
-		loader_ops = remoteproc_check_fw_format(store, store_ops);
-		if (!loader_ops) {
+	/* Check executable format to select a parser */
+	loader = rproc->loader;
+	if (!loader) {
+		metal_log(METAL_LOG_DEBUG, "%s: check loader\r\n", __func__);
+		loader = remoteproc_check_fw_format(img_data, len);
+		if (!loader) {
 			metal_log(METAL_LOG_ERROR,
-			       "load store failure: failed to get store ops.\n");
+			       "load failure: failed to get store ops.\n");
 			ret = -RPROC_EINVAL;
 			goto error1;
 		}
-		rproc->loader_ops = loader_ops;
+		rproc->loader = loader;
 	}
 
-	/* parse the firmware, get the headers */
-	metal_log(METAL_LOG_DEBUG, "%s: parse firmware\n\r", __func__);
-	ldata = loader_ops->parse(store, store_ops);
-	if (!ldata) {
-		metal_log(METAL_LOG_ERROR,
-			  "load store failure: failed to parse firmware.\n");
-		ret = -RPROC_EINVAL;
-		goto error2;
+	/* Load exectuable headers */
+	metal_log(METAL_LOG_DEBUG, "%s: loading headers\r\n", __func__);
+	offset = 0;
+	last_load_state = RPROC_LOADER_NOT_READY;
+	while(1) {
+		ret = loader->load_header(img_data, offset, len,
+					  &limg_info, last_load_state,
+					  &noffset, &nlen);
+		last_load_state = (unsigned int)ret;
+		metal_log(METAL_LOG_DEBUG,
+			  "%s, load header 0x%lx, 0x%x, next 0x%lx, 0x%x\r\n",
+			  __func__, offset, len, noffset, nlen);
+		if (ret < 0) {
+			metal_log(METAL_LOG_ERROR,
+				  "load header failed 0x%lx,%d.\r\n",
+				  offset, len);
+
+			goto error2;
+		} else if ((ret & RPROC_LOADER_READY_TO_LOAD) != 0) {
+			if (nlen == 0)
+				break;
+			else if ((noffset > (offset + len)) &&
+				 (store_ops->features & SUPPORT_SEEK) == 0) {
+				/* Required data is not continued, however
+				 * seek is not supported, stop to load
+				 * headers such as ELF section headers which
+				 * is usually located to the end of image.
+				 * Continue to load binary data to target
+				 * memory.
+				 */
+				break;
+			}
+		}
+		/* Continue to load headers image data */
+		img_data = NULL;
+		ret = store_ops->load(store, noffset, nlen,
+				      &img_data,
+				      RPROC_LOAD_ANYADDR,
+				      NULL, 1);
+		if (ret < (int)nlen) {
+			metal_log(METAL_LOG_ERROR,
+				  "load image data failed 0x%x,%d\r\n",
+				  noffset, nlen);
+			goto error2;
+		}
+		offset = noffset;
+		len = nlen;
+	}
+	ret = elf_locate_rsc_table(limg_info, &rsc_da, &offset, &rsc_size);
+	if (ret == 0 && rsc_size > 0) {
+		/* parse resource table */
+		rsc_len = (int)rsc_size;
+		rsc_table = remoteproc_get_rsc_table(rproc, store, store_ops,
+						     offset, rsc_len);
+	} else {
+		rsc_len = ret;
 	}
 
-	/* Try to get the resource table */
-	metal_log(METAL_LOG_DEBUG, "%s: get resource table\n\r", __func__);
-	rsc_table = remoteproc_get_rsc_table(rproc, store, ldata,
-					     loader_ops, store_ops,
-					     &rsc_len, &rsc_da);
-	if (RPROC_IS_ERR(rsc_table)) {
-		ret = RPROC_PTR_ERR(rsc_table);
-		rsc_table = NULL;
-		goto error2;
+	/* load executable data */
+	metal_log(METAL_LOG_DEBUG, "%s: load executable data\r\n", __func__);
+	offset = 0;
+	len = 0;
+	ret = -EINVAL;
+	while(1) {
+		unsigned char padding;
+		size_t nmemsize;
+		metal_phys_addr_t pa;
+
+		da = RPROC_LOAD_ANYADDR;
+		nlen = 0;
+		nmemsize = 0;
+		noffset = 0;
+		ret = loader->load_data(rproc, img_data, offset, len,
+					&limg_info, last_load_state, &da,
+					&noffset, &nlen, &padding, &nmemsize);
+		if (ret < 0) {
+			metal_log(METAL_LOG_ERROR,
+				  "load data failed,0x%lx,%d\r\n",
+				  noffset, nlen);
+			goto error3;
+		}
+		metal_log(METAL_LOG_DEBUG,
+			  "load data: da 0x%lx, offset 0x%lx, len = 0x%lx, memsize = 0x%lx, state 0x%x\r\n",
+			  da, noffset, nlen, nmemsize, ret);
+		last_load_state = ret;
+		if (da != RPROC_LOAD_ANYADDR) {
+			/* Data is supposed to be loaded to target memory */
+			img_data = NULL;
+			/* get the I/O region from remoteproc */
+			pa = METAL_BAD_PHYS;
+			(void)remoteproc_mmap(rproc, &pa, &da, nmemsize, 0, &io);
+			if (pa == METAL_BAD_PHYS || io == NULL) {
+				metal_log(METAL_LOG_ERROR,
+					  "load failed, no mapping for 0x%llx.\r\n",
+					  da);
+				ret = -RPROC_EINVAL;
+				goto error3;
+			}
+			if (nlen > 0) {
+				ret = store_ops->load(store, noffset, nlen,
+						      &img_data, pa, io, 1);
+				if (ret != (int)nlen) {
+					metal_log(METAL_LOG_ERROR,
+						  "load data failed 0x%lx, 0x%lx, 0x%x\r\n",
+						  pa, noffset, nlen);
+					ret = -RPROC_EINVAL;
+					goto error3;
+				}
+			}
+			if (nmemsize > nlen) {
+				size_t tmpoffset;
+
+				tmpoffset = metal_io_phys_to_offset(io,
+								    pa + nlen);
+				metal_io_block_set(io, tmpoffset,
+						   padding, (nmemsize - nlen));
+			}
+		} else if (nlen != 0) {
+			ret = store_ops->load(store, noffset, nlen,
+					      &img_data,
+					      RPROC_LOAD_ANYADDR,
+					      NULL, 1);
+			if (ret < (int)nlen) {
+				if ((last_load_state &
+				    RPROC_LOADER_POST_DATA_LOAD) != 0) {
+					metal_log(METAL_LOG_WARNING,
+						  "not all the headers are loaded\r\n");
+					break;
+				}
+				metal_log(METAL_LOG_ERROR,
+					  "post-load image data failed 0x%x,%d\r\n",
+					  noffset, nlen);
+				goto error3;
+			}
+			offset = noffset;
+			len = nlen;
+		} else {
+			/* (last_load_state & RPROC_LOADER_LOAD_COMPLETE) != 0 */
+			break;
+		}
 	}
 
-	/* load firmware */
-	metal_log(METAL_LOG_DEBUG, "%s: load firmware data\n\r", __func__);
-	ret = loader_ops->load(store, ldata, rproc, store_ops);
-	if (ret) {
-		metal_log(METAL_LOG_ERROR,
-			  "load store failure: failed to load firmware.\n");
-		goto error3;
+	if (rsc_len < 0) {
+		ret = elf_locate_rsc_table(limg_info, &rsc_da,
+					   &offset, &rsc_size);
+		if (ret == 0 && rsc_size > 0) {
+			/* parse resource table */
+			rsc_len = (int)rsc_size;
+			rsc_table = remoteproc_get_rsc_table(rproc, store,
+							     store_ops,
+							     offset,
+							     rsc_len);
+		}
 	}
 
 	/* Update resource table */
 	if (rsc_len && rsc_da != METAL_BAD_PHYS) {
 		void *rsc_table_cp = rsc_table;
-		struct metal_io_region *io;
 
 		metal_log(METAL_LOG_DEBUG,
-			  "%s: update resource table\n\r", __func__);
+			  "%s, update resource table\r\n", __func__);
 		rsc_table = remoteproc_mmap(rproc, NULL, &rsc_da,
 					    rsc_len, 0, &io);
 		if (rsc_table) {
-			/* FIX me: Should use metal_io_block_write */
-			memcpy(rsc_table, rsc_table_cp, rsc_len);
+			size_t rsc_io_offset;
+
+			/* Update resource table */
+			rsc_io_offset = metal_io_virt_to_offset(io, rsc_table);
+			ret = metal_io_block_write(io, rsc_io_offset,
+						   rsc_table_cp, rsc_len);
+			if (ret != rsc_len) {
+				metal_log(METAL_LOG_WARNING,
+					  "load: failed to update rsc\r\n");
+			}
 			rproc->rsc_table = rsc_table;
 			rproc->rsc_len = rsc_len;
 		} else {
 			metal_log(METAL_LOG_WARNING,
-				  "load store: not able to update rsc table.\n");
+				  "load: not able to update rsc table.\n");
 		}
 		metal_free_memory(rsc_table_cp);
 		/* So that the rsc_table will not get released */
 		rsc_table = NULL;
 	}
 
-	metal_log(METAL_LOG_DEBUG, "%s: successfully load firmware\n\r",
+	metal_log(METAL_LOG_DEBUG, "%s: successfully load firmware\r\n",
 		  __func__);
 	/* get entry point from the firmware */
-	entry = loader_ops->get_entry(ldata);
-	rproc->bootaddr = entry;
+	rproc->bootaddr = loader->get_entry(limg_info);
 	rproc->state = RPROC_READY;
 
 	metal_mutex_release(&rproc->lock);
-	if (loader_data)
-		*loader_data = ldata;
+	if (img_info)
+		*img_info = limg_info;
 	else
-		loader_ops->close(store, ldata, store_ops);
+		loader->release(limg_info);
 	store_ops->close(store);
-	return ret;
+	return 0;
 
 error3:
 	if (rsc_table)
 		metal_free_memory(rsc_table);
 error2:
-	loader_ops->close(store, ldata, store_ops);
+	loader->release(limg_info);
 error1:
 	store_ops->close(store);
-	rproc->ops->shutdown(rproc);
 	metal_mutex_release(&rproc->lock);
 	return ret;
 }
