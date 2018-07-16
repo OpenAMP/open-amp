@@ -67,7 +67,7 @@
 #define TCM_COMB_BIT		metal_bit(6)
 
 struct r5_rproc_priv {
-	struct remoteproc rproc;
+	struct remoteproc *rproc;
 	int cpu_id;
 	metal_phys_addr_t rpu_base;
 	struct metal_io_region rpu_io;
@@ -132,7 +132,8 @@ static void r5_rproc_mode_config(struct r5_rproc_priv *priv)
 	metal_io_write32(&priv->rpu_io, RPU_GLBL_CNTL_OFFSET, tmp);
 }
 
-struct remoteproc *r5_rproc_init(struct remoteproc_ops *ops, void *arg)
+struct remoteproc *r5_rproc_init(struct remoteproc *rproc,
+				 struct remoteproc_ops *ops, void *arg)
 {
 	struct r5_rproc_priv *priv;
 	unsigned int cpu_id = *((unsigned int *)arg);
@@ -147,17 +148,19 @@ struct remoteproc *r5_rproc_init(struct remoteproc_ops *ops, void *arg)
 	if (!priv)
 		return NULL;
 	memset(priv, 0, sizeof(*priv));
+	priv->rproc = rproc;
 	priv->cpu_id = cpu_id;
-	priv->rproc.ops = ops;
-	metal_list_init(&priv->rproc.mems);
-	priv->rproc.priv = priv;
+	priv->rproc->ops = ops;
+	metal_list_init(&priv->rproc->mems);
+	priv->rproc->priv = priv;
 	priv->rpu_base = RPU_BASE_ADDR;
 	metal_io_init(&priv->rpu_io, (void *)RPU_BASE_ADDR, &priv->rpu_base,
 		      0x1000, (metal_phys_addr_t)(-1),
 		      DEVICE_NONSHARED | PRIV_RW_USER_RW, NULL);
 
 	r5_rproc_mode_config(priv);
-	return &priv->rproc;
+	rproc->state = RPROC_READY;
+	return priv->rproc;
 }
 
 void r5_rproc_remove(struct remoteproc *rproc)
@@ -165,7 +168,7 @@ void r5_rproc_remove(struct remoteproc *rproc)
 	if (rproc) {
 		struct r5_rproc_priv *priv;
 
-		priv = metal_container_of(rproc, struct r5_rproc_priv, rproc);
+		priv = (struct r5_rproc_priv *)rproc->priv;
 		metal_free_memory(priv);
 	}
 }
@@ -345,54 +348,69 @@ struct remoteproc_ops r5_rproc_ops = {
 	.mmap = r5_rproc_mmap,
 };
 
-int mem_image_open(void *fw)
+int mem_image_open(void *store, const char *path, const void **image_data)
 {
-	/* The image is in memory, does nothing */
-	(void)fw;
-	return 0;
-}
-
-void mem_image_close(void *fw)
-{
-	/* The image is in memory, does nothing */
-	(void)fw;
-}
-
-long mem_image_load(void *fw, size_t offset, void *dest, size_t size,
-		   struct metal_io_region *io, int block)
-{
-	struct mem_file *image = fw;
+	struct mem_file *image = store;
 	const void *fw_base = image->base;
 
-	(void)io;
-	(void)block;
+	(void)(path);
+	if (image_data == NULL) {
+		LPERROR("%s: input image_data is NULL\r\n", __func__);
+		return -EINVAL;
+	}
+	*image_data = fw_base;
+	/* return an abitrary length, as the whole firmware is in memory */
+	return 0x100;
+}
 
-	LPRINTF("%s: offset=0x%x, dest=%p, size=0x%x\n\r",
-		__func__, offset, dest, size);
-	memcpy(dest, fw_base + offset, size);
+void mem_image_close(void *store)
+{
+	/* The image is in memory, does nothing */
+	(void)store;
+}
+
+int mem_image_load(void *store, size_t offset, size_t size,
+		   const void **data, metal_phys_addr_t pa,
+		   struct metal_io_region *io,
+		   char is_blocking)
+{
+	struct mem_file *image = store;
+	const void *fw_base = image->base;
+
+	(void)is_blocking;
+
+	LPRINTF("%s: offset=0x%x, size=0x%x\n\r",
+		__func__, offset, size);
+	if (pa == METAL_BAD_PHYS) {
+		if (data == NULL) {
+			LPERROR("%s: data is NULL while pa is ANY\r\n",
+				__func__);
+			return -EINVAL;
+		}
+		*data = (const void *)((const char *)fw_base + offset);
+	} else {
+		void *va;
+
+		if (io == NULL) {
+			LPERROR("%s, io is NULL while pa is not ANY\r\n",
+				__func__);
+			return -EINVAL;
+		}
+		va = metal_io_phys_to_virt(io, pa);
+		if (va == NULL) {
+			LPERROR("%s: no va is found\r\n", __func__);
+			return -EINVAL;
+		}
+		memcpy(va, (const void *)((const char *)fw_base + offset), size);
+	}
 
 	return (int)size;
-}
-
-int mem_image_load_finish(void *fw)
-{
-	(void)fw;
-	/* Always succeeded, as only blocking read is supported */
-	return 1;
-}
-
-int mem_image_support_seek(void *fw)
-{
-	(void)fw;
-	/* Support seek operation */
-	return 1;
 }
 
 struct image_store_ops mem_image_store_ops = {
 	.open = mem_image_open,
 	.close = mem_image_close,
 	.load = mem_image_load,
-	.load_finish = mem_image_load_finish,
 	.features = SUPPORT_SEEK,
 };
 
@@ -446,8 +464,9 @@ static void app_log_handler(enum metal_log_level level,
 
 int main(void)
 {
-	struct remoteproc *rproc;
-	void *fw = &image;
+	struct remoteproc rproc;
+	struct remoteproc *ret_rproc;
+	void *store = &image;
 	unsigned int cpu_id = NODE_RPU_1;
 	int ret;
 	struct metal_init_params metal_param = {
@@ -468,21 +487,21 @@ int main(void)
 	/* Initialize libmetal evironment */
 	metal_init(&metal_param);
 	/* Initialize remoteproc instance */
-	rproc = remoteproc_init(&r5_rproc_ops, &cpu_id);
-	if (!rproc) {
+	ret_rproc = remoteproc_init(&rproc, &r5_rproc_ops, &cpu_id);
+	if (!ret_rproc) {
 		LPRINTF("failed to initialize coprocessor\n\r");
 		return -1;
 	}
 
 	/* Load remtoeproc firmware */
 	LPRINTF("Start to load firmwaer\n\r");
-	ret = remoteproc_load(rproc, fw, NULL, &mem_image_store_ops);
+	ret = remoteproc_load(&rproc, NULL, store, &mem_image_store_ops, NULL);
 	if (ret) {
 		LPRINTF("failed to load firmware\n\r");
 		return -1;
 	}
 	/* Start the processor */
-	ret = remoteproc_start(rproc);
+	ret = remoteproc_start(&rproc);
 	if (ret) {
 		LPRINTF("failed to start processor\n\r");
 		return -1;
@@ -490,10 +509,10 @@ int main(void)
 	LPRINTF("successfully started the processor\n\r");
 	/* ... */
 	LPRINTF("going to stop the processor\n\r");
-	remoteproc_stop(rproc);
+	remoteproc_stop(&rproc);
 	/* application may want to do some cleanup before shutdown */
 	LPRINTF("going to shutdown the processor\n\r");
-	remoteproc_shutdown(rproc);
-	remoteproc_remove(rproc);
+	remoteproc_shutdown(&rproc);
+	remoteproc_remove(&rproc);
 	return 0;
 }
