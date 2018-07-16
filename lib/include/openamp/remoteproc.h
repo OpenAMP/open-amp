@@ -389,6 +389,7 @@ struct remoteproc_mem {
  * the remoteproc APIs.
  *
  * @bootadd: boot address
+ * @loader: executable loader
  * @lock: mutext lock
  * @ops: remoteproc operations
  * @rsc_table: pointer to resource table
@@ -410,7 +411,7 @@ struct remoteproc {
 	unsigned long bitmap;
 	struct remoteproc_ops *ops;
 	metal_phys_addr_t bootaddr;
-	struct loader_ops *loader_ops;
+	struct loader_ops *loader;
 	unsigned int state;
 	void *priv;
 };
@@ -458,6 +459,7 @@ struct remoteproc_ops {
 #define RPROC_ERR_RSC_TAB_VDEV_NRINGS (RPROC_EBASE + 9)
 #define RPROC_ERR_RSC_TAB_NP          (RPROC_EBASE + 10)
 #define RPROC_ERR_RSC_TAB_NS          (RPROC_EBASE + 11)
+#define RPROC_ERR_LOADER_STATE (RPROC_EBASE + 12)
 #define RPROC_EMAX	(RPROC_EBASE + 16)
 #define RPROC_EPTR	(void *)(-1)
 #define RPROC_EOF	(void *)(-1)
@@ -740,21 +742,25 @@ int remoteproc_stop(struct remoteproc *rproc);
  */
 int remoteproc_shutdown(struct remoteproc *rproc);
 
-/* remoteproc_load
+/**
+ * remoteproc_load
  *
- * load firmware, it expects firmware loader has been
- * set to the specified remoteproc.
+ * load executable, it expects the user application defines how to
+ * open the executable file and how to get data from the executable file
+ * and how to load data to the target memory.
  *
  * @rproc: pointer to the remoteproc instance
- * @fw: pointer to user defined private data
- * @loader_data: pointer to the data used by remoteproc loader
- * @store_ops: user defined image store operations
+ * @path: optional path to the image file
+ * @store: pointer to user defined image store argument
+ * @store_ops: pointer to image store operations
+ * @image_info: pointer to memory which stores image information used
+ *              by remoteproc loader
  *
  * return 0 for success and negative value for failure
  */
-int remoteproc_load(struct remoteproc *rproc,
-		    void *store, void **loader_data,
-		    struct image_store_ops *store_ops);
+int remoteproc_load(struct remoteproc *rproc, const char *path,
+		    void *store, struct image_store_ops *store_ops,
+		    void **img_info);
 
 /**
  * remoteproc_allocate_id
