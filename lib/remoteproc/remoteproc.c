@@ -635,6 +635,197 @@ error1:
 	return ret;
 }
 
+int remoteproc_load_noblock(struct remoteproc *rproc,
+			    const void *img_data, size_t offset, size_t len,
+			    void **img_info,
+			    metal_phys_addr_t *pa, struct metal_io_region **io,
+			    size_t *noffset, size_t *nlen,
+			    size_t *nmlen, unsigned char *padding)
+{
+	int ret;
+	struct loader_ops *loader;
+	void *limg_info = NULL;
+	int last_load_state;
+	metal_phys_addr_t da, rsc_da;
+	size_t rsc_size;
+	void *rsc_table = NULL, *lrsc_table = NULL;
+
+	if (!rproc)
+		return -RPROC_ENODEV;
+
+	metal_assert(pa != NULL);
+	metal_assert(io != NULL);
+	metal_assert(noffset != NULL);
+	metal_assert(nlen != NULL);
+	metal_assert(nmlen != NULL);
+	metal_assert(padding != NULL);
+
+	metal_mutex_acquire(&rproc->lock);
+	metal_log(METAL_LOG_DEBUG, "%s: check remoteproc status\r\n", __func__);
+	/* If remoteproc is not in ready state, cannot load executable */
+	if (rproc->state != RPROC_READY) {
+		metal_log(METAL_LOG_ERROR,
+			  "load failure: invalid rproc state %d.\r\n",
+			  rproc->state);
+		metal_mutex_release(&rproc->lock);
+		return -RPROC_EINVAL;
+	}
+
+	/* Check executable format to select a parser */
+	loader = rproc->loader;
+	if (!loader) {
+		metal_log(METAL_LOG_DEBUG, "%s: check loader\r\n", __func__);
+		if (img_data == NULL || offset != 0 || len == 0) {
+			metal_log(METAL_LOG_ERROR,
+				  "load failure, invalid inputs, not able to identify image.\r\n");
+			metal_mutex_release(&rproc->lock);
+			return -RPROC_EINVAL;
+		}
+		loader = remoteproc_check_fw_format(img_data, len);
+		if (!loader) {
+			metal_log(METAL_LOG_ERROR,
+			       "load failure: failed to identify image.\n");
+			ret = -RPROC_EINVAL;
+			metal_mutex_release(&rproc->lock);
+			return -RPROC_EINVAL;
+		}
+		rproc->loader = loader;
+	}
+	if (img_info == NULL || *img_info == NULL ) {
+		last_load_state = 0;
+	} else {
+		limg_info = *img_info;
+		last_load_state = loader->get_load_state(limg_info);
+		if (last_load_state < 0) {
+			metal_log(METAL_LOG_ERROR,
+				  "load failure, not able get load state.\r\n");
+			metal_mutex_release(&rproc->lock);
+			return -RPROC_EINVAL;
+		}
+	}
+	da = RPROC_LOAD_ANYADDR;
+	*nlen = 0;
+	if ((last_load_state & RPROC_LOADER_READY_TO_LOAD) == 0 &&
+	    (last_load_state & RPROC_LOADER_LOAD_COMPLETE) == 0) {
+		/* Get the mandatory executable headers */
+		ret = loader->load_header(img_data, offset, len,
+					  &limg_info, last_load_state,
+					  noffset, nlen);
+		last_load_state = (unsigned int)ret;
+		metal_log(METAL_LOG_DEBUG,
+			  "%s, load header 0x%lx, 0x%x, next 0x%lx, 0x%x\r\n",
+			  __func__, offset, len, *noffset, *nlen);
+		if (ret < 0) {
+			metal_log(METAL_LOG_ERROR,
+				  "load header failed 0x%lx,%d.\r\n",
+				  offset, len);
+
+			goto error1;
+		}
+		last_load_state = loader->get_load_state(limg_info);
+		if (*nlen != 0 &&
+		    (last_load_state & RPROC_LOADER_READY_TO_LOAD) == 0)
+			goto out;
+	}
+	if ((last_load_state & RPROC_LOADER_READY_TO_LOAD) != 0 ||
+	    (last_load_state & RPROC_LOADER_POST_DATA_LOAD) != 0) {
+		/* Enough information to know which target memory for
+		 * which data.
+		 */
+		ret = loader->load_data(rproc, img_data, offset, len,
+					&limg_info, last_load_state, &da,
+					noffset, nlen, padding, nmlen);
+		metal_log(METAL_LOG_DEBUG,
+			  "%s, load data 0x%lx, 0x%x, next 0x%lx, 0x%x\r\n",
+			  __func__, offset, len, *noffset, *nlen);
+		if (ret < 0) {
+			metal_log(METAL_LOG_ERROR,
+				  "load data failed,0x%lx,%d\r\n",
+				  offset, len);
+			goto error1;
+		}
+		if (da != RPROC_LOAD_ANYADDR) {
+			/* get the I/O region from remoteproc */
+			*pa = METAL_BAD_PHYS;
+			(void)remoteproc_mmap(rproc, pa, &da, *nmlen, 0, io);
+			if (*pa == METAL_BAD_PHYS || io == NULL) {
+				metal_log(METAL_LOG_ERROR,
+					  "load failed, no mapping for 0x%llx.\r\n",
+					  da);
+				ret = -RPROC_EINVAL;
+				goto error1;
+			}
+		}
+		if (*nlen != 0)
+			goto out;
+		else
+			last_load_state = loader->get_load_state(limg_info);
+	}
+	if ((last_load_state & RPROC_LOADER_LOAD_COMPLETE) != 0) {
+		/* Get resource table */
+		size_t rsc_offset;
+		size_t rsc_io_offset;
+
+		ret = elf_locate_rsc_table(limg_info, &rsc_da,
+					   &rsc_offset, &rsc_size);
+		if (ret == 0 && rsc_size > 0) {
+			lrsc_table = metal_allocate_memory(rsc_size);
+			if (lrsc_table == NULL) {
+				ret = -RPROC_ENOMEM;
+				goto error1;
+			}
+			rsc_table = remoteproc_mmap(rproc, NULL, &rsc_da,
+						    rsc_size, 0, io);
+			if (*io == NULL) {
+				metal_log(METAL_LOG_ERROR,
+					  "load failed: failed to mmap rsc\r\n");
+				metal_free_memory(lrsc_table);
+				goto error1;
+			}
+			rsc_io_offset = metal_io_virt_to_offset(*io, rsc_table);
+			ret = metal_io_block_read(*io, rsc_io_offset,
+						  lrsc_table, (int)rsc_size);
+			if (ret != (int)rsc_size) {
+				metal_log(METAL_LOG_ERROR,
+					  "load failed: failed to get rsc\r\n");
+				metal_free_memory(lrsc_table);
+				goto error1;
+			}
+			/* parse resource table */
+			ret = remoteproc_parse_rsc_table(rproc, lrsc_table,
+							 rsc_size);
+			if (ret == (int)rsc_size) {
+				metal_log(METAL_LOG_ERROR,
+					  "load failed: failed to parse rsc\r\n");
+				metal_free_memory(lrsc_table);
+				goto error1;
+			}
+			/* Update resource table */
+			ret = metal_io_block_write(*io, rsc_io_offset,
+						  lrsc_table, (int)rsc_size);
+			if (ret != (int)rsc_size) {
+				metal_log(METAL_LOG_WARNING,
+					  "load exectuable, failed to update rsc\r\n");
+			}
+			rproc->rsc_table = rsc_table;
+			rproc->rsc_len = (int)rsc_size;
+			metal_free_memory(lrsc_table);
+		}
+	}
+out:
+	if (img_info != NULL)
+		*img_info = limg_info;
+	else
+		loader->release(limg_info);
+	metal_mutex_release(&rproc->lock);
+	return 0;
+
+error1:
+	loader->release(limg_info);
+	metal_mutex_release(&rproc->lock);
+	return ret;
+}
+
 unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 				    unsigned int start,
 				    unsigned int end)
