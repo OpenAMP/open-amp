@@ -508,6 +508,7 @@ int main(void)
 	}
 	LPRINTF("successfully started the processor\n\r");
 	/* ... */
+	asm volatile("wfi");
 	LPRINTF("going to stop the processor\n\r");
 	remoteproc_stop(&rproc);
 	/* application may want to do some cleanup before shutdown */
