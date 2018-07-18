@@ -18,6 +18,7 @@ set (OPENAMP_LIB open_amp)
 foreach (_app load_fw)
   collector_list (_sources APP_COMMON_SOURCES)
   list (APPEND _sources "${CMAKE_CURRENT_SOURCE_DIR}/${_app}.c")
+  list (APPEND _sources "${CMAKE_CURRENT_SOURCE_DIR}/mem_image_store.c")
   list (APPEND _sources "${CMAKE_CURRENT_SOURCE_DIR}/zynqmp_r5_lcm_rproc_example.c")
 
   if (WITH_STATIC_LIB)
