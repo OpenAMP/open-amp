@@ -689,10 +689,21 @@ int elf_locate_rsc_table(void *elf_info, metal_phys_addr_t *da,
 	return 0;
 }
 
+int elf_get_load_state(void *img_info)
+{
+	unsigned int *load_state;
+
+	if (img_info == NULL)
+		return -RPROC_EINVAL;
+	load_state = elf_load_state(img_info);
+	return (int)(*load_state);
+}
+
 struct loader_ops elf_ops = {
 	.load_header = elf_load_header,
 	.load_data = elf_load,
 	.locate_rsc_table = elf_locate_rsc_table,
 	.release = elf_release,
 	.get_entry = elf_get_entry,
+	.get_load_state = elf_get_load_state,
 };

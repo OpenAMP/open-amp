@@ -48,9 +48,11 @@ extern "C" {
 /* Remoteproc loader finished loading */
 #define RPROC_LOADER_LOAD_COMPLETE  0x40000UL
 /* Remoteproc loader state mask */
-#define RPROC_LOADER_MASK           0x0FFF0000UL
+#define RPROC_LOADER_MASK           0x00FF0000UL
 /* Remoteproc loader private mask */
 #define RPROC_LOADER_PRIVATE_MASK   0x0000FFFFUL
+/* Remoteproc loader reserved mask */
+#define RPROC_LOADER_RESERVED_MASK  0x0F000000UL
 
 /**
  * struct image_store_ops - user defined image store operations
@@ -80,6 +82,7 @@ struct image_store_ops {
  *                    table.
  * @release: define how to release the loader
  * @get_entry: get entry address
+ * @get_load_state: get load state from the image information
  */
 struct loader_ops {
 	int (*load_header)(const void *img_data, size_t offset, size_t len,
@@ -95,6 +98,7 @@ struct loader_ops {
 				size_t *offset, size_t *size);
 	void (*release)(void *img_info);
 	metal_phys_addr_t (*get_entry)(void *img_info);
+	int (*get_load_state)(void *img_info);
 };
 
 #if defined __cplusplus
