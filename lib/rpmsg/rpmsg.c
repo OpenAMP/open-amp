@@ -201,7 +201,7 @@ int rpmsg_register_endpoint(struct rpmsg_device *rdev,
 
 int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 		     const char *name, uint32_t src, uint32_t dest,
-		     rpmsg_ept_cb cb, rpmsg_ept_destroy_cb destroy_cb)
+		     rpmsg_ept_cb cb, rpmsg_ns_unbind_cb unbind_cb)
 {
 	int status;
 	uint32_t addr = src;
@@ -227,7 +227,7 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 		addr = rpmsg_get_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE);
 	}
 
-	rpmsg_init_ept(ept, name, addr, dest, cb, destroy_cb);
+	rpmsg_init_ept(ept, name, addr, dest, cb, unbind_cb);
 
 	status = rpmsg_register_endpoint(rdev, ept);
 	if (status < 0)
