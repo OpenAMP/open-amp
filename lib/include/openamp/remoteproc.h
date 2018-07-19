@@ -426,6 +426,8 @@ struct remoteproc {
  * @mmap: memory mapped the mempory with physical address or destination
  *        address as input.
  * @handle_rsc: handle the vendor specific resource
+ * @config: configure the remoteproc to make it ready to load and run
+ *          executable
  * @start: kick the remoteproc to run application
  * @stop: stop the remoteproc from running application, the resource such as
  *        memory may not be off.
@@ -441,6 +443,7 @@ struct remoteproc_ops {
 		      size_t size, unsigned int attribute,
 		      struct metal_io_region **io);
 	int (*handle_rsc)(struct remoteproc *rproc, void *rsc, size_t len);
+	int (*config)(struct remoteproc *rproc, void *data);
 	int (*start)(struct remoteproc *rproc);
 	int (*stop)(struct remoteproc *rproc);
 	int (*shutdown)(struct remoteproc *rproc);
@@ -494,12 +497,13 @@ static inline void *RPROC_ERR_PTR(long error)
  */
 enum remoteproc_state {
 	RPROC_OFFLINE		= 0,
-	RPROC_READY		= 1,
-	RPROC_RUNNING		= 2,
-	RPROC_SUSPENDED		= 3,
-	RPROC_ERROR		= 4,
-	RPROC_STOPPED		= 5,
-	RPROC_LAST		= 6,
+	RPROC_CONFIGURED	= 1,
+	RPROC_READY		= 2,
+	RPROC_RUNNING		= 3,
+	RPROC_SUSPENDED		= 4,
+	RPROC_ERROR		= 5,
+	RPROC_STOPPED		= 6,
+	RPROC_LAST		= 7,
 };
 
 /**
@@ -705,6 +709,19 @@ int remoteproc_get_ready(struct remoteproc *rproc, void *priv, size_t plen);
  */
 int remoteproc_set_bootaddr(struct remoteproc *rproc,
 			    metal_phys_addr_t bootaddr);
+
+/**
+ * remoteproc_config
+ *
+ * This function configures the remote processor to get it
+ * ready to load and run executable.
+ *
+ * @rproc - pointer to remoteproc instance to start
+ * @data - configuration data
+ *
+ * returns 0 for success and negative value for errors
+ */
+int remoteproc_config(struct remoteproc *rproc, void *data);
 
 /**
  * remoteproc_start
