@@ -122,8 +122,8 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data,
 	(void)priv;
 	(void)src;
 	if (len != sizeof(struct _matrix)) {
-		LPERROR("Received matrix is of invalid len: %d:%d\n",
-			(int)sizeof(struct _matrix), len);
+		LPERROR("Received matrix is of invalid len: %d:%lu\n",
+			(int)sizeof(struct _matrix), (unsigned long)len);
 		err_cnt++;
 		return RPMSG_SUCCESS;
 	}
@@ -209,7 +209,8 @@ int app (struct rpmsg_device *rdev, void *priv)
 			LPRINTF("Error sending data...\n");
 			break;
 		}
-		LPRINTF("Matrix multiply: sent : %u\n", sizeof(i_matrix));
+		LPRINTF("Matrix multiply: sent : %lu\n",
+			(unsigned long)sizeof(i_matrix));
 		do {
 			platform_poll(priv);
 		} while (!result_returned && !err_cnt);

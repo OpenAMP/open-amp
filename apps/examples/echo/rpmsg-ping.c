@@ -49,8 +49,8 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	(void)ept;
 	(void)src;
 	(void)priv;
-	LPRINTF(" received payload number %lu of size %d \r\n",
-		r_payload->num, len);
+	LPRINTF(" received payload number %lu of size %lu \r\n",
+		r_payload->num, (unsigned long)len);
 
 	if (r_payload->size == 0) {
 		LPERROR(" Invalid size of package is received.\n");
@@ -142,8 +142,9 @@ int app (struct rpmsg_device *rdev, void *priv)
 		/* Mark the data buffer. */
 		memset(&(i_payload->data[0]), 0xA5, size);
 
-		LPRINTF("sending payload number %lu of size %d\n",
-			i_payload->num, (2 * sizeof(unsigned long)) + size);
+		LPRINTF("sending payload number %lu of size %lu\n",
+			i_payload->num,
+			(unsigned long)(2 * sizeof(unsigned long)) + size);
 
 		ret = rpmsg_send(&lept, i_payload,
 				 (2 * sizeof(unsigned long)) + size);
@@ -152,8 +153,8 @@ int app (struct rpmsg_device *rdev, void *priv)
 			LPERROR("Failed to send data...\n");
 			break;
 		}
-		LPRINTF("echo test: sent : %d\n",
-		(2 * sizeof(unsigned long)) + size);
+		LPRINTF("echo test: sent : %lu\n",
+			(unsigned long)(2 * sizeof(unsigned long)) + size);
 
 		expect_rnum++;
 		do {
