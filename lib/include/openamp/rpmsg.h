@@ -46,7 +46,7 @@ struct rpmsg_device;
 
 typedef int (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
 			    size_t len, uint32_t src, void *priv);
-typedef void (*rpmsg_ept_destroy_cb)(struct rpmsg_endpoint *ept);
+typedef void (*rpmsg_ns_unbind_cb)(struct rpmsg_endpoint *ept);
 typedef void (*rpmsg_ns_bind_cb)(struct rpmsg_device *rdev,
 				 const char *name, uint32_t dest);
 
@@ -58,7 +58,8 @@ typedef void (*rpmsg_ns_bind_cb)(struct rpmsg_device *rdev,
  * @dest_addr: address of the default remote endpoint binded.
  * @cb: user rx callback, return value of this callback is reserved
  *      for future use, for now, only allow RPMSG_SUCCESS as return value.
- * @destroy_cb: user end point detsroy callback
+ * @ns_unbind_cb: end point service service unbind callback, called when remote ept is
+ *                destroyed.
  * @node: end point node.
  * @addr: local rpmsg address
  * @priv: private data for the driver's use
@@ -72,7 +73,7 @@ struct rpmsg_endpoint {
 	uint32_t addr;
 	uint32_t dest_addr;
 	rpmsg_ept_cb cb;
-	rpmsg_ept_destroy_cb destroy_cb;
+	rpmsg_ns_unbind_cb ns_unbind_cb;
 	struct metal_list node;
 	void *priv;
 };
@@ -273,19 +274,20 @@ static inline int rpmsg_trysend_offchannel(struct rpmsg_endpoint *ept,
  * @src: local address of the endpoint
  * @dest: target address of the endpoint
  * @cb: endpoint callback
- * @destroy_cb: destroy endpoint callback
+ * @ns_unbind_cb: end point service unbind callback, called when remote ept is
+ *                destroyed.
  */
 static inline void rpmsg_init_ept(struct rpmsg_endpoint *ept,
 				  const char *name,
 				  uint32_t src, uint32_t dest,
 				  rpmsg_ept_cb cb,
-				  rpmsg_ept_destroy_cb destroy_cb)
+				  rpmsg_ns_unbind_cb ns_unbind_cb)
 {
 	strncpy(ept->name, name, sizeof(ept->name));
 	ept->addr = src;
 	ept->dest_addr = dest;
 	ept->cb = cb;
-	ept->destroy_cb = destroy_cb;
+	ept->ns_unbind_cb = ns_unbind_cb;
 }
 
 /**
@@ -300,7 +302,8 @@ static inline void rpmsg_init_ept(struct rpmsg_endpoint *ept,
  * @src: local address of the endpoint
  * @dest: target address of the endpoint
  * @cb: endpoint callback
- * @destroy_cb: destroy endpoint callback
+ * @ns_unbind_cb: end point service unbind callback, called when remote ept is
+ *                destroyed.
  *
  * In essence, an rpmsg endpoint represents a listener on the rpmsg bus, as
  * it binds an rpmsg address with an rx callback handler.
@@ -315,7 +318,7 @@ static inline void rpmsg_init_ept(struct rpmsg_endpoint *ept,
 
 int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 		     const char *name, uint32_t src, uint32_t dest,
-		     rpmsg_ept_cb cb, rpmsg_ept_destroy_cb destroy_cb);
+		     rpmsg_ept_cb cb, rpmsg_ns_unbind_cb ns_unbind_cb);
 
 /**
  * rpmsg_destroy_ept - destroy rpmsg endpoint and unregister it from rpmsg
