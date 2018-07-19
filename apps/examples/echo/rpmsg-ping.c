@@ -49,7 +49,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	(void)ept;
 	(void)src;
 	(void)priv;
-	LPRINTF(" received payload number %lu of size %d \r\n",
+	LPRINTF(" received payload number %lu of size %ld \r\n",
 		r_payload->num, len);
 
 	if (r_payload->size == 0) {
@@ -69,10 +69,11 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	return RPMSG_SUCCESS;
 }
 
-static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
+static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
-	LPRINTF("Endpoint is destroyed\n");
+	rpmsg_destroy_ept(&lept);
+	LPRINTF("echo test: service is destroyed\n");
 	ept_deleted = 1;
 }
 
@@ -86,7 +87,7 @@ static void rpmsg_name_service_bind_cb(struct rpmsg_device *rdev,
 		(void)rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
 				       APP_EPT_ADDR, src,
 				       rpmsg_endpoint_cb,
-				       rpmsg_endpoint_destroy);
+				       rpmsg_service_unbind);
 
 }
 
@@ -123,7 +124,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 	/* Create RPMsg endpoint */
 	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME, APP_EPT_ADDR,
 			       RPMSG_ADDR_ANY,
-			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
+			       rpmsg_endpoint_cb, rpmsg_service_unbind);
 
 	if (ret) {
 		LPERROR("Failed to create RPMsg endpoint.\n");
@@ -141,7 +142,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 		/* Mark the data buffer. */
 		memset(&(i_payload->data[0]), 0xA5, size);
 
-		LPRINTF("sending payload number %lu of size %d\n",
+		LPRINTF("sending payload number %lu of size %ld\n",
 			i_payload->num, (2 * sizeof(unsigned long)) + size);
 
 		ret = rpmsg_send(&lept, i_payload,
@@ -151,7 +152,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 			LPERROR("Failed to send data...\n");
 			break;
 		}
-		LPRINTF("echo test: sent : %d\n",
+		LPRINTF("echo test: sent : %ld\n",
 		(2 * sizeof(unsigned long)) + size);
 
 		expect_rnum++;
@@ -166,7 +167,6 @@ int app (struct rpmsg_device *rdev, void *priv)
 	LPRINTF("**********************************\n");
 	/* Send shutdown message to remote */
 	rpmsg_send(&lept, &shutdown_msg, sizeof(int));
-	rpmsg_destroy_ept(&lept);
 	while(!ept_deleted)
 		platform_poll(priv);
 	LPRINTF("Quitting application .. Echo test end\n");

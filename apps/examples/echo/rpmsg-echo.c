@@ -15,7 +15,7 @@ This application echoes back data that was sent to it by the master core. */
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
 static struct rpmsg_endpoint lept;
-static int ept_deleted = 0;
+static int shutdown_req = 0;
 
 /* External functions */
 extern int init_system(void);
@@ -33,7 +33,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	/* On reception of a shutdown we signal the application to terminate */
 	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
 		LPRINTF("shutdown message is received.\n");
-		rpmsg_destroy_ept(ept);
+		shutdown_req = 1;
 		return RPMSG_SUCCESS;
 	}
 
@@ -44,11 +44,11 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	return RPMSG_SUCCESS;
 }
 
-static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
+static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
-	LPRINTF("Endpoint is destroyed\n");
-	ept_deleted = 1;
+	LPRINTF("unexpected Remote endpoint destroy\n");
+	shutdown_req = 1;
 }
 
 /*-----------------------------------------------------------------------------*
@@ -63,7 +63,7 @@ int app(struct rpmsg_device *rdev, void *priv)
 
 	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
 			       0, RPMSG_ADDR_ANY, rpmsg_endpoint_cb,
-			       rpmsg_endpoint_destroy);
+			       rpmsg_service_unbind);
 	if (ret) {
 		LPERROR("Failed to create endpoint.\n");
 		return -1;
@@ -73,10 +73,11 @@ int app(struct rpmsg_device *rdev, void *priv)
 	while(1) {
 		platform_poll(priv);
 		/* we got a shutdown request, exit */
-		if (ept_deleted) {
+		if (shutdown_req) {
 			break;
 		}
 	}
+	rpmsg_destroy_ept(&lept);
 
 	return 0;
 }

@@ -150,24 +150,26 @@ struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_device *rdev,
 	struct rpmsg_endpoint *ept;
 
 	metal_list_for_each(&rdev->endpoints, node) {
-		int name_match = 1;
+		int name_match;
 
 		ept = metal_container_of(node, struct rpmsg_endpoint, node);
+		/* try to get by local address only */
 		if (addr != RPMSG_ADDR_ANY && ept->addr == addr)
 			return ept;
+		/* try to find match on local end remote address */
+		if (addr == ept->addr && dest_addr == ept->dest_addr)
+			return ept;
+		/* else use name service and destination address */
 		if (name)
 			name_match = !strncmp(ept->name, name,
 					      sizeof(ept->name));
-		if (dest_addr == RPMSG_ADDR_ANY &&
-		    ept->addr == RPMSG_ADDR_ANY &&
-		    name_match)
+		if (!name || !name_match)
+			continue;
+		/* destination address is known, equal to ept remote address*/
+		if (dest_addr != RPMSG_ADDR_ANY && ept->dest_addr == dest_addr)
 			return ept;
-		if (addr == RPMSG_ADDR_ANY &&
-		    ept->dest_addr == RPMSG_ADDR_ANY &&
-		    name && name_match)
-			return ept;
-		if (addr == ept->addr && dest_addr == ept->dest_addr &&
-		    name_match)
+		/* ept is registered but not associated to remote ept*/
+		if (addr == RPMSG_ADDR_ANY && ept->dest_addr == RPMSG_ADDR_ANY)
 			return ept;
 	}
 	return NULL;
@@ -199,7 +201,7 @@ int rpmsg_register_endpoint(struct rpmsg_device *rdev,
 
 int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 		     const char *name, uint32_t src, uint32_t dest,
-		     rpmsg_ept_cb cb, rpmsg_ept_destroy_cb destroy_cb)
+		     rpmsg_ept_cb cb, rpmsg_ns_unbind_cb unbind_cb)
 {
 	int status;
 	uint32_t addr = src;
@@ -225,7 +227,7 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 		addr = rpmsg_get_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE);
 	}
 
-	rpmsg_init_ept(ept, name, addr, dest, cb, destroy_cb);
+	rpmsg_init_ept(ept, name, addr, dest, cb, unbind_cb);
 
 	status = rpmsg_register_endpoint(rdev, ept);
 	if (status < 0)
@@ -261,10 +263,9 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 		return;
 
 	rdev = ept->rdev;
-	metal_mutex_release(&rdev->lock);
-	(void)rpmsg_send_ns_message(ept, RPMSG_NS_DESTROY);
-	rpmsg_unregister_endpoint(ept);
+	if (ept->addr != RPMSG_NS_EPT_ADDR)
+		(void)rpmsg_send_ns_message(ept, RPMSG_NS_DESTROY);
 	metal_mutex_acquire(&rdev->lock);
-	if (ept->destroy_cb)
-		ept->destroy_cb(ept);
+	rpmsg_unregister_endpoint(ept);
+	metal_mutex_release(&rdev->lock);
 }

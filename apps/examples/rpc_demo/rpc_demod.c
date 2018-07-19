@@ -221,9 +221,10 @@ static int handle_rpc(struct rpmsg_rpc_syscall *syscall,
 
 	return retval;
 }
-static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
+static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
+	rpmsg_destroy_ept(&app_ept);
 	LPRINTF("Endpoint is destroyed\n");
 	ept_deleted = 1;
 }
@@ -312,7 +313,7 @@ int app(struct rpmsg_device *rdev, void *priv)
 
 	ret = rpmsg_create_ept(&app_ept, rdev, RPMSG_SERVICE_NAME,
 			       0, RPMSG_ADDR_ANY, rpmsg_endpoint_cb,
-			       rpmsg_endpoint_destroy);
+			       rpmsg_service_unbind);
 	if (ret) {
 		LPERROR("Failed to create endpoint.\n");
 		return -EINVAL;
