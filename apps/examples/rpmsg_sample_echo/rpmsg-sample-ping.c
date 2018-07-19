@@ -73,10 +73,11 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	return RPMSG_SUCCESS;
 }
 
-static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
+static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
-	LPRINTF("Endpoint is destroyed\n");
+	rpmsg_destroy_ept(&lept);
+	LPRINTF("echo test: service is destroyed\n");
 	ept_deleted = 1;
 }
 
@@ -90,7 +91,7 @@ static void rpmsg_new_endpoint_cb(struct rpmsg_device *rdev, const char *name,
 		(void)rpmsg_create_ept(&lept, rdev, RPMSG_SERV_NAME,
 				       APP_EPT_ADDR, src,
 				       rpmsg_endpoint_cb,
-				       rpmsg_endpoint_destroy);
+				       rpmsg_service_unbind);
 
 }
 
@@ -108,7 +109,7 @@ int app(struct rpmsg_device *rdev, void *priv)
 	/* Create RPMsg endpoint */
 	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERV_NAME, APP_EPT_ADDR,
 			       RPMSG_ADDR_ANY,
-			       rpmsg_endpoint_cb, rpmsg_endpoint_destroy);
+			       rpmsg_endpoint_cb, rpmsg_service_unbind);
 
 	if (ret) {
 		LPERROR("Failed to create RPMsg endpoint.\n");
@@ -142,7 +143,6 @@ int app(struct rpmsg_device *rdev, void *priv)
 	LPRINTF("**********************************\n");
 	LPRINTF(" Test Results: Error count = %d\n", err_cnt);
 	LPRINTF("**********************************\n");
-	rpmsg_destroy_ept(&lept);
 	while (!ept_deleted)
 		platform_poll(priv);
 	LPRINTF("Quitting application .. rpmsg sample test end\n");
