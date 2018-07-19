@@ -197,6 +197,28 @@ int remoteproc_set_bootaddr(struct remoteproc *rproc,
 	return 0;
 }
 
+int remoteproc_config(struct remoteproc *rproc, void *data)
+{
+	int ret = -RPROC_ENODEV;
+
+	if (rproc) {
+		metal_mutex_acquire(&rproc->lock);
+		if (rproc->state == RPROC_OFFLINE) {
+			/* configure operation is allowed if the state is
+			 * offline or ready. This function can be called
+			 * mulitple times before start the remote.
+			 */
+			if (rproc->ops->config)
+				ret = rproc->ops->config(rproc, data);
+			rproc->state = RPROC_READY;
+		} else {
+			ret = -RPROC_EINVAL;
+		}
+		metal_mutex_release(&rproc->lock);
+	}
+	return ret;
+}
+
 int remoteproc_start(struct remoteproc *rproc)
 {
 	int ret = -RPROC_ENODEV;
@@ -383,7 +405,7 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 	metal_mutex_acquire(&rproc->lock);
 	metal_log(METAL_LOG_DEBUG, "%s: check remoteproc status\r\n", __func__);
 	/* If remoteproc is not in ready state, cannot load executable */
-	if (rproc->state != RPROC_READY) {
+	if (rproc->state != RPROC_READY && rproc->state != RPROC_CONFIGURED) {
 		metal_log(METAL_LOG_ERROR,
 			  "load failure: invalid rproc state %d.\r\n",
 			  rproc->state);
