@@ -58,9 +58,7 @@ extern "C" {
  * @close: user defined callback to close the "firmware" to clean up
  *         after loading
  * @load: user defined callback to load the firmware contents to target
- *           memory
- * @load_finish: user defined callback used to make sure all the async
- *               firmware loading finish
+ *        memory or local memory
  * @features: loader supported features. e.g. seek
  */
 struct image_store_ops {
