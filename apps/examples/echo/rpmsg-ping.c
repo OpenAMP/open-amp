@@ -49,7 +49,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	(void)ept;
 	(void)src;
 	(void)priv;
-	LPRINTF(" received payload number %lu of size %d \r\n",
+	LPRINTF(" received payload number %lu of size %ld \r\n",
 		r_payload->num, len);
 
 	if (r_payload->size == 0) {
@@ -142,7 +142,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 		/* Mark the data buffer. */
 		memset(&(i_payload->data[0]), 0xA5, size);
 
-		LPRINTF("sending payload number %lu of size %d\n",
+		LPRINTF("sending payload number %lu of size %ld\n",
 			i_payload->num, (2 * sizeof(unsigned long)) + size);
 
 		ret = rpmsg_send(&lept, i_payload,
@@ -152,7 +152,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 			LPERROR("Failed to send data...\n");
 			break;
 		}
-		LPRINTF("echo test: sent : %d\n",
+		LPRINTF("echo test: sent : %ld\n",
 		(2 * sizeof(unsigned long)) + size);
 
 		expect_rnum++;
