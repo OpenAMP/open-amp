@@ -286,7 +286,7 @@ static void linux_proc_remove(struct remoteproc *rproc)
 	/* Close IPI */
 	ipi = &prproc->ipi;
 	if (ipi->fd >= 0) {
-		metal_irq_unregister(ipi->fd, 0, NULL, ipi);
+		metal_irq_register(ipi->fd, 0, NULL, ipi);
 		close(ipi->fd);
 	}
 

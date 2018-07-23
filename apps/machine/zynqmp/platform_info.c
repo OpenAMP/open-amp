@@ -191,7 +191,7 @@ static void zynqmp_linux_r5_proc_remove(struct remoteproc *rproc)
 	dev = prproc->ipi_dev;
 	if (dev) {
 		metal_irq_disable((uintptr_t)dev->irq_info);
-		metal_irq_unregister((uintptr_t)dev->irq_info, NULL, NULL,
+		metal_irq_register((uintptr_t)dev->irq_info, NULL, NULL,
 				     NULL);
 		metal_device_close(dev);
 	}
