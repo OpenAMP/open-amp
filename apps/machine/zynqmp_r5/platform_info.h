@@ -4,6 +4,7 @@
 #include <openamp/remoteproc.h>
 #include <openamp/virtio.h>
 #include <openamp/rpmsg.h>
+#include "xparameters.h"
 
 #if defined __cplusplus
 extern "C" {
