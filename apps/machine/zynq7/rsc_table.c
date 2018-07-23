@@ -11,6 +11,7 @@
 
 #include <openamp/open_amp.h>
 #include "rsc_table.h"
+#include "platform_info.h"
 
 /* Place resource table in special ELF section */
 /* Redefine __section for section name with token */
@@ -50,7 +51,7 @@ struct remote_resource_table __resource resources = {
 	 offsetof(struct remote_resource_table, rpmsg_vdev),
 	 },
 
-	{RSC_RPROC_MEM, 0x800000, 0x800000, 0x100000, 0},
+	{RSC_RPROC_MEM, SHARED_MEM_PA, SHARED_MEM_PA, SHARED_MEM_SIZE, 0},
 
 	/* Virtio device entry */
 	{

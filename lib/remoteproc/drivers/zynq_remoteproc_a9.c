@@ -25,8 +25,8 @@
 #include <metal/atomic.h>
 
 /* ------------------------- Macros --------------------------*/
-#define SCUGIC_PERIPH_BASE      	   0xF8F00000
-#define SCUGIC_DIST_BASE        	   (SCUGIC_PERIPH_BASE + 0x00001000)
+#define SCUGIC_PERIPH_BASE		   0xF8F00000
+#define SCUGIC_DIST_BASE		   (SCUGIC_PERIPH_BASE + 0x00001000)
 #define ESAL_DP_SLCR_BASE                  0xF8000000
 #define GIC_DIST_SOFTINT                   0xF00
 #define GIC_SFI_TRIG_CPU_MASK              0x00FF0000

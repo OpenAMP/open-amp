@@ -52,15 +52,10 @@ static int app_gic_initialize(void)
 
 	Xil_ExceptionEnable();
 
-	/* Connect IPI0 Interrupt ID with ISR */
-	XScuGic_Connect(&xInterruptController, VRING0_IPI_INTR_VECT,
+	/* Connect notificaiton interrupt ID with ISR */
+	XScuGic_Connect(&xInterruptController, SGI_NOTIFICATION,
 			(Xil_ExceptionHandler)metal_irq_isr,
-			(void *)VRING0_IPI_INTR_VECT);
-
-	/* Connect IPI1 Interrupt ID with ISR */
-	XScuGic_Connect(&xInterruptController, VRING1_IPI_INTR_VECT,
-			(Xil_ExceptionHandler)metal_irq_isr,
-			(void *)VRING1_IPI_INTR_VECT);
+			(void *)SGI_NOTIFICATION);
 
 	return 0;
 }
