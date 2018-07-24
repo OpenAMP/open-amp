@@ -25,7 +25,7 @@ int handle_rsc_table(struct remoteproc *rproc,
 		     struct resource_table *rsc_table, int size,
 		     struct metal_io_region *io)
 {
-	void *rsc_start;
+	char *rsc_start;
 	unsigned int rsc_type;
 	unsigned int idx, offset;
 	int status = 0;
@@ -57,7 +57,7 @@ int handle_rsc_table(struct remoteproc *rproc,
 
 	/* Loop through the offset array and parse each resource entry */
 	for (idx = 0; idx < rsc_table->num; idx++) {
-		rsc_start = rsc_table;
+		rsc_start = (char *)rsc_table;
 		rsc_start += rsc_table->offset[idx];
 		if (io &&
 		    metal_io_virt_to_offset(io, rsc_start) == METAL_BAD_OFFSET)
@@ -205,13 +205,13 @@ size_t find_rsc(void *rsc_table, unsigned int rsc_type, unsigned int index)
 	struct resource_table *r_table = rsc_table;
 	unsigned int i, rsc_index;
 	unsigned int lrsc_type;
-	void *rsc_start;
+	char *rsc_start;
 
 	metal_assert(r_table);
 	/* Loop through the offset array and parse each resource entry */
 	rsc_index = 0;
 	for (i = 0; i < r_table->num; i++) {
-		rsc_start = r_table;
+		rsc_start = (char *)r_table;
 		rsc_start += r_table->offset[i];
 		lrsc_type = *((uint32_t *)rsc_start);
 		if (lrsc_type == rsc_type) {
