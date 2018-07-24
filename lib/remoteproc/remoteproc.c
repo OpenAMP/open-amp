@@ -877,7 +877,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 			 int vdev_id, unsigned int role,
 			 void (*rst_cb)(struct virtio_device *vdev))
 {
-	void *rsc_table;
+	char *rsc_table;
 	struct fw_rsc_vdev *vdev_rsc;
 	struct metal_io_region *vdev_rsc_io;
 	struct virtio_device *vdev;
@@ -896,7 +896,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 		metal_mutex_release(&rproc->lock);
 		return NULL;
 	}
-	vdev_rsc = rsc_table + vdev_rsc_offset;
+	vdev_rsc = (struct fw_rsc_vdev *)(rsc_table + vdev_rsc_offset);
 	notifyid = vdev_rsc->notifyid;
 	/* Check if the virtio device is already created */
 	metal_list_for_each(&rproc->vdevs, node) {
