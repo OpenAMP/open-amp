@@ -44,7 +44,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	return RPMSG_SUCCESS;
 }
 
-static void rpmsg_endpoint_destroy(struct rpmsg_endpoint *ept)
+static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
 	LPRINTF("unexpected Remote endpoint destroy\n");
@@ -63,7 +63,7 @@ int app(struct rpmsg_device *rdev, void *priv)
 
 	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
 			       0, RPMSG_ADDR_ANY, rpmsg_endpoint_cb,
-			       rpmsg_endpoint_destroy);
+			       rpmsg_service_unbind);
 	if (ret) {
 		LPERROR("Failed to create endpoint.\n");
 		return -1;
