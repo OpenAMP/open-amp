@@ -46,12 +46,13 @@ static int rpmsg_rpc_ept_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	return RPMSG_SUCCESS;
 }
 
-static void rpmsg_rpc_ept_destroy(struct rpmsg_endpoint *ept)
+static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 {
 	struct rpmsg_rpc_data *rpc;
 
 	rpc = metal_container_of(ept, struct rpmsg_rpc_data, ept);
 	rpc->ept_destroyed = 1;
+	rpmsg_destroy_ept(ept);
 	atomic_flag_clear(&rpc->nacked);
 	if (rpc->shutdown_cb)
 		rpc->shutdown_cb(rpc);
@@ -80,7 +81,7 @@ int rpmsg_rpc_init(struct rpmsg_rpc_data *rpc,
 	atomic_init(&rpc->nacked, 1);
 	ret = rpmsg_create_ept(&rpc->ept, rdev,
 			       ept_name, ept_addr, ept_raddr,
-			       rpmsg_rpc_ept_cb, rpmsg_rpc_ept_destroy);
+			       rpmsg_rpc_ept_cb, rpmsg_service_unbind);
 	if (ret != 0) {
 		metal_mutex_release(&rpc->lock);
 		return -EINVAL;
