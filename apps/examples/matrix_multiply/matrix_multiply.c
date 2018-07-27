@@ -14,7 +14,6 @@ multiplies them and returns the result to the master core. */
 
 #define	MAX_SIZE      6
 #define NUM_MATRIX    2
-#define SHUTDOWN_MSG  0xEF56A55A
 #define APP_EPT_ADDR  0
 
 #define raw_printf(format, ...) printf(format, ##__VA_ARGS__)
@@ -174,7 +173,6 @@ static void rpmsg_name_service_bind_cb(struct rpmsg_device *rdev,
  *-----------------------------------------------------------------------------*/
 int app (struct rpmsg_device *rdev, void *priv)
 {
-	int shutdown_msg = SHUTDOWN_MSG;
 	int c;
 	int ret;
 
@@ -213,7 +211,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 			(unsigned long)sizeof(i_matrix));
 		do {
 			platform_poll(priv);
-		} while (!result_returned && !err_cnt);
+		} while (!result_returned && !err_cnt && !ept_deleted);
 
 		if (err_cnt)
 			break;
@@ -223,10 +221,8 @@ int app (struct rpmsg_device *rdev, void *priv)
 	LPRINTF(" Test Results: Error count = %d \n", err_cnt);
 	LPRINTF("**********************************\n");
 
-	/* Send shutdown message to remote */
-	rpmsg_send(&lept, &shutdown_msg, sizeof(int));
-	while(!ept_deleted)
-		platform_poll(priv);
+	/* Detroy RPMsg endpoint */
+	rpmsg_destroy_ept(&lept);
 	LPRINTF("Quitting application .. Matrix multiplication end\n");
 
 	return 0;
