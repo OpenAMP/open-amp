@@ -11,7 +11,6 @@ This application echoes back data that was sent to it by the master core. */
 #include "platform_info.h"
 #include "rpmsg-ping.h"
 
-#define SHUTDOWN_MSG	0xEF56A55A
 #define APP_EPT_ADDR    0
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
@@ -73,7 +72,7 @@ static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
 	rpmsg_destroy_ept(&lept);
-	LPRINTF("Endpoint is destroyed\n");
+	LPRINTF("echo test: service is destroyed\n");
 	ept_deleted = 1;
 }
 
@@ -97,7 +96,6 @@ static void rpmsg_name_service_bind_cb(struct rpmsg_device *rdev,
 int app (struct rpmsg_device *rdev, void *priv)
 {
 	int ret;
-	int shutdown_msg = SHUTDOWN_MSG;
 	int i;
 	int size, max_size, num_payloads;
 	int expect_rnum = 0;
@@ -159,17 +157,15 @@ int app (struct rpmsg_device *rdev, void *priv)
 		expect_rnum++;
 		do {
 			platform_poll(priv);
-		} while ((rnum < expect_rnum) && !err_cnt);
+		} while ((rnum < expect_rnum) && !err_cnt && !ept_deleted);
 
 	}
 
 	LPRINTF("**********************************\n");
 	LPRINTF(" Test Results: Error count = %d \n", err_cnt);
 	LPRINTF("**********************************\n");
-	/* Send shutdown message to remote */
-	rpmsg_send(&lept, &shutdown_msg, sizeof(int));
-	while(!ept_deleted)
-		platform_poll(priv);
+	/* Destroy the RPMsg endpoint */
+	rpmsg_destroy_ept(&lept);
 	LPRINTF("Quitting application .. Echo test end\n");
 
 	metal_free_memory(i_payload);
