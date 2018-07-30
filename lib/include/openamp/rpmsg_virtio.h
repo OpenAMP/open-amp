@@ -155,6 +155,12 @@ void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev);
 void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
 				void *shbuf, size_t size);
 
+/**
+ * rpmsg_virtio_get_rpmsg_device - get RPMsg device from RPMsg virtio device
+ *
+ * @param rvdev - pointer to RPMsg virtio device
+ * @return - RPMsg device pointed by RPMsg virtio device
+ */
 static inline struct rpmsg_device *
 rpmsg_virtio_get_rpmsg_device(struct rpmsg_virtio_device *rvdev)
 {
@@ -171,6 +177,7 @@ rpmsg_virtio_get_rpmsg_device(struct rpmsg_virtio_device *rvdev)
  *
  * @param shpool - pointer to the shared buffers pool
  * @param size - shared buffers total size
+ * @return - buffer pointer if free buffer is available, NULL otherwise.
  */
 metal_weak void *
 rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
