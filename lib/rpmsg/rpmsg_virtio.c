@@ -469,9 +469,12 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	(void)src;
 
 	ns_msg = (struct rpmsg_ns_msg *)data;
+	if (len != sizeof(*ns_msg))
+		/* Returns as the message is corrupted */
+		return RPMSG_SUCCESS;
 	metal_io_block_read(io,
 			    metal_io_virt_to_offset(io, ns_msg->name),
-			    &name, len);
+			    &name, sizeof(name));
 	dest = ns_msg->addr;
 
 	/* check if a Ept has been locally registered */
