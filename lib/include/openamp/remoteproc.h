@@ -685,32 +685,6 @@ int remoteproc_set_rsc_table(struct remoteproc *rproc,
 			     size_t rsc_size);
 
 /**
- * remoteproc_get_ready
- *
- * Get remoteproc ready to load and execute application
- *
- * @rproc - pointer to remoteproc instance
- * @priv - pointer to private data
- * @plen - length of private data
- *
- * returns 0 for success and negative value for errors
- */
-int remoteproc_get_ready(struct remoteproc *rproc, void *priv, size_t plen);
-
-/**
- * remoteproc_set_bootaddr
- *
- * Set bootaddr of remoteproc
- *
- * @rproc - pointer to remoteproc instance
- * @bootaddr - boot address
- *
- * returns 0 for success and negative value for errors
- */
-int remoteproc_set_bootaddr(struct remoteproc *rproc,
-			    metal_phys_addr_t bootaddr);
-
-/**
  * remoteproc_config
  *
  * This function configures the remote processor to get it

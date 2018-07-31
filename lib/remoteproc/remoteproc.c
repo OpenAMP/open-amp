@@ -186,17 +186,6 @@ int remoteproc_remove(struct remoteproc *rproc)
 	return ret;
 }
 
-int remoteproc_set_bootaddr(struct remoteproc *rproc,
-			    metal_phys_addr_t bootaddr)
-{
-	if (rproc) {
-		metal_mutex_acquire(&rproc->lock);
-		rproc->bootaddr = bootaddr;
-		metal_mutex_release(&rproc->lock);
-	}
-	return 0;
-}
-
 int remoteproc_config(struct remoteproc *rproc, void *data)
 {
 	int ret = -RPROC_ENODEV;
