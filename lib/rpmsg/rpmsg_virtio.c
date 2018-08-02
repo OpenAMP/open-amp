@@ -493,7 +493,7 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 			 * send callback to application, that can
 			 * - create the associated endpoints.
 			 * - store information for future use.
-			 * - just ignore the requet as service not supported.
+			 * - just ignore the request as service not supported.
 			 */
 			metal_mutex_release(&rdev->lock);
 			if (rdev->ns_bind_cb)
