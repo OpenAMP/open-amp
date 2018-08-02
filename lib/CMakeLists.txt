@@ -35,7 +35,7 @@ set_property (SOURCE ${_sources}
 if (WITH_ZEPHYR)
   zephyr_library_named(${OPENAMP_LIB})
   add_dependencies(${OPENAMP_LIB} offsets_h)
-  target_sources (${OPENAMP_LIB} PRIVATE ${_sources})
+  zephyr_library_sources (${_sources})
   zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 else (WITH_ZEPHYR)
   if (WITH_SHARED_LIB)
