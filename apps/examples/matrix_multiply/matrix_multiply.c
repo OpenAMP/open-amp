@@ -33,10 +33,6 @@ static unsigned int result_returned = 0;
 static int err_cnt = 0;
 static int ept_deleted = 0;
 
-/* External functions */
-extern int init_system();
-extern void cleanup_system();
-
 /**
  * _gettimeofday() is called from time() which is used by srand() to generate
  * random number. It is defined here in case this function is not defined in

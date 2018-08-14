@@ -32,10 +32,6 @@ static int rnum = 0;
 static int err_cnt = 0;
 static int ept_deleted = 0;
 
-/* External functions */
-extern int init_system();
-extern void cleanup_system();
-
 /*-----------------------------------------------------------------------------*
  *  RPMSG endpoint callbacks
  *-----------------------------------------------------------------------------*/
