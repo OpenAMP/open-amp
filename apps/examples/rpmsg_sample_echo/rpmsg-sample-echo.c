@@ -21,10 +21,6 @@
 static struct rpmsg_endpoint lept;
 static int shutdown_req = 0;
 
-/* External functions */
-extern int init_system(void);
-extern void cleanup_system(void);
-
 /*-----------------------------------------------------------------------------*
  *  RPMSG endpoint callbacks
  *-----------------------------------------------------------------------------*/
