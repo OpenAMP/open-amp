@@ -18,6 +18,24 @@
 extern "C" {
 #endif
 
+struct remoteproc_priv {
+	const char *ipi_name; /**< IPI device name */
+	const char *ipi_bus_name; /**< IPI bus name */
+	const char *rsc_name; /**< rsc device name */
+	const char *rsc_bus_name; /**< rsc bus name */
+	const char *shm_name; /**< shared memory device name */
+	const char *shm_bus_name; /**< shared memory bus name */
+	struct metal_device *ipi_dev; /**< pointer to IPI device */
+	struct metal_io_region *ipi_io; /**< pointer to IPI i/o region */
+	struct metal_device *shm_dev; /**< pointer to shared memory device */
+	struct metal_io_region *shm_io; /**< pointer to shared memory i/o
+						 region */
+	struct remoteproc_mem shm_mem; /**< shared memory */
+	unsigned int ipi_chn_mask; /**< IPI channel mask */
+	atomic_int ipi_nokick;
+};
+
+
 /**
  * platform_init - initialize the platform
  *
