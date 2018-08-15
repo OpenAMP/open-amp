@@ -127,7 +127,8 @@ vring_init(struct vring *vr, unsigned int num, uint8_t *p, unsigned long align)
 	vr->desc = (struct vring_desc *)p;
 	vr->avail = (struct vring_avail *)(p + num * sizeof(struct vring_desc));
 	vr->used = (struct vring_used *)
-	    (((unsigned long)&vr->avail->ring[num] + align - 1) & ~(align - 1));
+	    (((unsigned long)&vr->avail->ring[num] + sizeof(uint16_t) +
+	      align - 1) & ~(align - 1));
 }
 
 /*
