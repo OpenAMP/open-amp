@@ -15,12 +15,14 @@ collector_list (_deps PROJECT_LIB_DEPS)
 
 set (OPENAMP_LIB open_amp)
 
-foreach (_app msg-test-rpmsg-ping msg-test-rpmsg-update)
+foreach (_app msg-test-rpmsg-ping msg-test-rpmsg-update msg-test-rpmsg-flood-ping)
   collector_list (_sources APP_COMMON_SOURCES)
   if (${_app} STREQUAL "msg-test-rpmsg-ping")
     list (APPEND _sources "${CMAKE_CURRENT_SOURCE_DIR}/rpmsg-ping.c")
   elseif (${_app} STREQUAL "msg-test-rpmsg-update")
     list (APPEND _sources "${CMAKE_CURRENT_SOURCE_DIR}/rpmsg-update.c")
+  elseif (${_app} STREQUAL "msg-test-rpmsg-flood-ping")
+    list (APPEND _sources "${CMAKE_CURRENT_SOURCE_DIR}/rpmsg-flood-ping.c")
   endif (${_app} STREQUAL "msg-test-rpmsg-ping")
 
   if (WITH_SHARED_LIB)
