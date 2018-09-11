@@ -38,8 +38,19 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	}
 
 	/* Send data back to master */
-	if (rpmsg_send(ept, data, len) < 0) {
-		LPERROR("rpmsg_send failed\n");
+	while (1) {
+		int ret;
+
+		ret = rpmsg_send(ept, data, len);
+		if (ret == RPMSG_ERR_NO_BUFF) {
+			LPRINTF("%s, wait for buffer\n", __func__);
+			continue;
+		} else {
+			if (ret < 0)
+				LPERROR("rpmsg_send, size %lu failed %d\r\n",
+					len, ret);
+			break;
+		}
 	}
 	return RPMSG_SUCCESS;
 }
