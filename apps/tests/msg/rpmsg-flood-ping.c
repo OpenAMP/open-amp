@@ -49,8 +49,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	(void)ept;
 	(void)src;
 	(void)priv;
-	//LPRINTF(" received payload number %lu of size %lu \r\n",
-	//	r_payload->num, (unsigned long)len);
+	(void)len;
 
 	if (r_payload->size == 0) {
 		LPERROR(" Invalid size of package is received.\n");
