@@ -48,7 +48,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 		} else {
 			if (ret < 0)
 				LPERROR("rpmsg_send, size %lu failed %d\r\n",
-					len, ret);
+					(unsigned long)len, ret);
 			break;
 		}
 	}
