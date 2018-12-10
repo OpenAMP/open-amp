@@ -12,6 +12,7 @@
 #include <metal/sleep.h>
 #include <metal/utilities.h>
 #include <openamp/rpmsg_virtio.h>
+#include <openamp/remoteproc.h>
 #include <openamp/virtqueue.h>
 
 #include "rpmsg_internal.h"
@@ -808,6 +809,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	struct rpmsg_device *rdev;
 	const char *vq_names[RPMSG_NUM_VRINGS];
 	vq_callback callback[RPMSG_NUM_VRINGS];
+	struct fw_rsc_config fw_config;
 	int status;
 	unsigned int i, role;
 
@@ -853,6 +855,13 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 #endif /*!VIRTIO_DRIVER_ONLY*/
 	vdev->features = rpmsg_virtio_get_features(rvdev);
 	rdev->support_ns = !!(vdev->features & (1 << VIRTIO_RPMSG_F_NS));
+
+	if (vdev->features & (1 << VIRTIO_RPMSG_F_BUFSZ)) {
+		rpmsg_virtio_read_config(rvdev,
+					 0, &fw_config, sizeof(fw_config));
+		rvdev->config.h2r_buf_size = fw_config.h2r_buf_size;
+		rvdev->config.r2h_buf_size = fw_config.r2h_buf_size;
+	}
 
 #ifndef VIRTIO_DEVICE_ONLY
 	if (role == RPMSG_HOST) {
