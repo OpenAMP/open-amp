@@ -43,7 +43,6 @@ typedef uint8_t boolean;
  */
 #define VQ_RING_DESC_CHAIN_END                         32768
 #define VIRTQUEUE_FLAG_INDIRECT                        0x0001
-#define VIRTQUEUE_FLAG_EVENT_IDX                       0x0002
 #define VIRTQUEUE_MAX_NAME_SZ                          32
 
 /* Support for indirect buffer descriptors. */
@@ -62,7 +61,6 @@ struct virtqueue {
 	const char *vq_name;
 	uint16_t vq_queue_index;
 	uint16_t vq_nentries;
-	uint32_t vq_flags;
 	void (*callback)(struct virtqueue *vq);
 	void (*notify)(struct virtqueue *vq);
 	struct vring vq_ring;

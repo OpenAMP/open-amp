@@ -594,6 +594,12 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	if (status != RPMSG_SUCCESS)
 		return status;
 
+	/*
+	 * Suppress "tx-complete" interrupts
+	 * since send method use busy loop when buffer pool exhaust
+	 */
+	virtqueue_disable_cb(rvdev->svq);
+
 	/* TODO: can have a virtio function to set the shared memory I/O */
 	for (i = 0; i < RPMSG_NUM_VRINGS; i++) {
 		struct virtqueue *vq;
