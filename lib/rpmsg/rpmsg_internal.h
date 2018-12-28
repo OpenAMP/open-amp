@@ -15,9 +15,12 @@ extern "C" {
 #endif
 
 #ifdef RPMSG_DEBUG
+#include <metal/log.h>
+
 #define RPMSG_ASSERT(_exp, _msg) do { \
 		if (!(_exp)) { \
-			openamp_print("FATAL: %s - _msg", __func__); \
+			metal_log(METAL_LOG_EMERGENCY, \
+				  "FATAL: %s - "_msg, __func__); \
 			while (1) { \
 				; \
 			} \
