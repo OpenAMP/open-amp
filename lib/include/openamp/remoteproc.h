@@ -14,7 +14,7 @@
 
 #include <metal/io.h>
 #include <metal/mutex.h>
-#include <openamp/compiler.h>
+#include <metal/compiler.h>
 
 #if defined __cplusplus
 extern "C" {
@@ -49,13 +49,13 @@ extern "C" {
  * Immediately following this header are the resource entries themselves,
  * each of which begins with a resource entry header (as described below).
  */
-OPENAMP_PACKED_BEGIN
+METAL_PACKED_BEGIN
 struct resource_table {
 	uint32_t ver;
 	uint32_t num;
 	uint32_t reserved[2];
 	uint32_t offset[0];
-} OPENAMP_PACKED_END;
+} METAL_PACKED_END;
 
 /**
  * struct fw_rsc_hdr - firmware resource entry header
@@ -66,11 +66,11 @@ struct resource_table {
  * its @type. The content of the entry itself will immediately follow
  * this header, and it should be parsed according to the resource type.
  */
-OPENAMP_PACKED_BEGIN
+METAL_PACKED_BEGIN
 struct fw_rsc_hdr {
 	uint32_t type;
 	uint8_t data[0];
-} OPENAMP_PACKED_END;
+} METAL_PACKED_END;
 
 /**
  * enum fw_resource_type - types of resource entries
@@ -150,7 +150,7 @@ enum fw_resource_type {
  * (optionally) contain a human readable name of this carveout region
  * (mainly for debugging purposes).
  */
-OPENAMP_PACKED_BEGIN
+METAL_PACKED_BEGIN
 struct fw_rsc_carveout {
 	uint32_t type;
 	uint32_t da;
@@ -159,7 +159,7 @@ struct fw_rsc_carveout {
 	uint32_t flags;
 	uint32_t reserved;
 	uint8_t name[32];
-} OPENAMP_PACKED_END;
+} METAL_PACKED_END;
 
 /**
  * struct fw_rsc_devmem - iommu mapping request
@@ -190,7 +190,7 @@ struct fw_rsc_carveout {
  * the firmware is allowed to request, and not allow firmwares to request
  * access to physical addresses that are outside those ranges.
  */
-OPENAMP_PACKED_BEGIN
+METAL_PACKED_BEGIN
 struct fw_rsc_devmem {
 	uint32_t type;
 	uint32_t da;
@@ -199,7 +199,7 @@ struct fw_rsc_devmem {
 	uint32_t flags;
 	uint32_t reserved;
 	uint8_t name[32];
-} OPENAMP_PACKED_END;
+} METAL_PACKED_END;
 
 /**
  * struct fw_rsc_trace - trace buffer declaration
@@ -217,14 +217,14 @@ struct fw_rsc_devmem {
  * After booting the remote remote_proc, the trace buffers are exposed to the
  * user via debugfs entries (called trace0, trace1, etc..).
  */
-OPENAMP_PACKED_BEGIN
+METAL_PACKED_BEGIN
 struct fw_rsc_trace {
 	uint32_t type;
 	uint32_t da;
 	uint32_t len;
 	uint32_t reserved;
 	uint8_t name[32];
-} OPENAMP_PACKED_END;
+} METAL_PACKED_END;
 
 /**
  * struct fw_rsc_vdev_vring - vring descriptor entry
@@ -243,14 +243,14 @@ struct fw_rsc_trace {
  * the remote remote_proc is expecting the vring, or indicate that
  * dynamically allocation of the vring's device address is supported.
  */
-OPENAMP_PACKED_BEGIN
+METAL_PACKED_BEGIN
 struct fw_rsc_vdev_vring {
 	uint32_t da;
 	uint32_t align;
 	uint32_t num;
 	uint32_t notifyid;
 	uint32_t reserved;
-} OPENAMP_PACKED_END;
+} METAL_PACKED_END;
 
 /**
  * struct fw_rsc_vdev - virtio device header
@@ -287,7 +287,7 @@ struct fw_rsc_vdev_vring {
  * this vdev (which is specific to the vdev; for more info, read the virtio
  * spec). the size of the config space is specified by @config_len.
  */
-OPENAMP_PACKED_BEGIN
+METAL_PACKED_BEGIN
 struct fw_rsc_vdev {
 	uint32_t type;
 	uint32_t id;
@@ -299,7 +299,7 @@ struct fw_rsc_vdev {
 	uint8_t num_of_vrings;
 	uint8_t reserved[2];
 	struct fw_rsc_vdev_vring vring[0];
-} OPENAMP_PACKED_END;
+} METAL_PACKED_END;
 
 /**
  * struct fw_rsc_vendor - remote processor vendor specific resource
@@ -311,11 +311,11 @@ struct fw_rsc_vdev {
  * These request entries should precede other shared resource entries
  * such as vdevs, vrings.
  */
-OPENAMP_PACKED_BEGIN
+METAL_PACKED_BEGIN
 struct fw_rsc_vendor {
 	uint32_t type;
 	uint32_t len;
-} OPENAMP_PACKED_END;
+} METAL_PACKED_END;
 
 struct loader_ops;
 struct image_store_ops;
