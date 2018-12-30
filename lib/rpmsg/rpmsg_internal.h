@@ -59,14 +59,14 @@ enum rpmsg_ns_flags {
  *
  * Every message sent(/received) on the rpmsg bus begins with this header.
  */
-OPENAMP_PACKED_BEGIN
+METAL_PACKED_BEGIN
 struct rpmsg_hdr {
 	uint32_t src;
 	uint32_t dst;
 	uint32_t reserved;
 	uint16_t len;
 	uint16_t flags;
-} OPENAMP_PACKED_END;
+} METAL_PACKED_END;
 
 /**
  * struct rpmsg_ns_msg - dynamic name service announcement message
@@ -80,12 +80,12 @@ struct rpmsg_hdr {
  * or ->remove() handler of the appropriate rpmsg driver will be invoked
  * (if/as-soon-as one is registered).
  */
-OPENAMP_PACKED_BEGIN
+METAL_PACKED_BEGIN
 struct rpmsg_ns_msg {
 	char name[RPMSG_NAME_SIZE];
 	uint32_t addr;
 	uint32_t flags;
-} OPENAMP_PACKED_END;
+} METAL_PACKED_END;
 
 int rpmsg_send_ns_message(struct rpmsg_endpoint *ept, unsigned long flags);
 

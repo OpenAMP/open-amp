@@ -12,7 +12,7 @@
 #ifndef _RPMSG_H_
 #define _RPMSG_H_
 
-#include <openamp/compiler.h>
+#include <metal/compiler.h>
 #include <metal/mutex.h>
 #include <metal/list.h>
 #include <metal/utilities.h>
