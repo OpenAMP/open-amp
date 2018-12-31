@@ -13,6 +13,8 @@
 
 #include "rpmsg_internal.h"
 
+#define RPMSG_ADDR_BMP_BITS (RPMSG_ADDR_BMP_SIZE * METAL_BITS_PER_ULONG)
+
 /**
  * rpmsg_get_address
  *
@@ -185,7 +187,7 @@ static void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept)
 	rdev = ept->rdev;
 
 	if (ept->addr != RPMSG_ADDR_ANY)
-		rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE,
+		rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_BITS,
 				      ept->addr);
 	metal_list_del(&ept->node);
 }
@@ -212,10 +214,10 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 	metal_mutex_acquire(&rdev->lock);
 	if (src != RPMSG_ADDR_ANY) {
 		status = rpmsg_is_address_set(rdev->bitmap,
-					      RPMSG_ADDR_BMP_SIZE, src);
+					      RPMSG_ADDR_BMP_BITS, src);
 		if (!status) {
 			/* Mark the address as used in the address bitmap. */
-			rpmsg_set_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE,
+			rpmsg_set_address(rdev->bitmap, RPMSG_ADDR_BMP_BITS,
 					  src);
 		} else if (status > 0) {
 			status = RPMSG_SUCCESS;
@@ -224,14 +226,14 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 			goto ret_status;
 		}
 	} else {
-		addr = rpmsg_get_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE);
+		addr = rpmsg_get_address(rdev->bitmap, RPMSG_ADDR_BMP_BITS);
 	}
 
 	rpmsg_init_ept(ept, name, addr, dest, cb, unbind_cb);
 
 	status = rpmsg_register_endpoint(rdev, ept);
 	if (status < 0)
-		rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE, addr);
+		rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_BITS, addr);
 
 	if (!status  && ept->dest_addr == RPMSG_ADDR_ANY) {
 		/* Send NS announcement to remote processor */
