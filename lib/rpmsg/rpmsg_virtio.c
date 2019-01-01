@@ -24,10 +24,6 @@
 /* Time to wait - In multiple of 10 msecs. */
 #define RPMSG_TICKS_PER_INTERVAL                10
 
-#define WORD_SIZE	sizeof(unsigned long)
-#define WORD_ALIGN(a)	((((a) & (WORD_SIZE - 1)) != 0) ? \
-			(((a) & (~(WORD_SIZE - 1))) + WORD_SIZE) : (a))
-
 #ifndef VIRTIO_SLAVE_ONLY
 metal_weak void *
 rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
@@ -50,8 +46,8 @@ void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
 	if (!shpool)
 		return;
 	shpool->base = shb;
-	shpool->size = WORD_ALIGN(size);
-	shpool->avail = WORD_ALIGN(size);
+	shpool->size = size;
+	shpool->avail = size;
 }
 
 /**
