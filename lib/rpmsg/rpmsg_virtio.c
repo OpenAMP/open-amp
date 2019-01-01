@@ -8,7 +8,6 @@
  */
 
 #include <metal/alloc.h>
-#include <metal/cache.h>
 #include <metal/sleep.h>
 #include <metal/utilities.h>
 #include <openamp/rpmsg_virtio.h>
@@ -193,15 +192,6 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 		    virtqueue_get_available_buffer(rvdev->rvq, idx, len);
 	}
 #endif /*!VIRTIO_MASTER_ONLY*/
-
-	if (data) {
-		/* FIX ME: library should not worry about if it needs
-		 * to flush/invalidate cache, it is shared memory.
-		 * The shared memory should be mapped properly before
-		 * using it.
-		 */
-		metal_cache_invalidate(data, (unsigned int)(*len));
-	}
 
 	return data;
 }
