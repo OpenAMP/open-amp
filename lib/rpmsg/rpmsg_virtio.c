@@ -115,7 +115,7 @@ static int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev,
 		/* Initialize buffer node */
 		vqbuf.buf = buffer;
 		vqbuf.len = len;
-		return virtqueue_add_buffer(rvdev->svq, &vqbuf, 0, 1, buffer);
+		return virtqueue_add_buffer(rvdev->svq, &vqbuf, 1, 0, buffer);
 	}
 #endif /*!VIRTIO_SLAVE_ONLY*/
 
