@@ -66,7 +66,7 @@ void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
  *
  */
 static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
-				       void *buffer, unsigned long len,
+				       void *buffer, unsigned int len,
 				       unsigned short idx)
 {
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
@@ -103,7 +103,7 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
  * @return - status of function execution
  */
 static int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev,
-				       void *buffer, unsigned long len,
+				       void *buffer, unsigned int len,
 				       unsigned short idx)
 {
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
@@ -140,7 +140,7 @@ static int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev,
  * return - pointer to buffer.
  */
 static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
-					unsigned long *len,
+					unsigned int *len,
 					unsigned short *idx)
 {
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
@@ -148,7 +148,7 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 
 #ifndef VIRTIO_SLAVE_ONLY
 	if (role == RPMSG_MASTER) {
-		data = virtqueue_get_buffer(rvdev->svq, (uint32_t *)len, idx);
+		data = virtqueue_get_buffer(rvdev->svq, len, idx);
 		if (data == NULL) {
 			data = rpmsg_virtio_shm_pool_get_buffer(rvdev->shpool,
 							RPMSG_BUFFER_SIZE);
@@ -159,8 +159,7 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 
 #ifndef VIRTIO_MASTER_ONLY
 	if (role == RPMSG_REMOTE) {
-		data = virtqueue_get_available_buffer(rvdev->svq, idx,
-						      (uint32_t *)len);
+		data = virtqueue_get_available_buffer(rvdev->svq, idx, len);
 	}
 #endif /*!VIRTIO_MASTER_ONLY*/
 
@@ -180,7 +179,7 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
  *
  */
 static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
-					unsigned long *len,
+					unsigned int *len,
 					unsigned short *idx)
 {
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
@@ -188,15 +187,14 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 
 #ifndef VIRTIO_SLAVE_ONLY
 	if (role == RPMSG_MASTER) {
-		data = virtqueue_get_buffer(rvdev->rvq, (uint32_t *)len, idx);
+		data = virtqueue_get_buffer(rvdev->rvq, len, idx);
 	}
 #endif /*!VIRTIO_SLAVE_ONLY*/
 
 #ifndef VIRTIO_MASTER_ONLY
 	if (role == RPMSG_REMOTE) {
 		data =
-		    virtqueue_get_available_buffer(rvdev->rvq, idx,
-						   (uint32_t *)len);
+		    virtqueue_get_available_buffer(rvdev->rvq, idx, len);
 	}
 #endif /*!VIRTIO_MASTER_ONLY*/
 
@@ -301,7 +299,7 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 	void *buffer = NULL;
 	unsigned short idx;
 	int tick_count = 0;
-	unsigned long buff_len;
+	unsigned int buff_len;
 	int status;
 	struct metal_io_region *io;
 
@@ -398,7 +396,7 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 	struct rpmsg_device *rdev = &rvdev->rdev;
 	struct rpmsg_endpoint *ept;
 	struct rpmsg_hdr *rp_hdr;
-	unsigned long len;
+	unsigned int len;
 	unsigned short idx;
 	int status;
 
