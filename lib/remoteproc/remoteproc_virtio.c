@@ -63,7 +63,7 @@ static void rproc_virtio_set_status(struct virtio_device *vdev,
 }
 #endif
 
-static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
+static uint32_t rproc_virtio_get_dfeatures(struct virtio_device *vdev)
 {
 	struct remoteproc_virtio *rpvdev;
 	struct fw_rsc_vdev *vdev_rsc;
@@ -73,11 +73,28 @@ static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
 	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
 	vdev_rsc = rpvdev->vdev_rsc;
 	io = rpvdev->vdev_rsc_io;
-	/* TODO: shall we get features based on the role ? */
 	features = metal_io_read32(io,
 			metal_io_virt_to_offset(io, &vdev_rsc->dfeatures));
 
 	return features;
+}
+
+static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
+{
+	struct remoteproc_virtio *rpvdev;
+	struct fw_rsc_vdev *vdev_rsc;
+	struct metal_io_region *io;
+	uint32_t gfeatures;
+	uint32_t dfeatures;
+
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	vdev_rsc = rpvdev->vdev_rsc;
+	io = rpvdev->vdev_rsc_io;
+	gfeatures = metal_io_read32(io,
+			metal_io_virt_to_offset(io, &vdev_rsc->gfeatures));
+	dfeatures = rproc_virtio_get_dfeatures(vdev);
+
+	return dfeatures & gfeatures;
 }
 
 #ifndef VIRTIO_SLAVE_ONLY
@@ -91,22 +108,20 @@ static void rproc_virtio_set_features(struct virtio_device *vdev,
 	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
 	vdev_rsc = rpvdev->vdev_rsc;
 	io = rpvdev->vdev_rsc_io;
-	/* TODO: shall we set features based on the role ? */
 	metal_io_write32(io,
-			 metal_io_virt_to_offset(io, &vdev_rsc->dfeatures),
+			 metal_io_virt_to_offset(io, &vdev_rsc->gfeatures),
 			 features);
 	rpvdev->notify(rpvdev->priv, vdev->notifyid);
 }
-#endif
 
 static uint32_t rproc_virtio_negotiate_features(struct virtio_device *vdev,
 						uint32_t features)
 {
-	(void)vdev;
-	(void)features;
-
+	uint32_t dfeatures = rproc_virtio_get_dfeatures(vdev);
+	rproc_virtio_set_features(vdev, dfeatures & features);
 	return 0;
 }
+#endif
 
 static void rproc_virtio_read_config(struct virtio_device *vdev,
 				     uint32_t offset, void *dst, int length)
@@ -135,12 +150,11 @@ static void rproc_virtio_reset_device(struct virtio_device *vdev)
 }
 #endif
 
-const struct virtio_dispatch remoteproc_virtio_dispatch_funcs = {
-	.get_status =  rproc_virtio_get_status,
+static const struct virtio_dispatch remoteproc_virtio_dispatch_funcs = {
+	.get_status = rproc_virtio_get_status,
 	.get_features = rproc_virtio_get_features,
 	.read_config = rproc_virtio_read_config,
 	.notify = rproc_virtio_virtqueue_notify,
-	.negotiate_features = rproc_virtio_negotiate_features,
 #ifndef VIRTIO_SLAVE_ONLY
 	/*
 	 * We suppose here that the vdev is in a shared memory so that can
@@ -149,6 +163,7 @@ const struct virtio_dispatch remoteproc_virtio_dispatch_funcs = {
 	 */
 	.set_status = rproc_virtio_set_status,
 	.set_features = rproc_virtio_set_features,
+	.negotiate_features = rproc_virtio_negotiate_features,
 	.write_config = rproc_virtio_write_config,
 	.reset_device = rproc_virtio_reset_device,
 #endif
@@ -207,7 +222,14 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 	vdev->reset_cb = rst_cb;
 	vdev->vrings_num = num_vrings;
 	vdev->func = &remoteproc_virtio_dispatch_funcs;
-	/* TODO: Shall we set features here ? */
+
+#ifndef VIRTIO_SLAVE_ONLY
+	if (role == VIRTIO_DEV_MASTER) {
+		uint32_t dfeatures = rproc_virtio_get_dfeatures(vdev);
+		/* Assume the master support all slave features */
+		rproc_virtio_negotiate_features(vdev, dfeatures);
+	}
+#endif
 
 	return &rpvdev->vdev;
 
