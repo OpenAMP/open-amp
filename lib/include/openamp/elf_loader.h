@@ -290,7 +290,7 @@ typedef struct elf64_sym {
 /* ELF decoding information */
 struct elf32_info {
 	Elf32_Ehdr ehdr;
-	unsigned int load_state;
+	int load_state;
 	Elf32_Phdr *phdrs;
 	Elf32_Shdr *shdrs;
 	void *shstrtab;
@@ -298,7 +298,7 @@ struct elf32_info {
 
 struct elf64_info {
 	Elf64_Ehdr ehdr;
-	unsigned int load_state;
+	int load_state;
 	Elf64_Phdr *phdrs;
 	Elf64_Shdr *shdrs;
 	void *shstrtab;
