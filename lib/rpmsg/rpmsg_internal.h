@@ -92,8 +92,8 @@ int rpmsg_send_ns_message(struct rpmsg_endpoint *ept, unsigned long flags);
 struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_device *rvdev,
 					  const char *name, uint32_t addr,
 					  uint32_t dest_addr);
-int rpmsg_register_endpoint(struct rpmsg_device *rdev,
-			    struct rpmsg_endpoint *ept);
+void rpmsg_register_endpoint(struct rpmsg_device *rdev,
+			     struct rpmsg_endpoint *ept);
 
 static inline struct rpmsg_endpoint *
 rpmsg_get_ept_from_addr(struct rpmsg_device *rdev, uint32_t addr)
