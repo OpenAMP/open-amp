@@ -12,7 +12,7 @@
 static int handle_dummy_rsc(struct remoteproc *rproc, void *rsc);
 
 /* Resources handler */
-rsc_handler rsc_handler_table[] = {
+static const rsc_handler rsc_handler_table[] = {
 	handle_carve_out_rsc, /**< carved out resource */
 	handle_dummy_rsc, /**< IOMMU dev mem resource */
 	handle_trace_rsc, /**< trace buffer resource */
