@@ -18,11 +18,11 @@
 
 #define RPMSG_NUM_VRINGS (2)
 
-/* Total tick count for 15secs - 1msec tick. */
-#define RPMSG_TICK_COUNT                        15000
+/* Total tick count for 15secs - 1usec tick. */
+#define RPMSG_TICK_COUNT                        15000000
 
-/* Time to wait - In multiple of 10 msecs. */
-#define RPMSG_TICKS_PER_INTERVAL                10
+/* Time to wait - In multiple of 1 msecs. */
+#define RPMSG_TICKS_PER_INTERVAL                1000
 
 #ifndef VIRTIO_SLAVE_ONLY
 metal_weak void *
