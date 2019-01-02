@@ -223,7 +223,7 @@ static const void *elf_get_segment_from_index(void *elf_info, int index)
 
 		if (phdrs == NULL)
 			return NULL;
-		if (index < 0 || index > ehdr->e_phnum)
+		if (index < 0 || index >= ehdr->e_phnum)
 			return NULL;
 		return &phdrs[index];
 	} else {
@@ -233,7 +233,7 @@ static const void *elf_get_segment_from_index(void *elf_info, int index)
 
 		if (phdrs == NULL)
 			return NULL;
-		if (index < 0 || index > ehdr->e_phnum)
+		if (index < 0 || index >= ehdr->e_phnum)
 			return NULL;
 		return &phdrs[index];
 	}
@@ -285,7 +285,7 @@ static void *elf_get_section_from_index(void *elf_info, int index)
 
 		if (shdr == NULL)
 			return NULL;
-		if (index > ehdr->e_shnum)
+		if (index < 0 || index >= ehdr->e_shnum)
 			return NULL;
 		return &einfo->shdrs[index];
 	} else {
@@ -295,7 +295,7 @@ static void *elf_get_section_from_index(void *elf_info, int index)
 
 		if (shdr == NULL)
 			return NULL;
-		if (index > ehdr->e_shnum)
+		if (index < 0 || index >= ehdr->e_shnum)
 			return NULL;
 		return &einfo->shdrs[index];
 	}
