@@ -22,7 +22,7 @@ static const rsc_handler rsc_handler_table[] = {
 };
 
 int handle_rsc_table(struct remoteproc *rproc,
-		     struct resource_table *rsc_table, int size,
+		     struct resource_table *rsc_table, size_t size,
 		     struct metal_io_region *io)
 {
 	char *rsc_start;
@@ -33,7 +33,7 @@ int handle_rsc_table(struct remoteproc *rproc,
 	/* Validate rsc table header fields */
 
 	/* Minimum rsc table size */
-	if (sizeof(struct resource_table) > (unsigned int)size) {
+	if (sizeof(struct resource_table) > size) {
 		return -RPROC_ERR_RSC_TAB_TRUNC;
 	}
 
@@ -46,7 +46,7 @@ int handle_rsc_table(struct remoteproc *rproc,
 	offset = sizeof(struct resource_table)
 		 + rsc_table->num * sizeof(rsc_table->offset[0]);
 
-	if (offset > (unsigned int)size) {
+	if (offset > size) {
 		return -RPROC_ERR_RSC_TAB_TRUNC;
 	}
 

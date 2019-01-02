@@ -154,7 +154,7 @@ void rpmsg_set_default_rpc(struct rpmsg_rpc_data *rpc)
  *       Open a file.  Minimal implementation
  *
  *************************************************************************/
-#define MAX_BUF_LEN 496UL
+#define MAX_BUF_LEN 496
 
 int _open(const char *filename, int flags, int mode)
 {
@@ -166,7 +166,7 @@ int _open(const char *filename, int flags, int mode)
 	unsigned char tmpbuf[MAX_BUF_LEN];
 	int ret;
 
-	if (filename == NULL || payload_size > (int)MAX_BUF_LEN) {
+	if (filename == NULL || payload_size > MAX_BUF_LEN) {
 		return -EINVAL;
 	}
 

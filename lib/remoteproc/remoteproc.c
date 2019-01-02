@@ -444,7 +444,7 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 		ret = loader->load_header(img_data, offset, len,
 					  &limg_info, last_load_state,
 					  &noffset, &nlen);
-		last_load_state = (unsigned int)ret;
+		last_load_state = ret;
 		metal_log(METAL_LOG_DEBUG,
 			  "%s, load header 0x%lx, 0x%x, next 0x%lx, 0x%x\r\n",
 			  __func__, offset, len, noffset, nlen);
@@ -722,7 +722,7 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 		ret = loader->load_header(img_data, offset, len,
 					  &limg_info, last_load_state,
 					  noffset, nlen);
-		last_load_state = (unsigned int)ret;
+		last_load_state = ret;
 		metal_log(METAL_LOG_DEBUG,
 			  "%s, load header 0x%lx, 0x%x, next 0x%lx, 0x%x\r\n",
 			  __func__, offset, len, *noffset, *nlen);

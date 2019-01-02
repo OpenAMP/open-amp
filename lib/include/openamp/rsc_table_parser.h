@@ -28,7 +28,7 @@ typedef int (*rsc_handler) (struct remoteproc *rproc, void *rsc);
  *
  * @param rproc     - pointer to remote remoteproc
  * @param rsc_table - resource table to parse
- * @param size      - size of rsc table
+ * @param len       - size of rsc table
  * @param io        - pointer to the resource table I/O region
  *                    It can be NULL if the resource table
  *                    is in the local memory.
@@ -37,7 +37,7 @@ typedef int (*rsc_handler) (struct remoteproc *rproc, void *rsc);
  *
  */
 int handle_rsc_table(struct remoteproc *rproc,
-		     struct resource_table *rsc_table, int len,
+		     struct resource_table *rsc_table, size_t len,
 		     struct metal_io_region *io);
 int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc);
 int handle_trace_rsc(struct remoteproc *rproc, void *rsc);
