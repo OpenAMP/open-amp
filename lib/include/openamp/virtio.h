@@ -117,7 +117,7 @@ struct virtio_vring_info {
  */
 
 struct virtio_device {
-	uint32_t index; /**< unique position on the virtio bus */
+	uint32_t notifyid; /**< unique position on the virtio bus */
 	struct virtio_device_id id; /**< the device type identification
 				      *  (used to match it with a driver
 				      */

@@ -891,7 +891,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	metal_list_for_each(&rproc->vdevs, node) {
 		rpvdev = metal_container_of(node, struct remoteproc_virtio,
 					    node);
-		if (rpvdev->vdev.index == notifyid) {
+		if (rpvdev->vdev.notifyid == notifyid) {
 			metal_mutex_release(&rproc->lock);
 			return &rpvdev->vdev;
 		}
