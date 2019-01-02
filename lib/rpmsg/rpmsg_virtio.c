@@ -534,7 +534,6 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	const char *vq_names[RPMSG_NUM_VRINGS];
 	typedef void (*vqcallback)(struct virtqueue *vq);
 	vqcallback callback[RPMSG_NUM_VRINGS];
-	unsigned long dev_features;
 	int status;
 	unsigned int i, role;
 
@@ -546,6 +545,14 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	vdev->priv = rvdev;
 	rdev->ops.send_offchannel_raw = rpmsg_virtio_send_offchannel_raw;
 	role = rpmsg_virtio_get_role(rvdev);
+
+#ifndef VIRTIO_MASTER_ONLY
+	if (role == RPMSG_REMOTE) {
+		/* wait synchro with the master */
+		rpmsg_virtio_wait_remote_ready(rvdev);
+	}
+#endif /*!VIRTIO_MASTER_ONLY*/
+	vdev->features = rpmsg_virtio_get_features(rvdev);
 
 #ifndef VIRTIO_SLAVE_ONLY
 	if (role == RPMSG_MASTER) {
@@ -580,13 +587,6 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	}
 #endif /*!VIRTIO_MASTER_ONLY*/
 	rvdev->shbuf_io = shm_io;
-
-#ifndef VIRTIO_MASTER_ONLY
-	if (role == RPMSG_REMOTE) {
-		/* wait synchro with the master */
-		rpmsg_virtio_wait_remote_ready(rvdev);
-	}
-#endif /*!VIRTIO_MASTER_ONLY*/
 
 	/* Create virtqueues for remote device */
 	status = rpmsg_virtio_create_virtqueues(rvdev, 0, RPMSG_NUM_VRINGS,
@@ -638,13 +638,11 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	/* Initialize channels and endpoints list */
 	metal_list_init(&rdev->endpoints);
 
-	dev_features = rpmsg_virtio_get_features(rvdev);
-
 	/*
 	 * Create name service announcement endpoint if device supports name
 	 * service announcement feature.
 	 */
-	if ((dev_features & (1 << VIRTIO_RPMSG_F_NS))) {
+	if (vdev->features & (1 << VIRTIO_RPMSG_F_NS)) {
 		rpmsg_init_ept(&rdev->ns_ept, "NS",
 			       RPMSG_NS_EPT_ADDR, RPMSG_NS_EPT_ADDR,
 			       rpmsg_virtio_ns_callback, NULL);
