@@ -25,7 +25,7 @@ static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 
 	vdev = vq->vq_dev;
 	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
-	metal_assert(vq_id <= vdev->vrings_num);
+	metal_assert(vq_id < vdev->vrings_num);
 	vring_info = &vdev->vrings_info[vq_id];
 	rpvdev->notify(rpvdev->priv, vring_info->notifyid);
 }
@@ -59,7 +59,7 @@ static void rproc_virtio_set_status(struct virtio_device *vdev,
 	metal_io_write8(io,
 			metal_io_virt_to_offset(io, &vdev_rsc->status),
 			status);
-	rpvdev->notify(rpvdev->priv, vdev->index);
+	rpvdev->notify(rpvdev->priv, vdev->notifyid);
 }
 #endif
 
@@ -95,7 +95,7 @@ static void rproc_virtio_set_features(struct virtio_device *vdev,
 	metal_io_write32(io,
 			 metal_io_virt_to_offset(io, &vdev_rsc->dfeatures),
 			 features);
-	rpvdev->notify(rpvdev->priv, vdev->index);
+	rpvdev->notify(rpvdev->priv, vdev->notifyid);
 }
 #endif
 
@@ -193,9 +193,6 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 		vrings_info[i].vq = vq;
 	}
 
-	/* FIXME commended as seems not nedded, already stored in vdev */
-	//rpvdev->notifyid = notifyid;
-	rpvdev->notify = notify;
 	rpvdev->priv = priv;
 	vdev->vrings_info = vrings_info;
 	/* Assuming the shared memory has been mapped and registered if
@@ -204,7 +201,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 	rpvdev->vdev_rsc = vdev_rsc;
 	rpvdev->vdev_rsc_io = rsc_io;
 
-	vdev->index = notifyid;
+	vdev->notifyid = notifyid;
 	vdev->role = role;
 	vdev->reset_cb = rst_cb;
 	vdev->vrings_num = num_vrings;
@@ -273,7 +270,7 @@ int rproc_virtio_notified(struct virtio_device *vdev, uint32_t notifyid)
 	if (!vdev)
 		return -RPROC_EINVAL;
 	/* We do nothing for vdev notification in this implementation */
-	if (vdev->index == notifyid)
+	if (vdev->notifyid == notifyid)
 		return 0;
 	num_vrings = vdev->vrings_num;
 	for (i = 0; i < num_vrings; i++) {

@@ -26,7 +26,6 @@ typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
 /**
  * struct remoteproc_virtio
  * @priv pointer to private data
- * @notifyid notification id
  * @vdev_rsc address of vdev resource
  * @vdev_rsc_io metal I/O region of vdev_info, can be NULL
  * @notify notification function
@@ -35,7 +34,6 @@ typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
  */
 struct remoteproc_virtio {
 	void *priv;
-	uint32_t notify_id;
 	void *vdev_rsc;
 	struct metal_io_region *vdev_rsc_io;
 	rpvdev_notify_func notify;
