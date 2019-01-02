@@ -133,11 +133,10 @@ int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
 
 	/* only assign notification IDs but do not initialize vdev */
 	notifyid = vdev_rsc->notifyid;
-	if (notifyid == RSC_NOTIFY_ID_ANY) {
-		notifyid = remoteproc_allocate_id(rproc,
-						  notifyid, notifyid + 1);
+	notifyid = remoteproc_allocate_id(rproc,
+					  notifyid, notifyid + 1);
+	if (notifyid != RSC_NOTIFY_ID_ANY)
 		vdev_rsc->notifyid = notifyid;
-	}
 
 	num_vrings = vdev_rsc->num_of_vrings;
 	for (i = 0; i < num_vrings; i++) {
@@ -145,12 +144,11 @@ int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
 
 		vring_rsc = &vdev_rsc->vring[i];
 		notifyid = vring_rsc->notifyid;
-		if (notifyid == RSC_NOTIFY_ID_ANY) {
-			notifyid = remoteproc_allocate_id(rproc,
-							  notifyid,
-							  notifyid + 1);
+		notifyid = remoteproc_allocate_id(rproc,
+						  notifyid,
+						  notifyid + 1);
+		if (notifyid != RSC_NOTIFY_ID_ANY)
 			vdev_rsc->notifyid = notifyid;
-		}
 	}
 
 	return 0;

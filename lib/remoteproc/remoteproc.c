@@ -846,12 +846,16 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 
 	if (start == RSC_NOTIFY_ID_ANY)
 		start = 0;
-	if (end == RSC_NOTIFY_ID_ANY)
+	if (end == 0)
 		end = METAL_BITS_PER_ULONG;
-	notifyid = metal_bitmap_next_set_bit(&rproc->bitmap,
-					     start, end);
+
+	notifyid = metal_bitmap_next_clear_bit(&rproc->bitmap,
+					       start, end);
 	if (notifyid != end)
 		metal_bitmap_set_bit(&rproc->bitmap, notifyid);
+	else
+		notifyid = RSC_NOTIFY_ID_ANY;
+
 	return notifyid;
 }
 
