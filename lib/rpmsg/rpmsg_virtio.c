@@ -432,6 +432,10 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 
 		rp_hdr = (struct rpmsg_hdr *)
 			 rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
+		if (rp_hdr == NULL) {
+			/* tell peer we return some rx buffer */
+			virtqueue_kick(rvdev->rvq);
+		}
 		metal_mutex_release(&rdev->lock);
 	}
 }
