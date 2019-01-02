@@ -408,22 +408,21 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 		ept = rpmsg_get_ept_from_addr(rdev, rp_hdr->dst);
 		metal_mutex_release(&rdev->lock);
 
-		if (!ept)
-			/* Fatal error no endpoint for the given dst addr. */
-			return;
+		if (ept) {
+			if (ept->dest_addr == RPMSG_ADDR_ANY) {
+				/*
+				 * First message received from the remote side,
+				 * update channel destination address
+				 */
+				ept->dest_addr = rp_hdr->src;
+			}
+			status = ept->cb(ept, RPMSG_LOCATE_DATA(rp_hdr),
+					 rp_hdr->len, rp_hdr->src, ept->priv);
 
-		if (ept->dest_addr == RPMSG_ADDR_ANY) {
-			/*
-			 * First message received from the remote side,
-			 * update channel destination address
-			 */
-			ept->dest_addr = rp_hdr->src;
+			RPMSG_ASSERT(status == RPMSG_SUCCESS,
+				     "unexpected callback status\n");
 		}
-		status = ept->cb(ept, (void *)RPMSG_LOCATE_DATA(rp_hdr),
-				 rp_hdr->len, rp_hdr->src, ept->priv);
 
-		RPMSG_ASSERT(status == RPMSG_SUCCESS,
-			     "unexpected callback status\n");
 		metal_mutex_acquire(&rdev->lock);
 
 		/* Return used buffers. */
