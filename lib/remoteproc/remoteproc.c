@@ -823,6 +823,9 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 			rproc->rsc_len = (int)rsc_size;
 			metal_free_memory(lrsc_table);
 		}
+
+		/* get entry point from the firmware */
+		rproc->bootaddr = loader->get_entry(limg_info);
 	}
 out:
 	if (img_info != NULL)
