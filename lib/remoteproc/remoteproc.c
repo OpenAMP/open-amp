@@ -722,7 +722,6 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 		ret = loader->load_header(img_data, offset, len,
 					  &limg_info, last_load_state,
 					  noffset, nlen);
-		last_load_state = (unsigned int)ret;
 		metal_log(METAL_LOG_DEBUG,
 			  "%s, load header 0x%lx, 0x%x, next 0x%lx, 0x%x\r\n",
 			  __func__, offset, len, *noffset, *nlen);
@@ -733,7 +732,7 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 
 			goto error1;
 		}
-		last_load_state = loader->get_load_state(limg_info);
+		last_load_state = ret;
 		if (*nlen != 0 &&
 		    (last_load_state & RPROC_LOADER_READY_TO_LOAD) == 0)
 			goto out;
@@ -755,6 +754,7 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 				  offset, len);
 			goto error1;
 		}
+		last_load_state = ret;
 		if (da != RPROC_LOAD_ANYADDR) {
 			/* get the I/O region from remoteproc */
 			*pa = METAL_BAD_PHYS;
@@ -769,8 +769,6 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 		}
 		if (*nlen != 0)
 			goto out;
-		else
-			last_load_state = loader->get_load_state(limg_info);
 	}
 	if ((last_load_state & RPROC_LOADER_LOAD_COMPLETE) != 0) {
 		/* Get resource table */
