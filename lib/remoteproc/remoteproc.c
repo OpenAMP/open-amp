@@ -384,8 +384,7 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 	size_t len, nlen;
 	int last_load_state;
 	metal_phys_addr_t da, rsc_da;
-	int rsc_len;
-	size_t rsc_size;
+	size_t rsc_size = 0;
 	void *rsc_table = NULL;
 	struct metal_io_region *io = NULL;
 
@@ -488,11 +487,8 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 	ret = loader->locate_rsc_table(limg_info, &rsc_da, &offset, &rsc_size);
 	if (ret == 0 && rsc_size > 0) {
 		/* parse resource table */
-		rsc_len = (int)rsc_size;
 		rsc_table = remoteproc_get_rsc_table(rproc, store, store_ops,
-						     offset, rsc_len);
-	} else {
-		rsc_len = ret;
+						     offset, rsc_size);
 	}
 
 	/* load executable data */
@@ -579,40 +575,39 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 		}
 	}
 
-	if (rsc_len < 0) {
+	if (rsc_size == 0) {
 		ret = loader->locate_rsc_table(limg_info, &rsc_da,
 					       &offset, &rsc_size);
 		if (ret == 0 && rsc_size > 0) {
 			/* parse resource table */
-			rsc_len = (int)rsc_size;
 			rsc_table = remoteproc_get_rsc_table(rproc, store,
 							     store_ops,
 							     offset,
-							     rsc_len);
+							     rsc_size);
 		}
 	}
 
 	/* Update resource table */
-	if (rsc_len && rsc_da != METAL_BAD_PHYS) {
+	if (rsc_table) {
 		void *rsc_table_cp = rsc_table;
 
 		metal_log(METAL_LOG_DEBUG,
 			  "%s, update resource table\r\n", __func__);
 		rsc_table = remoteproc_mmap(rproc, NULL, &rsc_da,
-					    rsc_len, 0, &io);
+					    rsc_size, 0, &io);
 		if (rsc_table) {
 			size_t rsc_io_offset;
 
 			/* Update resource table */
 			rsc_io_offset = metal_io_virt_to_offset(io, rsc_table);
 			ret = metal_io_block_write(io, rsc_io_offset,
-						   rsc_table_cp, rsc_len);
-			if (ret != rsc_len) {
+						   rsc_table_cp, rsc_size);
+			if (ret != (int)rsc_size) {
 				metal_log(METAL_LOG_WARNING,
 					  "load: failed to update rsc\r\n");
 			}
 			rproc->rsc_table = rsc_table;
-			rproc->rsc_len = rsc_len;
+			rproc->rsc_len = rsc_size;
 		} else {
 			metal_log(METAL_LOG_WARNING,
 				  "load: not able to update rsc table.\n");
