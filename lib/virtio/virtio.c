@@ -92,7 +92,7 @@ int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 
 	num_vrings = vdev->vrings_num;
 	if (nvqs > num_vrings)
-		return -ERROR_VQUEUE_INVLD_PARAM;
+		return ERROR_VQUEUE_INVLD_PARAM;
 	/* Initialize virtqueue for each vring */
 	for (i = 0; i < nvqs; i++) {
 		vring_info = &vdev->vrings_info[i];
