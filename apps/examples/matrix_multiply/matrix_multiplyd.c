@@ -61,7 +61,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	(void)src;
 
 	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
-		LPRINTF("shutdown message is received.\n");
+		LPRINTF("shutdown message is received.\r\n");
 		shutdown_req = 1;
 		return RPMSG_SUCCESS;
 	}
@@ -72,7 +72,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 
 	/* Send the result of matrix multiplication back to master. */
 	if (rpmsg_send(ept, &matrix_result, sizeof(matrix)) < 0) {
-		LPERROR("rpmsg_send failed\n");
+		LPERROR("rpmsg_send failed\r\n");
 	}
 	return RPMSG_SUCCESS;
 }
@@ -80,7 +80,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
-	LPERROR("Endpoint is destroyed\n");
+	LPERROR("Endpoint is destroyed\r\n");
 	shutdown_req = 1;
 }
 
@@ -95,11 +95,11 @@ int app(struct rpmsg_device *rdev, void *priv)
 			       0, RPMSG_ADDR_ANY, rpmsg_endpoint_cb,
 			       rpmsg_service_unbind);
 	if (ret) {
-		LPERROR("Failed to create endpoint.\n");
+		LPERROR("Failed to create endpoint.\r\n");
 		return -1;
 	}
 
-	LPRINTF("Waiting for events...\n");
+	LPRINTF("Waiting for events...\r\n");
 	while(1) {
 		platform_poll(priv);
 		/* we got a shutdown request, exit */
@@ -121,19 +121,19 @@ int main(int argc, char *argv[])
 	struct rpmsg_device *rpdev;
 	int ret;
 
-	LPRINTF("Starting application...\n");
+	LPRINTF("Starting application...\r\n");
 
 	/* Initialize platform */
 	ret = platform_init(argc, argv, &platform);
 	if (ret) {
-		LPERROR("Failed to initialize platform.\n");
+		LPERROR("Failed to initialize platform.\r\n");
 		ret = -1;
 	} else {
 		rpdev = platform_create_rpmsg_vdev(platform, 0,
 						   VIRTIO_DEV_SLAVE,
 						   NULL, NULL);
 		if (!rpdev) {
-			LPERROR("Failed to create rpmsg virtio device.\n");
+			LPERROR("Failed to create rpmsg virtio device.\r\n");
 			ret = -1;
 		} else {
 			app(rpdev, platform);
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	LPRINTF("Stopping application...\n");
+	LPRINTF("Stopping application...\r\n");
 	platform_cleanup(platform);
 
 	return ret;

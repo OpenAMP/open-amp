@@ -44,7 +44,7 @@ static XStatus IpiConfigure(XIpiPsu *const IpiInstPtr)
 	IpiCfgPtr = XIpiPsu_LookupConfig(XPAR_XIPIPSU_0_DEVICE_ID);
 	if (NULL == IpiCfgPtr) {
 		Status = XST_FAILURE;
-		LPERROR("%s ERROR in getting CfgPtr\n", __func__);
+		LPERROR("%s ERROR in getting CfgPtr\r\n", __func__);
 		return Status;
 	}
 
@@ -52,7 +52,7 @@ static XStatus IpiConfigure(XIpiPsu *const IpiInstPtr)
 	Status = XIpiPsu_CfgInitialize(IpiInstPtr, IpiCfgPtr,
 				       IpiCfgPtr->BaseAddress);
 	if (XST_SUCCESS != Status) {
-		LPERROR("%s ERROR #%d in configuring IPI\n", __func__, Status);
+		LPERROR("%s ERROR #%d in configuring IPI\r\n", __func__, Status);
 		return Status;
 	}
 	return Status;
@@ -219,7 +219,7 @@ int main(void)
 		return -1;
 	}
 
-	LPRINTF("Loading Exectuable Demo\n");
+	LPRINTF("Loading Exectuable Demo\r\n");
 	/* Initialize libmetal evironment */
 	metal_init(&metal_param);
 	/* Initialize remoteproc instance */

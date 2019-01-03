@@ -412,7 +412,7 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 	ret = store_ops->open(store, path, &img_data);
 	if (ret <= 0) {
 		metal_log(METAL_LOG_ERROR,
-			  "load failure: failed to open firmware %d.\n",
+			  "load failure: failed to open firmware %d.\r\n",
 			  ret);
 		metal_mutex_release(&rproc->lock);
 		return -RPROC_EINVAL;
@@ -427,7 +427,7 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 		loader = remoteproc_check_fw_format(img_data, len);
 		if (!loader) {
 			metal_log(METAL_LOG_ERROR,
-			       "load failure: failed to get store ops.\n");
+			       "load failure: failed to get store ops.\r\n");
 			ret = -RPROC_EINVAL;
 			goto error1;
 		}
@@ -608,7 +608,7 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 			rproc->rsc_len = rsc_size;
 		} else {
 			metal_log(METAL_LOG_WARNING,
-				  "load: not able to update rsc table.\n");
+				  "load: not able to update rsc table.\r\n");
 		}
 		metal_free_memory(rsc_table_cp);
 		/* So that the rsc_table will not get released */
@@ -689,7 +689,7 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 		loader = remoteproc_check_fw_format(img_data, len);
 		if (!loader) {
 			metal_log(METAL_LOG_ERROR,
-			       "load failure: failed to identify image.\n");
+			       "load failure: failed to identify image.\r\n");
 			ret = -RPROC_EINVAL;
 			metal_mutex_release(&rproc->lock);
 			return -RPROC_EINVAL;
@@ -723,7 +723,6 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 			metal_log(METAL_LOG_ERROR,
 				  "load header failed 0x%lx,%d.\r\n",
 				  offset, len);
-
 			goto error1;
 		}
 		last_load_state = ret;

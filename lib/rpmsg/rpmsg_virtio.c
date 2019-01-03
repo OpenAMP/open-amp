@@ -334,18 +334,18 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 	io = rvdev->shbuf_io;
 	status = metal_io_block_write(io, metal_io_virt_to_offset(io, buffer),
 				      &rp_hdr, sizeof(rp_hdr));
-	RPMSG_ASSERT(status == sizeof(rp_hdr), "failed to write header\n");
+	RPMSG_ASSERT(status == sizeof(rp_hdr), "failed to write header\r\n");
 
 	status = metal_io_block_write(io,
 				      metal_io_virt_to_offset(io,
 				      RPMSG_LOCATE_DATA(buffer)),
 				      data, size);
-	RPMSG_ASSERT(status == size, "failed to write buffer\n");
+	RPMSG_ASSERT(status == size, "failed to write buffer\r\n");
 	metal_mutex_acquire(&rdev->lock);
 
 	/* Enqueue buffer on virtqueue. */
 	status = rpmsg_virtio_enqueue_buffer(rvdev, buffer, buff_len, idx);
-	RPMSG_ASSERT(status == VQUEUE_SUCCESS, "failed to enqueue buffer\n");
+	RPMSG_ASSERT(status == VQUEUE_SUCCESS, "failed to enqueue buffer\r\n");
 	/* Let the other side know that there is a job to process. */
 	virtqueue_kick(rvdev->svq);
 
@@ -412,7 +412,7 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 					 rp_hdr->len, rp_hdr->src, ept->priv);
 
 			RPMSG_ASSERT(status == RPMSG_SUCCESS,
-				     "unexpected callback status\n");
+				     "unexpected callback status\r\n");
 		}
 
 		metal_mutex_acquire(&rdev->lock);

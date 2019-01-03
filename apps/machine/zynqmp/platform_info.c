@@ -92,26 +92,26 @@ platform_create_proc(int proc_index, int rsc_index)
 	if (!remoteproc_init(&rproc_inst, &zynqmp_linux_r5_proc_ops,
 			     &rproc_priv))
 		return NULL;
-	printf("Successfully initialized remoteproc\n");
+	printf("Successfully initialized remoteproc\r\n");
 
 	/* Mmap resource table */
 	pa = RSC_MEM_PA;
-	printf("Calling mmap resource table.\n");
+	printf("Calling mmap resource table.\r\n");
 	rsc_table = remoteproc_mmap(&rproc_inst, &pa, NULL, rsc_size,
 				    0, NULL);
 	if (!rsc_table) {
-		fprintf(stderr, "ERROR: Failed to mmap resource table.\n");
+		fprintf(stderr, "ERROR: Failed to mmap resource table.\r\n");
 		return NULL;
 	}
-	printf("Successfully mmap resource table.\n");
+	printf("Successfully mmap resource table.\r\n");
 	/* parse resource table to remoteproc */
 	ret = remoteproc_set_rsc_table(&rproc_inst, rsc_table, rsc_size);
 	if (ret) {
-		printf("Failed to intialize remoteproc\n");
+		printf("Failed to intialize remoteproc\r\n");
 		remoteproc_remove(&rproc_inst);
 		return NULL;
 	}
-	printf("Successfully set resource table to remoteproc.\n");
+	printf("Successfully set resource table to remoteproc.\r\n");
 
 	return &rproc_inst;
 }
@@ -124,7 +124,7 @@ int platform_init(int argc, char *argv[], void **platform)
 
 	if (!platform) {
 		fprintf(stderr, "Failed to initialize platform, NULL pointer"
-			"to store platform data.\n");
+			"to store platform data.\r\n");
 		return -EINVAL;
 	}
 	/* Initialize HW system components */
@@ -140,7 +140,7 @@ int platform_init(int argc, char *argv[], void **platform)
 
 	rproc = platform_create_proc(proc_id, rsc_id);
 	if (!rproc) {
-		fprintf(stderr, "Failed to create remoteproc device.\n");
+		fprintf(stderr, "Failed to create remoteproc device.\r\n");
 		return -EINVAL;
 	}
 	*platform = rproc;
@@ -169,14 +169,14 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 	shbuf = metal_io_phys_to_virt(shbuf_io,
 				      SHARED_BUF_PA);
 
-	printf("Creating virtio...\n");
+	printf("Creating virtio...\r\n");
 	/* TODO: can we have a wrapper for the following two functions? */
 	vdev = remoteproc_create_virtio(rproc, vdev_index, role, rst_cb);
 	if (!vdev) {
-		printf("failed remoteproc_create_virtio\n");
+		printf("failed remoteproc_create_virtio\r\n");
 		goto err1;
 	}
-	printf("Successfully created virtio device.\n");
+	printf("Successfully created virtio device.\r\n");
 
 	/* Only RPMsg virtio master needs to initialize the shared buffers pool */
 	rpmsg_virtio_init_shm_pool(&shpool, shbuf, SHARED_BUF_SIZE);
