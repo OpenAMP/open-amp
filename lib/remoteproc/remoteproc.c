@@ -126,9 +126,9 @@ error:
 	return rsc_table;
 }
 
-int remoteproc_parse_rsc_table(struct remoteproc *rproc,
-			       struct resource_table *rsc_table,
-			       size_t rsc_size)
+static int remoteproc_parse_rsc_table(struct remoteproc *rproc,
+				      struct resource_table *rsc_table,
+				      size_t rsc_size)
 {
 	struct metal_io_region *io;
 
@@ -806,7 +806,7 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 			/* parse resource table */
 			ret = remoteproc_parse_rsc_table(rproc, lrsc_table,
 							 rsc_size);
-			if (ret == (int)rsc_size) {
+			if (ret < 0) {
 				metal_log(METAL_LOG_ERROR,
 					  "load failed: failed to parse rsc\r\n");
 				metal_free_memory(lrsc_table);
