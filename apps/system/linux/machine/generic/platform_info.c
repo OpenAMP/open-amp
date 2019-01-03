@@ -145,7 +145,7 @@ static int sk_unix_client(const char *descr)
 	strncpy(addr.sun_path, descr + strlen(UNIX_PREFIX),
 		sizeof addr.sun_path);
 	if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) >= 0) {
-		printf("connected to %s\n", descr + strlen(UNIX_PREFIX));
+		printf("connected to %s\r\n", descr + strlen(UNIX_PREFIX));
 		return fd;
 	}
 
@@ -169,7 +169,7 @@ static int sk_unix_server(const char *descr)
 	}
 
 	listen(fd, 5);
-	printf("Waiting for connection on %s\n", addr.sun_path);
+	printf("Waiting for connection on %s\r\n", addr.sun_path);
 	nfd = accept(fd, NULL, NULL);
 	close(fd);
 	return nfd;
@@ -207,7 +207,7 @@ static int event_open(const char *descr)
 		/* UNIX server. */
 		fd = sk_unix_server(descr);
 	}
-	printf("Open IPI: %s\n", descr);
+	printf("Open IPI: %s\r\n", descr);
 	return fd;
 }
 
@@ -237,7 +237,7 @@ linux_proc_init(struct remoteproc *rproc,
 	/* Create shared memory io */
 	ret = metal_shmem_open(prproc->shm_file, prproc->shm_size, &io);
 	if (ret) {
-		printf("Failed to init rproc, failed to open shm %s.\n",
+		printf("Failed to init rproc, failed to open shm %s.\r\n",
 		       prproc->shm_file);
 		return NULL;
 	}
@@ -254,13 +254,13 @@ linux_proc_init(struct remoteproc *rproc,
 	ipi = &prproc->ipi;
 	if (!ipi->path) {
 		fprintf(stderr,
-			"ERROR: No IPI sock path specified.\n");
+			"ERROR: No IPI sock path specified.\r\n");
 		goto err;
 	}
 	ipi->fd = event_open(ipi->path);
 	if (ipi->fd < 0) {
 		fprintf(stderr,
-			"ERROR: Failed to open sock %s for IPI.\n",
+			"ERROR: Failed to open sock %s for IPI.\r\n",
 			ipi->path);
 		goto err;
 	}
@@ -376,7 +376,7 @@ static int platform_slave_setup_resource_table(const char *shm_file,
 
 	ret = metal_shmem_open(shm_file, shm_size, &io);
 	if (ret) {
-		printf("Failed to init rproc, failed to open shm %s.\n",
+		printf("Failed to init rproc, failed to open shm %s.\r\n",
 		       shm_file);
 		return -1;
 	}
@@ -409,7 +409,7 @@ platform_create_proc(int proc_index, int rsc_index)
 							  rsc_table, rsc_size,
 							  RSC_MEM_PA);
 		if (ret) {
-			printf("Failed to initialize resource table\n");
+			printf("Failed to initialize resource table\r\n");
 			return NULL;
 		}
 	}
@@ -442,7 +442,7 @@ int platform_init(int argc, char *argv[], void **platform)
 
 	if (!platform) {
 		fprintf(stderr, "Failed to initialize platform, NULL pointer"
-			"to store platform data.\n");
+			"to store platform data.\r\n");
 		return -EINVAL;
 	}
 	/* Initialize HW system components */
@@ -458,7 +458,7 @@ int platform_init(int argc, char *argv[], void **platform)
 
 	rproc = platform_create_proc(proc_id, rsc_id);
 	if (!rproc) {
-		fprintf(stderr, "Failed to create remoteproc device.\n");
+		fprintf(stderr, "Failed to create remoteproc device.\r\n");
 		return -EINVAL;
 	}
 	*platform = rproc;

@@ -56,7 +56,7 @@ int mem_image_load(void *store, size_t offset, size_t size,
 
 	(void)is_blocking;
 
-	LPRINTF("%s: offset=0x%x, size=0x%x\n\r",
+	LPRINTF("%s: offset=0x%x, size=0x%x\r\n",
 		__func__, offset, size);
 	if (pa == METAL_BAD_PHYS) {
 		if (data == NULL) {
