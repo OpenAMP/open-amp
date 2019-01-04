@@ -206,31 +206,6 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 	return data;
 }
 
-#ifndef VIRTIO_MASTER_ONLY
-/**
- * check if the remote is ready to start RPMsg communication
- */
-static int rpmsg_virtio_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
-{
-	uint8_t status;
-
-	while (1) {
-		status = rpmsg_virtio_get_status(rvdev);
-		/* Busy wait until the remote is ready */
-		if (status & VIRTIO_CONFIG_STATUS_NEEDS_RESET) {
-			rpmsg_virtio_set_status(rvdev, 0);
-			/* TODO notify remote processor */
-		} else if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK) {
-			return true;
-		}
-		/* TODO: clarify metal_cpu_yield usage*/
-		metal_cpu_yield();
-	}
-
-	return false;
-}
-#endif /*!VIRTIO_MASTER_ONLY*/
-
 /**
  * _rpmsg_virtio_get_buffer_size
  *
@@ -577,13 +552,6 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	}
 #endif /*!VIRTIO_MASTER_ONLY*/
 	rvdev->shbuf_io = shm_io;
-
-#ifndef VIRTIO_MASTER_ONLY
-	if (role == RPMSG_REMOTE) {
-		/* wait synchro with the master */
-		rpmsg_virtio_wait_remote_ready(rvdev);
-	}
-#endif /*!VIRTIO_MASTER_ONLY*/
 
 	/* Create virtqueues for remote device */
 	status = rpmsg_virtio_create_virtqueues(rvdev, 0, RPMSG_NUM_VRINGS,
