@@ -485,7 +485,7 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 		offset = noffset;
 		len = nlen;
 	}
-	ret = elf_locate_rsc_table(limg_info, &rsc_da, &offset, &rsc_size);
+	ret = loader->locate_rsc_table(limg_info, &rsc_da, &offset, &rsc_size);
 	if (ret == 0 && rsc_size > 0) {
 		/* parse resource table */
 		rsc_len = (int)rsc_size;
@@ -580,8 +580,8 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 	}
 
 	if (rsc_len < 0) {
-		ret = elf_locate_rsc_table(limg_info, &rsc_da,
-					   &offset, &rsc_size);
+		ret = loader->locate_rsc_table(limg_info, &rsc_da,
+					       &offset, &rsc_size);
 		if (ret == 0 && rsc_size > 0) {
 			/* parse resource table */
 			rsc_len = (int)rsc_size;
@@ -778,8 +778,8 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 		size_t rsc_offset;
 		size_t rsc_io_offset;
 
-		ret = elf_locate_rsc_table(limg_info, &rsc_da,
-					   &rsc_offset, &rsc_size);
+		ret = loader->locate_rsc_table(limg_info, &rsc_da,
+					       &rsc_offset, &rsc_size);
 		if (ret == 0 && rsc_size > 0) {
 			lrsc_table = metal_allocate_memory(rsc_size);
 			if (lrsc_table == NULL) {
