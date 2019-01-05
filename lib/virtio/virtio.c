@@ -42,10 +42,10 @@ const char *virtio_dev_name(unsigned short devid)
 
 	for (ident = virtio_ident_table; ident->name != NULL; ident++) {
 		if (ident->devid == devid)
-			return (ident->name);
+			return ident->name;
 	}
 
-	return (NULL);
+	return NULL;
 }
 
 static const char *virtio_feature_name(unsigned long val,
@@ -62,11 +62,11 @@ static const char *virtio_feature_name(unsigned long val,
 
 		for (j = 0; descs[i][j].vfd_val != 0; j++) {
 			if (val == descs[i][j].vfd_val)
-				return (descs[i][j].vfd_str);
+				return descs[i][j].vfd_str;
 		}
 	}
 
-	return (NULL);
+	return NULL;
 }
 
 void virtio_describe(struct virtio_device *dev, const char *msg,

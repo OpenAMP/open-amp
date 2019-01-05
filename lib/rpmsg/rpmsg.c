@@ -164,10 +164,10 @@ struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_device *rdev,
 					      sizeof(ept->name));
 		if (!name || !name_match)
 			continue;
-		/* destination address is known, equal to ept remote address*/
+		/* destination address is known, equal to ept remote address */
 		if (dest_addr != RPMSG_ADDR_ANY && ept->dest_addr == dest_addr)
 			return ept;
-		/* ept is registered but not associated to remote ept*/
+		/* ept is registered but not associated to remote ept */
 		if (addr == RPMSG_ADDR_ANY && ept->dest_addr == RPMSG_ADDR_ANY)
 			return ept;
 	}

@@ -73,7 +73,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 
 	if (status == VQUEUE_SUCCESS) {
 		vq->vq_dev = virt_dev;
-		vq->vq_name =  name;
+		vq->vq_name = name;
 		vq->vq_queue_index = id;
 		vq->vq_nentries = ring->num_descs;
 		vq->vq_free_cnt = vq->vq_nentries;
@@ -84,7 +84,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		vq_ring_init(vq, (void *)ring->vaddr, ring->align);
 	}
 
-	return (status);
+	return status;
 }
 
 /**
@@ -171,7 +171,7 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 	uint16_t used_idx, desc_idx;
 
 	if (!vq || vq->vq_used_cons_idx == vq->vq_ring.used->idx)
-		return (NULL);
+		return NULL;
 
 	VQUEUE_BUSY(vq);
 
@@ -452,7 +452,7 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 			dp->flags |= VRING_DESC_F_WRITE;
 	}
 
-	return (idx);
+	return idx;
 }
 
 /**
@@ -484,7 +484,7 @@ static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx)
 		}
 	}
 
-	VQASSERT(vq, (dxp->ndescs == 0),
+	VQASSERT(vq, dxp->ndescs == 0,
 		 "failed to free entire desc chain, remaining");
 
 	/*

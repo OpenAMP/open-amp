@@ -17,13 +17,11 @@
 extern "C" {
 #endif
 
-typedef uint8_t boolean;
-
 #include <openamp/virtio_ring.h>
 #include <metal/alloc.h>
 #include <metal/io.h>
 
-/*Error Codes*/
+/* Error Codes */
 #define VQ_ERROR_BASE                                 -3000
 #define ERROR_VRING_FULL                              (VQ_ERROR_BASE - 1)
 #define ERROR_INVLD_DESC_IDX                          (VQ_ERROR_BASE - 2)
@@ -42,8 +40,6 @@ typedef uint8_t boolean;
  * handling vq_free_cnt.
  */
 #define VQ_RING_DESC_CHAIN_END                         32768
-#define VIRTQUEUE_FLAG_INDIRECT                        0x0001
-#define VIRTQUEUE_MAX_NAME_SZ                          32
 
 /* Support for indirect buffer descriptors. */
 #define VIRTIO_RING_F_INDIRECT_DESC    (1 << 28)
@@ -88,7 +84,7 @@ struct virtqueue {
 	uint16_t vq_available_idx;
 
 #ifdef VQUEUE_DEBUG
-	boolean vq_inuse;
+	bool vq_inuse;
 #endif
 
 	/*
@@ -155,7 +151,6 @@ typedef void vq_notify(struct virtqueue *);
 
 #else
 
-#define KASSERT(cond, str)
 #define VQASSERT(_vq, _exp, _msg)
 #define VQ_RING_ASSERT_VALID_IDX(_vq, _idx)
 #define VQ_RING_ASSERT_CHAIN_TERM(_vq)
@@ -169,7 +164,7 @@ int virtqueue_create(struct virtio_device *device, unsigned short id,
 		     const char *name, struct vring_alloc_info *ring,
 		     void (*callback)(struct virtqueue *vq),
 		     void (*notify)(struct virtqueue *vq),
-		     struct virtqueue *v_queue);
+		     struct virtqueue *vq);
 
 /*
  * virtqueue_set_shmem_io
