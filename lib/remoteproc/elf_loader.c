@@ -516,7 +516,7 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 			*nlen = shstrtab_size;
 			return *load_state;
 		}
-		/* Caculate shstrtab section offset to the input image data */
+		/* Calculate shstrtab section offset to the input image data */
 		shstrtab_offset -= offset;
 		shstrtab = elf_shstrtab_ptr(*img_info);
 		*shstrtab = metal_allocate_memory(shstrtab_size);
@@ -549,7 +549,7 @@ int elf_load(struct remoteproc *rproc,
 	metal_assert(nlen != NULL);
 	if ((last_load_state & RPROC_LOADER_MASK) == RPROC_LOADER_NOT_READY) {
 		metal_log(METAL_LOG_DEBUG,
-			  "%s, needs to load header first\r\n");
+			  "needs to load header first\r\n");
 		last_load_state = elf_load_header(img_data, offset, len,
 						  img_info, last_load_state,
 						  noffset, nlen);
@@ -574,7 +574,7 @@ int elf_load(struct remoteproc *rproc,
 		phdr = elf_next_load_segment(*img_info, &nsegment, da,
 					     noffset, &nsize, &nsegmsize);
 		if (phdr == NULL) {
-			metal_log(METAL_LOG_DEBUG, "cannot find more segement\r\n");
+			metal_log(METAL_LOG_DEBUG, "cannot find more segment\r\n");
 			*load_state = (*load_state & (~ELF_NEXT_SEGMENT_MASK)) |
 				      (nsegment & ELF_NEXT_SEGMENT_MASK);
 			return *load_state;
@@ -584,7 +584,7 @@ int elf_load(struct remoteproc *rproc,
 		phnums = elf_phnum(*img_info);
 		metal_log(METAL_LOG_DEBUG, "segment: %d, total segs %d\r\n",
 			  nsegment, phnums);
-		if (nsegment == elf_phnum(*img_info)) {
+		if (nsegment == phnums) {
 			*load_state = (*load_state & (~RPROC_LOADER_MASK)) |
 				      RPROC_LOADER_POST_DATA_LOAD;
 		}

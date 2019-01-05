@@ -67,16 +67,16 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 /**
  * rproc_virtio_remove_vdev
  *
- * Create rproc virtio vdev
+ * Remove rproc virtio vdev
  *
  * @vdev - pointer to the virtio device
  */
 void rproc_virtio_remove_vdev(struct virtio_device *vdev);
 
 /**
- * rproc_virtio_create_vring
+ * rproc_virtio_init_vring
  *
- * Create rproc virtio vring
+ * Initialize rproc virtio vring
  *
  * @vdev: pointer to the virtio device
  * @index: vring index in the virtio device

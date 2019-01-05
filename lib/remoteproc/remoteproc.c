@@ -152,14 +152,13 @@ int remoteproc_set_rsc_table(struct remoteproc *rproc,
 		rproc->rsc_io = io;
 	}
 	return ret;
-
 }
 
 struct remoteproc *remoteproc_init(struct remoteproc *rproc,
 				   struct remoteproc_ops *ops, void *priv)
 {
 	if (rproc) {
-		memset(rproc, 0, sizeof (*rproc));
+		memset(rproc, 0, sizeof(*rproc));
 		rproc->state = RPROC_OFFLINE;
 		metal_mutex_init(&rproc->lock);
 		metal_list_init(&rproc->mems);
@@ -195,7 +194,7 @@ int remoteproc_config(struct remoteproc *rproc, void *data)
 		if (rproc->state == RPROC_OFFLINE) {
 			/* configure operation is allowed if the state is
 			 * offline or ready. This function can be called
-			 * mulitple times before start the remote.
+			 * multiple times before start the remote.
 			 */
 			if (rproc->ops->config)
 				ret = rproc->ops->config(rproc, data);
@@ -408,8 +407,8 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 		return -RPROC_EINVAL;
 	}
 
-	/* Open exectuable to get ready to parse */
-	metal_log(METAL_LOG_DEBUG, "%s: open exectuable image\r\n", __func__);
+	/* Open executable to get ready to parse */
+	metal_log(METAL_LOG_DEBUG, "%s: open executable image\r\n", __func__);
 	ret = store_ops->open(store, path, &img_data);
 	if (ret <= 0) {
 		metal_log(METAL_LOG_ERROR,
@@ -435,7 +434,7 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 		rproc->loader = loader;
 	}
 
-	/* Load exectuable headers */
+	/* Load executable headers */
 	metal_log(METAL_LOG_DEBUG, "%s: loading headers\r\n", __func__);
 	offset = 0;
 	last_load_state = RPROC_LOADER_NOT_READY;
@@ -697,7 +696,7 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 		}
 		rproc->loader = loader;
 	}
-	if (img_info == NULL || *img_info == NULL ) {
+	if (img_info == NULL || *img_info == NULL) {
 		last_load_state = 0;
 	} else {
 		limg_info = *img_info;
