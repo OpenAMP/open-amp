@@ -203,7 +203,6 @@ static void elf_parse_segment(void *elf_info, const void *elf_phdr,
 		if (p_offset != NULL)
 			*p_offset = (size_t)phdr->p_offset;
 		if (p_vaddr != NULL)
-		if (p_vaddr != NULL)
 			*p_vaddr = (metal_phys_addr_t)phdr->p_vaddr;
 		if (p_paddr != NULL)
 			*p_paddr = (metal_phys_addr_t)phdr->p_paddr;
@@ -338,8 +337,7 @@ static void elf_parse_section(void *elf_info, void *elf_shdr,
 		if (sh_flags != NULL)
 			*sh_flags = shdr->sh_flags;
 		if (sh_addr != NULL)
-			*sh_addr = (metal_phys_addr_t)(shdr->sh_addr &
-				   (metal_phys_addr_t)(-1));
+			*sh_addr = (metal_phys_addr_t)shdr->sh_addr;
 		if (sh_offset != NULL)
 			*sh_offset = shdr->sh_offset;
 		if (sh_size != NULL)
@@ -523,7 +521,7 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 		if (*shstrtab == NULL)
 			return -RPROC_ENOMEM;
 		memcpy(*shstrtab,
-		       (const void *)((const char *)img_data + shstrtab_offset),
+		       (const char *)img_data + shstrtab_offset,
 		       shstrtab_size);
 		*load_state = (*load_state & (~ELF_STATE_MASK)) |
 			       ELF_STATE_HDRS_COMPLETE;
@@ -650,17 +648,17 @@ metal_phys_addr_t elf_get_entry(void *elf_info)
 		return METAL_BAD_PHYS;
 
 	if (elf_is_64(elf_info) == 0) {
-		Elf32_Ehdr *elf_ehdr = (Elf32_Ehdr *)elf_info;
+		Elf32_Ehdr *elf_ehdr = elf_info;
 		Elf32_Addr e_entry;
 
 		e_entry = elf_ehdr->e_entry;
 		return (metal_phys_addr_t)e_entry;
 	} else {
-		Elf64_Ehdr *elf_ehdr = (Elf64_Ehdr *)elf_info;
+		Elf64_Ehdr *elf_ehdr = elf_info;
 		Elf64_Addr e_entry;
 
 		e_entry = elf_ehdr->e_entry;
-		return (metal_phys_addr_t)(e_entry & (metal_phys_addr_t)(-1));
+		return (metal_phys_addr_t)e_entry;
 	}
 }
 

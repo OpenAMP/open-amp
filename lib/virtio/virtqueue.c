@@ -81,7 +81,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		vq->notify = notify;
 
 		/* Initialize vring control block in virtqueue. */
-		vq_ring_init(vq, (void *)ring->vaddr, ring->align);
+		vq_ring_init(vq, ring->vaddr, ring->align);
 	}
 
 	return status;
@@ -509,7 +509,7 @@ static void vq_ring_init(struct virtqueue *vq, void *ring_mem, int alignment)
 	size = vq->vq_nentries;
 	vr = &vq->vq_ring;
 
-	vring_init(vr, size, (unsigned char *)ring_mem, alignment);
+	vring_init(vr, size, ring_mem, alignment);
 
 #ifndef VIRTIO_SLAVE_ONLY
 	if (vq->vq_dev->role == VIRTIO_DEV_MASTER) {

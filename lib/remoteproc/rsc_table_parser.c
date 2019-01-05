@@ -91,7 +91,7 @@ int handle_rsc_table(struct remoteproc *rproc,
  */
 int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc)
 {
-	struct fw_rsc_carveout *carve_rsc = (struct fw_rsc_carveout *)rsc;
+	struct fw_rsc_carveout *carve_rsc = rsc;
 	metal_phys_addr_t da;
 	metal_phys_addr_t pa;
 	size_t size;
@@ -128,7 +128,7 @@ int handle_vendor_rsc(struct remoteproc *rproc, void *rsc)
 
 int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
 {
-	struct fw_rsc_vdev *vdev_rsc = (struct fw_rsc_vdev *)rsc;
+	struct fw_rsc_vdev *vdev_rsc = rsc;
 	unsigned int notifyid, i, num_vrings;
 
 	/* only assign notification IDs but do not initialize vdev */
@@ -167,7 +167,7 @@ int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
  */
 int handle_trace_rsc(struct remoteproc *rproc, void *rsc)
 {
-	struct fw_rsc_trace *vdev_rsc = (struct fw_rsc_trace *)rsc;
+	struct fw_rsc_trace *vdev_rsc = rsc;
 	(void)rproc;
 
 	if (vdev_rsc->da != FW_RSC_U32_ADDR_ANY && vdev_rsc->len != 0)

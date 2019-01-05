@@ -32,7 +32,7 @@ rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
 
 	if (shpool->avail < size)
 		return NULL;
-	buffer =  (void *)((char *)shpool->base + shpool->size - shpool->avail);
+	buffer = (char *)shpool->base + shpool->size - shpool->avail;
 	shpool->avail -= size;
 
 	return buffer;
@@ -390,8 +390,7 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 	metal_mutex_acquire(&rdev->lock);
 
 	/* Process the received data from remote node */
-	rp_hdr = (struct rpmsg_hdr *)rpmsg_virtio_get_rx_buffer(rvdev,
-								&len, &idx);
+	rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
 
 	metal_mutex_release(&rdev->lock);
 
@@ -421,8 +420,7 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 		/* Return used buffers. */
 		rpmsg_virtio_return_buffer(rvdev, rp_hdr, len, idx);
 
-		rp_hdr = (struct rpmsg_hdr *)
-			 rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
+		rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
 		if (rp_hdr == NULL) {
 			/* tell peer we return some rx buffer */
 			virtqueue_kick(rvdev->rvq);
@@ -459,7 +457,7 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	(void)priv;
 	(void)src;
 
-	ns_msg = (struct rpmsg_ns_msg *)data;
+	ns_msg = data;
 	if (len != sizeof(*ns_msg))
 		/* Returns as the message is corrupted */
 		return RPMSG_SUCCESS;
