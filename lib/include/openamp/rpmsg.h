@@ -149,6 +149,7 @@ struct rpmsg_device {
 
 	/** Create/destroy namespace message */
 	bool support_ns;
+	bool support_ack;
 };
 
 /**
