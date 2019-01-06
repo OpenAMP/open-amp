@@ -28,6 +28,7 @@ extern "C" {
 
 /* The feature bitmap for virtio rpmsg */
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
+#define VIRTIO_RPMSG_F_ACK	1 /* RP supports name service acknowledge */
 
 /**
  * struct rpmsg_virtio_shm_pool - shared memory pool used for rpmsg buffers
