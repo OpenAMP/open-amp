@@ -538,6 +538,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	}
 #endif /*!VIRTIO_MASTER_ONLY*/
 	vdev->features = rpmsg_virtio_get_features(rvdev);
+	rdev->support_ns = !!(vdev->features & (1 << VIRTIO_RPMSG_F_NS));
 
 #ifndef VIRTIO_SLAVE_ONLY
 	if (role == RPMSG_MASTER) {
@@ -633,7 +634,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	 * Create name service announcement endpoint if device supports name
 	 * service announcement feature.
 	 */
-	if (vdev->features & (1 << VIRTIO_RPMSG_F_NS)) {
+	if (rdev->support_ns) {
 		rpmsg_init_ept(&rdev->ns_ept, "NS",
 			       RPMSG_NS_EPT_ADDR, RPMSG_NS_EPT_ADDR,
 			       rpmsg_virtio_ns_callback, NULL);

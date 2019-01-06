@@ -227,7 +227,7 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 	rpmsg_init_ept(ept, name, addr, dest, cb, unbind_cb);
 	rpmsg_register_endpoint(rdev, ept);
 
-	if (ept->dest_addr == RPMSG_ADDR_ANY) {
+	if (rdev->support_ns && ept->dest_addr == RPMSG_ADDR_ANY) {
 		/* Send NS announcement to remote processor */
 		metal_mutex_release(&rdev->lock);
 		status = rpmsg_send_ns_message(ept, RPMSG_NS_CREATE);
@@ -257,7 +257,7 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 		return;
 
 	rdev = ept->rdev;
-	if (ept->addr != RPMSG_NS_EPT_ADDR)
+	if (rdev->support_ns && ept->addr != RPMSG_NS_EPT_ADDR)
 		(void)rpmsg_send_ns_message(ept, RPMSG_NS_DESTROY);
 	metal_mutex_acquire(&rdev->lock);
 	rpmsg_unregister_endpoint(ept);
