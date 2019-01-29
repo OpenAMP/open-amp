@@ -253,6 +253,9 @@ static int _rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 		length =
 		    (int)virtqueue_get_desc_size(rvdev->svq) -
 		    sizeof(struct rpmsg_hdr);
+		if (length < 0) {
+			length = 0;
+		}
 	}
 #endif /*!VIRTIO_MASTER_ONLY*/
 
