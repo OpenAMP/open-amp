@@ -45,22 +45,32 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 			     uint32_t src, void *priv)
 {
 	struct _payload *r_payload = (struct _payload *)data;
+	unsigned char *r_buf, *i_buf;
+	unsigned int i;
 
 	(void)ept;
 	(void)src;
 	(void)priv;
 	(void)len;
 
-	if (r_payload->size == 0) {
-		LPERROR(" Invalid size of package is received.\n");
+	if (r_payload->size == 0 || r_payload->size > 496) {
+		LPERROR(" Invalid size of package is received 0x%x.\n",
+			(unsigned int)r_payload->size);
 		err_cnt++;
 		return RPMSG_SUCCESS;
 	}
 	/* Validate data buffer integrity. */
-	if (memcmp(r_payload->data, i_payload->data, r_payload->size) != 0) {
-		LPRINTF("Data corruption %lu, size %lu\n",
-			r_payload->num, r_payload->size);
-		err_cnt++;
+	r_buf = (unsigned char*)r_payload->data;
+	i_buf = (unsigned char*)i_payload->data;
+	for (i = 0; i < (unsigned int)r_payload->size; i++) {
+		if (*r_buf != *i_buf) {
+			LPERROR("Data corruption %lu, size %lu\n",
+				r_payload->num, r_payload->size);
+			err_cnt++;
+			break;
+		}
+		r_buf++;
+		i_buf++;
 	}
 	rnum = r_payload->num + 1;
 	return RPMSG_SUCCESS;
