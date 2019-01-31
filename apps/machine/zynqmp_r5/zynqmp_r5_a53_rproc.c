@@ -82,8 +82,7 @@ zynqmp_r5_a53_proc_init(struct remoteproc *rproc,
 
 	/* Register interrupt handler and enable interrupt */
 	irq_vect = (uintptr_t)ipi_dev->irq_info;
-	metal_irq_register(irq_vect, zynqmp_r5_a53_proc_irq_handler,
-			   ipi_dev, rproc);
+	metal_irq_register(irq_vect, zynqmp_r5_a53_proc_irq_handler, rproc);
 	metal_irq_enable(irq_vect);
 	metal_io_write32(prproc->ipi_io, IPI_IER_OFFSET,
 			 prproc->ipi_chn_mask);
@@ -105,8 +104,7 @@ static void zynqmp_r5_a53_proc_remove(struct remoteproc *rproc)
 	dev = prproc->ipi_dev;
 	if (dev) {
 		metal_irq_disable((uintptr_t)dev->irq_info);
-		metal_irq_unregister((uintptr_t)dev->irq_info, NULL, NULL,
-					 NULL);
+		metal_irq_unregister((uintptr_t)dev->irq_info);
 		metal_device_close(dev);
 	}
 }
