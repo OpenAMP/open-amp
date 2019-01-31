@@ -264,7 +264,8 @@ linux_proc_init(struct remoteproc *rproc,
 			ipi->path);
 		goto err;
 	}
-	metal_irq_register(ipi->fd, linux_proc_irq_handler, NULL, ipi);
+	metal_irq_register(ipi->fd, linux_proc_irq_handler, ipi);
+	metal_irq_enable(ipi->fd);
 	rproc->ops = ops;
 	return rproc;
 
@@ -286,7 +287,8 @@ static void linux_proc_remove(struct remoteproc *rproc)
 	/* Close IPI */
 	ipi = &prproc->ipi;
 	if (ipi->fd >= 0) {
-		metal_irq_unregister(ipi->fd, 0, NULL, ipi);
+		metal_irq_disable(ipi->fd);
+		metal_irq_unregister(ipi->fd);
 		close(ipi->fd);
 	}
 
