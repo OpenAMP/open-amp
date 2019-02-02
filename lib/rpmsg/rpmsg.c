@@ -257,7 +257,7 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 		return;
 
 	rdev = ept->rdev;
-	if (rdev->support_ns && ept->addr != RPMSG_NS_EPT_ADDR)
+	if (ept->name[0] && rdev->support_ns && ept->addr != RPMSG_NS_EPT_ADDR)
 		(void)rpmsg_send_ns_message(ept, RPMSG_NS_DESTROY);
 	metal_mutex_acquire(&rdev->lock);
 	rpmsg_unregister_endpoint(ept);
