@@ -15,6 +15,7 @@
 #include <metal/compiler.h>
 #include <metal/mutex.h>
 #include <metal/list.h>
+#include <metal/sleep.h>
 #include <metal/utilities.h>
 #include <string.h>
 #include <stdbool.h>
@@ -31,6 +32,12 @@ extern "C" {
 #define RPMSG_NS_EPT_ADDR		(0x35)
 #define RPMSG_RESERVED_ADDRESSES	(1024)
 #define RPMSG_ADDR_ANY			0xFFFFFFFF
+
+/* Total tick count for 15secs - 1usec tick. */
+#define RPMSG_TICK_COUNT		15000000
+
+/* Time to wait - In multiple of 1 msecs. */
+#define RPMSG_TICKS_PER_INTERVAL	1000
 
 /* Error macros. */
 #define RPMSG_SUCCESS			0
@@ -141,6 +148,19 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 			      int wait);
 
 /**
+ * is_rpmsg_ept_ready - check if the rpmsg endpoint ready to send
+ *
+ * @ept: pointer to rpmsg endpoint
+ *
+ * Returns 1 if the rpmsg endpoint has both local addr and destination
+ * addr set, 0 otherwise
+ */
+static inline unsigned int is_rpmsg_ept_ready(struct rpmsg_endpoint *ept)
+{
+	return ept && ept->rdev && ept->dest_addr != RPMSG_ADDR_ANY;
+}
+
+/**
  * rpmsg_send() - send a message across to the remote processor
  * @ept: the rpmsg endpoint
  * @data: payload of the message
@@ -158,8 +178,17 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 static inline int rpmsg_send(struct rpmsg_endpoint *ept, const void *data,
 			     int len)
 {
-	return rpmsg_send_offchannel_raw(ept, ept->addr, ept->dest_addr, data,
-					 len, true);
+	int tc = 0;
+
+	for (; tc < RPMSG_TICK_COUNT; tc += RPMSG_TICKS_PER_INTERVAL) {
+		if (is_rpmsg_ept_ready(ept))
+			return rpmsg_send_offchannel_raw(ept, ept->addr,
+							 ept->dest_addr,
+							 data, len, true);
+		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
+	}
+
+	return RPMSG_ERR_ADDR;
 }
 
 /**
@@ -432,8 +461,17 @@ static inline int rpmsg_sendto_nocopy(struct rpmsg_endpoint *ept,
 static inline int rpmsg_send_nocopy(struct rpmsg_endpoint *ept,
 				    const void *data, int len)
 {
-	return rpmsg_send_offchannel_nocopy(ept, ept->addr,
-					    ept->dest_addr, data, len);
+	int tc = 0;
+
+	for (; tc < RPMSG_TICK_COUNT; tc += RPMSG_TICKS_PER_INTERVAL) {
+		if (is_rpmsg_ept_ready(ept))
+			return rpmsg_send_offchannel_nocopy(ept, ept->addr,
+							    ept->dest_addr,
+							    data, len);
+		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
+	}
+
+	return RPMSG_ERR_ADDR;
 }
 
 /**
@@ -505,19 +543,6 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
  * destroy endpoint callback if it is provided.
  */
 void rpmsg_destroy_ept(struct rpmsg_endpoint *ept);
-
-/**
- * is_rpmsg_ept_ready - check if the rpmsg endpoint ready to send
- *
- * @ept: pointer to rpmsg endpoint
- *
- * Returns 1 if the rpmsg endpoint has both local addr and destination
- * addr set, 0 otherwise
- */
-static inline unsigned int is_rpmsg_ept_ready(struct rpmsg_endpoint *ept)
-{
-	return ept && ept->rdev && ept->dest_addr != RPMSG_ADDR_ANY;
-}
 
 #if defined __cplusplus
 }
