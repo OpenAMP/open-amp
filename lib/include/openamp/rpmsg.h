@@ -15,6 +15,7 @@
 #include <metal/compiler.h>
 #include <metal/mutex.h>
 #include <metal/list.h>
+#include <metal/sleep.h>
 #include <metal/utilities.h>
 #include <string.h>
 #include <stdbool.h>
@@ -25,22 +26,28 @@ extern "C" {
 #endif
 
 /* Configurable parameters */
-#define RPMSG_NAME_SIZE		(32)
-#define RPMSG_ADDR_BMP_SIZE	(128)
+#define RPMSG_NAME_SIZE			(32)
+#define RPMSG_ADDR_BMP_SIZE		(128)
 
-#define RPMSG_NS_EPT_ADDR	(0x35)
-#define RPMSG_ADDR_ANY		0xFFFFFFFF
+#define RPMSG_NS_EPT_ADDR		(0x35)
+#define RPMSG_ADDR_ANY			0xFFFFFFFF
+
+/* Total tick count for 15secs - 1usec tick. */
+#define RPMSG_TICK_COUNT		15000000
+
+/* Time to wait - In multiple of 1 msecs. */
+#define RPMSG_TICKS_PER_INTERVAL	1000
 
 /* Error macros. */
-#define RPMSG_SUCCESS		0
-#define RPMSG_ERROR_BASE	-2000
-#define RPMSG_ERR_NO_MEM	(RPMSG_ERROR_BASE - 1)
-#define RPMSG_ERR_NO_BUFF	(RPMSG_ERROR_BASE - 2)
-#define RPMSG_ERR_PARAM		(RPMSG_ERROR_BASE - 3)
-#define RPMSG_ERR_DEV_STATE	(RPMSG_ERROR_BASE - 4)
-#define RPMSG_ERR_BUFF_SIZE	(RPMSG_ERROR_BASE - 5)
-#define RPMSG_ERR_INIT		(RPMSG_ERROR_BASE - 6)
-#define RPMSG_ERR_ADDR		(RPMSG_ERROR_BASE - 7)
+#define RPMSG_SUCCESS			0
+#define RPMSG_ERROR_BASE		-2000
+#define RPMSG_ERR_NO_MEM		(RPMSG_ERROR_BASE - 1)
+#define RPMSG_ERR_NO_BUFF		(RPMSG_ERROR_BASE - 2)
+#define RPMSG_ERR_PARAM			(RPMSG_ERROR_BASE - 3)
+#define RPMSG_ERR_DEV_STATE		(RPMSG_ERROR_BASE - 4)
+#define RPMSG_ERR_BUFF_SIZE		(RPMSG_ERROR_BASE - 5)
+#define RPMSG_ERR_INIT			(RPMSG_ERROR_BASE - 6)
+#define RPMSG_ERR_ADDR			(RPMSG_ERROR_BASE - 7)
 
 struct rpmsg_endpoint;
 struct rpmsg_device;
@@ -160,10 +167,17 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 static inline int rpmsg_send(struct rpmsg_endpoint *ept, const void *data,
 			     int len)
 {
-	if (!is_rpmsg_ept_ready(ept))
-		return RPMSG_ERR_ADDR;
-	return rpmsg_send_offchannel_raw(ept, ept->addr, ept->dest_addr, data,
-					 len, true);
+	int tc = 0;
+
+	for (; tc < RPMSG_TICK_COUNT; tc += RPMSG_TICKS_PER_INTERVAL) {
+		if (is_rpmsg_ept_ready(ept))
+			return rpmsg_send_offchannel_raw(ept, ept->addr,
+							 ept->dest_addr,
+							 data, len, true);
+		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
+	}
+
+	return RPMSG_ERR_ADDR;
 }
 
 /**
