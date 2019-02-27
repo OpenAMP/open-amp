@@ -27,7 +27,7 @@ static uint32_t rpmsg_get_address(unsigned long *bitmap, int size)
 	unsigned int addr = RPMSG_ADDR_ANY;
 	unsigned int nextbit;
 
-	nextbit = metal_bitmap_next_clear_bit(bitmap, 0, size);
+	nextbit = metal_bitmap_next_clear_bit(bitmap, 1, size);
 	if (nextbit < (uint32_t)size) {
 		addr = nextbit;
 		metal_bitmap_set_bit(bitmap, nextbit);
@@ -203,7 +203,7 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 	int status = RPMSG_SUCCESS;
 	uint32_t addr = src;
 
-	if (!ept)
+	if (!ept || !src)
 		return RPMSG_ERR_PARAM;
 
 	metal_mutex_acquire(&rdev->lock);
@@ -262,4 +262,5 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 	metal_mutex_acquire(&rdev->lock);
 	rpmsg_unregister_endpoint(ept);
 	metal_mutex_release(&rdev->lock);
+	memset(ept, 0, sizeof(*ept));
 }
