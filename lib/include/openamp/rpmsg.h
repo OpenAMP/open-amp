@@ -111,6 +111,20 @@ struct rpmsg_device {
 };
 
 /**
+ * is_rpmsg_ept_ready - check if the rpmsg endpoint ready to send
+ *
+ * @ept: pointer to rpmsg endpoint
+ *
+ * Returns 1 if the rpmsg endpoint has both local addr and destination
+ * addr set, 0 otherwise
+ */
+static inline unsigned int is_rpmsg_ept_ready(struct rpmsg_endpoint *ept)
+{
+	return (ept->dest_addr != RPMSG_ADDR_ANY) &&
+		(ept->addr != 0) && (ept->addr != RPMSG_ADDR_ANY);
+}
+
+/**
  * rpmsg_send_offchannel_raw() - send a message across to the remote processor,
  * specifying source and destination address.
  * @ept: the rpmsg endpoint
@@ -146,7 +160,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 static inline int rpmsg_send(struct rpmsg_endpoint *ept, const void *data,
 			     int len)
 {
-	if (ept->dest_addr == RPMSG_ADDR_ANY)
+	if (!is_rpmsg_ept_ready(ept))
 		return RPMSG_ERR_ADDR;
 	return rpmsg_send_offchannel_raw(ept, ept->addr, ept->dest_addr, data,
 					 len, true);
@@ -216,7 +230,7 @@ static inline int rpmsg_send_offchannel(struct rpmsg_endpoint *ept,
 static inline int rpmsg_trysend(struct rpmsg_endpoint *ept, const void *data,
 				int len)
 {
-	if (ept->dest_addr == RPMSG_ADDR_ANY)
+	if (!is_rpmsg_ept_ready(ept))
 		return RPMSG_ERR_ADDR;
 	return rpmsg_send_offchannel_raw(ept, ept->addr, ept->dest_addr, data,
 					 len, false);
@@ -335,20 +349,6 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
  * destroy endpoint callback if it is provided.
  */
 void rpmsg_destroy_ept(struct rpmsg_endpoint *ept);
-
-/**
- * is_rpmsg_ept_ready - check if the rpmsg endpoint ready to send
- *
- * @ept: pointer to rpmsg endpoint
- *
- * Returns 1 if the rpmsg endpoint has both local addr and destination
- * addr set, 0 otherwise
- */
-static inline unsigned int is_rpmsg_ept_ready(struct rpmsg_endpoint *ept)
-{
-	return (ept->dest_addr != RPMSG_ADDR_ANY) &&
-		(ept->addr != 0) && (ept->addr != RPMSG_ADDR_ANY);
-}
 
 #if defined __cplusplus
 }
