@@ -392,9 +392,9 @@ int elf_identify(const void *img_data, size_t len)
 		return 0;
 }
 
-int elf_load_header(const void *img_data, size_t offset, size_t len,
-		    void **img_info, int last_load_state,
-		    size_t *noffset, size_t *nlen)
+static int elf_load_header(const void *img_data, size_t offset, size_t len,
+			   void **img_info, int last_load_state,
+			   size_t *noffset, size_t *nlen)
 {
 	int *load_state;
 
@@ -531,12 +531,12 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 	return last_load_state;
 }
 
-int elf_load(struct remoteproc *rproc,
-	     const void *img_data, size_t offset, size_t len,
-	     void **img_info, int last_load_state,
-	     metal_phys_addr_t *da,
-	     size_t *noffset, size_t *nlen,
-	     unsigned char *padding, size_t *nmemsize)
+static int elf_load(struct remoteproc *rproc,
+		    const void *img_data, size_t offset, size_t len,
+		    void **img_info, int last_load_state,
+		    metal_phys_addr_t *da,
+		    size_t *noffset, size_t *nlen,
+		    unsigned char *padding, size_t *nmemsize)
 {
 	int *load_state;
 	const void *phdr;
@@ -614,7 +614,7 @@ int elf_load(struct remoteproc *rproc,
 	return *load_state;
 }
 
-void elf_release(void *img_info)
+static void elf_release(void *img_info)
 {
 	if (!img_info)
 		return;
@@ -642,7 +642,7 @@ void elf_release(void *img_info)
 	}
 }
 
-metal_phys_addr_t elf_get_entry(void *elf_info)
+static metal_phys_addr_t elf_get_entry(void *elf_info)
 {
 	if (!elf_info)
 		return METAL_BAD_PHYS;
@@ -662,8 +662,8 @@ metal_phys_addr_t elf_get_entry(void *elf_info)
 	}
 }
 
-int elf_locate_rsc_table(void *elf_info, metal_phys_addr_t *da,
-			 size_t *offset, size_t *size)
+static int elf_locate_rsc_table(void *elf_info, metal_phys_addr_t *da,
+				size_t *offset, size_t *size)
 {
 	char *sect_name = ".resource_table";
 	void *shdr;
@@ -687,7 +687,7 @@ int elf_locate_rsc_table(void *elf_info, metal_phys_addr_t *da,
 	return 0;
 }
 
-int elf_get_load_state(void *img_info)
+static int elf_get_load_state(void *img_info)
 {
 	int *load_state;
 
