@@ -7,19 +7,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <metal/io.h>
-#include <metal/sys.h>
-#include <openamp/remoteproc_loader.h>
-#include <stdarg.h>
-#include <stdio.h>
-/* Xilinx headers */
-#include <pm_api_sys.h>
-#include <pm_defs.h>
-#include <xil_printf.h>
-
-#define LPRINTF(format, ...) xil_printf(format, ##__VA_ARGS__)
-//#define LPRINTF(format, ...)
-#define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
+#include <common.h>
 
 struct mem_file {
 	const void *base;
@@ -56,7 +44,7 @@ int mem_image_load(void *store, size_t offset, size_t size,
 
 	(void)is_blocking;
 
-	LPRINTF("%s: offset=0x%x, size=0x%x\r\n",
+	LPRINTF("%s: offset=0x%x, size=0x%x\n\r",
 		__func__, offset, size);
 	if (pa == METAL_BAD_PHYS) {
 		if (data == NULL) {

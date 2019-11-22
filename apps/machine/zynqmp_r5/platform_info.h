@@ -17,7 +17,16 @@ extern "C" {
 #define PRIV_RW_USER_RW     (0x00000003U<<8U) /* Full Access */
 
 /* Interrupt vectors */
-#define IPI_IRQ_VECT_ID         XPAR_XIPIPSU_0_INT_ID
+#ifdef versal
+#define IPI_IRQ_VECT_ID     63
+#define IPI_BASE_ADDR       0xFF340000 /* IPI base address*/
+#define IPI_CHN_BITMASK     0x0000020 /* IPI channel bit mask for IPI from/to
+					   APU */
+#else
+#define IPI_IRQ_VECT_ID     XPAR_XIPIPSU_0_INT_ID
+#define IPI_BASE_ADDR       XPAR_XIPIPSU_0_BASE_ADDRESS
+#define IPI_CHN_BITMASK     0x01000000
+#endif /* versal */
 
 struct remoteproc_priv {
 	const char *ipi_name; /**< IPI device name */

@@ -34,23 +34,28 @@
 #define RPU_CPU_ID          0 /* RPU remote CPU Index. We only talk to
                                * one CPU in the exmaple. We set the CPU
                                * index to 0. */
-#define IPI_CHN_BITMASK     0x00000100 /* IPI channel bit mask for IPI
+#ifdef versal
+#define IPI_CHN_BITMASK     0x08 /* IPI channel bit mask for IPI
 					* from/to RPU0 */
+#define IPI_DEV_NAME        "ff360000.ipi" /* IPI device name */
+#else
+#define IPI_CHN_BITMASK	    0x00000100
+#define IPI_DEV_NAME	    "ff340000.ipi"
+#endif /* versal */
 #define DEV_BUS_NAME        "platform" /* device bus name. "platform" bus
                                         * is used in Linux kernel for generic
 					* devices */
 /* libmetal devices names used in the examples.
  * They are platform devices, you find them in Linux sysfs
  * sys/bus/platform/devices */
-#define IPI_DEV_NAME        "ff340000.ipi" /* IPI device name */
 #define SHM_DEV_NAME        "3ed20000.shm" /* shared device name */
 
-#define RSC_MEM_PA 0x3ED20000UL
-#define RSC_MEM_SIZE 0x2000UL
-#define VRING_MEM_PA  0x3ED40000UL
-#define VRING_MEM_SIZE 0x8000UL
-#define SHARED_BUF_PA 0x3ED48000UL
-#define SHARED_BUF_SIZE 0x40000UL
+#define RSC_MEM_PA          0x3ED20000UL
+#define RSC_MEM_SIZE        0x2000UL
+#define VRING_MEM_PA        0x3ED40000UL
+#define VRING_MEM_SIZE      0x8000UL
+#define SHARED_BUF_PA       0x3ED48000UL
+#define SHARED_BUF_SIZE     0x40000UL
 
 struct remoteproc_priv rproc_priv = {
 	.ipi_name = IPI_DEV_NAME,

@@ -23,6 +23,7 @@
 #include <metal/io.h>
 #include <metal/irq.h>
 #include <metal/shmem.h>
+#include <metal/scatterlist.h>
 #include <metal/utilities.h>
 #include <openamp/remoteproc.h>
 #include <openamp/rpmsg_virtio.h>
@@ -58,20 +59,22 @@ struct remoteproc_priv {
 	int shm_size;
 	struct metal_io_region *shm_old_io;
 	struct metal_io_region shm_new_io;
+	struct metal_generic_shmem *metal_shm;
+	struct metal_scatter_list *sg;
 	struct remoteproc_mem shm;
 	struct vring_ipi_info ipi;
 };
 
 static struct remoteproc_priv rproc_priv_table [] = {
 	{
-		.shm_file = "openamp.shm",
+		.shm_file = "linux_shm/openamp.shm",
 		.shm_size = 0x80000,
 		.ipi = {
 			.path = "unixs:/tmp/openamp.event.0",
 		},
 	},
 	{
-		.shm_file = "openamp.shm",
+		.shm_file = "linux_shm/openamp.shm",
 		.shm_size = 0x80000,
 		.ipi = {
 			.path = "unix:/tmp/openamp.event.0",
@@ -228,6 +231,8 @@ linux_proc_init(struct remoteproc *rproc,
 	struct remoteproc_priv *prproc = arg;
 	struct metal_io_region *io;
 	struct remoteproc_mem *shm;
+	struct metal_generic_shmem *metal_shm = NULL;
+	struct metal_scatter_list *sg = NULL;
 	struct vring_ipi_info *ipi;
 	int ret;
 
@@ -235,12 +240,20 @@ linux_proc_init(struct remoteproc *rproc,
 		return NULL;
 	rproc->priv = prproc;
 	/* Create shared memory io */
-	ret = metal_shmem_open(prproc->shm_file, prproc->shm_size, &io);
+	ret = metal_shmem_open(prproc->shm_file, prproc->shm_size, 0, &metal_shm);
 	if (ret) {
 		printf("Failed to init rproc, failed to open shm %s.\r\n",
 		       prproc->shm_file);
 		return NULL;
 	}
+	prproc->metal_shm = metal_shm;
+	sg = metal_shmem_mmap(metal_shm, prproc->shm_size);
+	if (sg == NULL) {
+		printf("Failed mmap shmem with libmetal.\n");
+		goto err;
+	}
+	prproc->sg = sg;
+	io = sg->ios;
 	prproc->shm_old_io = io;
 	shm = &prproc->shm;
 	shm->pa = 0;
@@ -270,6 +283,12 @@ linux_proc_init(struct remoteproc *rproc,
 	return rproc;
 
 err:
+	if (sg != NULL) {
+		metal_shmem_munmap(metal_shm, sg);
+	}
+	if (metal_shm != NULL) {
+		metal_shmem_close(metal_shm);
+	}
 	return NULL;
 }
 
@@ -278,7 +297,6 @@ static void linux_proc_remove(struct remoteproc *rproc)
 {
 	struct remoteproc_priv *prproc;
 	struct vring_ipi_info *ipi;
-	struct metal_io_region *io;
 
 	if (!rproc)
 		return;
@@ -293,10 +311,11 @@ static void linux_proc_remove(struct remoteproc *rproc)
 	}
 
 	/* Close shared memory */
-	io = prproc->shm_old_io;
-	if (io && io->ops.close) {
-		io->ops.close(io);
-		prproc->shm_old_io = NULL;
+	if (prproc->metal_shm) {
+		if (prproc->sg) {
+			metal_shmem_munmap(prproc->metal_shm, prproc->sg);
+		}
+		metal_shmem_close(prproc->metal_shm);
 	}
 }
 
@@ -371,19 +390,29 @@ static int platform_slave_setup_resource_table(const char *shm_file,
 					       metal_phys_addr_t rsc_pa)
 {
 	struct metal_io_region *io;
+	struct metal_generic_shmem *metal_shm = NULL;
+	struct metal_scatter_list *sg = NULL;
 	void *rsc_shm;
 	int ret;
 
-	ret = metal_shmem_open(shm_file, shm_size, &io);
+	/* Get shared memory io */
+	ret = metal_shmem_open(shm_file, shm_size, 0, &metal_shm);
 	if (ret) {
-		printf("Failed to init rproc, failed to open shm %s.\r\n",
+		printf("Failed to setup rsc table, failed to open shm %s.\r\n",
 		       shm_file);
 		return -1;
 	}
+	sg = metal_shmem_mmap(metal_shm, shm_size);
+	if (sg == NULL) {
+		printf("Failed to setup rsc table, mmap with libmetal failed.\r\n");
+		metal_shmem_close(metal_shm);
+		return -1;
+	}
+	io = sg->ios;
 	rsc_shm = metal_io_virt(io, rsc_pa);
 	memcpy(rsc_shm, rsc_table, rsc_size);
-	io->ops.close(io);
-	free(io);
+	metal_shmem_munmap(metal_shm, sg);
+	metal_shmem_close(metal_shm);
 	return 0;
 }
 
