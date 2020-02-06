@@ -88,6 +88,26 @@ zynqmp_linux_r5_proc_init(struct remoteproc *rproc,
     prproc->shm_io = metal_device_io_region(dev, 0);
     if (!prproc->shm_io)
         goto err2;
+
+#ifdef RPMSG_NO_IPI
+	/* Get poll shared memory device */
+	ret = metal_device_open(prproc->shm_poll_bus_name,
+				prproc->shm_poll_name,
+				&dev);
+	if (ret) {
+		fprintf(stderr,
+			"ERROR: failed to open shm poll device: %d.\r\n",
+			ret);
+		goto err1;
+	}
+	printf("Successfully open shm poll device.\r\n");
+	prproc->shm_poll_dev = dev;
+	prproc->shm_poll_io = metal_device_io_region(dev, 0);
+	if (!prproc->shm_poll_io)
+		goto err2;
+	metal_io_write32(prproc->shm_poll_io, 0, !POLL_STOP);
+#endif /* RPMSG_NO_IPI */
+
     mem_pa = metal_io_phys(prproc->shm_io, 0);
     remoteproc_init_mem(&prproc->shm_mem, "shm", mem_pa, mem_pa,
                 metal_io_region_size(prproc->shm_io),
@@ -186,9 +206,12 @@ static int zynqmp_linux_r5_proc_notify(struct remoteproc *rproc, uint32_t id)
         return -1;
     prproc = rproc->priv;
 
-    /* TODO: use IPI driver instead and pass ID */
+#ifdef RPMSG_NO_IPI
+    metal_io_write32(prproc->shm_poll_io, 0, POLL_STOP);
+#else /* RPMSG_NO_IPI */
     metal_io_write32(prproc->ipi_io, IPI_TRIG_OFFSET,
-              prproc->ipi_chn_mask);
+                     prproc->ipi_chn_mask);
+#endif /* !RPMSG_NO_IPI */
     return 0;
 }
 

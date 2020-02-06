@@ -57,12 +57,23 @@
 #define SHARED_BUF_PA       0x3ED48000UL
 #define SHARED_BUF_SIZE     0x40000UL
 
+#ifdef RPMSG_NO_IPI
+#define POLL_DEV_NAME        "3ee40000.shm" /* shared device name */
+#define POLL_STOP 0x1U
+#endif /* RPMSG_NO_IPI */
+
 struct remoteproc_priv rproc_priv = {
+	.shm_name = SHM_DEV_NAME,
+	.shm_bus_name = DEV_BUS_NAME,
+#ifndef RPMSG_NO_IPI
 	.ipi_name = IPI_DEV_NAME,
 	.ipi_bus_name = DEV_BUS_NAME,
 	.ipi_chn_mask = IPI_CHN_BITMASK,
-	.shm_name = SHM_DEV_NAME,
-	.shm_bus_name = DEV_BUS_NAME,
+#endif /* !RPMSG_NO_IPI */
+#ifdef RPMSG_NO_IPI
+	.shm_poll_name = POLL_DEV_NAME,
+	.shm_poll_bus_name = DEV_BUS_NAME,
+#endif /* RPMSG_NO_IPI */
 };
 
 static struct remoteproc rproc_inst;
@@ -207,17 +218,31 @@ int platform_poll(void *priv)
 	struct remoteproc *rproc = priv;
 	struct remoteproc_priv *prproc;
 	unsigned int flags;
+	int ret;
 
 	prproc = rproc->priv;
 	while(1) {
+#ifdef RPMSG_NO_IPI
+		if (metal_io_read32(prproc->shm_poll_io, 0)) {
+			ret = remoteproc_get_notification(rproc,
+							  RSC_NOTIFY_ID_ANY);
+			if (ret)
+				return ret;
+			break;
+		}
+#else
 		flags = metal_irq_save_disable();
 		if (!(atomic_flag_test_and_set(&prproc->ipi_nokick))) {
 			metal_irq_restore_enable(flags);
-			remoteproc_get_notification(rproc, RSC_NOTIFY_ID_ANY);
+			ret = remoteproc_get_notification(rproc,
+							  RSC_NOTIFY_ID_ANY);
+			if (ret)
+				return ret;
 			break;
 		}
 		_rproc_wait();
 		metal_irq_restore_enable(flags);
+#endif /* RPMSG_NO_IPI */
 	}
 	return 0;
 }
