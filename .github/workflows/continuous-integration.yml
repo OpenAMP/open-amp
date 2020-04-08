@@ -1,0 +1,26 @@
+name: open-amp lib Continuous Integration
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - docs/**
+      - cmake/**
+      - scripts/**
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - docs/**
+      - cmake/**
+      - scripts/**
+
+jobs:
+  checkpatch_review:
+    name: checkpatch review
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Run checkpatch review
+      uses: webispy/checkpatch-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
