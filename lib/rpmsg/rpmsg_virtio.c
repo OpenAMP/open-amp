@@ -775,10 +775,9 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	 * service announcement feature.
 	 */
 	if (rdev->support_ns) {
-		rpmsg_initialize_ept(&rdev->ns_ept, "NS",
+		rpmsg_register_endpoint(rdev, &rdev->ns_ept, "NS",
 				     RPMSG_NS_EPT_ADDR, RPMSG_NS_EPT_ADDR,
 				     rpmsg_virtio_ns_callback, NULL);
-		rpmsg_register_endpoint(rdev, &rdev->ns_ept);
 	}
 
 #ifndef VIRTIO_SLAVE_ONLY
