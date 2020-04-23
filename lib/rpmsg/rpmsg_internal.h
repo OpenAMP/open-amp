@@ -92,8 +92,28 @@ int rpmsg_send_ns_message(struct rpmsg_endpoint *ept, unsigned long flags);
 struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_device *rvdev,
 					  const char *name, uint32_t addr,
 					  uint32_t dest_addr);
-void rpmsg_register_endpoint(struct rpmsg_device *rdev,
-			     struct rpmsg_endpoint *ept);
+
+/**
+ * rpmsg_init_ept - initialize rpmsg endpoint
+ *
+ * Initialize an RPMsg endpoint with a name, source address,
+ * remoteproc address, endpoint callback, and destroy endpoint callback.
+ *
+ * @ept: pointer to rpmsg endpoint
+ * @rdev: pointer to the rpmsg device
+ * @name: service name associated to the endpoint
+ * @src: local address of the endpoint
+ * @dest: target address of the endpoint
+ * @cb: endpoint callback
+ * @ns_unbind_cb: end point service unbind callback, called when remote ept is
+ *                destroyed.
+ */
+void rpmsg_init_ept(struct rpmsg_endpoint *ept,
+		    struct rpmsg_device *rdev,
+		    const char *name,
+		    uint32_t src, uint32_t dest,
+		    rpmsg_ept_cb cb,
+		    rpmsg_ns_unbind_cb ns_unbind_cb);
 
 static inline struct rpmsg_endpoint *
 rpmsg_get_ept_from_addr(struct rpmsg_device *rdev, uint32_t addr)
