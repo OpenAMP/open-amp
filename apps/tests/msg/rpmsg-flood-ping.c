@@ -12,7 +12,7 @@
 #include "platform_info.h"
 #include "rpmsg-ping.h"
 
-#define APP_EPT_ADDR    0
+#define APP_EPT_ADDR    1024
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 

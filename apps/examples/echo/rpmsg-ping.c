@@ -11,7 +11,6 @@ This application echoes back data that was sent to it by the master core. */
 #include "platform_info.h"
 #include "rpmsg-echo.h"
 
-#define APP_EPT_ADDR    0
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
@@ -80,7 +79,7 @@ static void rpmsg_name_service_bind_cb(struct rpmsg_device *rdev,
 		LPERROR("Unexpected name service %s.\r\n", name);
 	else
 		(void)rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
-				       APP_EPT_ADDR, dest,
+				       RPMSG_ADDR_ANY, dest,
 				       rpmsg_endpoint_cb,
 				       rpmsg_service_unbind);
 
@@ -116,8 +115,8 @@ int app (struct rpmsg_device *rdev, void *priv)
 	}
 
 	/* Create RPMsg endpoint */
-	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME, APP_EPT_ADDR,
-			       RPMSG_ADDR_ANY,
+	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
+			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
 			       rpmsg_endpoint_cb, rpmsg_service_unbind);
 
 	if (ret) {
