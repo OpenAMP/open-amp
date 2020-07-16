@@ -1,13 +1,11 @@
 /*
  * Load firmware example
  *
- * Copyright(c) 2018 Xilinx Ltd.
- * All rights reserved.
- *
+ * Copyright (C) 2022, Advanced Micro Devices, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <platform_info.h>
+#include "platform_info.h"
 #include <common.h>
 
 extern const struct image_store_ops mem_image_store_ops;

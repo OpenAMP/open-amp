@@ -1,9 +1,7 @@
 /*
  * ZynqMP RPU life cycle management remoteproc example implementation
  *
- * Copyright(c) 2019 Xilinx Ltd.
- * All rights reserved.
- *
+ * Copyright (C) 2022, Advanced Micro Devices, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #include <common.h>
@@ -181,7 +179,7 @@ static int rpu_rproc_shutdown(struct remoteproc *rproc)
 					XPm_ReleaseNode(NODE_TCM_1_B);
 			} else {
 				LPERROR("unmap failed: invalid cpu node: %d\r\n", priv->cpu_id);
-				return NULL;
+				return -EINVAL;
 			}
 		}
 
