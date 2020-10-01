@@ -251,6 +251,7 @@ For now, it supports:
 * Linux host OpenAMP between Linux userspace processes
 * Linux userspace OpenAMP RPMsg master
 * Linux userspace OpenAMP RPMsg slave
+* Linux userspace OpenAMP RPMsg and MicroBlaze bare metal remote
 
 ## Known Limitations:
 1. In case of OpenAMP on Linux userspace for inter processors communication,
