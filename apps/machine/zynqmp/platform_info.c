@@ -25,6 +25,7 @@
 #include <metal/utilities.h>
 #include <openamp/remoteproc.h>
 #include <openamp/rpmsg_virtio.h>
+#include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/types.h>

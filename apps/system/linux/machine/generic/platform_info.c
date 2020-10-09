@@ -26,6 +26,7 @@
 #include <metal/utilities.h>
 #include <openamp/remoteproc.h>
 #include <openamp/rpmsg_virtio.h>
+#include <errno.h>
 #include <poll.h>
 #include <string.h>
 #include <stdio.h>

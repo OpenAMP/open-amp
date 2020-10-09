@@ -2,6 +2,7 @@
  This application is meant to run on the remote CPU running baremetal.
  This applicationr can print to to master console and perform file I/O using proxy mechanism. */
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

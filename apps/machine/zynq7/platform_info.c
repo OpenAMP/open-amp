@@ -26,6 +26,7 @@
 #include <metal/sys.h>
 #include "platform_info.h"
 #include "rsc_table.h"
+#include <errno.h>
 #include <xparameters.h>
 
 /* Another APU core ID. In this demo, the other APU core is 0. */
