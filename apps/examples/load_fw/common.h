@@ -14,6 +14,7 @@
 #include <metal/utilities.h>
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 /* Xilinx headers */

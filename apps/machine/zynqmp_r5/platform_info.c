@@ -24,6 +24,7 @@
 #include <metal/irq.h>
 #include <metal/utilities.h>
 #include <openamp/rpmsg_virtio.h>
+#include <errno.h>
 #include "platform_info.h"
 #include "rsc_table.h"
 
