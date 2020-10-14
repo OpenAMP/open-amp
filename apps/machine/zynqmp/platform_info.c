@@ -58,10 +58,6 @@
 #define SHARED_BUF_PA       0x3ED48000UL
 #define SHARED_BUF_SIZE     0x40000UL
 
-#ifdef RPMSG_NO_IPI
-#define POLL_DEV_NAME        "3ee40000.shm" /* shared device name */
-#define POLL_STOP 0x1U
-#endif /* RPMSG_NO_IPI */
 
 struct remoteproc_priv rproc_priv = {
 	.shm_name = SHM_DEV_NAME,
@@ -224,6 +220,7 @@ int platform_poll(void *priv)
 	prproc = rproc->priv;
 	while(1) {
 #ifdef RPMSG_NO_IPI
+		(void)flags;
 		if (metal_io_read32(prproc->shm_poll_io, 0)) {
 			ret = remoteproc_get_notification(rproc,
 							  RSC_NOTIFY_ID_ANY);
