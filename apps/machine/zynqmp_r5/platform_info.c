@@ -28,8 +28,8 @@
 #include "platform_info.h"
 #include "rsc_table.h"
 
-#define IPI_DEV_NAME         "ipi_dev"
-#define IPI_BUS_NAME         "generic"
+#define KICK_DEV_NAME         "poll_dev"
+#define KICK_BUS_NAME         "generic"
 
 /* Cortex R5 memory attributes */
 #define DEVICE_SHARED		0x00000001U /* device, shareable */
@@ -53,7 +53,7 @@
 /* Polling information used by remoteproc operations.
  */
 static metal_phys_addr_t poll_phys_addr = POLL_BASE_ADDR;
-struct metal_device poll_device = {
+struct metal_device kick_device = {
 	.name = "poll_dev",
 	.bus = NULL,
 	.num_regions = 1,
@@ -76,8 +76,8 @@ struct metal_device poll_device = {
 };
 
 static struct remoteproc_priv rproc_priv = {
-	.poll_dev_name = IPI_DEV_NAME,
-	.poll_dev_bus_name = IPI_BUS_NAME,
+	.kick_dev_name = KICK_DEV_NAME,
+	.kick_dev_bus_name = KICK_BUS_NAME,
 #ifndef RPMSG_NO_IPI
 	.ipi_chn_mask = IPI_CHN_BITMASK,
 #endif /* !RPMSG_NO_IPI */
@@ -106,12 +106,10 @@ platform_create_proc(int proc_index, int rsc_index)
 
 	(void) proc_index;
 	rsc_table = get_resource_table(rsc_index, &rsc_size);
-#ifndef RPMSG_NO_IPI
+
 	/* Register IPI device */
-	ret = metal_register_generic_device(&ipi_device);
-	if (ret)
-		return ret;
-#endif /* !RPMSG_NO_IPI */
+	if (metal_register_generic_device(&kick_device))
+		return NULL;
 
 	/* Initialize remoteproc instance */
 	if (!remoteproc_init(&rproc_inst, &zynqmp_r5_a53_proc_ops, &rproc_priv))
@@ -241,13 +239,14 @@ int platform_poll(void *priv)
 	prproc = rproc->priv;
 	while(1) {
 #ifdef RPMSG_NO_IPI
-		if (metal_io_read32(prproc->poll_io, 0)) {
+		if (metal_io_read32(prproc->kick_io, 0)) {
 			ret = remoteproc_get_notification(rproc,
 							  RSC_NOTIFY_ID_ANY);
 			if (ret)
 				return ret;
 			break;
 		}
+		(void)flags;
 #else /* !RPMSG_NO_IPI */
 		flags = metal_irq_save_disable();
 		if (!(atomic_flag_test_and_set(&prproc->ipi_nokick))) {
