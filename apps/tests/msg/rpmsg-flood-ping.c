@@ -130,6 +130,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 			       rpmsg_endpoint_cb, rpmsg_service_unbind);
 	if (ret) {
 		LPERROR("Failed to create RPMsg endpoint.\r\n");
+		metal_free_memory(i_payload);
 		return ret;
 	}
 
