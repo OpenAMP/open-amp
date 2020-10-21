@@ -178,7 +178,7 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 		return NULL;
 	shbuf_io = remoteproc_get_io_with_pa(rproc, SHARED_BUF_PA);
 	if (!shbuf_io)
-		return NULL;
+		goto err1;
 	shbuf = metal_io_phys_to_virt(shbuf_io,
 				      SHARED_BUF_PA);
 
