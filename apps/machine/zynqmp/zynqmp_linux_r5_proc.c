@@ -68,7 +68,6 @@ zynqmp_linux_r5_proc_init(struct remoteproc *rproc,
 {
 	struct remoteproc_priv *prproc = arg;
 	struct metal_device *dev;
-	unsigned int irq_vect;
 #ifndef RPMSG_NO_IPI
 	unsigned int irq_vect;
 #endif /* !RPMSG_NO_IPI */
@@ -143,8 +142,6 @@ zynqmp_linux_r5_proc_init(struct remoteproc *rproc,
 			 prproc->ipi_chn_mask);
 	printf("Successfully initialized Linux r5 remoteproc.\r\n");
 	return rproc;
-err3:
-	metal_device_close(prproc->ipi_dev);
 #endif /* !RPMSG_NO_IPI */
 	printf("Successfully initialized Linux r5 remoteproc.\r\n");
 	return rproc;
@@ -161,7 +158,6 @@ err1:
 static void zynqmp_linux_r5_proc_remove(struct remoteproc *rproc)
 {
 	struct remoteproc_priv *prproc;
-	struct metal_device *dev;
 #ifndef RPMSG_NO_IPI
 	struct metal_device *dev;
 #endif /* !RPMSG_NO_IPI */
