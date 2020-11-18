@@ -322,6 +322,7 @@ static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 		metal_mutex_release(&rdev->lock);
 		if (rp_hdr || !tick_count)
 			break;
+
 		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
 		tick_count--;
 	}
