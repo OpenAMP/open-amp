@@ -244,7 +244,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	(void)src;
 
 	if (len < (int)sizeof(*syscall)) {
-		LPERROR("Received data is less than the rpc structure: %d\r\n",
+		LPERROR("Received data is less than the rpc structure: %zd\r\n",
 			len);
 		err_cnt++;
 		return RPMSG_SUCCESS;
