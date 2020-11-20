@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 /* This is a test application to send rpmsgs in flood mode.
  * That is it will keep sending messages until there is no available
  * buffers.

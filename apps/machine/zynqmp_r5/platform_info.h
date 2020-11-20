@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2014, Mentor Graphics Corporation
+ * All rights reserved.
+ * Copyright (c) 2017 Xilinx, Inc.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 #ifndef PLATFORM_INFO_H_
 #define PLATFORM_INFO_H_
 
