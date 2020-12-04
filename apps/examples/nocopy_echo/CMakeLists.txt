@@ -15,9 +15,13 @@ collector_list (_deps PROJECT_LIB_DEPS)
 
 set (OPENAMP_LIB open_amp)
 
-foreach (_app pmsg-nocopy-ping)
+foreach (_app rpmsg-nocopy-ping rpmsg-nocopy-echo)
   collector_list (_sources APP_COMMON_SOURCES)
+  if (${_app} STREQUAL "rpmsg-nocopy-ping")
     list (APPEND _sources "${CMAKE_CURRENT_SOURCE_DIR}/rpmsg-nocopy-ping.c")
+  elseif (${_app} STREQUAL "rpmsg-nocopy-echo")
+    list (APPEND _sources "${CMAKE_CURRENT_SOURCE_DIR}/rpmsg-nocopy-echo.c")
+  endif (${_app} STREQUAL "rpmsg-nocopy-ping")
 
   if (WITH_SHARED_LIB)
     add_executable (${_app}-shared ${_sources})
