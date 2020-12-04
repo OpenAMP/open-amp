@@ -11,7 +11,7 @@
 #include <openamp/open_amp.h>
 #include <metal/alloc.h>
 #include "platform_info.h"
-#include "rpmsg-ping.h"
+#include "rpmsg-echo.h"
 
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
@@ -31,10 +31,6 @@ static struct rpmsg_endpoint lept;
 static int rnum;
 static int err_cnt;
 static int ept_deleted;
-
-/* External functions */
-extern int init_system(void);
-extern void cleanup_system(void);
 
 static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 			     uint32_t src, void *priv)
