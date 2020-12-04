@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * Copyright (c) 2020, Xiaomi Inc. All rights reserved.
+ * Copyright (c) 2020, STMicroelectronics
  */
 
 #include <stdio.h>
@@ -22,7 +23,14 @@ struct _payload {
 	unsigned char data[];
 };
 
+struct rpmsg_rcv_msg {
+	struct _payload *payload;
+	size_t len;
+	struct rpmsg_endpoint *ept;
+};
+
 static int err_cnt;
+static struct rpmsg_rcv_msg rcv_msg;
 
 #define PAYLOAD_MIN_SIZE	1
 
@@ -32,32 +40,53 @@ static int rnum;
 static int err_cnt;
 static int ept_deleted;
 
-static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
-			     uint32_t src, void *priv)
+static int rpmsg_check_rcv_msg(struct rpmsg_rcv_msg *rcv_msg, uint32_t exp_num)
 {
-	int i;
-	struct _payload *r_payload = (struct _payload *)data;
+	int i, ret = RPMSG_SUCCESS;
+	struct _payload *r_payload = rcv_msg->payload;
 
-	(void)ept;
-	(void)src;
-	(void)priv;
-	LPRINTF(" received payload number %lu of size %lu \r\n",
-		r_payload->num, (unsigned long)len);
+	if (r_payload->num != exp_num) {
+		LPERROR("Invalid message number received %ld, expected %d\r\n",
+			r_payload->num, exp_num);
+		ret = RPMSG_ERR_PARAM;
+		goto out;
+	}
 
 	if (r_payload->size == 0) {
 		LPERROR(" Invalid size of package is received.\r\n");
-		err_cnt++;
-		return RPMSG_SUCCESS;
+		ret = RPMSG_ERR_PARAM;
+		goto out;
 	}
+
 	/* Validate data buffer integrity. */
 	for (i = 0; i < (int)r_payload->size; i++) {
 		if (r_payload->data[i] != 0xA5) {
 			LPRINTF("Data corruption at index %d\r\n", i);
-			err_cnt++;
-			break;
+			ret = RPMSG_ERR_PARAM;
+			goto out;
 		}
 	}
-	rnum = r_payload->num + 1;
+out:
+	rpmsg_release_rx_buffer(rcv_msg->ept, r_payload);
+
+	return ret;
+}
+
+static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
+			     uint32_t src, void *priv)
+{
+	(void)src;
+	(void)priv;
+
+	rpmsg_hold_rx_buffer(ept, data);
+	rcv_msg.ept = ept;
+	rcv_msg.payload =  (struct _payload *)data;
+	rcv_msg.len = len;
+
+	LPRINTF(" received payload number %lu of size %lu \r\n",
+		rcv_msg.payload->num, (unsigned long)len);
+
+	rnum = rcv_msg.payload->num + 1;
 	return RPMSG_SUCCESS;
 }
 
@@ -147,8 +176,12 @@ static int app(struct rpmsg_device *rdev, void *priv)
 		expect_rnum++;
 		do {
 			platform_poll(priv);
-		} while ((rnum < expect_rnum) && !err_cnt && !ept_deleted);
+		} while ((rnum < expect_rnum) && !ept_deleted);
 
+		if (ept_deleted)
+			break;
+		if (rpmsg_check_rcv_msg(&rcv_msg, expect_rnum - 1))
+			err_cnt++;
 	}
 
 	LPRINTF("**********************************\r\n");
