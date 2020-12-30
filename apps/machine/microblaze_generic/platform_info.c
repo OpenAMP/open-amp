@@ -205,12 +205,6 @@ void platform_release_rpmsg_vdev(struct rpmsg_device *rpdev, void *platform)
 	remoteproc_remove_virtio(rproc, rpvdev->vdev);
 }
 
-void platform_release_rpmsg_vdev(struct rpmsg_device *rpdev)
-{
-	if (rpdev->
-	(void)rpdev;
-}
-
 void platform_cleanup(void *platform)
 {
 	struct remoteproc *rproc = platform;
