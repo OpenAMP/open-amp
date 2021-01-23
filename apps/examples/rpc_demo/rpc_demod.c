@@ -1,7 +1,12 @@
+/*
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 /* This is a sample demonstration application that showcases usage of proxy from the remote core. 
  This application is meant to run on the remote CPU running baremetal.
  This applicationr can print to to master console and perform file I/O using proxy mechanism. */
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -239,7 +244,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	(void)src;
 
 	if (len < (int)sizeof(*syscall)) {
-		LPERROR("Received data is less than the rpc structure: %d\r\n",
+		LPERROR("Received data is less than the rpc structure: %zd\r\n",
 			len);
 		err_cnt++;
 		return RPMSG_SUCCESS;
@@ -286,7 +291,7 @@ void kill_action_handler(int signum)
 	terminate_rpc_app();
 
 	if (rpdev)
-		platform_release_rpmsg_vdev(rpdev);
+		platform_release_rpmsg_vdev(rpdev, platform);
 	if (platform)
 		platform_cleanup(platform);
 }
@@ -312,7 +317,8 @@ int app(struct rpmsg_device *rdev, void *priv)
 	LPRINTF("Try to create rpmsg endpoint.\r\n");
 
 	ret = rpmsg_create_ept(&app_ept, rdev, RPMSG_SERVICE_NAME,
-			       0, RPMSG_ADDR_ANY, rpmsg_endpoint_cb,
+			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			       rpmsg_endpoint_cb,
 			       rpmsg_service_unbind);
 	if (ret) {
 		LPERROR("Failed to create endpoint.\r\n");
@@ -358,7 +364,7 @@ int main(int argc, char *argv[])
 			ret = -1;
 		} else {
 			app(rpdev, platform);
-			platform_release_rpmsg_vdev(rpdev);
+			platform_release_rpmsg_vdev(rpdev, platform);
 			ret = 0;
 		}
 	}

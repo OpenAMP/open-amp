@@ -3,9 +3,9 @@ set (PROJECT_VER_MINOR  1)
 set (PROJECT_VER_PATCH  0)
 set (PROJECT_VER        0.1.0)
 
-if (NOT CMAKE_BUILD_TYPE)
+if (NOT DEFINED CMAKE_BUILD_TYPE)
   set (CMAKE_BUILD_TYPE Debug)
-endif (NOT CMAKE_BUILD_TYPE)
+endif (NOT DEFINED CMAKE_BUILD_TYPE)
 
 if (NOT CMAKE_INSTALL_LIBDIR)
   set (CMAKE_INSTALL_LIBDIR "lib")
@@ -73,6 +73,10 @@ if (WITH_ZEPHYR)
 endif (WITH_ZEPHYR)
 
 option (WITH_LIBMETAL_FIND "Check Libmetal library can be found" ON)
+
+if (DEFINED RPMSG_BUFFER_SIZE)
+  add_definitions( -DRPMSG_BUFFER_SIZE=${RPMSG_BUFFER_SIZE} )
+endif (DEFINED RPMSG_BUFFER_SIZE)
 
 message ("-- C_FLAGS : ${CMAKE_C_FLAGS}")
 # vim: expandtab:ts=2:sw=2:smartindent

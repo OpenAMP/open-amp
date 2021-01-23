@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 /* This is a sample demonstration application that showcases usage of remoteproc
 and rpmsg APIs on the remote core. This application is meant to run on the remote CPU
 running baremetal code. This applicationr receives two matrices from the master,
@@ -92,7 +96,8 @@ int app(struct rpmsg_device *rdev, void *priv)
 	int ret;
 
 	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
-			       0, RPMSG_ADDR_ANY, rpmsg_endpoint_cb,
+			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			       rpmsg_endpoint_cb,
 			       rpmsg_service_unbind);
 	if (ret) {
 		LPERROR("Failed to create endpoint.\r\n");
@@ -137,7 +142,7 @@ int main(int argc, char *argv[])
 			ret = -1;
 		} else {
 			app(rpdev, platform);
-			platform_release_rpmsg_vdev(rpdev);
+			platform_release_rpmsg_vdev(rpdev, platform);
 			ret = 0;
 		}
 	}

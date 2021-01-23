@@ -1,4 +1,8 @@
 /*
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+/*
  * This is a sample demonstration application that showcases usage of rpmsg
  * This application is meant to run on the remote CPU running baremetal code.
  * This application simulate linux sample rpmsg driver. For this it echo 100
@@ -20,7 +24,6 @@
 #define BYE_MSG		"goodbye!"
 #define MSG_LIMIT	100
 
-#define APP_EPT_ADDR    0
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
@@ -85,7 +88,7 @@ static void rpmsg_name_service_bind_cb(struct rpmsg_device *rdev,
 		LPERROR("Unexpected name service %s.\r\n", name);
 	else
 		(void)rpmsg_create_ept(&lept, rdev, RPMSG_SERV_NAME,
-				       APP_EPT_ADDR, dest,
+				       RPMSG_ADDR_ANY, dest,
 				       rpmsg_endpoint_cb,
 				       rpmsg_service_unbind);
 
@@ -103,8 +106,8 @@ int app(struct rpmsg_device *rdev, void *priv)
 	LPRINTF(" and validate its integrity ..\r\n");
 
 	/* Create RPMsg endpoint */
-	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERV_NAME, APP_EPT_ADDR,
-			       RPMSG_ADDR_ANY,
+	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERV_NAME,
+			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
 			       rpmsg_endpoint_cb, rpmsg_service_unbind);
 
 	if (ret) {
@@ -167,7 +170,7 @@ int main(int argc, char *argv[])
 			ret = -1;
 		} else {
 			app(rpdev, platform);
-			platform_release_rpmsg_vdev(rpdev);
+			platform_release_rpmsg_vdev(rpdev, platform);
 			ret = 0;
 		}
 	}

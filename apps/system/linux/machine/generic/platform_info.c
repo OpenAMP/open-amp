@@ -27,6 +27,7 @@
 #include <metal/utilities.h>
 #include <openamp/remoteproc.h>
 #include <openamp/rpmsg_virtio.h>
+#include <errno.h>
 #include <poll.h>
 #include <string.h>
 #include <stdio.h>
@@ -513,7 +514,7 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 		return NULL;
 	shbuf_io = remoteproc_get_io_with_pa(rproc, SHARED_BUF_PA);
 	if (!shbuf_io)
-		return NULL;
+		goto err1;
 	shbuf = metal_io_phys_to_virt(shbuf_io, SHARED_BUF_PA);
 
 	printf("creating remoteproc virtio\r\n");
@@ -567,9 +568,16 @@ int platform_poll(void *priv)
 	return 0;
 }
 
-void platform_release_rpmsg_vdev(struct rpmsg_device *rpdev)
+void platform_release_rpmsg_vdev(struct rpmsg_device *rpdev, void *platform)
 {
-	(void)rpdev;
+	struct rpmsg_virtio_device *rpvdev;
+	struct remoteproc *rproc;
+
+	rpvdev = metal_container_of(rpdev, struct rpmsg_virtio_device, rdev);
+	rproc = platform;
+
+	rpmsg_deinit_vdev(rpvdev);
+	remoteproc_remove_virtio(rproc, rpvdev->vdev);
 }
 
 void platform_cleanup(void *platform)

@@ -8,6 +8,7 @@
  */
 
 #include <common.h>
+#include <errno.h>
 
 struct mem_file {
 	const void *base;

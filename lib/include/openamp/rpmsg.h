@@ -25,22 +25,23 @@ extern "C" {
 #endif
 
 /* Configurable parameters */
-#define RPMSG_NAME_SIZE		(32)
-#define RPMSG_ADDR_BMP_SIZE	(128)
+#define RPMSG_NAME_SIZE			(32)
+#define RPMSG_ADDR_BMP_SIZE		(128)
 
-#define RPMSG_NS_EPT_ADDR	(0x35)
-#define RPMSG_ADDR_ANY		0xFFFFFFFF
+#define RPMSG_NS_EPT_ADDR		(0x35)
+#define RPMSG_RESERVED_ADDRESSES	(1024)
+#define RPMSG_ADDR_ANY			0xFFFFFFFF
 
 /* Error macros. */
-#define RPMSG_SUCCESS		0
-#define RPMSG_ERROR_BASE	-2000
-#define RPMSG_ERR_NO_MEM	(RPMSG_ERROR_BASE - 1)
-#define RPMSG_ERR_NO_BUFF	(RPMSG_ERROR_BASE - 2)
-#define RPMSG_ERR_PARAM		(RPMSG_ERROR_BASE - 3)
-#define RPMSG_ERR_DEV_STATE	(RPMSG_ERROR_BASE - 4)
-#define RPMSG_ERR_BUFF_SIZE	(RPMSG_ERROR_BASE - 5)
-#define RPMSG_ERR_INIT		(RPMSG_ERROR_BASE - 6)
-#define RPMSG_ERR_ADDR		(RPMSG_ERROR_BASE - 7)
+#define RPMSG_SUCCESS			0
+#define RPMSG_ERROR_BASE		-2000
+#define RPMSG_ERR_NO_MEM		(RPMSG_ERROR_BASE - 1)
+#define RPMSG_ERR_NO_BUFF		(RPMSG_ERROR_BASE - 2)
+#define RPMSG_ERR_PARAM			(RPMSG_ERROR_BASE - 3)
+#define RPMSG_ERR_DEV_STATE		(RPMSG_ERROR_BASE - 4)
+#define RPMSG_ERR_BUFF_SIZE		(RPMSG_ERROR_BASE - 5)
+#define RPMSG_ERR_INIT			(RPMSG_ERROR_BASE - 6)
+#define RPMSG_ERR_ADDR			(RPMSG_ERROR_BASE - 7)
 
 struct rpmsg_endpoint;
 struct rpmsg_device;
@@ -82,11 +83,22 @@ struct rpmsg_endpoint {
 /**
  * struct rpmsg_device_ops - RPMsg device operations
  * @send_offchannel_raw: send RPMsg data
+ * @hold_rx_buffer: hold RPMsg RX buffer
+ * @release_rx_buffer: release RPMsg RX buffer
+ * @get_tx_payload_buffer: get RPMsg TX buffer
+ * @send_offchannel_nocopy: send RPMsg data without copy
  */
 struct rpmsg_device_ops {
 	int (*send_offchannel_raw)(struct rpmsg_device *rdev,
 				   uint32_t src, uint32_t dst,
-				   const void *data, int size, int wait);
+				   const void *data, int len, int wait);
+	void (*hold_rx_buffer)(struct rpmsg_device *rdev, void *rxbuf);
+	void (*release_rx_buffer)(struct rpmsg_device *rdev, void *rxbuf);
+	void *(*get_tx_payload_buffer)(struct rpmsg_device *rdev,
+				       uint32_t *len, int wait);
+	int (*send_offchannel_nocopy)(struct rpmsg_device *rdev,
+				      uint32_t src, uint32_t dst,
+				       const void *data, int len);
 };
 
 /**
@@ -125,7 +137,7 @@ struct rpmsg_device {
  * Returns number of bytes it has sent or negative error value on failure.
  */
 int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
-			      uint32_t dst, const void *data, int size,
+			      uint32_t dst, const void *data, int len,
 			      int wait);
 
 /**
@@ -146,8 +158,6 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 static inline int rpmsg_send(struct rpmsg_endpoint *ept, const void *data,
 			     int len)
 {
-	if (ept->dest_addr == RPMSG_ADDR_ANY)
-		return RPMSG_ERR_ADDR;
 	return rpmsg_send_offchannel_raw(ept, ept->addr, ept->dest_addr, data,
 					 len, true);
 }
@@ -216,8 +226,6 @@ static inline int rpmsg_send_offchannel(struct rpmsg_endpoint *ept,
 static inline int rpmsg_trysend(struct rpmsg_endpoint *ept, const void *data,
 				int len)
 {
-	if (ept->dest_addr == RPMSG_ADDR_ANY)
-		return RPMSG_ERR_ADDR;
 	return rpmsg_send_offchannel_raw(ept, ept->addr, ept->dest_addr, data,
 					 len, false);
 }
@@ -269,10 +277,172 @@ static inline int rpmsg_trysend_offchannel(struct rpmsg_endpoint *ept,
 }
 
 /**
+ * @brief Holds the rx buffer for usage outside the receive callback.
+ *
+ * Calling this function prevents the RPMsg receive buffer from being released
+ * back to the pool of shmem buffers. This API can only be called at rx
+ * callback context (rpmsg_rx_cb_t). With this API, the application doesn't
+ * need to copy the message in rx callback. Instead, the rx buffer base address
+ * is saved in application context and further processed in application
+ * process. After the message is processed, the application can release the rx
+ * buffer for future reuse in vring by calling the rpmsg_release_rx_buffer()
+ * function.
+ *
+ * @param: ept The rpmsg endpoint
+ * @param: rxbuf RX buffer with message payload
+ *
+ * @see rpmsg_release_rx_buffer
+ */
+void rpmsg_hold_rx_buffer(struct rpmsg_endpoint *ept, void *rxbuf);
+
+/**
+ * @brief Releases the rx buffer for future reuse in vring.
+ *
+ * This API can be called at process context when the message in rx buffer is
+ * processed.
+ *
+ * @ept: the rpmsg endpoint
+ * @rxbuf: rx buffer with message payload
+ *
+ * @see rpmsg_hold_rx_buffer
+ */
+void rpmsg_release_rx_buffer(struct rpmsg_endpoint *ept, void *rxbuf);
+
+/**
+ * @brief Gets the tx buffer for message payload.
+ *
+ * This API can only be called at process context to get the tx buffer in vring.
+ * By this way, the application can directly put its message into the vring tx
+ * buffer without copy from an application buffer.
+ * It is the application responsibility to correctly fill the allocated tx
+ * buffer by data and passing correct parameters to the rpmsg_send_nocopy() or
+ * rpmsg_sendto_nocopy() function to perform data no-copy-send mechanism.
+ *
+ * @ept:  Pointer to rpmsg endpoint
+ * @len:  Pointer to store tx buffer size
+ * @wait: Boolean, wait or not for buffer to become available
+ *
+ * @return The tx buffer address on success and NULL on failure
+ *
+ * @see rpmsg_send_offchannel_nocopy
+ * @see rpmsg_sendto_nocopy
+ * @see rpmsg_send_nocopy
+ */
+void *rpmsg_get_tx_payload_buffer(struct rpmsg_endpoint *ept,
+				  uint32_t *len, int wait);
+
+/**
+ * rpmsg_send_offchannel_nocopy() - send a message in tx buffer reserved by
+ * rpmsg_get_tx_payload_buffer() across to the remote processor.
+ *
+ * This function sends buf of length len to the remote dst address,
+ * and uses src as the source address.
+ * The message will be sent to the remote processor which the ept
+ * endpoint belongs to.
+ * The application has to take the responsibility for:
+ *  1. tx buffer reserved (rpmsg_get_tx_payload_buffer() )
+ *  2. filling the data to be sent into the pre-allocated tx buffer
+ *  3. not exceeding the buffer size when filling the data
+ *  4. data cache coherency
+ *
+ * After the rpmsg_send_offchannel_nocopy() function is issued the tx buffer is
+ * no more owned by the sending task and must not be touched anymore unless the
+ * rpmsg_send_offchannel_nocopy() function fails and returns an error. In that
+ * case application should try to re-issue the rpmsg_send_offchannel_nocopy()
+ * again.
+ *
+ * @ept:  The rpmsg endpoint
+ * @src:  The rpmsg endpoint local address
+ * @dst:  The rpmsg endpoint remote address
+ * @data: TX buffer with message filled
+ * @len:  Length of payload
+ *
+ * @return number of bytes it has sent or negative error value on failure.
+ *
+ * @see rpmsg_get_tx_payload_buffer
+ * @see rpmsg_sendto_nocopy
+ * @see rpmsg_send_nocopy
+ */
+int rpmsg_send_offchannel_nocopy(struct rpmsg_endpoint *ept, uint32_t src,
+				 uint32_t dst, const void *data, int len);
+
+/**
+ * @brief rpmsg_sendto_nocopy() - sends a message in tx buffer allocated by
+ * rpmsg_get_tx_payload_buffer() across to the remote processor, specify dst.
+ *
+ * This function sends buf of length len to the remote dst address.
+ * The message will be sent to the remote processor which the ept
+ * endpoint belongs to, using ept's source address.
+ * The application has to take the responsibility for:
+ *  1. tx buffer allocation (rpmsg_get_tx_payload_buffer() )
+ *  2. filling the data to be sent into the pre-allocated tx buffer
+ *  3. not exceeding the buffer size when filling the data
+ *  4. data cache coherency
+ *
+ * After the rpmsg_sendto_nocopy() function is issued the tx buffer is no more
+ * owned by the sending task and must not be touched anymore unless the
+ * rpmsg_sendto_nocopy() function fails and returns an error. In that case the
+ * application should try to re-issue the rpmsg_sendto_nocopy() again.
+ *
+ * @ept:  The rpmsg endpoint
+ * @data: TX buffer with message filled
+ * @len:  Length of payload
+ * @dst:  Destination address
+ *
+ * @return number of bytes it has sent or negative error value on failure.
+ *
+ * @see rpmsg_get_tx_payload_buffer
+ * @see rpmsg_send_offchannel_nocopy
+ * @see rpmsg_send_nocopy
+ */
+static inline int rpmsg_sendto_nocopy(struct rpmsg_endpoint *ept,
+				      const void *data, int len, uint32_t dst)
+{
+	return rpmsg_send_offchannel_nocopy(ept, ept->addr, dst, data, len);
+}
+
+/**
+ * rpmsg_send_nocopy() - send a message in tx buffer reserved by
+ * rpmsg_get_tx_payload_buffer() across to the remote processor.
+ *
+ * This function sends buf of length len on the ept endpoint.
+ * The message will be sent to the remote processor which the ept
+ * endpoint belongs to, using ept's source and destination addresses.
+ * The application has to take the responsibility for:
+ *  1. tx buffer reserved (rpmsg_get_tx_payload_buffer() )
+ *  2. filling the data to be sent into the pre-allocated tx buffer
+ *  3. not exceeding the buffer size when filling the data
+ *  4. data cache coherency
+ *
+ * After the rpmsg_send_nocopy() function is issued the tx buffer is no more
+ * owned by the sending task and must not be touched anymore unless the
+ * rpmsg_send_nocopy() function fails and returns an error. In that case the
+ * application should try to re-issue the rpmsg_send_nocopy() again.
+ *
+ * @ept:  The rpmsg endpoint
+ * @data: TX buffer with message filled
+ * @len:  Length of payload
+ *
+ * @return number of bytes it has sent or negative error value on failure.
+ *
+ * @see rpmsg_get_tx_payload_buffer
+ * @see rpmsg_send_offchannel_nocopy
+ * @see rpmsg_sendto_nocopy
+ */
+static inline int rpmsg_send_nocopy(struct rpmsg_endpoint *ept,
+				    const void *data, int len)
+{
+	return rpmsg_send_offchannel_nocopy(ept, ept->addr,
+					    ept->dest_addr, data, len);
+}
+
+/**
  * rpmsg_init_ept - initialize rpmsg endpoint
  *
  * Initialize an RPMsg endpoint with a name, source address,
  * remoteproc address, endpoint callback, and destroy endpoint callback.
+ *
+ * API deprecated since release v2020.10
  *
  * @ept: pointer to rpmsg endpoint
  * @name: service name associated to the endpoint
@@ -282,11 +452,11 @@ static inline int rpmsg_trysend_offchannel(struct rpmsg_endpoint *ept,
  * @ns_unbind_cb: end point service unbind callback, called when remote ept is
  *                destroyed.
  */
-static inline void rpmsg_init_ept(struct rpmsg_endpoint *ept,
-				  const char *name,
-				  uint32_t src, uint32_t dest,
-				  rpmsg_ept_cb cb,
-				  rpmsg_ns_unbind_cb ns_unbind_cb)
+__deprecated static inline void rpmsg_init_ept(struct rpmsg_endpoint *ept,
+					       const char *name,
+					       uint32_t src, uint32_t dest,
+					       rpmsg_ept_cb cb,
+					       rpmsg_ns_unbind_cb ns_unbind_cb)
 {
 	strncpy(ept->name, name ? name : "", sizeof(ept->name));
 	ept->addr = src;
@@ -346,8 +516,7 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept);
  */
 static inline unsigned int is_rpmsg_ept_ready(struct rpmsg_endpoint *ept)
 {
-	return (ept->dest_addr != RPMSG_ADDR_ANY) &&
-		(ept->addr != RPMSG_ADDR_ANY);
+	return ept && ept->rdev && ept->dest_addr != RPMSG_ADDR_ANY;
 }
 
 #if defined __cplusplus

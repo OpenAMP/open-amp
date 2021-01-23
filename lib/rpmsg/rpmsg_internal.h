@@ -35,7 +35,12 @@ extern "C" {
 	} while (0)
 #endif
 
+#define RPMSG_BUF_HELD (1U << 31) /* Flag to suggest to hold the buffer */
+
+#define RPMSG_LOCATE_HDR(p) \
+	((struct rpmsg_hdr *)((unsigned char *)(p) - sizeof(struct rpmsg_hdr)))
 #define RPMSG_LOCATE_DATA(p) ((unsigned char *)(p) + sizeof(struct rpmsg_hdr))
+
 /**
  * enum rpmsg_ns_flags - dynamic name service announcement flags
  *
@@ -86,6 +91,33 @@ struct rpmsg_ns_msg {
 	uint32_t addr;
 	uint32_t flags;
 } METAL_PACKED_END;
+
+/**
+ * rpmsg_initialize_ept - initialize rpmsg endpoint
+ *
+ * Initialize an RPMsg endpoint with a name, source address,
+ * remoteproc address, endpoint callback, and destroy endpoint callback.
+ *
+ * @ept: pointer to rpmsg endpoint
+ * @name: service name associated to the endpoint
+ * @src: local address of the endpoint
+ * @dest: target address of the endpoint
+ * @cb: endpoint callback
+ * @ns_unbind_cb: end point service unbind callback, called when remote ept is
+ *                destroyed.
+ */
+static inline void rpmsg_initialize_ept(struct rpmsg_endpoint *ept,
+					const char *name,
+					uint32_t src, uint32_t dest,
+					rpmsg_ept_cb cb,
+					rpmsg_ns_unbind_cb ns_unbind_cb)
+{
+	strncpy(ept->name, name ? name : "", sizeof(ept->name));
+	ept->addr = src;
+	ept->dest_addr = dest;
+	ept->cb = cb;
+	ept->ns_unbind_cb = ns_unbind_cb;
+}
 
 int rpmsg_send_ns_message(struct rpmsg_endpoint *ept, unsigned long flags);
 

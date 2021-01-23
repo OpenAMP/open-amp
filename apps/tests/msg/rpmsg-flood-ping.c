@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 /* This is a test application to send rpmsgs in flood mode.
  * That is it will keep sending messages until there is no available
  * buffers.
@@ -12,7 +16,7 @@
 #include "platform_info.h"
 #include "rpmsg-ping.h"
 
-#define APP_EPT_ADDR    0
+#define APP_EPT_ADDR    1024
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
@@ -130,6 +134,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 			       rpmsg_endpoint_cb, rpmsg_service_unbind);
 	if (ret) {
 		LPERROR("Failed to create RPMsg endpoint.\r\n");
+		metal_free_memory(i_payload);
 		return ret;
 	}
 
@@ -206,7 +211,7 @@ int main(int argc, char *argv[])
 			ret = -1;
 		} else {
 			app(rpdev, platform);
-			platform_release_rpmsg_vdev(rpdev);
+			platform_release_rpmsg_vdev(rpdev, platform);
 			ret = 0;
 		}
 	}
