@@ -32,7 +32,7 @@ jobs:
         git config --global user.name "Your Name"
         git rebase origin/${BASE_REF}
         export
-        ./scripts/ci/check_compliance.py -m checkpatch  -m Gitlint -m Identity -c origin/${BASE_REF}.. || true
+        ./scripts/ci/check_compliance.py -m checkpatch  -m Gitlint -m Identity -c origin/${BASE_REF}..
 
     - name: upload-results
       uses: actions/upload-artifact@master
@@ -43,6 +43,9 @@ jobs:
 
     - name: check-warns
       run: |
+        if [[ ! -s "compliance.xml" ]]; then
+          exit 1;
+        fi
         if [ -s checkpatch.txt ]; then
            errors=$(cat checkpatch.txt)
            errors="${errors//'%'/'%25'}"
