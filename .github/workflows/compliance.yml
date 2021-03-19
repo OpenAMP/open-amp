@@ -20,7 +20,7 @@ jobs:
     - name: Install python dependencies
       run: |
         pip3 install setuptools
-        pip3 install junitparser gitlint
+        pip3 install junitparser==1.6.3 gitlint
     - name: Run Compliance Tests
       id: compliance
       env:
