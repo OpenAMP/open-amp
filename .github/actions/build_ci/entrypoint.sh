@@ -90,7 +90,7 @@ build_zephyr(){
 	cp ../CMakeLists.txt modules/lib/open-amp/open-amp/ || exit 1
 	cp ../VERSION modules/lib/open-amp/open-amp/ || exit 1
 	cp -r ../cmake modules/lib/open-amp/open-amp/ || exit 1
-	cp -r ../libmetal/lib modules/hal/libmetal/libmetal/lib || exit 1
+	cp -r ../libmetal modules/hal/libmetal/ || exit 1
 	cd ./zephyr || exit 1
 	source zephyr-env.sh || exit 1
 	echo  "build openamp sample"
