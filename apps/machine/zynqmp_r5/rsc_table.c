@@ -26,8 +26,12 @@
 
 #define NUM_VRINGS                  0x02
 #define VRING_ALIGN                 0x1000
+#ifndef RING_TX
 #define RING_TX                     FW_RSC_U32_ADDR_ANY
+#endif /* !RING_TX */
+#ifndef RING_RX
 #define RING_RX                     FW_RSC_U32_ADDR_ANY
+#endif /* RING_RX */
 #define VRING_SIZE                  256
 
 #define NUM_TABLE_ENTRIES           1

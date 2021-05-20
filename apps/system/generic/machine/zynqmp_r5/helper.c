@@ -16,7 +16,7 @@
 #include <metal/irq.h>
 #include "platform_info.h"
 
-#define INTC_DEVICE_ID		XPAR_SCUGIC_0_DEVICE_ID
+#define INTC_DEVICE_ID		XPAR_SCUGIC_SINGLE_DEVICE_ID
 
 static XScuGic xInterruptController;
 

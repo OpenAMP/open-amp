@@ -26,14 +26,34 @@ extern "C" {
 
 /* Interrupt vectors */
 #ifdef versal
+
+#ifndef IPI_IRQ_VECT_ID
 #define IPI_IRQ_VECT_ID     63
+#endif /* !IPI_IRQ_VECT_ID */
+
+#ifndef POLL_BASE_ADDR
 #define POLL_BASE_ADDR       0xFF340000 /* IPI base address*/
+#endif /* !POLL_BASE_ADDR */
+
+#ifndef IPI_CHN_BITMASK
 #define IPI_CHN_BITMASK     0x0000020 /* IPI channel bit mask for IPI from/to
 					   APU */
+#endif /* !IPI_CHN_BITMASK */
+
 #else
+
+#ifndef IPI_IRQ_VECT_ID
 #define IPI_IRQ_VECT_ID     XPAR_XIPIPSU_0_INT_ID
+#endif /* !IPI_IRQ_VECT_ID */
+
+#ifndef POLL_BASE_ADDR
 #define POLL_BASE_ADDR      XPAR_XIPIPSU_0_BASE_ADDRESS
+#endif /* !POLL_BASE_ADDR */
+
+#ifndef IPI_CHN_BITMASK
 #define IPI_CHN_BITMASK     0x01000000
+#endif /* !IPI_CHN_BITMASK */
+
 #endif /* versal */
 
 #ifdef RPMSG_NO_IPI
