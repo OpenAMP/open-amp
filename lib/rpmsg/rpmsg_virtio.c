@@ -333,6 +333,7 @@ static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 		metal_mutex_release(&rdev->lock);
 		if (rp_hdr || !tick_count)
 			break;
+
 		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
 		tick_count--;
 	}
@@ -585,6 +586,9 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 		} else {
 			_ept->dest_addr = dest;
 			metal_mutex_release(&rdev->lock);
+			/* notify application that the endpoint has been bound */
+			if (_ept->ns_bound_cb)
+				_ept->ns_bound_cb(_ept);
 		}
 	}
 

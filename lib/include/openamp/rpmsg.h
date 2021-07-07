@@ -49,6 +49,7 @@ struct rpmsg_device;
 /* Returns positive value on success or negative error value on failure */
 typedef int (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
 			    size_t len, uint32_t src, void *priv);
+typedef void (*rpmsg_ns_bound_cb)(struct rpmsg_endpoint *ept);
 typedef void (*rpmsg_ns_unbind_cb)(struct rpmsg_endpoint *ept);
 typedef void (*rpmsg_ns_bind_cb)(struct rpmsg_device *rdev,
 				 const char *name, uint32_t dest);
@@ -61,6 +62,8 @@ typedef void (*rpmsg_ns_bind_cb)(struct rpmsg_device *rdev,
  * @dest_addr: address of the default remote endpoint binded.
  * @cb: user rx callback, return value of this callback is reserved
  *      for future use, for now, only allow RPMSG_SUCCESS as return value.
+ * @ns_bound_cb: end point service bound callback, called when remote
+ *                ept address is received.
  * @ns_unbind_cb: end point service unbind callback, called when remote
  *                ept is destroyed.
  * @node: end point node.
@@ -75,6 +78,7 @@ struct rpmsg_endpoint {
 	uint32_t addr;
 	uint32_t dest_addr;
 	rpmsg_ept_cb cb;
+	rpmsg_ns_bound_cb ns_bound_cb;
 	rpmsg_ns_unbind_cb ns_unbind_cb;
 	struct metal_list node;
 	void *priv;
