@@ -16,6 +16,7 @@
 #include <metal/mutex.h>
 #include <openamp/rpmsg.h>
 #include <openamp/virtio.h>
+#include <openamp/remoteproc.h>
 
 #if defined __cplusplus
 extern "C" {
@@ -28,6 +29,7 @@ extern "C" {
 
 /* The feature bitmap for virtio rpmsg */
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
+#define VIRTIO_RPMSG_F_BUFSZ	2 /* RP supports buffer size negotiation */
 
 /**
  * struct rpmsg_virtio_shm_pool - shared memory pool used for rpmsg buffers
@@ -44,6 +46,7 @@ struct rpmsg_virtio_shm_pool {
 /**
  * struct rpmsg_virtio_device - representation of a rpmsg device based on virtio
  * @rdev: rpmsg device, first property in the struct
+ * @config: rpmsg config information
  * @vdev: pointer to the virtio device
  * @rvq: pointer to receive virtqueue
  * @svq: pointer to send virtqueue
@@ -52,6 +55,7 @@ struct rpmsg_virtio_shm_pool {
  */
 struct rpmsg_virtio_device {
 	struct rpmsg_device rdev;
+	struct fw_rsc_config config;
 	struct virtio_device *vdev;
 	struct virtqueue *rvq;
 	struct virtqueue *svq;

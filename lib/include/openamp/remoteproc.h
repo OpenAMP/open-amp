@@ -304,6 +304,23 @@ struct fw_rsc_vdev {
 } METAL_PACKED_END;
 
 /**
+ * struct fw_rsc_config - configuration space declaration
+ * @txbuf_size: the tx buffer size
+ * @rxbuf_size: the rx buffer size
+ * @reserved: reserved (must be zero)
+ *
+ * This structure immediately follow fw_rsc_vdev to provide the config info.
+ */
+METAL_PACKED_BEGIN
+struct fw_rsc_config {
+	/* The tx/rx individual buffer size(if VIRTIO_RPMSG_F_BUFSZ) */
+	uint32_t txbuf_size;
+	uint32_t rxbuf_size;
+	uint32_t reserved[14]; /* Reserve for the future use */
+	/* Put the customize config here */
+} METAL_PACKED_END;
+
+/**
  * struct fw_rsc_vendor - remote processor vendor specific resource
  * @len: length of the resource
  *

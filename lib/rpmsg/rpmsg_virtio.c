@@ -151,8 +151,8 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 		data = virtqueue_get_buffer(rvdev->svq, len, idx);
 		if (!data && rvdev->svq->vq_free_cnt) {
 			data = rpmsg_virtio_shm_pool_get_buffer(rvdev->shpool,
-							RPMSG_BUFFER_SIZE);
-			*len = RPMSG_BUFFER_SIZE;
+						    rvdev->config.rxbuf_size);
+			*len = rvdev->config.rxbuf_size;
 			*idx = 0;
 		}
 	}
@@ -250,7 +250,7 @@ static int _rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 		 * If device role is Master then buffers are provided by us,
 		 * so just provide the macro.
 		 */
-		length = RPMSG_BUFFER_SIZE - sizeof(struct rpmsg_hdr);
+		length = rvdev->config.rxbuf_size - sizeof(struct rpmsg_hdr);
 	}
 #endif /*!VIRTIO_SLAVE_ONLY*/
 
@@ -333,6 +333,7 @@ static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 		metal_mutex_release(&rdev->lock);
 		if (rp_hdr || !tick_count)
 			break;
+
 		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
 		tick_count--;
 	}
@@ -623,6 +624,8 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	rvdev->vdev = vdev;
 	rdev->ns_bind_cb = ns_bind_cb;
 	vdev->priv = rvdev;
+	rvdev->config.txbuf_size = RPMSG_BUFFER_SIZE;
+	rvdev->config.rxbuf_size = RPMSG_BUFFER_SIZE;
 	rdev->ops.send_offchannel_raw = rpmsg_virtio_send_offchannel_raw;
 	rdev->ops.hold_rx_buffer = rpmsg_virtio_hold_rx_buffer;
 	rdev->ops.release_rx_buffer = rpmsg_virtio_release_rx_buffer;
@@ -638,6 +641,13 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 #endif /*!VIRTIO_MASTER_ONLY*/
 	vdev->features = rpmsg_virtio_get_features(rvdev);
 	rdev->support_ns = !!(vdev->features & (1 << VIRTIO_RPMSG_F_NS));
+
+	if (vdev->features & (1 << VIRTIO_RPMSG_F_BUFSZ)) {
+		rpmsg_virtio_read_config(rvdev,
+			0,
+			&rvdev->config,
+			sizeof(rvdev->config));
+	}
 
 #ifndef VIRTIO_SLAVE_ONLY
 	if (role == RPMSG_MASTER) {
@@ -699,11 +709,11 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		unsigned int idx;
 		void *buffer;
 
-		vqbuf.len = RPMSG_BUFFER_SIZE;
+		vqbuf.len = rvdev->config.txbuf_size;
 		for (idx = 0; idx < rvdev->rvq->vq_nentries; idx++) {
 			/* Initialize TX virtqueue buffers for remote device */
 			buffer = rpmsg_virtio_shm_pool_get_buffer(shpool,
-							RPMSG_BUFFER_SIZE);
+						rvdev->config.txbuf_size);
 
 			if (!buffer) {
 				return RPMSG_ERR_NO_BUFF;
@@ -714,7 +724,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 			metal_io_block_set(shm_io,
 					   metal_io_virt_to_offset(shm_io,
 								   buffer),
-					   0x00, RPMSG_BUFFER_SIZE);
+					   0x00, rvdev->config.txbuf_size);
 			status =
 				virtqueue_add_buffer(rvdev->rvq, &vqbuf, 0, 1,
 						     buffer);
