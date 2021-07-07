@@ -120,6 +120,7 @@ struct rpmsg_device {
 	rpmsg_ns_bind_cb ns_bind_cb;
 	struct rpmsg_device_ops ops;
 	bool support_ns;
+	bool support_ack;
 };
 
 /**
