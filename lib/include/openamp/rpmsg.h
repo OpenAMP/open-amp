@@ -118,6 +118,7 @@ struct rpmsg_device {
 	unsigned long bitmap[metal_bitmap_longs(RPMSG_ADDR_BMP_SIZE)];
 	metal_mutex_t lock;
 	rpmsg_ns_bind_cb ns_bind_cb;
+	rpmsg_ns_bind_cb ns_unbind_cb;
 	struct rpmsg_device_ops ops;
 	bool support_ns;
 };
