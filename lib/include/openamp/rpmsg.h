@@ -109,6 +109,8 @@ struct rpmsg_device_ops {
  * @lock: mutex lock for rpmsg management
  * @ns_bind_cb: callback handler for name service announcement without local
  *              endpoints waiting to bind.
+ * @ns_unbind_cb: callback handler for name service announcement, called when
+ *                remote ept is destroyed.
  * @ops: RPMsg device operations
  * @support_ns: create/destroy namespace message
  */
@@ -118,6 +120,7 @@ struct rpmsg_device {
 	unsigned long bitmap[metal_bitmap_longs(RPMSG_ADDR_BMP_SIZE)];
 	metal_mutex_t lock;
 	rpmsg_ns_bind_cb ns_bind_cb;
+	rpmsg_ns_bind_cb ns_unbind_cb;
 	struct rpmsg_device_ops ops;
 	bool support_ns;
 };

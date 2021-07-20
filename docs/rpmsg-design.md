@@ -101,6 +101,12 @@ running on two processors.
   void (*rpmsg_ns_bind_cb)(struct rpmsg_device *rdev,
 			   const char *name, uint32_t dest)
   ```
+* RPMsg name service unbind callback. If user defines such callback, when
+  there is name service destroy arrives, it will call this callback.:
+  ```
+  void (*rpmsg_ns_unbind_cb)(struct rpmsg_device *rdev,
+			   const char *name, uint32_t dest)
+  ```
 * RPMsg endpoint name service unbind callback. If user defines such callback,
   when there is name service destroy arrives, it will call this callback to
   notify the user application about the remote has destroyed the service.:
