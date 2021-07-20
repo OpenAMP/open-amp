@@ -585,6 +585,8 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 		metal_mutex_release(&rdev->lock);
 		if (_ept && _ept->ns_unbind_cb)
 			_ept->ns_unbind_cb(_ept);
+		if (rdev->ns_unbind_cb)
+			rdev->ns_unbind_cb(rdev, name, dest);
 	} else {
 		if (!_ept) {
 			/*
