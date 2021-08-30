@@ -43,7 +43,9 @@ struct remoteproc_priv {
 };
 
 #ifdef RPMSG_NO_IPI
+#ifndef POLL_DEV_NAME
 #define POLL_DEV_NAME        "3ee40000.poll" /* shared device name */
+#endif /* !POLL_DEV_NAME */
 #define POLL_STOP 0x1U
 #endif /* RPMSG_NO_IPI */
 
