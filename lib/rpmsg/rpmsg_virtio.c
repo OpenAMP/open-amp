@@ -8,6 +8,7 @@
  */
 
 #include <metal/alloc.h>
+#include <metal/cache.h>
 #include <metal/sleep.h>
 #include <metal/utilities.h>
 #include <openamp/rpmsg_virtio.h>
@@ -102,6 +103,11 @@ static int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev,
 				       uint16_t idx)
 {
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
+
+#ifdef VIRTIO_CACHED_BUFFERS
+	metal_cache_flush(buffer, len);
+#endif /* VIRTIO_CACHED_BUFFERS */
+
 #ifndef VIRTIO_SLAVE_ONLY
 	if (role == RPMSG_MASTER) {
 		struct virtqueue_buf vqbuf;
@@ -191,6 +197,11 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 		    virtqueue_get_available_buffer(rvdev->rvq, idx, len);
 	}
 #endif /*!VIRTIO_MASTER_ONLY*/
+
+#ifdef VIRTIO_CACHED_BUFFERS
+	/* Invalidate the buffer before returning it */
+	metal_cache_invalidate(data, *len);
+#endif /* VIRTIO_CACHED_BUFFERS */
 
 	return data;
 }
@@ -284,7 +295,7 @@ static void rpmsg_virtio_release_rx_buffer(struct rpmsg_device *rdev,
 	rvdev = metal_container_of(rdev, struct rpmsg_virtio_device, rdev);
 	rp_hdr = RPMSG_LOCATE_HDR(rxbuf);
 	/* The reserved field contains buffer index */
-	idx = rp_hdr->reserved & ~RPMSG_BUF_HELD;
+	idx = (uint16_t)(rp_hdr->reserved & ~RPMSG_BUF_HELD);
 
 	metal_mutex_acquire(&rdev->lock);
 	/* Return buffer on virtqueue. */

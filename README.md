@@ -90,6 +90,10 @@ library for it project:
 * **WITH_SHARED_LIB** (default ON): Build with a shared library.
 * **WITH_ZEPHYR** (default OFF): Build open-amp as a zephyr library. This option
   is mandatory in a Zephyr environment.
+* **WITH_DCACHE_VRINGS** (default OFF): Build with data cache operations
+  enabled on vrings.
+* **WITH_DCACHE_BUFFERS** (default OFF): Build with data cache operations
+  enabled on buffers.
 * **RPMSG_BUFFER_SIZE** (default 512): adjust the size of the RPMsg buffers.
   The default value of the RPMsg size is compatible with the Linux Kernel hard
   coded value. If you AMP configuration is Linux kernel master/ OpenAMP remote,
@@ -254,6 +258,9 @@ In order to user OpenAMP(RPMsg) in Linux userspace, you will need to have put th
   vring memory and shared buffer memory to your Linux kernel device tree. The device tree example
   can be found here:
   https://github.com/OpenAMP/open-amp/blob/master/apps/machine/zynqmp/openamp-linux-userspace.dtsi
+
+## Version
+The OpenAMP version follows the set of rule proposed in [Semantic Versioning specification](https://semver.org/).
 
 ## Supported System and Machines
 For now, it supports:

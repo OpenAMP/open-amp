@@ -1,7 +1,22 @@
-set (PROJECT_VER_MAJOR  0)
-set (PROJECT_VER_MINOR  1)
-set (PROJECT_VER_PATCH  0)
-set (PROJECT_VER        0.1.0)
+file(READ ${OPENAMP_ROOT_DIR}/VERSION ver)
+
+string(REGEX MATCH "VERSION_MAJOR = ([0-9]*)" _ ${ver})
+set(PROJECT_VERSION_MAJOR ${CMAKE_MATCH_1})
+
+string(REGEX MATCH "VERSION_MINOR = ([0-9]*)" _ ${ver})
+set(PROJECT_VERSION_MINOR ${CMAKE_MATCH_1})
+
+string(REGEX MATCH "VERSION_PATCH = ([0-9]*)" _ ${ver})
+set(PROJECT_VERSION_PATCH ${CMAKE_MATCH_1})
+
+set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
+
+message(STATUS "open-amp version: ${PROJECT_VERSION} (${OPENAMP_ROOT_DIR})")
+
+add_definitions( -DOPENAMP_VERSION_MAJOR=${PROJECT_VERSION_MAJOR} )
+add_definitions( -DOPENAMP_VERSION_MINOR=${PROJECT_VERSION_MINOR} )
+add_definitions( -DOPENAMP_VERSION_PATCH=${PROJECT_VERSION_PATCH} )
+add_definitions( -DOPENAMP_VERSION="${PROJECT_VERSION}" )
 
 if (NOT DEFINED CMAKE_BUILD_TYPE)
   set (CMAKE_BUILD_TYPE Debug)
@@ -58,6 +73,18 @@ endif (NOT WITH_VIRTIO_MASTER)
 if (NOT WITH_VIRTIO_SLAVE)
   add_definitions(-DVIRTIO_MASTER_ONLY)
 endif (NOT WITH_VIRTIO_SLAVE)
+
+option (WITH_DCACHE_VRINGS "Build with vrings cache operations enabled" OFF)
+
+if (WITH_DCACHE_VRINGS)
+  add_definitions(-DVIRTIO_CACHED_VRINGS)
+endif (WITH_DCACHE_VRINGS)
+
+option (WITH_DCACHE_BUFFERS "Build with vrings cache operations enabled" OFF)
+
+if (WITH_DCACHE_BUFFERS)
+  add_definitions(-DVIRTIO_CACHED_BUFFERS)
+endif (WITH_DCACHE_BUFFERS)
 
 # Set the complication flags
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
