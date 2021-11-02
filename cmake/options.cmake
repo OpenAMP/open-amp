@@ -106,4 +106,3 @@ if (DEFINED RPMSG_BUFFER_SIZE)
 endif (DEFINED RPMSG_BUFFER_SIZE)
 
 message ("-- C_FLAGS : ${CMAKE_C_FLAGS}")
-# vim: expandtab:ts=2:sw=2:smartindent
