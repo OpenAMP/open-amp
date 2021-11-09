@@ -46,6 +46,9 @@ remoteproc_get_mem(struct remoteproc *rproc, const char *name,
 		return NULL;
 
 	metal_list_for_each(&rproc->mems, node) {
+		if(node == 0x0){
+			return NULL;
+		}
 		mem = metal_container_of(node, struct remoteproc_mem, node);
 		if (name) {
 			if (!strncmp(name, mem->name, strlen(name)))
