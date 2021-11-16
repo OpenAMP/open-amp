@@ -148,7 +148,7 @@ int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
 						  notifyid,
 						  notifyid + 1);
 		if (notifyid != RSC_NOTIFY_ID_ANY)
-			vdev_rsc->notifyid = notifyid;
+			vring_rsc->notifyid = notifyid;
 	}
 
 	return 0;
