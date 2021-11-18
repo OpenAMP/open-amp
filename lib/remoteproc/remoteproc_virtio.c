@@ -30,6 +30,17 @@ static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 	rpvdev->notify(rpvdev->priv, vring_info->notifyid);
 }
 
+static int rproc_virtio_wait_tx_buffer(struct virtio_device *vdev)
+{
+	struct remoteproc_virtio *rpvdev;
+	struct remoteproc *rproc;
+
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	rproc  = rpvdev->priv;
+
+	return rproc->ops->wait_tx_buffer ? rproc->ops->wait_tx_buffer(rproc) : -EAGAIN;
+}
+
 static unsigned char rproc_virtio_get_status(struct virtio_device *vdev)
 {
 	struct remoteproc_virtio *rpvdev;
@@ -179,6 +190,7 @@ static const struct virtio_dispatch remoteproc_virtio_dispatch_funcs = {
 	.get_features = rproc_virtio_get_features,
 	.read_config = rproc_virtio_read_config,
 	.notify = rproc_virtio_virtqueue_notify,
+	.wait_tx_buffer = rproc_virtio_wait_tx_buffer,
 #ifndef VIRTIO_SLAVE_ONLY
 	/*
 	 * We suppose here that the vdev is in a shared memory so that can

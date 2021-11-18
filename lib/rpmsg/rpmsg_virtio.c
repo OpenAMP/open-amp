@@ -304,6 +304,72 @@ static void rpmsg_virtio_release_rx_buffer(struct rpmsg_device *rdev,
 	metal_mutex_release(&rdev->lock);
 }
 
+/**
+ * rpmsg_virtio_rx_callback
+ *
+ * Rx callback function.
+ *
+ * @param vq - pointer to virtqueue on which messages is received
+ *
+ */
+static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
+{
+	struct virtio_device *vdev = vq->vq_dev;
+	struct rpmsg_virtio_device *rvdev = vdev->priv;
+	struct rpmsg_device *rdev = &rvdev->rdev;
+	struct rpmsg_endpoint *ept;
+	struct rpmsg_hdr *rp_hdr;
+	uint32_t len;
+	uint16_t idx;
+	int status;
+
+	metal_mutex_acquire(&rdev->lock);
+
+	/* Process the received data from remote node */
+	rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
+
+	metal_mutex_release(&rdev->lock);
+
+	while (rp_hdr) {
+		rp_hdr->reserved = idx;
+
+		/* Get the channel node from the remote device channels list. */
+		metal_mutex_acquire(&rdev->lock);
+		ept = rpmsg_get_ept_from_addr(rdev, rp_hdr->dst);
+		metal_mutex_release(&rdev->lock);
+
+		if (ept) {
+			if (ept->dest_addr == RPMSG_ADDR_ANY) {
+				/*
+				 * First message received from the remote side,
+				 * update channel destination address
+				 */
+				ept->dest_addr = rp_hdr->src;
+			}
+			status = ept->cb(ept, RPMSG_LOCATE_DATA(rp_hdr),
+					 rp_hdr->len, rp_hdr->src, ept->priv);
+
+			RPMSG_ASSERT(status >= 0,
+				     "unexpected callback status\r\n");
+		}
+
+		metal_mutex_acquire(&rdev->lock);
+
+		/* Check whether callback wants to hold buffer */
+		if (!(rp_hdr->reserved & RPMSG_BUF_HELD)) {
+			/* No, return used buffers. */
+			rpmsg_virtio_return_buffer(rvdev, rp_hdr, len, idx);
+		}
+
+		rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
+		if (!rp_hdr) {
+			/* tell peer we return some rx buffer */
+			virtqueue_kick(rvdev->rvq);
+		}
+		metal_mutex_release(&rdev->lock);
+	}
+}
+
 static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 						uint32_t *len, int wait)
 {
@@ -333,6 +399,8 @@ static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 		metal_mutex_release(&rdev->lock);
 		if (rp_hdr || !tick_count)
 			break;
+		if (rpmsg_virtio_wait_tx_buffer(rvdev) >= 0)
+			continue;
 		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
 		tick_count--;
 	}
@@ -456,72 +524,6 @@ static int rpmsg_virtio_send_offchannel_raw(struct rpmsg_device *rdev,
 static void rpmsg_virtio_tx_callback(struct virtqueue *vq)
 {
 	(void)vq;
-}
-
-/**
- * rpmsg_virtio_rx_callback
- *
- * Rx callback function.
- *
- * @param vq - pointer to virtqueue on which messages is received
- *
- */
-static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
-{
-	struct virtio_device *vdev = vq->vq_dev;
-	struct rpmsg_virtio_device *rvdev = vdev->priv;
-	struct rpmsg_device *rdev = &rvdev->rdev;
-	struct rpmsg_endpoint *ept;
-	struct rpmsg_hdr *rp_hdr;
-	uint32_t len;
-	uint16_t idx;
-	int status;
-
-	metal_mutex_acquire(&rdev->lock);
-
-	/* Process the received data from remote node */
-	rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
-
-	metal_mutex_release(&rdev->lock);
-
-	while (rp_hdr) {
-		rp_hdr->reserved = idx;
-
-		/* Get the channel node from the remote device channels list. */
-		metal_mutex_acquire(&rdev->lock);
-		ept = rpmsg_get_ept_from_addr(rdev, rp_hdr->dst);
-		metal_mutex_release(&rdev->lock);
-
-		if (ept) {
-			if (ept->dest_addr == RPMSG_ADDR_ANY) {
-				/*
-				 * First message received from the remote side,
-				 * update channel destination address
-				 */
-				ept->dest_addr = rp_hdr->src;
-			}
-			status = ept->cb(ept, RPMSG_LOCATE_DATA(rp_hdr),
-					 rp_hdr->len, rp_hdr->src, ept->priv);
-
-			RPMSG_ASSERT(status >= 0,
-				     "unexpected callback status\r\n");
-		}
-
-		metal_mutex_acquire(&rdev->lock);
-
-		/* Check whether callback wants to hold buffer */
-		if (!(rp_hdr->reserved & RPMSG_BUF_HELD)) {
-			/* No, return used buffers. */
-			rpmsg_virtio_return_buffer(rvdev, rp_hdr, len, idx);
-		}
-
-		rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
-		if (!rp_hdr) {
-			/* tell peer we return some rx buffer */
-			virtqueue_kick(rvdev->rvq);
-		}
-		metal_mutex_release(&rdev->lock);
-	}
 }
 
 /**

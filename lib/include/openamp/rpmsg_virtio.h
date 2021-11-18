@@ -109,6 +109,12 @@ rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device *rvdev,
 					callbacks);
 }
 
+static inline int rpmsg_virtio_wait_tx_buffer(struct rpmsg_virtio_device *rvdev)
+{
+	return rvdev->vdev->func->wait_tx_buffer ?
+			rvdev->vdev->func->wait_tx_buffer(rvdev->vdev) : -EAGAIN;
+}
+
 /**
  * rpmsg_virtio_get_buffer_size - get rpmsg virtio buffer size
  *

@@ -432,6 +432,16 @@ struct remoteproc_ops {
 					  metal_phys_addr_t da,
 					  void *va, size_t size,
 					  struct remoteproc_mem *buf);
+	/**
+	 * wait_tx_buffer
+	 *
+	 * Wait tx buffer available
+	 *
+	 * @rproc - pointer to remoteproc instance
+	 *
+	 * return none
+	 */
+	int (*wait_tx_buffer)(struct remoteproc *rproc);
 };
 
 /* Remoteproc error codes */
