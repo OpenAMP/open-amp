@@ -880,6 +880,16 @@ static int remoteproc_virtio_notify(void *priv, uint32_t id)
 	return 0;
 }
 
+static int remoteproc_virtio_wait_notified(void *priv, uint32_t id)
+{
+	struct remoteproc *rproc = priv;
+
+	if (rproc->ops->wait_notified)
+		return rproc->ops->wait_notified(rproc, id);
+
+	return 0;
+}
+
 struct virtio_device *
 remoteproc_create_virtio(struct remoteproc *rproc,
 			 int vdev_id, unsigned int role,
@@ -927,6 +937,7 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	rproc_virtio_wait_remote_ready(vdev);
 
 	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	rpvdev->wait_notified = remoteproc_virtio_wait_notified;
 	metal_list_add_tail(&rproc->vdevs, &rpvdev->node);
 	num_vrings = vdev_rsc->num_of_vrings;
 

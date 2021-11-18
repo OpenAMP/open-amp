@@ -412,6 +412,18 @@ struct remoteproc_ops {
 	int (*shutdown)(struct remoteproc *rproc);
 	int (*notify)(struct remoteproc *rproc, uint32_t id);
 	/**
+	 * wait_notified
+	 *
+	 * Wait for remote notified, when there is no TX buffer anymore.
+	 * Set to NULL means use usleep to wait TX buffer available.
+	 *
+	 * @rproc - pointer to remoteproc instance
+	 * @id    - the notifyid
+	 *
+	 * return 0 means there is notify available, otherwise negative value.
+	 */
+	int (*wait_notified)(struct remoteproc *rproc, uint32_t id);
+	/**
 	 * get_mem
 	 *
 	 * get remoteproc memory I/O region by either name, virtual

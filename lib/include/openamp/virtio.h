@@ -162,6 +162,7 @@ struct virtio_dispatch {
 			     void *src, int length);
 	void (*reset_device)(struct virtio_device *dev);
 	void (*notify)(struct virtqueue *vq);
+	int (*wait_notified)(struct virtio_device *dev, struct virtqueue *vq);
 };
 
 int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
