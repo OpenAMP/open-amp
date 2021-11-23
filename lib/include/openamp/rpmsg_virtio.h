@@ -22,9 +22,7 @@ extern "C" {
 #endif
 
 /* Configurable parameters */
-#ifndef RPMSG_BUFFER_SIZE
-#define RPMSG_BUFFER_SIZE	(512)
-#endif
+#define RPMSG_BUFFER_SIZE	@RPMSG_BUFFER_SIZE@
 
 /* The feature bitmap for virtio rpmsg */
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */

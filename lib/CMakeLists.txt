@@ -3,6 +3,7 @@ set_property (GLOBAL PROPERTY "PROJECT_LIB_EXTRA_CFLAGS")
 
 collector_create (PROJECT_LIB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}")
 collect (PROJECT_LIB_DIRS "${CMAKE_CURRENT_BINARY_DIR}")
+collect (PROJECT_INC_DIRS "${PROJECT_BINARY_DIR}/include/generated")
 collect (PROJECT_INC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
 collect (PROJECT_LIB_SOURCES version.c)
 
@@ -18,8 +19,9 @@ endif (WITH_PROXY)
 
 set (OPENAMP_LIB open_amp)
 
+configure_file(include/openamp/rpmsg_virtio.h
+               ${PROJECT_BINARY_DIR}/include/generated/openamp/rpmsg_virtio.h @ONLY)
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/openamp/version_def.h)
-collect (PROJECT_INC_DIRS " ${PROJECT_BINARY_DIR}/include/generated/openamp")
 
 if (NOT CMAKE_INSTALL_LIBDIR)
 	set (CMAKE_INSTALL_LIBDIR "lib")
@@ -65,7 +67,8 @@ else (WITH_ZEPHYR)
   endif (WITH_STATIC_LIB)
 endif (WITH_ZEPHYR)
 
-install (DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/openamp" DESTINATION include)
+install (DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/openamp" DESTINATION include
+         PATTERN "rpmsg_virtio.h" EXCLUDE)
 install (DIRECTORY "${PROJECT_BINARY_DIR}/include/generated/openamp" DESTINATION include)
 
 # vim: expandtab:ts=2:sw=2:smartindent
