@@ -5,13 +5,13 @@ name: open-amp lib Continuous Integration
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
     paths-ignore:
       - docs/**
       - cmake/**
       - scripts/**
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
     paths-ignore:
       - docs/**
       - cmake/**
