@@ -197,7 +197,7 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 	}
 
 	xil_printf("initializing rpmsg vdev\r\n");
-	if (role == VIRTIO_DEV_MASTER) {
+	if (role == VIRTIO_DEV_DRIVER) {
 		/* Only RPMsg virtio master needs to initialize the
 		 * shared buffers pool
 		 */

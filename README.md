@@ -82,10 +82,10 @@ library for it project:
 * **WITH_PROXY** (default OFF): Include proxy support in the library.
 * **WITH APPS** (default OFF): Build with sample applications.
 * **WITH_PROXY_APPS** (default OFF):Build with proxy sample applications.
-* **WITH_VIRTIO_MASTER** (default ON): Build with virtio master enabled.
+* **WITH_VIRTIO_DRIVER** (default ON): Build with virtio driver enabled.
   This option can be set to OFF if the only the remote mode is implemented.
-* **WITH_VIRTIO_SLAVE** (default ON): Build with virtio slave enabled.
-  This option can be set to OFF if the only the master mode is implemented.
+* **WITH_VIRTIO_DEVICE** (default ON): Build with virtio device enabled.
+  This option can be set to OFF if the only the driver mode is implemented.
 * **WITH_STATIC_LIB** (default ON): Build with a static library.
 * **WITH_SHARED_LIB** (default ON): Build with a shared library.
 * **WITH_ZEPHYR** (default OFF): Build open-amp as a zephyr library. This option

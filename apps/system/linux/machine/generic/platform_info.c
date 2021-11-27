@@ -366,7 +366,7 @@ static struct remoteproc_ops linux_proc_ops = {
 /* RPMsg virtio shared buffer pool */
 static struct rpmsg_virtio_shm_pool shpool;
 
-static int platform_slave_setup_resource_table(const char *shm_file,
+static int platform_device_setup_resource_table(const char *shm_file,
 					       int shm_size,
 					       void *rsc_table, int rsc_size,
 					       metal_phys_addr_t rsc_pa)
@@ -405,7 +405,7 @@ platform_create_proc(int proc_index, int rsc_index)
 	 * This step can be done out of the application.
 	 * Assumes the unix server side setup resource table. */
 	if (is_sk_unix_server(prproc->ipi.path)) {
-		ret = platform_slave_setup_resource_table(prproc->shm_file,
+		ret = platform_device_setup_resource_table(prproc->shm_file,
 							  prproc->shm_size,
 							  rsc_table, rsc_size,
 							  RSC_MEM_PA);
