@@ -75,8 +75,23 @@ struct rpmsg_virtio_device {
 	struct rpmsg_virtio_shm_pool *shpool;
 };
 
-#define RPMSG_REMOTE	VIRTIO_DEV_SLAVE
-#define RPMSG_MASTER	VIRTIO_DEV_MASTER
+#define RPMSG_REMOTE	VIRTIO_DEV_DEVICE
+#define RPMSG_HOST	VIRTIO_DEV_DRIVER
+
+#define RPMSG_SLAVE        deprecated_rpmsg_slave()
+#define RPMSG_MASTER       deprecated_rpmsg_master()
+
+__deprecated static inline int deprecated_rpmsg_master(void)
+{
+	/* "RPMSG_MASTER is deprecated, please use RPMSG_HOST" */
+	return RPMSG_HOST;
+}
+
+__deprecated static inline int deprecated_rpmsg_slave(void)
+{
+	/* "RPMSG_SLAVE is deprecated, please use RPMSG_REMOTE" */
+	return RPMSG_REMOTE;
+}
 
 static inline unsigned int
 rpmsg_virtio_get_role(struct rpmsg_virtio_device *rvdev)

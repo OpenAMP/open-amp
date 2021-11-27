@@ -63,16 +63,25 @@ if (NOT ${MACHINE} STREQUAL "zynqmp_r5")
  set (WITH_LOAD_FW OFF)
 endif(NOT ${MACHINE} STREQUAL "zynqmp_r5")
 
-option (WITH_VIRTIO_MASTER "Build with virtio master enabled" ON)
-option (WITH_VIRTIO_SLAVE "Build with virtio slave enabled" ON)
+option (WITH_VIRTIO_DRIVER "Build with virtio driver (front end)  enabled" ON)
+option (WITH_VIRTIO_DEVICE "Build with virtio device (back end)  enabled" ON)
+option (WITH_VIRTIO_MASTER "Build with virtio driver (front end)  enabled" OFF)
+option (WITH_VIRTIO_SLAVE "Build with virtio device (back end)  enabled" OFF)
 
-if (NOT WITH_VIRTIO_MASTER)
-  add_definitions(-DVIRTIO_SLAVE_ONLY)
-endif (NOT WITH_VIRTIO_MASTER)
+if (WITH_VIRTIO_MASTER)
+  message(DEPRECATION "deprecated cmake option replaced by WITH_VIRTIO_DRIVER" ...)
+endif (WITH_VIRTIO_MASTER)
+if (WITH_VIRTIO_SLAVE)
+  message(DEPRECATION "deprecated cmake option replaced by WITH_VIRTIO_DEVICE" ...)
+endif (WITH_VIRTIO_SLAVE)
 
-if (NOT WITH_VIRTIO_SLAVE)
-  add_definitions(-DVIRTIO_MASTER_ONLY)
-endif (NOT WITH_VIRTIO_SLAVE)
+if (NOT WITH_VIRTIO_DRIVER AND NOT WITH_VIRTIO_MASTER)
+	add_definitions(-DVIRTIO_DEVICE_ONLY)
+endif (NOT WITH_VIRTIO_DRIVER AND NOT WITH_VIRTIO_MASTER)
+
+if (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
+	add_definitions(-DVIRTIO_DRIVER_ONLY)
+endif (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
 
 option (WITH_DCACHE_VRINGS "Build with vrings cache operations enabled" OFF)
 

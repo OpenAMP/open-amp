@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
 		ret = -1;
 	} else {
 		rpdev = platform_create_rpmsg_vdev(platform, 0,
-						  VIRTIO_DEV_MASTER,
+						  VIRTIO_DEV_DRIVER,
 						  NULL,
 						  rpmsg_name_service_bind_cb);
 		if (!rpdev) {
