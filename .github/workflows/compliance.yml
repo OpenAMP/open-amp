@@ -5,7 +5,7 @@ name: open-amp lib compliance checks
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
     paths-ignore:
       - docs/**
       - cmake/**
@@ -35,7 +35,7 @@ jobs:
         ./scripts/ci/check_compliance.py -m checkpatch  -m Gitlint -m Identity -c origin/${BASE_REF}..
 
     - name: upload-results
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@main
       continue-on-error: True
       with:
         name: compliance.xml
