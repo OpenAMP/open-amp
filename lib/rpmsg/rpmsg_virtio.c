@@ -3,6 +3,7 @@
  * All rights reserved.
  * Copyright (c) 2016 Freescale Semiconductor, Inc. All rights reserved.
  * Copyright (c) 2018 Linaro, Inc. All rights reserved.
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -151,8 +152,8 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 		data = virtqueue_get_buffer(rvdev->svq, len, idx);
 		if (!data && rvdev->svq->vq_free_cnt) {
 			data = rpmsg_virtio_shm_pool_get_buffer(rvdev->shpool,
-							RPMSG_BUFFER_SIZE);
-			*len = RPMSG_BUFFER_SIZE;
+					rvdev->config.h2r_buf_size);
+			*len = rvdev->config.h2r_buf_size;
 			*idx = 0;
 		}
 	}
@@ -250,7 +251,7 @@ static int _rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 		 * If device role is Master then buffers are provided by us,
 		 * so just provide the macro.
 		 */
-		length = RPMSG_BUFFER_SIZE - sizeof(struct rpmsg_hdr);
+		length = rvdev->config.h2r_buf_size - sizeof(struct rpmsg_hdr);
 	}
 #endif /*!VIRTIO_SLAVE_ONLY*/
 
@@ -384,7 +385,7 @@ static int rpmsg_virtio_send_offchannel_nocopy(struct rpmsg_device *rdev,
 
 #ifndef VIRTIO_SLAVE_ONLY
 	if (rpmsg_virtio_get_role(rvdev) == RPMSG_MASTER)
-		buff_len = RPMSG_BUFFER_SIZE;
+		buff_len = rvdev->config.h2r_buf_size;
 	else
 #endif /*!VIRTIO_SLAVE_ONLY*/
 		buff_len = virtqueue_get_buffer_length(rvdev->svq, idx);
@@ -611,6 +612,17 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct metal_io_region *shm_io,
 		    struct rpmsg_virtio_shm_pool *shpool)
 {
+	return rpmsg_init_vdev_with_config(rvdev, vdev, ns_bind_cb, shm_io,
+			   shpool, &RPMSG_VIRTIO_DEFAULT_CONFIG);
+}
+
+int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
+				struct virtio_device *vdev,
+				rpmsg_ns_bind_cb ns_bind_cb,
+				struct metal_io_region *shm_io,
+				struct rpmsg_virtio_shm_pool *shpool,
+				const struct rpmsg_virtio_config *config)
+{
 	struct rpmsg_device *rdev;
 	const char *vq_names[RPMSG_NUM_VRINGS];
 	vq_callback callback[RPMSG_NUM_VRINGS];
@@ -629,6 +641,23 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 	rdev->ops.get_tx_payload_buffer = rpmsg_virtio_get_tx_payload_buffer;
 	rdev->ops.send_offchannel_nocopy = rpmsg_virtio_send_offchannel_nocopy;
 	role = rpmsg_virtio_get_role(rvdev);
+
+#ifndef VIRTIO_SLAVE_ONLY
+	if (role == RPMSG_MASTER) {
+		/*
+		 * The virtio configuration contains only options applicable to
+		 * a virtio driver, implying rpmsg host role.
+		 */
+		if (config == NULL) {
+			return RPMSG_ERR_PARAM;
+		}
+		rvdev->config = *config;
+	}
+#else /*!VIRTIO_SLAVE_ONLY*/
+	/* Ignore passed config in the virtio-device-only configuration. */
+	(void)config;
+#endif /*!VIRTIO_SLAVE_ONLY*/
+
 
 #ifndef VIRTIO_MASTER_ONLY
 	if (role == RPMSG_REMOTE) {
@@ -699,11 +728,11 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		unsigned int idx;
 		void *buffer;
 
-		vqbuf.len = RPMSG_BUFFER_SIZE;
+		vqbuf.len = rvdev->config.r2h_buf_size;
 		for (idx = 0; idx < rvdev->rvq->vq_nentries; idx++) {
 			/* Initialize TX virtqueue buffers for remote device */
 			buffer = rpmsg_virtio_shm_pool_get_buffer(shpool,
-							RPMSG_BUFFER_SIZE);
+					rvdev->config.r2h_buf_size);
 
 			if (!buffer) {
 				return RPMSG_ERR_NO_BUFF;
@@ -714,7 +743,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 			metal_io_block_set(shm_io,
 					   metal_io_virt_to_offset(shm_io,
 								   buffer),
-					   0x00, RPMSG_BUFFER_SIZE);
+					   0x00, rvdev->config.r2h_buf_size);
 			status =
 				virtqueue_add_buffer(rvdev->rvq, &vqbuf, 0, 1,
 						     buffer);
