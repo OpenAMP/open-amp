@@ -143,14 +143,14 @@ int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev);
 
 /**
  * rpmsg_init_vdev - initialize rpmsg virtio device
- * Master side:
+ * Host side:
  * Initialize RPMsg virtio queues and shared buffers, the address of shm can be
  * ANY. In this case, function will get shared memory from system shared memory
- * pools. If the vdev has RPMsg name service feature, this API will create an
+ * pools. If the vdev has the RPMsg name service feature, this API will create a
  * name service endpoint.
  *
- * Slave side:
- * This API will not return until the driver ready is set by the master side.
+ * Remote side:
+ * This API will not return until the driver ready is set by the host side.
  *
  * @param rvdev  - pointer to the rpmsg virtio device
  * @param vdev   - pointer to the virtio device
