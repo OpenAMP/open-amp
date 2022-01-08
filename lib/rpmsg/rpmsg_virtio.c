@@ -25,6 +25,18 @@
 /* Time to wait - In multiple of 1 msecs. */
 #define RPMSG_TICKS_PER_INTERVAL                1000
 
+
+/* Default configuration */
+#ifndef VIRTIO_SLAVE_ONLY
+#define RPMSG_VIRTIO_DEFAULT_CONFIG                \
+	(&(const struct rpmsg_virtio_config) {     \
+		.h2r_buf_size = RPMSG_BUFFER_SIZE, \
+		.r2h_buf_size = RPMSG_BUFFER_SIZE, \
+	})
+#else
+#define RPMSG_VIRTIO_DEFAULT_CONFIG          NULL
+#endif
+
 #ifndef VIRTIO_SLAVE_ONLY
 metal_weak void *
 rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
@@ -613,7 +625,7 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
 		    struct rpmsg_virtio_shm_pool *shpool)
 {
 	return rpmsg_init_vdev_with_config(rvdev, vdev, ns_bind_cb, shm_io,
-			   shpool, &RPMSG_VIRTIO_DEFAULT_CONFIG);
+			   shpool, RPMSG_VIRTIO_DEFAULT_CONFIG);
 }
 
 int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
