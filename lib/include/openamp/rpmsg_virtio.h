@@ -55,13 +55,6 @@ struct rpmsg_virtio_config {
 	uint32_t r2h_buf_size;
 };
 
-/* Default configuration */
-#define RPMSG_VIRTIO_DEFAULT_CONFIG                \
-	((const struct rpmsg_virtio_config) {       \
-		.h2r_buf_size = RPMSG_BUFFER_SIZE,  \
-		.r2h_buf_size = RPMSG_BUFFER_SIZE,  \
-	})
-
 /**
  * struct rpmsg_virtio_device - representation of a rpmsg device based on virtio
  * @rdev: rpmsg device, first property in the struct
