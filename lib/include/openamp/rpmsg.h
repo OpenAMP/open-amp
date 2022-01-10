@@ -437,35 +437,6 @@ static inline int rpmsg_send_nocopy(struct rpmsg_endpoint *ept,
 }
 
 /**
- * rpmsg_init_ept - initialize rpmsg endpoint
- *
- * Initialize an RPMsg endpoint with a name, source address,
- * remoteproc address, endpoint callback, and destroy endpoint callback.
- *
- * API deprecated since release v2020.10
- *
- * @ept: pointer to rpmsg endpoint
- * @name: service name associated to the endpoint
- * @src: local address of the endpoint
- * @dest: target address of the endpoint
- * @cb: endpoint callback
- * @ns_unbind_cb: end point service unbind callback, called when remote ept is
- *                destroyed.
- */
-__deprecated static inline void rpmsg_init_ept(struct rpmsg_endpoint *ept,
-					       const char *name,
-					       uint32_t src, uint32_t dest,
-					       rpmsg_ept_cb cb,
-					       rpmsg_ns_unbind_cb ns_unbind_cb)
-{
-	strncpy(ept->name, name ? name : "", sizeof(ept->name));
-	ept->addr = src;
-	ept->dest_addr = dest;
-	ept->cb = cb;
-	ept->ns_unbind_cb = ns_unbind_cb;
-}
-
-/**
  * rpmsg_create_ept - create rpmsg endpoint and register it to rpmsg device
  *
  * Create a RPMsg endpoint, initialize it with a name, source address,
