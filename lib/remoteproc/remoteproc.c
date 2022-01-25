@@ -18,7 +18,7 @@
 /******************************************************************************
  *  static functions
  *****************************************************************************/
-static struct loader_ops *
+static const struct loader_ops *
 remoteproc_check_fw_format(const void *img_data, size_t img_len)
 {
 	if (img_len <= 0)
@@ -100,7 +100,7 @@ remoteproc_patoda(struct remoteproc_mem *mem, metal_phys_addr_t pa)
 
 static void *remoteproc_get_rsc_table(struct remoteproc *rproc,
 				      void *store,
-				      struct image_store_ops *store_ops,
+				      const struct image_store_ops *store_ops,
 				      size_t offset,
 				      size_t len)
 {
@@ -166,7 +166,7 @@ int remoteproc_set_rsc_table(struct remoteproc *rproc,
 }
 
 struct remoteproc *remoteproc_init(struct remoteproc *rproc,
-				   struct remoteproc_ops *ops, void *priv)
+				   const struct remoteproc_ops *ops, void *priv)
 {
 	if (rproc) {
 		memset(rproc, 0, sizeof(*rproc));
@@ -389,11 +389,11 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 }
 
 int remoteproc_load(struct remoteproc *rproc, const char *path,
-		    void *store, struct image_store_ops *store_ops,
+		    void *store, const struct image_store_ops *store_ops,
 		    void **img_info)
 {
 	int ret;
-	struct loader_ops *loader;
+	const struct loader_ops *loader;
 	const void *img_data;
 	void *limg_info = NULL;
 	size_t offset, noffset;
@@ -667,7 +667,7 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 			    size_t *nmlen, unsigned char *padding)
 {
 	int ret;
-	struct loader_ops *loader;
+	const struct loader_ops *loader;
 	void *limg_info = NULL;
 	int last_load_state;
 	metal_phys_addr_t da, rsc_da;
