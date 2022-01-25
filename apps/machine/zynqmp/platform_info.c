@@ -105,7 +105,7 @@ extern void cleanup_system(void);
 
 /* processor operations from r5 to a53. It defines
  * notification operation and remote processor managementi operations. */
-extern struct remoteproc_ops zynqmp_linux_r5_proc_ops;
+extern const struct remoteproc_ops zynqmp_linux_r5_proc_ops;
 
 /* RPMsg virtio shared buffer pool */
 static struct rpmsg_virtio_shm_pool shpool;

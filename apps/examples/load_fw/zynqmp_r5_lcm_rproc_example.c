@@ -97,7 +97,7 @@ static void r5_rproc_mode_config(struct r5_rproc_priv *priv)
 }
 
 struct remoteproc *r5_rproc_init(struct remoteproc *rproc,
-				 struct remoteproc_ops *ops, void *arg)
+				 const struct remoteproc_ops *ops, void *arg)
 {
 	struct r5_rproc_priv *priv;
 	unsigned int cpu_id = *((unsigned int *)arg);
@@ -303,7 +303,7 @@ int r5_rproc_shutdown(struct remoteproc *rproc)
 		return 0;
 }
 
-struct remoteproc_ops r5_rproc_ops = {
+const struct remoteproc_ops r5_rproc_ops = {
 	.init = r5_rproc_init,
 	.remove = r5_rproc_remove,
 	.start = r5_rproc_start,

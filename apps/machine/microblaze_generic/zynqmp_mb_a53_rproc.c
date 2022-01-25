@@ -29,8 +29,8 @@
 #include "platform_info.h"
 
 static struct remoteproc *
-zynqmp_mb_a53_proc_init(struct remoteproc *rproc, struct remoteproc_ops *ops,
-			void *arg)
+zynqmp_mb_a53_proc_init(struct remoteproc *rproc,
+			const struct remoteproc_ops *ops, void *arg)
 {
 	struct remoteproc_priv *prproc = arg;
 
@@ -107,7 +107,7 @@ static int zynqmp_mb_a53_proc_notify(struct remoteproc *rproc, uint32_t id)
  * processor operations from mb to a53. It defines
  * notification operation and remote processor management operations.
  */
-struct remoteproc_ops zynqmp_mb_a53_proc_ops = {
+const struct remoteproc_ops zynqmp_mb_a53_proc_ops = {
 	.init = zynqmp_mb_a53_proc_init,
 	.remove = zynqmp_mb_a53_proc_remove,
 	.mmap = zynqmp_mb_a53_proc_mmap,

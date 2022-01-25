@@ -44,7 +44,7 @@
 
 /* processor operations for hil_proc for A9. It defines
  * notification operation and remote processor management. */
-extern struct remoteproc_ops zynq_a9_proc_ops;
+extern const struct remoteproc_ops zynq_a9_proc_ops;
 static metal_phys_addr_t scugic_phys_addr = SCUGIC_DIST_BASE;
 struct metal_device scugic_device = {
 	.name = SCUGIC_DEV_NAME,

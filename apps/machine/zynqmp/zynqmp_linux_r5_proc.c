@@ -64,7 +64,7 @@ static int zynqmp_linux_r5_proc_irq_handler(int vect_id, void *data)
 
 static struct remoteproc *
 zynqmp_linux_r5_proc_init(struct remoteproc *rproc,
-			  struct remoteproc_ops *ops, void *arg)
+			  const struct remoteproc_ops *ops, void *arg)
 {
 	struct remoteproc_priv *prproc = arg;
 	struct metal_device *dev;
@@ -232,7 +232,7 @@ static int zynqmp_linux_r5_proc_notify(struct remoteproc *rproc, uint32_t id)
 
 /* processor operations from r5 to a53. It defines
  * notification operation and remote processor managementi operations. */
-struct remoteproc_ops zynqmp_linux_r5_proc_ops = {
+const struct remoteproc_ops zynqmp_linux_r5_proc_ops = {
 	.init = zynqmp_linux_r5_proc_init,
 	.remove = zynqmp_linux_r5_proc_remove,
 	.mmap = zynqmp_linux_r5_proc_mmap,
