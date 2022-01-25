@@ -28,7 +28,7 @@ It will extend to crash detection, suspend and resume.
 * Initialize remoteproc instance:
   ```
   struct remoteproc *remoteproc_init(struct remoteproc *rproc,
-				     struct remoteproc_ops *ops, void *priv)
+				     const struct remoteproc_ops *ops, void *priv)
   ```
 * Release remoteproc instance:
   ```
@@ -72,7 +72,7 @@ It will extend to crash detection, suspend and resume.
   it ready to run:
   ```
   int remoteproc_load(struct remoteproc *rproc, const char *path,
-		      void *store, struct image_store_ops *store_ops,
+		      void *store, const struct image_store_ops *store_ops,
 		      void **img_info)
   ```
 * Run application on the remote presented by the remoteproc instance:
