@@ -9,7 +9,7 @@
 #include <common.h>
 
 static struct remoteproc *rpu_rproc_init(struct remoteproc *rproc,
-				 struct remoteproc_ops *ops, void *arg)
+				 const struct remoteproc_ops *ops, void *arg)
 {
 	struct rproc_priv *priv;
 	unsigned int cpu_id = *((unsigned int *)arg);
@@ -193,7 +193,7 @@ static int rpu_rproc_shutdown(struct remoteproc *rproc)
 	return 0;
 }
 
-struct remoteproc_ops zynqmp_rpu_rproc_ops = {
+const struct remoteproc_ops zynqmp_rpu_rproc_ops = {
     .init = rpu_rproc_init,
     .remove = rpu_rproc_remove,
     .start = rpu_rproc_start,

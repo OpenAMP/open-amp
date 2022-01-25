@@ -73,7 +73,7 @@ int mem_image_load(void *store, size_t offset, size_t size,
 	return (int)size;
 }
 
-struct image_store_ops mem_image_store_ops = {
+const struct image_store_ops mem_image_store_ops = {
 	.open = mem_image_open,
 	.close = mem_image_close,
 	.load = mem_image_load,

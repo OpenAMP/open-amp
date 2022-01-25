@@ -8,23 +8,23 @@
 #include <platform_info.h>
 #include <common.h>
 
-extern struct remoteproc_ops zynqmp_apu_rproc_ops;
-extern struct remoteproc_ops zynqmp_rpu_rproc_ops;
+extern const struct remoteproc_ops zynqmp_apu_rproc_ops;
+extern const struct remoteproc_ops zynqmp_rpu_rproc_ops;
 
 static struct remoteproc rproc_inst;
-static struct  remoteproc_ops ops;
 
 static struct remoteproc * platform_create_proc(unsigned int cpu_id)
 {
+	const struct remoteproc_ops *ops;
 	struct remoteproc * rproc;
 	if (NODE_RPU_0 <= LOAD_FW_TARGET && LOAD_FW_TARGET <= NODE_RPU_1)
-		ops = zynqmp_rpu_rproc_ops;
+		ops = &zynqmp_rpu_rproc_ops;
 	else if (NODE_APU_0 <= LOAD_FW_TARGET && LOAD_FW_TARGET <= NODE_APU_1)
-		ops = zynqmp_apu_rproc_ops;
+		ops = &zynqmp_apu_rproc_ops;
 	else
 		return NULL;
 
-	rproc = remoteproc_init(&rproc_inst, &ops, &cpu_id);
+	rproc = remoteproc_init(&rproc_inst, ops, &cpu_id);
 	if (!rproc)
 		return NULL;
 	return &rproc_inst;

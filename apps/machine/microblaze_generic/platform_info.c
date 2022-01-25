@@ -45,7 +45,7 @@ extern void cleanup_system(void);
  * processor operations from MicroBlaze to a53. It defines
  * notification operation and remote processor management operations.
  */
-extern struct remoteproc_ops zynqmp_mb_a53_proc_ops;
+extern const struct remoteproc_ops zynqmp_mb_a53_proc_ops;
 
 /* RPMsg virtio shared buffer pool */
 static struct rpmsg_virtio_shm_pool shpool;

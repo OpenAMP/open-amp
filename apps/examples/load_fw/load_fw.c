@@ -10,7 +10,7 @@
 #include <platform_info.h>
 #include <common.h>
 
-extern struct image_store_ops mem_image_store_ops;
+extern const struct image_store_ops mem_image_store_ops;
 
 struct mem_file {
 	const void *base;
@@ -21,7 +21,7 @@ static struct mem_file image = {
 };
 
 int load_exectuable_block(struct remoteproc *rproc,
-			  struct image_store_ops *store_ops, void *store,
+			  const struct image_store_ops *store_ops, void *store,
 			  const char *img_path)
 {
 	int ret;
@@ -60,8 +60,8 @@ int load_exectuable_block(struct remoteproc *rproc,
 
 #ifndef RPU_BOOT_LINUX
 int load_exectuable_noblock(struct remoteproc *rproc,
-			     struct image_store_ops *store_ops, void *store,
-			     const char *img_path)
+			     const struct image_store_ops *store_ops,
+			     void *store, const char *img_path)
 {
 	int ret;
 	const void *img_data;
