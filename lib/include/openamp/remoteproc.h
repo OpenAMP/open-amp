@@ -371,9 +371,9 @@ struct remoteproc {
 	struct metal_list mems;
 	struct metal_list vdevs;
 	unsigned long bitmap;
-	struct remoteproc_ops *ops;
+	const struct remoteproc_ops *ops;
 	metal_phys_addr_t bootaddr;
-	struct loader_ops *loader;
+	const struct loader_ops *loader;
 	unsigned int state;
 	void *priv;
 };
@@ -399,7 +399,7 @@ struct remoteproc {
  */
 struct remoteproc_ops {
 	struct remoteproc *(*init)(struct remoteproc *rproc,
-				   struct remoteproc_ops *ops, void *arg);
+				   const struct remoteproc_ops *ops, void *arg);
 	void (*remove)(struct remoteproc *rproc);
 	void *(*mmap)(struct remoteproc *rproc,
 		      metal_phys_addr_t *pa, metal_phys_addr_t *da,
@@ -504,7 +504,8 @@ enum remoteproc_state {
  * @returns created remoteproc pointer
  */
 struct remoteproc *remoteproc_init(struct remoteproc *rproc,
-				   struct remoteproc_ops *ops, void *priv);
+				   const struct remoteproc_ops *ops,
+				   void *priv);
 
 /**
  * remoteproc_remove
@@ -721,7 +722,7 @@ int remoteproc_shutdown(struct remoteproc *rproc);
  * return 0 for success and negative value for failure
  */
 int remoteproc_load(struct remoteproc *rproc, const char *path,
-		    void *store, struct image_store_ops *store_ops,
+		    void *store, const struct image_store_ops *store_ops,
 		    void **img_info);
 
 /**
