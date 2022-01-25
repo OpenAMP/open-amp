@@ -34,16 +34,16 @@ Remoteproc data struct
 ===========================
 ```
 struct remoteproc {
-	struct metal_device dev;       /**< Each remoteproc has a device, each device knows its memories regions */
-	metal_mutex_t lock;            /**< mutex lock */
-	void *rsc_table;               /**< pointer to resource table */
-	size_t rsc_len;                /**< length of the resoruce table */
-	struct remoteproc_ops *ops;    /**< pointer to remoteproc operation */
-	metal_phys_addr_t bootaddr;    /**< boot address */
-	struct loader_ops *loader_ops; /**< image loader operation */
-	unsigned int state;            /**< remoteproc state */
-	struct metal_list vdevs;       /**< list of vdevs  (can we limited to one for code size but linux and resource table supports multiple */
-	void *priv;                    /**< remoteproc private data */
+	struct metal_device dev;             /**< Each remoteproc has a device, each device knows its memories regions */
+	metal_mutex_t lock;                  /**< mutex lock */
+	void *rsc_table;                     /**< pointer to resource table */
+	size_t rsc_len;                      /**< length of the resource table */
+	const struct remoteproc_ops *ops;    /**< pointer to remoteproc operation */
+	metal_phys_addr_t bootaddr;          /**< boot address */
+	const struct loader_ops *loader_ops; /**< image loader operation */
+	unsigned int state;                  /**< remoteproc state */
+	struct metal_list vdevs;             /**< list of vdevs  (can we limited to one for code size but linux and resource table supports multiple */
+	void *priv;                          /**< remoteproc private data */
 };
 
 struct remoteproc_vdev {
