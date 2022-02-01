@@ -55,14 +55,14 @@ remoteproc_get_mem(struct remoteproc *rproc, const char *name,
 
 			pa_start = mem->pa;
 			pa_end = pa_start + mem->size;
-			if (pa >= pa_start && (pa + size) <= pa_end)
+			if (pa >= pa_start && (pa + size) <= pa_end && pa < pa_end)
 				return mem;
 		} else if (da != METAL_BAD_PHYS) {
 			metal_phys_addr_t da_start, da_end;
 
 			da_start = mem->da;
 			da_end = da_start + mem->size;
-			if (da >= da_start && (da + size) <= da_end)
+			if (da >= da_start && (da + size) <= da_end && da < da_end)
 				return mem;
 		} else if (va) {
 			if (metal_io_virt_to_offset(mem->io, va) !=
