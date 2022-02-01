@@ -271,10 +271,10 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 
 	VQUEUE_BUSY(vq);
 
+	head_idx = vq->vq_available_idx++ & (vq->vq_nentries - 1);
+
 	/* Avail.ring is updated by master, invalidate it */
 	VRING_INVALIDATE(vq->vq_ring.avail->ring[head_idx]);
-
-	head_idx = vq->vq_available_idx++ & (vq->vq_nentries - 1);
 	*avail_idx = vq->vq_ring.avail->ring[head_idx];
 
 	/* Invalidate the desc entry written by master before accessing it */
@@ -453,10 +453,10 @@ uint32_t virtqueue_get_desc_size(struct virtqueue *vq)
 
 	VQUEUE_BUSY(vq);
 
+	head_idx = vq->vq_available_idx & (vq->vq_nentries - 1);
+
 	/* Avail.ring is updated by master, invalidate it */
 	VRING_INVALIDATE(vq->vq_ring.avail->ring[head_idx]);
-
-	head_idx = vq->vq_available_idx & (vq->vq_nentries - 1);
 	avail_idx = vq->vq_ring.avail->ring[head_idx];
 
 	/* Invalidate the desc entry written by master before accessing it */
