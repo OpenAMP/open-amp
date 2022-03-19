@@ -120,21 +120,20 @@ static void *remoteproc_get_rsc_table(struct remoteproc *rproc,
 	if (ret < 0 || ret < (int)len || !img_data) {
 		metal_log(METAL_LOG_ERROR,
 			  "get rsc failed: 0x%llx, 0x%llx\r\n", offset, len);
-		rsc_table = RPROC_ERR_PTR(-RPROC_EINVAL);
+		ret = -RPROC_EINVAL;
 		goto error;
 	}
 	memcpy(rsc_table, img_data, len);
 
 	ret = handle_rsc_table(rproc, rsc_table, len, NULL);
 	if (ret < 0) {
-		rsc_table = RPROC_ERR_PTR(ret);
 		goto error;
 	}
 	return rsc_table;
 
 error:
 	metal_free_memory(rsc_table);
-	return rsc_table;
+	return RPROC_ERR_PTR(ret);
 }
 
 static int remoteproc_parse_rsc_table(struct remoteproc *rproc,
