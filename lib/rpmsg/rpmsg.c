@@ -217,9 +217,6 @@ struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_device *rdev,
 		/* try to get by local address only */
 		if (addr != RPMSG_ADDR_ANY && ept->addr == addr)
 			return ept;
-		/* try to find match on local end remote address */
-		if (addr == ept->addr && dest_addr == ept->dest_addr)
-			return ept;
 		/* else use name service and destination address */
 		if (name)
 			name_match = !strncmp(ept->name, name,
