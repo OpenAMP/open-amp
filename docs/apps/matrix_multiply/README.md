@@ -1,7 +1,7 @@
 
 # matrix_multiply 
 This readme is about the OpenAMP matrix_multiply demo.
-The matrix_multiply is about one processor generates two matrices, and send them to the one, and the other one calcuate the matrix multiplicaiton and return the result matrix.
+The matrix_multiply is about one processor generates two matrices, and send them to the one, and the other one calculate the matrix multiplicaiton and return the result matrix.
 
 For now, it implements Linux generates the matrices, and the baremetal calculate the matrix mulitplication and send back the result.
 
@@ -34,7 +34,7 @@ You will need to manually compile the following kernel modules with your Linux k
 
 ### Load the Demo
 After Linux boots,
-* Load the machine remoteproc. If Linux runs as remoteproc master, you will need to pass the other processor's matrix_multiply binary as firmware arguement to the remoteproc module.
+* Load the machine remoteproc. If Linux runs as remoteproc master, you will need to pass the other processor's matrix_multiply binary as firmware argument to the remoteproc module.
 * If you run the Linux kernel application demo, load the `rpmsg_mat_mul_kern_app` module, you will see the kernel app will generate two matrices to the other processor, and output the result matrix returned by the other processor.
 * If you run the userspace application demo, load the `rpmsg_user_dev_driver` module.
 * If you run the userspace application demo `mat_mul_demo`, you will see the similar output on the console:

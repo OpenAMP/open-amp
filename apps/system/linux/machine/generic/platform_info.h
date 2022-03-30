@@ -24,7 +24,7 @@ extern "C" {
  * It will initialize the platform.
  *
  * @argc: number of arguments
- * @argv: array of the input arguements
+ * @argv: array of the input arguments
  * @platform: pointer to store the platform data pointer
  *
  * return 0 for success or negative value for failure

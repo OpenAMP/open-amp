@@ -104,7 +104,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 
 	max_size = rpmsg_virtio_get_buffer_size(rdev);
 	if (max_size < 0) {
-		LPERROR("No avaiable buffer size.\r\n");
+		LPERROR("No available buffer size.\r\n");
 		return -1;
 	}
 	max_size -= sizeof(struct _payload);

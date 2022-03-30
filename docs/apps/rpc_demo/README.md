@@ -3,7 +3,7 @@
 This readme is about the OpenAMP rpc_demo demo.
 The rpc_demo is about one processor uses the UART on the other processor and create file on the other processor's filesystem with file operations.
 
-For now, It implements the processor running generic(baremetal) applicaiton access the devices on the Linux.
+For now, It implements the processor running generic(baremetal) application access the devices on the Linux.
 
 ## Compilation
 

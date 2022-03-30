@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-/* define vdev notification funciton user should implement */
+/* define vdev notification function user should implement */
 typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
 
 /**

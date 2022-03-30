@@ -24,7 +24,7 @@ digraph G {
     node [shape="box"];
     rank="same";
     m_remoteproc_init [label="rproc = remoteproc_init(&remoteproc_ops, &arg);"]
-    m_remoteproc_load [label="calls remoteproc_load() to load applicaiton"];
+    m_remoteproc_load [label="calls remoteproc_load() to load application"];
     m_remoteproc_boot [shape="box", label="ret=remoteproc_boot(&rproc)"];
     m_remoteproc_get_vdev [label="vdev=remoteproc_create_virtio(rproc, rpmsg_vdev_id, MASTER, NULL);"];
     m_rpmsg_shmpool_init[label="rpmsg_virtio_init_shm_pool(shpool, shbuf, shbuf_pool_size);"];
@@ -75,8 +75,8 @@ digraph G {
 
   master -> m_remoteproc_init [dir="none"];
   slave -> s_remoteproc_init [dir="none"];
-  s_rpmsg_create_ep -> m_rpmsg_ns_cb [label="NS annoucement"];
-  m_rpmsg_create_ep -> s_rpmsg_ns_cb [label="NS annoucement"];
+  s_rpmsg_create_ep -> m_rpmsg_ns_cb [label="NS announcement"];
+  m_rpmsg_create_ep -> s_rpmsg_ns_cb [label="NS announcement"];
   m_rpmsg_send -> s_rpmsg_rx_cb [label="RPMsg data"];
   s_rpmsg_send -> m_rpmsg_rx_cb [label="RPMsg data"];
   m_rpmsg_destroy_ep -> s_rpmsg_ns_unbind_cb [label="Endpoint destroy NS"];

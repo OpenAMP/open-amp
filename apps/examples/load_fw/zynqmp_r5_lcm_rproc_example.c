@@ -103,7 +103,7 @@ struct remoteproc *r5_rproc_init(struct remoteproc *rproc,
 	unsigned int cpu_id = *((unsigned int *)arg);
 
 	if (cpu_id < NODE_RPU_0 || cpu_id > NODE_RPU_1) {
-		xil_printf("rproc init: invalide node id: %d\r\n", cpu_id);
+		xil_printf("rproc init: invalid node id: %d\r\n", cpu_id);
 		return NULL;
 	}
 
@@ -150,7 +150,7 @@ void *r5_rproc_mmap(struct remoteproc *rproc,
 
 	if (!da || !pa)
 		return NULL;
-	LPRINTF("%s: pa=0x%x, da=0x%x, size=0x%x, atrribute=0x%x\r\n",
+	LPRINTF("%s: pa=0x%x, da=0x%x, size=0x%x, attribute=0x%x\r\n",
 		__func__, *pa, *da, size, attribute);
 	lda = *da;
 	lpa = *pa;

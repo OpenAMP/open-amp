@@ -58,7 +58,7 @@ int app(struct rpmsg_device *rdev, void *priv)
 			     priv, platform_poll, rpmsg_rpc_shutdown);
 	rpmsg_set_default_rpc(&rpc);
 	if (ret) {
-		LPRINTF("Failed to intialize rpmsg rpc\r\n");
+		LPRINTF("Failed to initialize rpmsg rpc\r\n");
 		return -1;
 	}
 

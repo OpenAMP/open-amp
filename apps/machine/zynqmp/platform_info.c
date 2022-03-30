@@ -33,8 +33,9 @@
 #include "platform_info.h"
 
 #define RPU_CPU_ID          0 /* RPU remote CPU Index. We only talk to
-                               * one CPU in the exmaple. We set the CPU
-                               * index to 0. */
+			       * one CPU in the example. We set the CPU
+			       * index to 0.
+			       */
 #ifdef versal
 #define IPI_CHN_BITMASK     0x08 /* IPI channel bit mask for IPI
 					* from/to RPU0 */
@@ -120,7 +121,7 @@ platform_create_proc(int proc_index, int rsc_index)
 	/* parse resource table to remoteproc */
 	ret = remoteproc_set_rsc_table(&rproc_inst, rsc_table, rsc_size);
 	if (ret) {
-		printf("Failed to intialize remoteproc\r\n");
+		printf("Failed to initialize remoteproc\r\n");
 		remoteproc_remove(&rproc_inst);
 		return NULL;
 	}

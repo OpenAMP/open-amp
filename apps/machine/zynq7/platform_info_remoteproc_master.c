@@ -36,9 +36,9 @@ extern struct hil_platform_ops zynq_a9_proc_ops;
 
 /**
  * This array provdes defnition of CPU nodes for master and remote
- * context. It contains two nodes beacuse the same file is intended
+ * context. It contains two nodes because the same file is intended
  * to use with both master and remote configurations. On zynq platform
- * only one node defintion is required for master/remote as there
+ * only one node definition is required for master/remote as there
  * are only two cores present in the platform.
  *
  * Only platform specific info is populated here. Rest of information

@@ -145,7 +145,7 @@ int main(void)
 	unsigned int cpu_id = LOAD_FW_TARGET;
 	int ret;
 
-	LPRINTF("Loading Exectuable Demo\n");
+	LPRINTF("Loading Executable Demo\n");
 	rproc = app_init(cpu_id);
 	if (!rproc) {
 		LPERROR("app_init failed\r\n");

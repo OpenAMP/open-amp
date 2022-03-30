@@ -7,7 +7,7 @@ This action test builds for a specified target.
 ### `target`
 
 **Required** the build target. Default `"linux"`.
-The supported taget are:
+The supported targets are:
   linux
   generic arm
   zephyr

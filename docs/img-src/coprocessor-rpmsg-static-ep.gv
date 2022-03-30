@@ -22,7 +22,7 @@ digraph G {
     node [shape="box"];
     rank="same";
     m_remoteproc_init [label="rproc = remoteproc_init(&remoteproc_ops, &arg);"];
-    m_remoteproc_load [label="calls remoteproc_load() to load applicaiton"];
+    m_remoteproc_load [label="calls remoteproc_load() to load application"];
     m_remoteproc_boot [shape="box", label="ret=remoteproc_boot(&rproc)"];
     m_remoteproc_get_vdev [label="vdev=remoteproc_create_virtio(rproc, rpmsg_vdev_id, MASTER, NULL);"];
     m_rpmsg_shmpool_init[label="rpmsg_virtio_init_shm_pool(shpool, shbuf, shbuf_pool_size);"];

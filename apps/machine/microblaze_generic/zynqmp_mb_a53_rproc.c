@@ -12,7 +12,7 @@
  * DESCRIPTION
  *
  *      OpenAMP remoteproc implementation for Xilinx MicroBlaze design
- *      example. The design instanciates Xilinx MicroBlaze soft proccesor
+ *      example. The design instantiates Xilinx MicroBlaze soft processor
  *      in ZynqMP's programmable logic and uses processing system (PS)
  *      DDR memory for its text and data. The APU in PS runs Linux with
  *      reserved-memory nodes in its device tree toaccommodat the

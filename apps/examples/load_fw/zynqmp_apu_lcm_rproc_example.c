@@ -52,7 +52,7 @@ static void *apu_rproc_mmap(struct remoteproc *rproc,
 	if ((!da || !pa) || (*da == METAL_BAD_PHYS && *pa == METAL_BAD_PHYS))
 		return NULL;
 
-	LPRINTF("%s: pa=0x%x, da=0x%x, size=0x%x, atrribute=0x%x\n\r",
+	LPRINTF("%s: pa=0x%x, da=0x%x, size=0x%x, attribute=0x%x\n\r",
 		__func__, *pa, *da, size, attribute);
 	lda = *da;
 	lpa = *pa;

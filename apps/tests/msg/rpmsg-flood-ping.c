@@ -117,7 +117,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 	num_pkgs = NUMS_PACKAGES;
 	max_size = rpmsg_virtio_get_buffer_size(rdev);
 	if (max_size < 0) {
-		LPERROR("No avaiable buffer size.\r\n");
+		LPERROR("No available buffer size.\r\n");
 		return -1;
 	}
 	i_payload = (struct _payload *)metal_allocate_memory(max_size);
