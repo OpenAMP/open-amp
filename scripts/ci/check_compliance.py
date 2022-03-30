@@ -9,9 +9,9 @@ import subprocess
 import re
 import os
 from email.utils import parseaddr
-from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure, Attr
 import logging
 import argparse
+from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure, Attr
 import tempfile
 import traceback
 from pathlib import Path
@@ -22,10 +22,6 @@ EDIT_TIP = "\n\n*Tip: The bot edits this comment instead of posting a new " \
            "messages.*"
 
 logger = None
-
-
-# This ends up as None when we're not running in a Zephyr tree
-ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
 
 
 def git(*args, cwd=None):
@@ -189,8 +185,7 @@ class CheckPatch(ComplianceTest):
     path_hint = "<git-top>"
 
     def run(self):
-        # Default to Zephyr's checkpatch if ZEPHYR_BASE is set
-        checkpatch = os.path.join(ZEPHYR_BASE or GIT_TOP, 'scripts',
+        checkpatch = os.path.join(GIT_TOP, 'scripts',
                                   'checkpatch.pl')
         if not os.path.exists(checkpatch):
             self.skip(checkpatch + " not found")
@@ -199,19 +194,13 @@ class CheckPatch(ComplianceTest):
         diff = subprocess.Popen(('git', 'diff', COMMIT_RANGE),
                                 stdout=subprocess.PIPE)
         try:
-            subprocess.check_output((checkpatch, '--mailback','--mailback', '--no-tree', '-'),
+            subprocess.check_output(checkpatch + ' --mailback' + ' --no-tree' + ' -',
                                     stdin=diff.stdout,
                                     stderr=subprocess.STDOUT,
                                     shell=True, cwd=GIT_TOP)
-
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
-            if re.search("[1-9][0-9]* errors,", output):
-                self.add_failure(output)
-            else:
-                # No errors found, but warnings. Show them.
-                self.add_info(output)
-
+            self.add_failure(output)
 
 class GitLint(ComplianceTest):
     """
