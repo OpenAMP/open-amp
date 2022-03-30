@@ -2,10 +2,15 @@ include(CheckSymbolExists)
 
 collect (APP_COMMON_SOURCES helper.c)
 
+# If not provided, add default value for resource table
+if(NOT DEFINED ${RSC_TABLE})
+  set(RSC_TABLE 0x3ed20000 CACHE STRING "")
+endif(NOT DEFINED ${RSC_TABLE})
+
 set (_linker_script "${CMAKE_CURRENT_SOURCE_DIR}/linker_remote.ld")
-set_property (GLOBAL PROPERTY APP_LINKER_OPT "-T\"${_linker_script}\"")
+set_property (GLOBAL PROPERTY APP_LINKER_OPT " -Wl,--defsym,_rsc_table=${RSC_TABLE} -T\"${_linker_script}\"")
 set (_linker_large_text_script "${CMAKE_CURRENT_SOURCE_DIR}/linker_large_text.ld")
-set_property (GLOBAL PROPERTY APP_LINKER_LARGE_TEXT_OPT "-T\"${_linker_large_text_script}\"")
+set_property (GLOBAL PROPERTY APP_LINKER_LARGE_TEXT_OPT " -Wl,--defsym,_rsc_table=${RSC_TABLE} -T\"${_linker_large_text_script}\"")
 
 find_path(XIL_INCLUDE_DIR NAMES xparameters.h PATHS ${CMAKE_FIND_ROOT_PATH})
 collect (PROJECT_INC_DIRS "${XIL_INCLUDE_DIR}")
