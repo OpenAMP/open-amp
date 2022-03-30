@@ -2,7 +2,7 @@
 RPMsg is a framework to allow communication between two processors.
 RPMsg implementation in OpenAMP library is based on virtio. It complies
 the RPMsg Linux kernel implementation. It defines the handshaking on
-setting up and tearing down the communication between applicaitons
+setting up and tearing down the communication between applications
 running on two processors.
 
 ## RPMsg User API Flow Chats

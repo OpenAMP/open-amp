@@ -220,7 +220,7 @@ int app (struct rpmsg_device *rdev, void *priv)
 	LPRINTF(" Test Results: Error count = %d \r\n", err_cnt);
 	LPRINTF("**********************************\r\n");
 
-	/* Detroy RPMsg endpoint */
+	/* Destroy RPMsg endpoint */
 	rpmsg_destroy_ept(&lept);
 	LPRINTF("Quitting application .. Matrix multiplication end\r\n");
 

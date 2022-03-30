@@ -162,7 +162,7 @@ struct rpmsg_endpoint {
 	uint32_t addr;                                                                                            /**< endpoint local address */
 	uint32_t dest_addr;                                                                                       /**< endpoint default target address */
 	int (*cb)(struct rpmsg_endpoint *ept, void *data, struct metal_io_region *io, size_t len, uint32_t addr); /**< endpoint callback */
-	void (*destroy)(struct rpmsg_endpoint *ept);                                                              /**< user registerd endpoint destory callback */
+	void (*destroy)(struct rpmsg_endpoint *ept);                                                              /**< user registered endpoint destroy callback */
 	/* Whether we need another callback for ack ns announcement? */
 };
 ```

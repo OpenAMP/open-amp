@@ -50,8 +50,8 @@ string (TOUPPER ${MACHINE}                PROJECT_MACHINE_UPPER)
 
 # Select which components are in the openamp lib
 option (WITH_PROXY          "Build with proxy(access device controlled by other processor)" ON)
-option (WITH_APPS           "Build with sample applicaitons" OFF)
-option (WITH_PROXY_APPS     "Build with proxy sample applicaitons" OFF)
+option (WITH_APPS           "Build with sample applications" OFF)
+option (WITH_PROXY_APPS     "Build with proxy sample applications" OFF)
 if (WITH_APPS)
   if (WITH_PROXY)
     set (WITH_PROXY_APPS ON)

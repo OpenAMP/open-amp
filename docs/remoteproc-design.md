@@ -8,8 +8,8 @@ It will extend to crash detection, suspend and resume.
 | State | State Description |
 |:------|:------------------|
 | Offline | Initial state of a remoteproc instance. The remote presented by the remoteproc instance and its resource has been powered off. |
-| Configured | The remote presented by the remoteproc instance has been configured. And ready to load applicaiton. |
-| Ready | The remote presented by the remoteproc instance has applicaiton loaded, and ready to run. |
+| Configured | The remote presented by the remoteproc instance has been configured. And ready to load application. |
+| Ready | The remote presented by the remoteproc instance has application loaded, and ready to run. |
 | Stopped | The remote presented by the remoteproc instance has stopped from running. But the remote is still powered on. And the remote's resource hasn't been released. |
 
 ![Rproc LCM States](img/rproc-lcm-state-machine.png)
@@ -64,7 +64,7 @@ It will extend to crash detection, suspend and resume.
 			       size_t rsc_size)
   ```
 * Configure the remote presented by the remoteproc instance to make it able
-  to load applicaiton:
+  to load application:
   ```
   int remoteproc_config(struct remoteproc *rproc, void *data)
   ```
