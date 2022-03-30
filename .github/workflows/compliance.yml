@@ -22,6 +22,7 @@ jobs:
         pip3 install setuptools
         pip3 install junitparser==1.6.3 gitlint
     - name: Run Compliance Tests
+      continue-on-error: true
       id: compliance
       env:
         BASE_REF: ${{ github.base_ref }}
@@ -31,7 +32,6 @@ jobs:
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
         git rebase origin/${BASE_REF}
-        export
         ./scripts/ci/check_compliance.py -m checkpatch  -m Gitlint -m Identity -c origin/${BASE_REF}..
 
     - name: upload-results
@@ -46,30 +46,18 @@ jobs:
         if [[ ! -s "compliance.xml" ]]; then
           exit 1;
         fi
-        if [ -s checkpatch.txt ]; then
-           errors=$(cat checkpatch.txt)
-           errors="${errors//'%'/'%25'}"
-           errors="${errors//$'\n'/'%0A'}"
-           errors="${errors//$'\r'/'%0D'}"
-           echo "::error file=Checkpatch.txt::$errors"
-           exit=1
-        fi
-        if [ -s Identity.txt ]; then
-           errors=$(cat Identity.txt)
-           errors="${errors//'%'/'%25'}"
-           errors="${errors//$'\n'/'%0A'}"
-           errors="${errors//$'\r'/'%0D'}"
-           echo "::error file=Identity.txt::$errors"
-           exit=1
-        fi
-        if [ -s Gitlint.txt ]; then
-           errors=$(cat Gitlint.txt)
-           errors="${errors//'%'/'%25'}"
-           errors="${errors//$'\n'/'%0A'}"
-           errors="${errors//$'\r'/'%0D'}"
-           echo "::error file=Gitlint.txt::$errors"
-           exit=1
-        fi
-        if [ ${exit} == 1 ]; then
+
+        for file in checkpatch.txt Identity.txt Gitlint.txt; do
+          if [[ -s $file ]]; then
+            errors=$(cat $file)
+            errors="${errors//'%'/'%25'}"
+            errors="${errors//$'\n'/'%0A'}"
+            errors="${errors//$'\r'/'%0D'}"
+            echo "::error file=${file}::$errors"
+            exit=1
+          fi
+        done
+
+        if [ "${exit}" == "1" ]; then
           exit 1;
         fi
