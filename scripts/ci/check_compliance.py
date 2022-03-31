@@ -194,7 +194,8 @@ class CheckPatch(ComplianceTest):
         diff = subprocess.Popen(('git', 'diff', COMMIT_RANGE),
                                 stdout=subprocess.PIPE)
         try:
-            subprocess.check_output(checkpatch + ' --mailback' + ' --no-tree' + ' -',
+            subprocess.check_output(checkpatch + ' --mailback' + ' --codespell' +
+                                    ' --no-tree' + ' -',
                                     stdin=diff.stdout,
                                     stderr=subprocess.STDOUT,
                                     shell=True, cwd=GIT_TOP)
