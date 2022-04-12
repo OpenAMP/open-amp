@@ -131,7 +131,7 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
 
 	VQ_PARAM_CHK(vq == NULL, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(needed < 1, status, ERROR_VQUEUE_INVLD_PARAM);
-	VQ_PARAM_CHK(vq->vq_free_cnt == 0, status, ERROR_VRING_FULL);
+	VQ_PARAM_CHK(vq->vq_free_cnt < needed, status, ERROR_VRING_FULL);
 
 	VQUEUE_BUSY(vq);
 
