@@ -874,7 +874,10 @@ static int remoteproc_virtio_notify(void *priv, uint32_t id)
 {
 	struct remoteproc *rproc = priv;
 
-	return rproc->ops->notify(rproc, id);
+	if (rproc->ops->notify)
+		return rproc->ops->notify(rproc, id);
+
+	return 0;
 }
 
 struct virtio_device *
