@@ -423,6 +423,7 @@ struct remoteproc_ops {
 	 * @da - device address
 	 * @va - virtual address
 	 * @size - memory size
+	 * @buf - pointer to remoteproc_mem struct object to store result
 	 *
 	 * @returns remoteproc memory pointed by buf if success, otherwise NULL
 	 */
