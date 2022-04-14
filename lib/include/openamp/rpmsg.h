@@ -42,6 +42,7 @@ extern "C" {
 #define RPMSG_ERR_BUFF_SIZE		(RPMSG_ERROR_BASE - 5)
 #define RPMSG_ERR_INIT			(RPMSG_ERROR_BASE - 6)
 #define RPMSG_ERR_ADDR			(RPMSG_ERROR_BASE - 7)
+#define RPMSG_ERR_PERM			(RPMSG_ERROR_BASE - 8)
 
 struct rpmsg_endpoint;
 struct rpmsg_device;
@@ -87,6 +88,7 @@ struct rpmsg_endpoint {
  * @release_rx_buffer: release RPMsg RX buffer
  * @get_tx_payload_buffer: get RPMsg TX buffer
  * @send_offchannel_nocopy: send RPMsg data without copy
+ * @release_tx_buffer: release RPMsg TX buffer
  */
 struct rpmsg_device_ops {
 	int (*send_offchannel_raw)(struct rpmsg_device *rdev,
@@ -99,6 +101,7 @@ struct rpmsg_device_ops {
 	int (*send_offchannel_nocopy)(struct rpmsg_device *rdev,
 				      uint32_t src, uint32_t dst,
 				       const void *data, int len);
+	int (*release_tx_buffer)(struct rpmsg_device *rdev, void *txbuf);
 };
 
 /**
@@ -345,6 +348,28 @@ void rpmsg_release_rx_buffer(struct rpmsg_endpoint *ept, void *rxbuf);
  */
 void *rpmsg_get_tx_payload_buffer(struct rpmsg_endpoint *ept,
 				  uint32_t *len, int wait);
+
+/**
+ * @brief Releases unused buffer.
+ *
+ * This API can be called when the Tx buffer reserved by rpmsg_get_tx_payload_buffer
+ * needs to be released without having been sent to the remote side.
+ *
+ * Note that the rpmsg virtio is not able to detect if a buffer has already been released.
+ * The user must prevent a double release (e.g. by resetting its buffer pointer to zero after
+ * the release).
+ *
+ * @ept: the rpmsg endpoint
+ * @txbuf: tx buffer with message payload
+ *
+ * @return:
+ *   - RPMSG_SUCCESS on success
+ *   - RPMSG_ERR_PARAM on invalid parameter
+ *   - RPMSG_ERR_PERM if service not implemented
+ *
+ * @see rpmsg_get_tx_payload_buffer
+ */
+int rpmsg_release_tx_buffer(struct rpmsg_endpoint *ept, void *txbuf);
 
 /**
  * rpmsg_send_offchannel_nocopy() - send a message in tx buffer reserved by

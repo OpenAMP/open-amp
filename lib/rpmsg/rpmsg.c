@@ -170,6 +170,21 @@ void rpmsg_release_rx_buffer(struct rpmsg_endpoint *ept, void *rxbuf)
 		rdev->ops.release_rx_buffer(rdev, rxbuf);
 }
 
+int rpmsg_release_tx_buffer(struct rpmsg_endpoint *ept, void *buf)
+{
+	struct rpmsg_device *rdev;
+
+	if (!ept || !ept->rdev || !buf)
+		return RPMSG_ERR_PARAM;
+
+	rdev = ept->rdev;
+
+	if (rdev->ops.release_tx_buffer)
+		return rdev->ops.release_tx_buffer(rdev, buf);
+
+	return RPMSG_ERR_PERM;
+}
+
 void *rpmsg_get_tx_payload_buffer(struct rpmsg_endpoint *ept,
 				  uint32_t *len, int wait)
 {
