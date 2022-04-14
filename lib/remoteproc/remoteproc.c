@@ -48,7 +48,7 @@ remoteproc_get_mem(struct remoteproc *rproc, const char *name,
 	metal_list_for_each(&rproc->mems, node) {
 		mem = metal_container_of(node, struct remoteproc_mem, node);
 		if (name) {
-			if (!strncmp(name, mem->name, strlen(name)))
+			if (!strncmp(name, mem->name, RPROC_MAX_NAME_LEN))
 				return mem;
 		} else if (pa != METAL_BAD_PHYS) {
 			metal_phys_addr_t pa_start, pa_end;
