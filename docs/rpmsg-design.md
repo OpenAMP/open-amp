@@ -87,6 +87,12 @@ running on two processors.
 			       uint32_t src, uint32_t dst,
 			       const void *data, int len)`
   ```
+
+* Releases unused Tx buffer reserved by rpmsg_get_tx_payload_buffer() function:
+  ```
+  int rpmsg_release_tx_buffer(struct rpmsg_endpoint *ept, void *txbuf)
+  ```
+
 ## RPMsg User Defined Callbacks
 * RPMsg endpoint message received callback:
   ```
