@@ -66,6 +66,8 @@ struct rpmsg_virtio_config {
  * @svq: pointer to send virtqueue
  * @shbuf_io: pointer to the shared buffer I/O region
  * @shpool: pointer to the shared buffers pool
+ * @reclaimer: Rpmsg buffer reclaimer that contains buffers released by
+ *             the rpmsg_virtio_release_tx_buffer function.
  */
 struct rpmsg_virtio_device {
 	struct rpmsg_device rdev;
@@ -75,6 +77,7 @@ struct rpmsg_virtio_device {
 	struct virtqueue *svq;
 	struct metal_io_region *shbuf_io;
 	struct rpmsg_virtio_shm_pool *shpool;
+	struct metal_list reclaimer;
 };
 
 #define RPMSG_REMOTE	VIRTIO_DEV_DEVICE
