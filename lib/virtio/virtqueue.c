@@ -226,6 +226,12 @@ uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx)
 	return vq->vq_ring.desc[idx].len;
 }
 
+void *virtqueue_get_buffer_addr(struct virtqueue *vq, uint16_t idx)
+{
+	VRING_INVALIDATE(vq->vq_ring.desc[idx].addr);
+	return virtqueue_phys_to_virt(vq, vq->vq_ring.desc[idx].addr);
+}
+
 /**
  * virtqueue_free   - Frees VirtIO queue resources
  *
