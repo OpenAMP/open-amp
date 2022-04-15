@@ -509,6 +509,14 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 		printf("failed rpmsg_init_vdev\r\n");
 		goto err2;
 	}
+
+#ifdef WITH_RPMSG_FLOW_CONTROL
+	if (!rpmsg_virtio_get_features(rpmsg_vdev) && VIRTIO_RPMSG_F_FC) {
+		printf("Flow control is not activated.\r\n");
+		goto err2;
+	}
+#endif
+
 	return rpmsg_virtio_get_rpmsg_device(rpmsg_vdev);
 err2:
 	remoteproc_remove_virtio(rproc, vdev);

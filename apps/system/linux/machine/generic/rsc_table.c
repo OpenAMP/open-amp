@@ -12,13 +12,14 @@
 #include <openamp/open_amp.h>
 #include "rsc_table.h"
 
-#define RPMSG_IPU_C0_FEATURES        1
+#ifdef WITH_RPMSG_FLOW_CONTROL
+#define RPMSG_IPU_C0_FEATURES        ((1 << VIRTIO_RPMSG_F_NS) | (1 << VIRTIO_RPMSG_F_FC))
+#else
+#define RPMSG_IPU_C0_FEATURES        (1 << VIRTIO_RPMSG_F_NS)
+#endif
 
 /* VirtIO rpmsg device id */
 #define VIRTIO_ID_RPMSG_             7
-
-/* Remote supports Name Service announcement */
-#define VIRTIO_RPMSG_F_NS           0
 
 #define NUM_VRINGS                  0x02
 #define VRING_ALIGN                 0x1000
