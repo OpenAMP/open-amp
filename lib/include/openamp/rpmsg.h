@@ -29,6 +29,7 @@ extern "C" {
 #define RPMSG_ADDR_BMP_SIZE		(128)
 
 #define RPMSG_NS_EPT_ADDR		(0x35)
+#define RPMSG_FC_EPT_ADDR		(0x36)
 #define RPMSG_RESERVED_ADDRESSES	(1024)
 #define RPMSG_ADDR_ANY			0xFFFFFFFF
 
@@ -52,6 +53,7 @@ typedef int (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
 typedef void (*rpmsg_ns_unbind_cb)(struct rpmsg_endpoint *ept);
 typedef void (*rpmsg_ns_bind_cb)(struct rpmsg_device *rdev,
 				 const char *name, uint32_t dest);
+typedef void (*rpmsg_flow_ctrl_cb)(struct rpmsg_endpoint *ept, uint32_t flags, uint32_t src);
 
 /**
  * struct rpmsg_endpoint - binds a local rpmsg address to its user
@@ -63,6 +65,7 @@ typedef void (*rpmsg_ns_bind_cb)(struct rpmsg_device *rdev,
  *      for future use, for now, only allow RPMSG_SUCCESS as return value.
  * @ns_unbind_cb: end point service unbind callback, called when remote
  *                ept is destroyed.
+ * @flowctrl_cb: used to inform an endpoint about the state of the remote endpoint
  * @node: end point node.
  * @priv: private data for the driver's use
  *
@@ -76,6 +79,7 @@ struct rpmsg_endpoint {
 	uint32_t dest_addr;
 	rpmsg_ept_cb cb;
 	rpmsg_ns_unbind_cb ns_unbind_cb;
+	rpmsg_flow_ctrl_cb flow_ctrl_cb;
 	struct metal_list node;
 	void *priv;
 };
@@ -105,6 +109,7 @@ struct rpmsg_device_ops {
  * struct rpmsg_device - representation of a RPMsg device
  * @endpoints: list of endpoints
  * @ns_ept: name service endpoint
+ * @fc_ept: flow control service endpoint
  * @bitmap: table endpoint address allocation.
  * @lock: mutex lock for rpmsg management
  * @ns_bind_cb: callback handler for name service announcement without local
@@ -117,6 +122,7 @@ struct rpmsg_device_ops {
 struct rpmsg_device {
 	struct metal_list endpoints;
 	struct rpmsg_endpoint ns_ept;
+	struct rpmsg_endpoint fc_ept;
 	unsigned long bitmap[metal_bitmap_longs(RPMSG_ADDR_BMP_SIZE)];
 	metal_mutex_t lock;
 	rpmsg_ns_bind_cb ns_bind_cb;
@@ -492,6 +498,25 @@ static inline unsigned int is_rpmsg_ept_ready(struct rpmsg_endpoint *ept)
 {
 	return ept && ept->rdev && ept->dest_addr != RPMSG_ADDR_ANY;
 }
+
+/*
+ * The feature bitmap for the endpoint flow control flags.
+ * Only software flow control implemented yet.
+ */
+
+/* Set when ept is ready to communicate, reset to request to pause the communication */
+#define RPMSG_EPT_FC_ON  (1 << 0)
+
+/**
+ * rpmsg_set_flow_control - inform remote processor about it state
+ *
+ * @ept: pointer to the rpmsg endpoint
+ * @state: state of the local endpoint
+ *
+ * It unregisters the rpmsg endpoint from the rpmsg device and calls the
+ * destroy endpoint callback if it is provided.
+ */
+int rpmsg_set_flow_control(struct rpmsg_endpoint *ept, uint32_t flags);
 
 #if defined __cplusplus
 }

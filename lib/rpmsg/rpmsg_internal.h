@@ -103,6 +103,9 @@ rpmsg_get_ept_from_addr(struct rpmsg_device *rdev, uint32_t addr)
 	return rpmsg_get_endpoint(rdev, NULL, addr, RPMSG_ADDR_ANY);
 }
 
+int rpmsg_fc_callback(struct rpmsg_endpoint *ept, void *data,
+		      size_t len, uint32_t src, void *priv);
+
 #if defined __cplusplus
 }
 #endif
