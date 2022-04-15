@@ -783,6 +783,12 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 				     rpmsg_virtio_ns_callback, NULL);
 	}
 
+	if (!!(vdev->features & (1 << VIRTIO_RPMSG_F_FC))) {
+		rpmsg_register_endpoint(rdev, &rdev->fc_ept, "FC",
+					RPMSG_FC_EPT_ADDR, RPMSG_FC_EPT_ADDR,
+					rpmsg_fc_callback, NULL);
+	}
+
 #ifndef VIRTIO_DEVICE_ONLY
 	if (role == RPMSG_HOST)
 		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
