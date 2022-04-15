@@ -15,7 +15,7 @@
 #define __section_t(S)          __attribute__((__section__(#S)))
 #define __resource              __section_t(.resource_table)
 
-#define RPMSG_IPU_C0_FEATURES        1
+#define RPMSG_VDEV_DFEATURES        (1 << VIRTIO_RPMSG_F_NS)
 
 #define NUM_VRINGS                  0x02
 #define VRING_ALIGN                 0x1000
@@ -41,7 +41,7 @@ struct remote_resource_table __resource resources = {
 
 	/* Virtio device entry */
 	{
-	 RSC_VDEV, VIRTIO_ID_RPMSG, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,
+	 RSC_VDEV, VIRTIO_ID_RPMSG, 0, RPMSG_VDEV_DFEATURES, 0, 0, 0,
 	 NUM_VRINGS, {0, 0},
 	 },
 
