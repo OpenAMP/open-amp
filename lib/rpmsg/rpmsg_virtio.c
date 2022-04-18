@@ -324,15 +324,9 @@ static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 	struct rpmsg_hdr *rp_hdr;
 	uint16_t idx;
 	int tick_count;
-	int status;
 
 	/* Get the associated remote device for channel. */
 	rvdev = metal_container_of(rdev, struct rpmsg_virtio_device, rdev);
-
-	/* Validate device state */
-	status = rpmsg_virtio_get_status(rvdev);
-	if (!(status & VIRTIO_CONFIG_STATUS_DRIVER_OK))
-		return NULL;
 
 	if (wait)
 		tick_count = RPMSG_TICK_COUNT / RPMSG_TICKS_PER_INTERVAL;
