@@ -32,6 +32,7 @@
 	(&(const struct rpmsg_virtio_config) {     \
 		.h2r_buf_size = RPMSG_BUFFER_SIZE, \
 		.r2h_buf_size = RPMSG_BUFFER_SIZE, \
+		.split_shpool = false,             \
 	})
 #else
 #define RPMSG_VIRTIO_DEFAULT_CONFIG          NULL
@@ -692,11 +693,11 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 		 * Since device is RPMSG Remote so we need to manage the
 		 * shared buffers. Create shared memory pool to handle buffers.
 		 */
+		rvdev->shpool = config->split_shpool ? shpool + 1 : shpool;
 		if (!shpool)
 			return RPMSG_ERR_PARAM;
-		if (!shpool->size)
+		if (!shpool->size || !rvdev->shpool->size)
 			return RPMSG_ERR_NO_BUFF;
-		rvdev->shpool = shpool;
 
 		vq_names[0] = "rx_vq";
 		vq_names[1] = "tx_vq";
