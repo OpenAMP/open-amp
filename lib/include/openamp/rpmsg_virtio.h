@@ -49,10 +49,12 @@ struct rpmsg_virtio_shm_pool {
  *
  * @h2r_buf_size: the size of the buffer used to send data from host to remote
  * @r2h_buf_size: the size of the buffer used to send data from remote to host
+ * @split_shpool: the flag that splitting share memory pool to TX and RX
  */
 struct rpmsg_virtio_config {
 	uint32_t h2r_buf_size;
 	uint32_t r2h_buf_size;
+	bool split_shpool;
 };
 
 /**
@@ -196,8 +198,13 @@ int rpmsg_init_vdev(struct rpmsg_virtio_device *rvdev,
  * @param ns_bind_cb  - callback handler for name service announcement without
  *                      local endpoints waiting to bind.
  * @param shm_io - pointer to the share memory I/O region.
- * @param shpool - pointer to shared memory pool. rpmsg_virtio_init_shm_pool has
- *                 to be called first to fill this structure.
+ * @param shpool - pointer to shared memory pool array.
+ *                 If the config->split_shpool is turn on, the array will contain
+ *                 two elements, the shpool of txshpool and rxshpool, Otherwise,
+ *                 the array has only one element, and txshpool rxshpool shares
+ *                 a shpool.
+ *                 And rpmsg_virtio_init_shm_pool has to be called first to fill
+ *                 each shpool in this array.
  * @param config - pointer to configuration structure
  *
  * @return - status of function execution
