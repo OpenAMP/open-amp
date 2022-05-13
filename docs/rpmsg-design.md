@@ -115,3 +115,9 @@ running on two processors.
   ```
   void (*rpmsg_ns_unbind_cb)(struct rpmsg_endpoint *ept)
   ```
+* RPMsg endpoint flow control callback. If user defines such callback,
+  when a remote endpoint send flow control information, it will call this callback to
+  be informed on the remote endpoint state based on flags.:
+  ```
+  void (*rpmsg_flow_ctrl_cb)(struct rpmsg_endpoint *ept, uint32_t flags, uint32_t src)
+  ```
