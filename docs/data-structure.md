@@ -1,106 +1,67 @@
-Libmetal helper data struct
-===========================
-```
-struct metal_io_region {
-	char name[64];                      /**< I/O region name */
-	void                    *virt;      /**< base virtual address */
-	const metal_phys_addr_t *physmap;   /**< table of base physical address
-	                                         of each of the pages in the I/O
-	                                         region */
-	size_t                  size;       /**< size of the I/O region */
-	unsigned long           page_shift; /**< page shift of I/O region */
-	metal_phys_addr_t       page_mask;  /**< page mask of I/O region */
-	unsigned int            mem_flags;  /**< memory attribute of the
-	                                         I/O region */
-	struct metal_io_ops     ops;        /**< I/O region operations */
-};
-
-
-/** Libmetal device structure. */
-struct metal_device {
-	const char             *name;       /**< Device name */
-	struct metal_bus       *bus;        /**< Bus that contains device */
-	unsigned               num_regions; /**< Number of I/O regions in
-	                                      device */
-	struct metal_io_region regions[METAL_MAX_DEVICE_REGIONS]; /**< Array of
-	                                                I/O regions in device*/
-	struct metal_list      node;       /**< Node on bus' list of devices */
-	int                    irq_num;    /**< Number of IRQs per device */
-	void                   *irq_info;  /**< IRQ ID */
-};
-```
-
 Remoteproc data struct
 ===========================
+* Representation of the remote processor instance:
+
 ```
 struct remoteproc {
-	struct metal_device dev;             /**< Each remoteproc has a device, each device knows its memories regions */
-	metal_mutex_t lock;                  /**< mutex lock */
-	void *rsc_table;                     /**< pointer to resource table */
-	size_t rsc_len;                      /**< length of the resource table */
-	const struct remoteproc_ops *ops;    /**< pointer to remoteproc operation */
-	metal_phys_addr_t bootaddr;          /**< boot address */
-	const struct loader_ops *loader_ops; /**< image loader operation */
-	unsigned int state;                  /**< remoteproc state */
-	struct metal_list vdevs;             /**< list of vdevs  (can we limited to one for code size but linux and resource table supports multiple */
-	void *priv;                          /**< remoteproc private data */
+	metal_mutex_t lock;                /**< mutex lock */
+	void *rsc_table;                   /**< address of the resource table */
+	size_t rsc_len;                    /**< length of the resource table */
+	struct metal_io_region *rsc_io;    /**< metal I/O region of resource table*/
+	struct metal_list mems;            /**< remoteproc memories */
+	struct metal_list vdevs;           /**< remoteproc virtio devices */
+	unsigned long bitmap;              /**< bitmap for notify IDs for remoteproc subdevices */
+	const struct remoteproc_ops *ops;  /**< pointer to remoteproc operation */
+	metal_phys_addr_t bootaddr;        /**< boot address */
+	const struct loader_ops *loader;   /**< image loader operation */
+	unsigned int state;                /**< remote processor state */
+	void *priv;                        /**< remoteproc private data */
+};
+```
+* Representation of the remote processor virtio device:
+```
+
+struct remoteproc_virtio {
+	void *priv;                           /**< private data */
+	void *vdev_rsc;                       /**< address of vdev resource */
+	struct metal_io_region *vdev_rsc_io;  /**< metal I/O region of vdev_info, can be NULL */
+	rpvdev_notify_func notify;            /**< notification function */
+	struct virtio_device vdev;            /**< associated virtio device */
+	struct metal_list node;               /**< node for the remoteproc vdevs list */
 };
 
-struct remoteproc_vdev {
-	struct metal_list node;          /**< node */
-	struct remoteproc *rproc;        /**< pointer to the remoteproc instance */
-	struct virtio_dev;               /**< virtio device */
-	uint32_t notify_id;              /**< virtio device notification ID */
-	void *vdev_rsc;                  /**< pointer to the vdev space in resource table */
-	struct metal_io_region *vdev_io; /**< pointer to the vdev space I/O region */ 
-	int vrings_num;                  /**< number of vrings */
-	struct rproc_vrings[1];          /**< vrings array */
-};
-
-struct remoteproc_vring {
-	struct remoteproc_vdev *rpvdev;  /**< pointer to the remoteproc vdev */
-	uint32_t notify_id;              /**< vring notify id */
-	size_t len;                      /**< vring length */
-	uint32_t alignment;              /**< vring alignment */
-	void *va;                        /**< vring start virtual address */
-	struct metal_io_region *io;      /**< pointer to the vring I/O region */
-};
 ```
 
 Virtio Data struct
 ===========================
+* Representation of a virtio device:
 ```
 struct virtio_dev {
-	int index;                               /**< unique position on the virtio bus */
-	struct virtio_device_id id;              /**< the device type identification (used to match it with a driver). */
-	struct metal_device *dev;                /**< do we need this in virtio device ? */
-	metal_spinlock lock;                     /**< spin lock */
+	uint32_t notifyid;                       /**< unique position on the virtio bus */
+	struct virtio_device_id id;              /**< the device type identification (used to match it with a driver */
 	uint64_t features;                       /**< the features supported by both ends. */
 	unsigned int role;                       /**< if it is virtio backend or front end. */
-	void (*rst_cb)(struct virtio_dev *vdev); /**< user registered virtio device callback */
-	void *priv;                              /**< pointer to virtio_dev private data */
-	int vrings_num;                          /**< number of vrings */
-	struct virtqueue vqs[1];                 /**< array of virtqueues */
+	virtio_dev_reset_cb reset_cb;            /**< user registered device callback */
+	const struct virtio_dispatch *func;      /**< Virtio dispatch table */
+	void *priv;                              /**< pointer to virtio_device private data */
+	unsigned int vrings_num;                 /**< number of vrings */
+	struct virtio_vring_info *vrings_info;   /**< vrings associated to the virtio device*/
 };
+```
 
+* Representation of a virtqueue local context:
+```
 struct virtqueue {
-	char vq_name[VIRTQUEUE_MAX_NAME_SZ];    /**< virtqueue name */
-	struct virtio_device *vdev;             /**< pointer to virtio device */
-	uint16_t vq_queue_index;
+	struct virtio_device *vq_dev;            /**< pointer to virtio device */
+	const char *vq_name;                     /**< virtqueue name */
+	uint16_t vq_queue_index;                 /**< virtqueue name */
 	uint16_t vq_nentries;
-	uint32_t vq_flags;
-	int vq_alignment;
-	int vq_ring_size;
-	boolean vq_inuse;
-	void *vq_ring_mem;
-	void (*callback) (struct virtqueue * vq); /**< virtqueue callback */
-	void (*notify) (struct virtqueue * vq);   /**< virtqueue notify remote function */
-	int vq_max_indirect_size;
-	int vq_indirect_mem_size;
+	void (*callback)(struct virtqueue *vq);  /**< virtqueue callback */
+	void (*notify)(struct virtqueue *vq);    /**< virtqueue notify remote function */
 	struct vring vq_ring;
 	uint16_t vq_free_cnt;
 	uint16_t vq_queued_cnt;
-	struct metal_io_region *buffers_io; /**< buffers shared memory */
+	void *shm_io;                            /**< pointer to the shared buffer I/O region */
 
 	/*
 	 * Head of the free chain in the descriptor table. If
@@ -121,7 +82,6 @@ struct virtqueue {
 	 */
 	uint16_t vq_available_idx;
 
-	uint8_t padd;
 	/*
 	 * Used by the host side during callback. Cookie
 	 * holds the address of buffer received from other side.
@@ -134,35 +94,56 @@ struct virtqueue {
 		uint16_t ndescs;
 	} vq_descx[0];
 };
+```
 
+* Representation of a shared virtqueue structure defined in Virtual I/O Device (VIRTIO) Version 1.1:
+```
 struct vring {
-	unsigned int num;   /**< number of buffers of the vring */
-	struct vring_desc *desc;
-	struct vring_avail *avail;
-	struct vring_used *used;
+	unsigned int num;           /**< number of buffers of the vring */
+	struct vring_desc *desc;    /**< pointer to the buffers descriptor */
+	struct vring_avail *avail;  /**< pointer to the ring of available descriptor heads*/
+	struct vring_used *used;    /**< pointer to the ring of used descriptor heads */
 };
 ```
-RPMsg Data struct
+RPMsg virtio Data struct
 ===========================
+* Representation of a RPMsg virtio device:
 ```
 struct rpmsg_virtio_device {
-	struct virtio_dev *vdev;           /**< pointer to the virtio device */
-	struct virtqueue *rvq;             /**< pointer to receive virtqueue */
-	struct virtqueue *svq;             /**< pointer to send virtqueue */
-	int buffers_number;                /**< number of shared buffers */
-	struct metal_io_region *shbuf_io;  /**< pointer to the shared buffer I/O region */
-	void *shbuf;
-	int (*new_endpoint_cb)(const char *name, uint32_t addr); /**< name service announcement user designed callback which is used for when there is a name service announcement, there is no local endpoints waiting to bind */
-	struct metal_list endpoints;       /**< list of endpoints */
+	struct rpmsg_device rdev;               /**< the associated rpmsg device */
+	struct rpmsg_virtio_config config;      /**< structure containing the virtio configuration */
+	struct virtio_device *vdev;             /**< pointer to the virtio device */
+	struct virtqueue *rvq;                  /**< pointer to the receive virtqueue */
+	struct virtqueue *svq;                  /**< a to the send virtqueue */
+	struct metal_io_region *shbuf_io;       /**< pointer to the shared buffer I/O region */
+	struct rpmsg_virtio_shm_pool *shpool;   /**< pointer to the shared buffers pool */
 };
 
+```
+
+RPMsg Data struct
+===========================
+* representation of a RPMsg devices:
+```
+struct rpmsg_device {
+	struct metal_list endpoints;                                   /**< list of endpoints */
+	struct rpmsg_endpoint ns_ept;                                  /**< name service endpoint */
+	unsigned long bitmap[metal_bitmap_longs(RPMSG_ADDR_BMP_SIZE)]; /**< bitmap: table endpoint address allocation */
+	metal_mutex_t lock;                                            /**<  mutex lock for rpmsg management */
+	rpmsg_ns_bind_cb ns_bind_cb;                                   /**< callback handler for name service announcement without local endpoints waiting to bind. */
+	struct rpmsg_device_ops ops;                                   /**<  RPMsg device operations */
+	bool support_ns;                                               /**< create/destroy namespace message */
+};
+
+* Representation of a local RPMsg endpoint associated to an unique address:
 struct rpmsg_endpoint {
-	char name[SERVICE_NAME_SIZE];
-	struct rpmsg_virtio_dev *rvdev;                                                                           /**< pointer to the RPMsg virtio device */
-	uint32_t addr;                                                                                            /**< endpoint local address */
-	uint32_t dest_addr;                                                                                       /**< endpoint default target address */
-	int (*cb)(struct rpmsg_endpoint *ept, void *data, struct metal_io_region *io, size_t len, uint32_t addr); /**< endpoint callback */
-	void (*destroy)(struct rpmsg_endpoint *ept);                                                              /**< user registered endpoint destroy callback */
-	/* Whether we need another callback for ack ns announcement? */
+	char name[SERVICE_NAME_SIZE];                                                     /**< associated name service */
+	struct rpmsg_virtio_dev *rvdev;                                                   /**< pointer to the RPMsg virtio device */
+	uint32_t addr;                                                                    /**< endpoint local address */
+	uint32_t dest_addr;                                                               /**< endpoint default target address */
+	int (*cb)(struct rpmsg_endpoint *ept, void *data, size_t len, uint32_t addr);     /**< endpoint callback */
+	void (*ns_unbind_cb)(struct rpmsg_endpoint *ept);                                 /**< remote endpoint destroy callback */
+	struct metal_list node;                                                           /**< node for the rpmsg_device endpoints list */
+	void *priv;                                                                       /**< user private data */
 };
 ```
