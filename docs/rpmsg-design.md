@@ -88,11 +88,7 @@ running on two processors.
 			       const void *data, int len)`
   ```
 ## RPMsg User Defined Callbacks
-* RPMsg endpoint message received callback:
-  ```
-  int (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
-		      size_t len, uint32_t src, void *priv)
-  ```
+### RPMsg device Callbacks
 * RPMsg name service binding callback. If user defines such callback, when
   there is a name service announcement arrives, if there is no registered
   endpoint found to bind to this name service, it will call this callback.
@@ -106,6 +102,12 @@ running on two processors.
   ```
   void (*rpmsg_ns_unbind_cb)(struct rpmsg_device *rdev,
 			   const char *name, uint32_t dest)
+  ```
+### RPMsg endpoint Callbacks
+* RPMsg endpoint message received callback:
+  ```
+  int (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
+          size_t len, uint32_t src, void *priv)
   ```
 * RPMsg endpoint name service unbind callback. If user defines such callback,
   when there is name service destroy arrives, it will call this callback to
