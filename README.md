@@ -252,7 +252,7 @@ https://github.com/OpenAMP/meta-openamp
   `IMAGE_INSTALL_append` in the `local.conf` file.
 * You can also add OpenAMP demos Linux applications packages to your yocto packages list. OpenAMP
   demo examples recipes are also in `meta-openamp`:
-  https://github.com/OpenAMP/meta-openamp/tree/master/recipes-openamp/openamp-examples
+  https://github.com/OpenAMP/meta-openamp/tree/master/recipes-openamp/rpmsg-examples
 
 In order to user OpenAMP(RPMsg) in Linux userspace, you will need to have put the IPI device,
   vring memory and shared buffer memory to your Linux kernel device tree. The device tree example
