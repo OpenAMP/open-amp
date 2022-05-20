@@ -2,9 +2,11 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-/* This is a sample demonstration application that showcases usage of proxy from the remote core. 
- This application is meant to run on the remote CPU running baremetal.
- This applicationr can print to to master console and perform file I/O using proxy mechanism. */
+/*
+ * This is a sample demonstration application that showcases usage of proxy from the remote core.
+ * This application is meant to run on the remote CPU running baremetal.
+ * This applicationr can print to to master console and perform file I/O using proxy mechanism.
+ */
 
 #include <errno.h>
 #include <stdio.h>
