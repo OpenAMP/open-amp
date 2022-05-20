@@ -104,7 +104,7 @@ The [Zephyr open-amp repo](https://github.com/zephyrproject-rtos/open-amp)
 implements the open-amp library for the Zephyr project. It is mainly a fork of
 this repository, with some add-ons for integration in the Zephyr project.
 The standard way to compile OpenAMP for a Zephyr project is to use Zephyr build
-environment. Please refer to [Zephyr OpenAMP samples](https://github.com/zephyrproject-rtos/zephyr/tree/master/samples/subsys/ipc) for examples.
+environment. Please refer to [Zephyr OpenAMP samples](https://github.com/zephyrproject-rtos/zephyr/tree/main/samples/subsys/ipc) for examples.
 
 Nevertheless you can compile the OpenAMP project for Zephyr.
 As OpenAMP uses libmetal, please refer to libmetal README to build libmetal
@@ -257,7 +257,7 @@ https://github.com/OpenAMP/meta-openamp
 In order to user OpenAMP(RPMsg) in Linux userspace, you will need to have put the IPI device,
   vring memory and shared buffer memory to your Linux kernel device tree. The device tree example
   can be found here:
-  https://github.com/OpenAMP/open-amp/blob/master/apps/machine/zynqmp/openamp-linux-userspace.dtsi
+  https://github.com/OpenAMP/open-amp/blob/main/apps/machine/zynqmp/openamp-linux-userspace.dtsi
 
 ## Version
 The OpenAMP version follows the set of rule proposed in [Semantic Versioning specification](https://semver.org/).
@@ -282,7 +282,7 @@ As an open-source project, we welcome and encourage the community to submit patc
 Then following points should be rescpected to facilitate the review process.
 
 ### Licencing
-Code is contributed to the Linux kernel under a number of licenses, but all code must be compatible with version the [BSD License](https://github.com/OpenAMP/open-amp/blob/master/LICENSE.md), which is the license covering the OpenAMP distribution as a whole. In practice, use the following tag instead of the full license text in the individual files:
+Code is contributed to the Linux kernel under a number of licenses, but all code must be compatible with version the [BSD License](https://github.com/OpenAMP/open-amp/blob/main/LICENSE.md), which is the license covering the OpenAMP distribution as a whole. In practice, use the following tag instead of the full license text in the individual files:
 
     ```
     SPDX-License-Identifier:    BSD-3-Clause
