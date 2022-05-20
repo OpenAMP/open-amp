@@ -5,7 +5,7 @@
 /*
  * This is a sample demonstration application that showcases usage of rpmsg
  * This application is meant to run on the remote CPU running baremetal code.
- * This application echoes back data that was sent to it by the master core.
+ * This application echoes back data that was sent to it by the host core.
  */
 
 #include <stdio.h>
@@ -43,7 +43,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 		return RPMSG_SUCCESS;
 	}
 
-	/* Send data back to master */
+	/* Send data back to host */
 	while (1) {
 		int ret;
 

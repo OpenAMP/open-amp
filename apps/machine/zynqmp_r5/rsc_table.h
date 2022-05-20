@@ -9,7 +9,7 @@
 
 /*
  * This file populates resource table for BM remote
- * for use by the Linux Master
+ * for use by the Linux host
  */
 
 #ifndef RSC_TABLE_H_

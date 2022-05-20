@@ -1,8 +1,8 @@
 # linux_rpc_demo
 This readme is about the OpenAMP linux_rpc_demo.
 
-The linux_rpc_demo is about remote procedure calls between linux master and linux
-slave using rpmsg to perform
+The linux_rpc_demo is about remote procedure calls between linux host and linux
+remote using rpmsg to perform
 1. File operations such as open, read, write and close
 2. I/O operation such as printf, scanf
 
@@ -51,7 +51,7 @@ generated to `build/usr/local/bin` directory.
     $ sudo LD_LIBRARY_PATH=<openamp_built>/usr/local/lib:<libmetal_built>/usr/local/lib \
        build-openamp/usr/local/bin/linux_rpc_demo-shared 1
     ```
-Enter the inputs on the master side the same gets printed on the remote side. You will see communication between the master and remote process using rpmsg calls.
+Enter the inputs on the host side the same gets printed on the remote side. You will see communication between the host and remote process using rpmsg calls.
 
 ## Note:
 `sudo` is required to run the OpenAMP demos between Linux processes, as it doesn't work on

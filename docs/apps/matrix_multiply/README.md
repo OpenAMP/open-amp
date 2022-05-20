@@ -28,13 +28,13 @@ You will need to manually compile the following kernel modules with your Linux k
 
 #### Linux Userspace Compliation
 * Compile `obsolete/apps/matrix_multiply/system/linux/userspace/mat_mul_demo` into your Linux OS.
-* If you are running generic(baremetal) system as remoteproc slave, and Linux as remoteproc master, please also add the built generic `matrix_multiply` executable to the firmware of your Linux OS.
+* If you are running generic(baremetal) system as remoteproc remote, and Linux as remoteproc host, please also add the built generic `matrix_multiply` executable to the firmware of your Linux OS.
 
 ## Run the Demo
 
 ### Load the Demo
 After Linux boots,
-* Load the machine remoteproc. If Linux runs as remoteproc master, you will need to pass the other processor's matrix_multiply binary as firmware argument to the remoteproc module.
+* Load the machine remoteproc. If Linux runs as remoteproc host, you will need to pass the other processor's matrix_multiply binary as firmware argument to the remoteproc module.
 * If you run the Linux kernel application demo, load the `rpmsg_mat_mul_kern_app` module, you will see the kernel app will generate two matrices to the other processor, and output the result matrix returned by the other processor.
 * If you run the userspace application demo, load the `rpmsg_user_dev_driver` module.
 * If you run the userspace application demo `mat_mul_demo`, you will see the similar output on the console:

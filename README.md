@@ -11,9 +11,9 @@ enable development of software applications for Asymmetric Multiprocessing
    environments
 3. Compatibility with upstream Linux remoteproc and rpmsg components
 4. Following AMP configurations supported
-	a. Linux master/Generic(Baremetal) remote
-	b. Generic(Baremetal) master/Linux remote
-5. Proxy infrastructure and supplied demos showcase ability of proxy on master
+	a. Linux host/Generic(Baremetal) remote
+	b. Generic(Baremetal) host/Linux remote
+5. Proxy infrastructure and supplied demos showcase ability of proxy on host
    to handle printf, scanf, open, close, read, write calls from Bare metal
    based remote contexts.
 
@@ -96,7 +96,7 @@ library for it project:
   enabled on buffers.
 * **RPMSG_BUFFER_SIZE** (default 512): adjust the size of the RPMsg buffers.
   The default value of the RPMsg size is compatible with the Linux Kernel hard
-  coded value. If you AMP configuration is Linux kernel master/ OpenAMP remote,
+  coded value. If you AMP configuration is Linux kernel host/ OpenAMP remote,
   this option must not be used.
 
 ### Example to compile OpenAMP for Zephyr
@@ -264,11 +264,11 @@ The OpenAMP version follows the set of rule proposed in [Semantic Versioning spe
 
 ## Supported System and Machines
 For now, it supports:
-* Zynq generic slave
-* Zynq UltraScale+ MPSoC R5 generic slave
+* Zynq generic remote
+* Zynq UltraScale+ MPSoC R5 generic remote
 * Linux host OpenAMP between Linux userspace processes
-* Linux userspace OpenAMP RPMsg master
-* Linux userspace OpenAMP RPMsg slave
+* Linux userspace OpenAMP RPMsg host
+* Linux userspace OpenAMP RPMsg remote
 * Linux userspace OpenAMP RPMsg and MicroBlaze bare metal remote
 
 ## Known Limitations:

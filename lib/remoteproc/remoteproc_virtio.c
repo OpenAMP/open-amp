@@ -182,7 +182,7 @@ static const struct virtio_dispatch remoteproc_virtio_dispatch_funcs = {
 #ifndef VIRTIO_DEVICE_ONLY
 	/*
 	 * We suppose here that the vdev is in a shared memory so that can
-	 * be access only by one core: the master. In this case salve core has
+	 * be access only by one core: the host. In this case salve core has
 	 * only read access right.
 	 */
 	.set_status = rproc_virtio_set_status,
@@ -250,7 +250,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 #ifndef VIRTIO_DEVICE_ONLY
 	if (role == VIRTIO_DEV_DRIVER) {
 		uint32_t dfeatures = rproc_virtio_get_dfeatures(vdev);
-		/* Assume the master support all slave features */
+		/* Assume the virtio driver support all remote features */
 		rproc_virtio_negotiate_features(vdev, dfeatures);
 	}
 #endif
@@ -336,9 +336,9 @@ void rproc_virtio_wait_remote_ready(struct virtio_device *vdev)
 	uint8_t status;
 
 	/*
-	 * No status available for slave. As Master has not to wait
-	 * slave action, we can return. Behavior should be updated
-	 * in future if a slave status is added.
+	 * No status available for remote. As virtio driver has not to wait
+	 * remote action, we can return. Behavior should be updated
+	 * in future if a remote status is added.
 	 */
 	if (vdev->role == VIRTIO_DEV_DRIVER)
 		return;

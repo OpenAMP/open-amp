@@ -215,12 +215,12 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 	}
 
 	xil_printf("initializing rpmsg shared buffer pool\r\n");
-	/* Only RPMsg virtio master needs to initialize the shared buffers pool */
+	/* Only RPMsg virtio driver needs to initialize the shared buffers pool */
 	rpmsg_virtio_init_shm_pool(&shpool, shbuf,
 				   (SHARED_MEM_SIZE - SHARED_BUF_OFFSET));
 
 	xil_printf("initializing rpmsg vdev\r\n");
-	/* RPMsg virtio slave can set shared buffers pool argument to NULL */
+	/* RPMsg virtio device can set shared buffers pool argument to NULL */
 	ret =  rpmsg_init_vdev(rpmsg_vdev, vdev, ns_bind_cb,
 			       shbuf_io,
 			       &shpool);

@@ -5,8 +5,8 @@
 /*
  * This is a sample demonstration application that showcases usage of remoteproc
  * and rpmsg APIs on the remote core. This application is meant to run on the remote CPU
- * running baremetal code. This applicationr receives two matrices from the master,
- * multiplies them and returns the result to the master core.
+ * running baremetal code. This applicationr receives two matrices from the host,
+ * multiplies them and returns the result to the host core.
  */
 
 #include <stdio.h>

@@ -6,7 +6,7 @@
 
 /*
  * This file populates resource table for BM remote
- * for use by the Linux Master
+ * for use by the Linux host
  */
 
 #include <openamp/open_amp.h>

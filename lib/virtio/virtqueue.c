@@ -99,7 +99,7 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 
 	/*
 	 * CACHE: nothing to be done here. Only desc.next is setup at this
-	 * stage but that is only written by master, so no need to flush it.
+	 * stage but that is only written by driver, so no need to flush it.
 	 */
 
 	return status;
@@ -188,7 +188,7 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 	void *cookie;
 	uint16_t used_idx, desc_idx;
 
-	/* Used.idx is updated by slave, so we need to invalidate */
+	/* Used.idx is updated by the virtio device, so we need to invalidate */
 	VRING_INVALIDATE(vq->vq_ring.used->idx);
 
 	if (!vq || vq->vq_used_cons_idx == vq->vq_ring.used->idx)
@@ -201,7 +201,7 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 
 	atomic_thread_fence(memory_order_seq_cst);
 
-	/* Used.ring is written by slave, invalidate it */
+	/* Used.ring is written by remote, invalidate it */
 	VRING_INVALIDATE(vq->vq_ring.used->ring[used_idx]);
 
 	desc_idx = (uint16_t)uep->id;
@@ -263,7 +263,7 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 
 	atomic_thread_fence(memory_order_seq_cst);
 
-	/* Avail.idx is updated by master, invalidate it */
+	/* Avail.idx is updated by driver, invalidate it */
 	VRING_INVALIDATE(vq->vq_ring.avail->idx);
 	if (vq->vq_available_idx == vq->vq_ring.avail->idx) {
 		return NULL;
@@ -273,11 +273,11 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 
 	head_idx = vq->vq_available_idx++ & (vq->vq_nentries - 1);
 
-	/* Avail.ring is updated by master, invalidate it */
+	/* Avail.ring is updated by driver, invalidate it */
 	VRING_INVALIDATE(vq->vq_ring.avail->ring[head_idx]);
 	*avail_idx = vq->vq_ring.avail->ring[head_idx];
 
-	/* Invalidate the desc entry written by master before accessing it */
+	/* Invalidate the desc entry written by driver before accessing it */
 	VRING_INVALIDATE(vq->vq_ring.desc[*avail_idx]);
 	buffer = virtqueue_phys_to_virt(vq, vq->vq_ring.desc[*avail_idx].addr);
 	*len = vq->vq_ring.desc[*avail_idx].len;
@@ -308,20 +308,20 @@ int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 
 	VQUEUE_BUSY(vq);
 
-	/* CACHE: used is never written by master, so it's safe to directly access it */
+	/* CACHE: used is never written by driver, so it's safe to directly access it */
 	used_idx = vq->vq_ring.used->idx & (vq->vq_nentries - 1);
 	used_desc = &vq->vq_ring.used->ring[used_idx];
 	used_desc->id = head_idx;
 	used_desc->len = len;
 
-	/* We still need to flush it because this is read by master */
+	/* We still need to flush it because this is read by driver */
 	VRING_FLUSH(vq->vq_ring.used->ring[used_idx]);
 
 	atomic_thread_fence(memory_order_seq_cst);
 
 	vq->vq_ring.used->idx++;
 
-	/* Used.idx is read by master, so we need to flush it */
+	/* Used.idx is read by driver, so we need to flush it */
 	VRING_FLUSH(vq->vq_ring.used->idx);
 
 	/* Keep pending count until virtqueue_notify(). */
@@ -444,7 +444,7 @@ uint32_t virtqueue_get_desc_size(struct virtqueue *vq)
 	uint16_t avail_idx = 0;
 	uint32_t len = 0;
 
-	/* Avail.idx is updated by master, invalidate it */
+	/* Avail.idx is updated by driver, invalidate it */
 	VRING_INVALIDATE(vq->vq_ring.avail->idx);
 
 	if (vq->vq_available_idx == vq->vq_ring.avail->idx) {
@@ -455,11 +455,11 @@ uint32_t virtqueue_get_desc_size(struct virtqueue *vq)
 
 	head_idx = vq->vq_available_idx & (vq->vq_nentries - 1);
 
-	/* Avail.ring is updated by master, invalidate it */
+	/* Avail.ring is updated by driver, invalidate it */
 	VRING_INVALIDATE(vq->vq_ring.avail->ring[head_idx]);
 	avail_idx = vq->vq_ring.avail->ring[head_idx];
 
-	/* Invalidate the desc entry written by master before accessing it */
+	/* Invalidate the desc entry written by driver before accessing it */
 	VRING_INVALIDATE(vq->vq_ring.desc[avail_idx].len);
 
 	len = vq->vq_ring.desc[avail_idx].len;
@@ -495,7 +495,7 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 		VQASSERT(vq, idx != VQ_RING_DESC_CHAIN_END,
 			 "premature end of free desc chain");
 
-		/* CACHE: No need to invalidate desc because it is only written by master */
+		/* CACHE: No need to invalidate desc because it is only written by driver */
 		dp = &desc[idx];
 		dp->addr = virtqueue_virt_to_phys(vq, buf_list[i].buf);
 		dp->len = buf_list[i].len;
@@ -532,7 +532,7 @@ static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx)
 	struct vring_desc *dp;
 	struct vq_desc_extra *dxp;
 
-	/* CACHE: desc is never written by slave, no need to invalidate */
+	/* CACHE: desc is never written by remote, no need to invalidate */
 	VQ_RING_ASSERT_VALID_IDX(vq, desc_idx);
 	dp = &vq->vq_ring.desc[desc_idx];
 	dxp = &vq->vq_descx[desc_idx];
@@ -560,7 +560,7 @@ static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx)
 	 * newly freed chain. If the virtqueue was completely used, then
 	 * head would be VQ_RING_DESC_CHAIN_END (ASSERTed above).
 	 *
-	 * CACHE: desc.next is never read by slave, no need to flush it.
+	 * CACHE: desc.next is never read by remote, no need to flush it.
 	 */
 	dp->next = vq->vq_desc_head_idx;
 	vq->vq_desc_head_idx = desc_idx;
@@ -608,7 +608,7 @@ static void vq_ring_update_avail(struct virtqueue *vq, uint16_t desc_idx)
 	 * currently running on another CPU, we can keep it processing the new
 	 * descriptor.
 	 *
-	 * CACHE: avail is never written by slave, so it is safe to not invalidate here
+	 * CACHE: avail is never written by remote, so it is safe to not invalidate here
 	 */
 	avail_idx = vq->vq_ring.avail->idx & (vq->vq_nentries - 1);
 	vq->vq_ring.avail->ring[avail_idx] = desc_idx;
@@ -778,7 +778,7 @@ static int virtqueue_nused(struct virtqueue *vq)
 {
 	uint16_t used_idx, nused;
 
-	/* Used is written by slave */
+	/* Used is written by remote */
 	VRING_INVALIDATE(vq->vq_ring.used->idx);
 	used_idx = vq->vq_ring.used->idx;
 
@@ -799,7 +799,7 @@ static int virtqueue_navail(struct virtqueue *vq)
 {
 	uint16_t avail_idx, navail;
 
-	/* Avail is written by master */
+	/* Avail is written by driver */
 	VRING_INVALIDATE(vq->vq_ring.avail->idx);
 
 	avail_idx = vq->vq_ring.avail->idx;

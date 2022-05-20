@@ -260,7 +260,7 @@ static int _rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 #ifndef VIRTIO_DEVICE_ONLY
 	if (role == RPMSG_HOST) {
 		/*
-		 * If device role is Master then buffers are provided by us,
+		 * If device role is host then buffers are provided by us,
 		 * so just provide the macro.
 		 */
 		length = rvdev->config.h2r_buf_size - sizeof(struct rpmsg_hdr);
@@ -270,7 +270,7 @@ static int _rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 #ifndef VIRTIO_DRIVER_ONLY
 	if (role == RPMSG_REMOTE) {
 		/*
-		 * If other core is Master then buffers are provided by it,
+		 * If other core is host then buffers are provided by it,
 		 * so get the buffer size from the virtqueue.
 		 */
 		length =
@@ -676,7 +676,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 
 #ifndef VIRTIO_DRIVER_ONLY
 	if (role == RPMSG_REMOTE) {
-		/* wait synchro with the master */
+		/* wait synchro with the host */
 		rpmsg_virtio_wait_remote_ready(rvdev);
 	}
 #endif /*!VIRTIO_DRIVER_ONLY*/
