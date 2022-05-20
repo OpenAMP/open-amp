@@ -35,10 +35,10 @@ extern struct hil_platform_ops zynq_a9_proc_ops;
 #define REMOTE_CPU_ID                     1
 
 /**
- * This array provdes defnition of CPU nodes for master and remote
+ * This array provdes defnition of CPU nodes for host and remote
  * context. It contains two nodes because the same file is intended
- * to use with both master and remote configurations. On zynq platform
- * only one node definition is required for master/remote as there
+ * to use with both host and remote configurations. On zynq platform
+ * only one node definition is required for host/remote as there
  * are only two cores present in the platform.
  *
  * Only platform specific info is populated here. Rest of information
@@ -63,15 +63,15 @@ extern struct hil_platform_ops zynq_a9_proc_ops;
  *
  *
  * 1) First node in the array is intended for the remote contexts and it
- *    defines Master CPU ID, shared memory, interrupts info, number of channels
+ *    defines Host CPU ID, shared memory, interrupts info, number of channels
  *    and there names. This node defines only one channel
  *   "rpmsg-openamp-demo-channel".
  *
- * 2)Second node is required by the master and it defines remote CPU ID,
+ * 2)Second node is required by the host and it defines remote CPU ID,
  *   shared memory and interrupts info. In general no channel info is required by the
- *   Master node, however in baremetal master and linux remote case the linux
- *   rpmsg bus driver behaves as master so the rpmsg driver on linux side still needs
- *   channel info. This information is not required by the masters for baremetal
+ *   Host node, however in baremetal host and linux remote case the linux
+ *   rpmsg bus driver behaves as host so the rpmsg driver on linux side still needs
+ *   channel info. This information is not required by the hosts for baremetal
  *   remotes. 
  *
  */

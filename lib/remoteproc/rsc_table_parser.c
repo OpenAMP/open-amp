@@ -169,7 +169,7 @@ int handle_trace_rsc(struct remoteproc *rproc, void *rsc)
 
 	if (vdev_rsc->da != FW_RSC_U32_ADDR_ANY && vdev_rsc->len != 0)
 		return 0;
-	/* FIXME: master should allocated a memory used by slave */
+	/* FIXME: The host should allocated a memory used by remote */
 
 	return -RPROC_ERR_RSC_TAB_NS;
 }

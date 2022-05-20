@@ -7,7 +7,7 @@
 /*
  * Resource table declarations. Resource table is placed in a separate
  * section of a bare-metal binary or firmware. It's used to describe
- * shared memory (virtIO devices) resources the remoteproc master should
+ * shared memory (virtIO devices) resources the remoteproc host should
  * initialize and / or use to communicate with the firmware.
  */
 #ifndef RSC_TABLE_H_

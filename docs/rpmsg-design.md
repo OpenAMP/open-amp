@@ -14,7 +14,7 @@ running on two processors.
 ![Creating Endpoint Dynamically with Name Service](img/coprocessor-rpmsg-ns-dynamic.png)
 
 ## RPMsg User APIs
-* RPMsg virtio master to initialize the shared buffers pool(RPMsg virtio slave
+* RPMsg virtio driver to initialize the shared buffers pool(RPMsg virtio device
   doesn't need to use this API):
   ```
   void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,

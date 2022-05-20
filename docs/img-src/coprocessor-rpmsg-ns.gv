@@ -5,8 +5,8 @@ digraph G {
 
   subgraph roles {
     node [style="filled", fillcolor="lightblue"];
-    master [label="Master"];
-    slave [label="Slave"];
+    host [label="Host"];
+    remote [label="Remote"];
   }
 
   subgraph m_comment_nodes {
@@ -26,7 +26,7 @@ digraph G {
     m_remoteproc_init [label="rproc = remoteproc_init(&remoteproc_ops, &arg);"]
     m_remoteproc_load [label="calls remoteproc_load() to load application"];
     m_remoteproc_boot [shape="box", label="ret=remoteproc_boot(&rproc)"];
-    m_remoteproc_get_vdev [label="vdev=remoteproc_create_virtio(rproc, rpmsg_vdev_id, MASTER, NULL);"];
+    m_remoteproc_get_vdev [label="vdev=remoteproc_create_virtio(rproc, rpmsg_vdev_id, VIRTIO_DEV_DRIVER, NULL);"];
     m_rpmsg_shmpool_init[label="rpmsg_virtio_init_shm_pool(shpool, shbuf, shbuf_pool_size);"];
     m_rpmsg_vdev_init [label="rpdev=rpmsg_init_vdev(rpvdev, vdev, ns_bind_cb, &shm_io, shpool);"];
     m_rpmsg_ns_cb [label="\lrpmsg_ns_callback() will see if there is a local ep registered.\lIf yes, bind the ep; otherwise, call ns_bind_cb.\l"];
@@ -48,7 +48,7 @@ digraph G {
     s_remoteproc_init [label="rproc = remoteproc_init(&remoteproc_ops, &arg);"];
 
     s_remoteproc_parse_rsc [label="ret = remoteproc_set_rsc_table(rproc, &rsc_table, rsc_size)"];
-    s_remoteproc_get_vdev [label="vdev=remoteproc_create_virtio(rproc, rpmsg_vdev_id, SLAVE, rst_cb);"];
+    s_remoteproc_get_vdev [label="vdev=remoteproc_create_virtio(rproc, rpmsg_vdev_id, VIRTIO_DEV_DEVICE, rst_cb);"];
     s_rpmsg_vdev_init [label="rpdev=rpmsg_init_vdev(rpvdev, vdev, ns_bind_cb, &shm_io, NULL);"];
     s_rpmsg_create_ep [label="\lept=rpmsg_create_ept(ept, rdev, ept_name, ept_addr, dest_addr, \lendpoint_cb, ns_unbind_cb);\l"];
     s_rpmsg_ns_cb [label="\lrpmsg_ns_callback() will see if there is a local ep registered.\lIf yes, bind the ep; otherwise, call ns_binc_cb.\l"];
@@ -67,12 +67,12 @@ digraph G {
   subgraph s_comment_nodes {
     node [group=s_comment, shape="note", style="filled", fillcolor="yellow"];
     rank="same";
-    s_rpmsg_vdev_init_comment [label="\l* If vdev supports name service, it will create name service endpoint;\l* It will not return until the master set status to DRIVER READY\l"];
+    s_rpmsg_vdev_init_comment [label="\l* If vdev supports name service, it will create name service endpoint;\l* It will not return until the host set status to DRIVER READY\l"];
     s_rpmsg_rx_cb_comment [label="\l* It will look for the endpoint which matches the destination address.\lIf the two endpoints hasn't binded yet,\lit will set the local endpoint's destination address with the source address in the message\l"];
   }
 
-  master -> m_remoteproc_init [dir="none"];
-  slave -> s_remoteproc_init [dir="none"];
+  host -> m_remoteproc_init [dir="none"];
+  remote -> s_remoteproc_init [dir="none"];
   s_rpmsg_create_ep -> m_rpmsg_ns_cb [label="NS announcement"];
   m_rpmsg_create_ep -> s_rpmsg_ns_cb [label="NS announcement"];
   m_rpmsg_send -> s_rpmsg_rx_cb [label="RPMsg data"];
@@ -88,8 +88,8 @@ digraph G {
   s_rpmsg_vdev_init -> s_rpmsg_vdev_init_comment [dir="none"];
   s_rpmsg_rx_cb -> s_rpmsg_rx_cb_comment [dir="none"];
 
-  {rank=same; master; m_remoteproc_init}
-  {rank=same; slave; s_remoteproc_init}
+  {rank=same; host; m_remoteproc_init}
+  {rank=same; remote; s_remoteproc_init}
 
 }
 

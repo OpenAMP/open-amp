@@ -6,7 +6,7 @@
  * This is a sample demonstration application that showcases usage of rpmsg
  * This application is meant to run on the remote CPU running baremetal code.
  * This application allows to check the compatibility with linux OS running on
- * the master CPU. For this it echo MSG_LIMIT time message sent by the rpmsg
+ * the host CPU. For this it echo MSG_LIMIT time message sent by the rpmsg
  * sample client available in linux kernel distribution.
  */
 
@@ -36,7 +36,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 	static uint32_t count = 0;
 	char payload[RPMSG_BUFFER_SIZE];
 
-	/* Send data back MSG_LIMIT time to master */
+	/* Send data back MSG_LIMIT time to host */
 	memset(payload, 0, RPMSG_BUFFER_SIZE);
 	memcpy(payload, data, len);
 	if (++count <= MSG_LIMIT) {

@@ -8,7 +8,7 @@
 /*This is a sample demonstration application that showcases usage of proxy
  *from the remote core.
  *This application is meant to run on the remote CPU running linux.
- *This application can print to the master console and perform file I/O through
+ *This application can print to the host console and perform file I/O through
  *rpmsg channels.
  */
 
@@ -482,10 +482,10 @@ int app(struct rpmsg_device *rdev, void *priv)
 
 	printf("\nRemote>Rpmsg based retargetting to proxy initialized..\r\n");
 
-	/* Remote performing file IO on Master */
+	/* Remote performing file IO on Host */
 	printf("\nRemote>FileIO demo ..\r\n");
 
-	printf("\nRemote>Creating a file on master and writing to it..\r\n");
+	printf("\nRemote>Creating a file on host and writing to it..\r\n");
 	rpmsg_open(fname, REDEF_O_CREAT | REDEF_O_WRONLY | REDEF_O_APPEND,
 		   S_IRUSR | S_IWUSR);
 	printf("\nRemote>Opened file '%s' with fd = %d\r\n", fname, fd);
@@ -496,8 +496,8 @@ int app(struct rpmsg_device *rdev, void *priv)
 	rpmsg_close(fd);
 	printf("\nRemote>Closed fd = %d\r\n", fd);
 
-	/* Remote performing file IO on Master */
-	printf("\nRemote>Reading a file on master and displaying its "
+	/* Remote performing file IO on Host */
+	printf("\nRemote>Reading a file on host and displaying its "
 	"contents..\r\n");
 	rpmsg_open(fname, REDEF_O_RDONLY, S_IRUSR | S_IWUSR);
 	printf("\nRemote>Opened file '%s' with fd = %d\r\n", fname, fd);
@@ -509,10 +509,10 @@ int app(struct rpmsg_device *rdev, void *priv)
 	printf("\nRemote>Closed fd = %d\r\n", fd);
 
 	while (1) {
-		/* Remote performing STDIO on Master */
+		/* Remote performing STDIO on Host */
 		printf("\nRemote>Remote firmware using scanf and printf .."
 		"\r\n");
-		printf("\nRemote>Scanning user input from master..\r\n");
+		printf("\nRemote>Scanning user input from host..\r\n");
 		printf("\nRemote>Enter name\r\n");
 		rpmsg_input(ubuff, sizeof(ubuff));
 		ret = bytes_read;

@@ -198,14 +198,14 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 
 	xil_printf("initializing rpmsg vdev\r\n");
 	if (role == VIRTIO_DEV_DRIVER) {
-		/* Only RPMsg virtio master needs to initialize the
+		/* Only RPMsg virtio driver needs to initialize the
 		 * shared buffers pool
 		 */
 		rpmsg_virtio_init_shm_pool(&shpool, shbuf,
 					   (SHARED_MEM_SIZE -
 					    SHARED_BUF_OFFSET));
 
-		/* RPMsg virtio slave can set shared buffers pool
+		/* RPMsg virtio device can set shared buffers pool
 		 * argument to NULL
 		 */
 		ret =  rpmsg_init_vdev(rpmsg_vdev, vdev, ns_bind_cb,
