@@ -6,8 +6,10 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-/* This file populates resource table for BM remote
- * for use by the Linux Master */
+/*
+ * This file populates resource table for BM remote
+ * for use by the Linux Master
+ */
 
 #include <openamp/open_amp.h>
 #include "rsc_table.h"

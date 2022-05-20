@@ -2,9 +2,11 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-/* This is a sample demonstration application that showcases usage of rpmsg 
-This application is meant to run on the remote CPU running baremetal code. 
-This application echoes back data that was sent to it by the master core. */
+/*
+ * This is a sample demonstration application that showcases usage of rpmsg
+ * This application is meant to run on the remote CPU running baremetal code.
+ * This application echoes back data that was sent to it by the master core.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
