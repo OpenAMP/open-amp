@@ -26,6 +26,7 @@ static const struct virtio_ident {
 	VIRTIO_ID_IOMEMORY, "IOMemory"}, {
 	VIRTIO_ID_SCSI, "SCSI"}, {
 	VIRTIO_ID_9P, "9P Transport"}, {
+	VIRTIO_ID_SCMI, "SCMI"}, {
 	0, NULL}
 };
 
