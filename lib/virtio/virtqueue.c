@@ -287,6 +287,40 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 	return buffer;
 }
 
+unsigned int virtqueue_buffer_writable(struct virtqueue *vq, uint16_t avail_idx)
+{
+	uint16_t flags;
+
+	VRING_INVALIDATE(vq->vq_ring.desc[avail_idx]);
+	flags = vq->vq_ring.desc[avail_idx].flags;
+
+	return !!(flags & VRING_DESC_F_WRITE);
+}
+
+void *virtqueue_get_next_buffer(struct virtqueue *vq, uint16_t *avail_idx,
+				uint32_t *len)
+{
+	uint16_t flags;
+	void *buffer;
+
+	VQUEUE_BUSY(vq);
+
+	VRING_INVALIDATE(vq->vq_ring.desc[*avail_idx]);
+	flags = vq->vq_ring.desc[*avail_idx].flags;
+
+	if (!(flags & VRING_DESC_F_NEXT))
+		return NULL;
+
+	*avail_idx = vq->vq_ring.desc[*avail_idx].next;
+
+	buffer = virtqueue_phys_to_virt(vq, vq->vq_ring.desc[*avail_idx].addr);
+	*len = vq->vq_ring.desc[*avail_idx].len;
+
+	VQUEUE_IDLE(vq);
+
+	return buffer;
+}
+
 /**
  * virtqueue_add_consumed_buffer - Returns consumed buffer back to VirtIO queue
  *
