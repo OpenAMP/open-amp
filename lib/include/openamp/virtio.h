@@ -67,6 +67,7 @@ __deprecated static inline int deprecated_virtio_dev_slave(void)
 struct virtio_device_id {
 	uint32_t device;
 	uint32_t vendor;
+	uint32_t version;
 };
 
 /*
