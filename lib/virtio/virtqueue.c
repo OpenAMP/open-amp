@@ -421,11 +421,11 @@ void virtqueue_dump(struct virtqueue *vq)
 	VRING_INVALIDATE(vq->vq_ring.used);
 
 	metal_log(METAL_LOG_DEBUG,
-		  "VQ: %s - size=%d; free=%d; queued=%d; "
-		  "desc_head_idx=%d; avail.idx=%d; used_cons_idx=%d; "
+		  "VQ: %s - size=%d; free=%d; queued=%d; desc_head_idx=%d; "
+		  "available_idx=%d; avail.idx=%d; used_cons_idx=%d; "
 		  "used.idx=%d; avail.flags=0x%x; used.flags=0x%x\r\n",
 		  vq->vq_name, vq->vq_nentries, vq->vq_free_cnt,
-		  vq->vq_queued_cnt, vq->vq_desc_head_idx,
+		  vq->vq_queued_cnt, vq->vq_desc_head_idx, vq->vq_available_idx,
 		  vq->vq_ring.avail->idx, vq->vq_used_cons_idx,
 		  vq->vq_ring.used->idx, vq->vq_ring.avail->flags,
 		  vq->vq_ring.used->flags);
