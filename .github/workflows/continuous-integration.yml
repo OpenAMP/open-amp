@@ -11,7 +11,9 @@ on:
       - cmake/**
       - scripts/**
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - virtio-exp
     paths-ignore:
       - docs/**
       - cmake/**

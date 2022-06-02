@@ -5,7 +5,9 @@ name: open-amp lib compliance checks
 
 on:
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - virtio-exp
     paths-ignore:
       - docs/**
       - cmake/**
