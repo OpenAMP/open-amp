@@ -95,6 +95,17 @@ struct virtio_device_id {
  */
 #define VIRTIO_F_VERSION_1 32
 
+/*
+ * The device can be used on a platform where device access to data
+ * in memory is limited and/or translated.
+ */
+#define VIRTIO_F_ACCESS_PLATFORM      33
+
+/*
+ * Packed virtqueue layout
+ */
+#define VIRTIO_F_RING_PACKED          34
+
 typedef void (*virtio_dev_reset_cb)(struct virtio_device *vdev);
 
 struct virtio_dispatch;
