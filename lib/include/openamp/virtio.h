@@ -187,6 +187,103 @@ int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 			     unsigned int nvqs, const char *names[],
 			     vq_callback callbacks[]);
 
+/**
+ * @brief Retrieve device status.
+ *
+ * @param[in] dev Pointer to device structure.
+ *
+ * @return status of the device.
+ */
+
+inline uint8_t virtio_device_get_status(struct virtio_device *vdev)
+{
+	return vdev->func->get_status(vdev);
+}
+
+/**
+ * @brief Set device status.
+ *
+ * @param[in] dev Pointer to device structure.
+ * @param[in] status Value to be set as device status.
+ *
+ * @return N/A.
+ */
+
+inline void virtio_device_set_status(struct virtio_device *vdev, uint8_t status)
+{
+	vdev->func->set_status(vdev, status);
+}
+
+/**
+ * @brief Retrieve configuration data from the device.
+ *
+ * @param[in] dev Pointer to device structure.
+ * @param[in] offset Offset of the data within the configuration area.
+ * @param[in] dst Address of the buffer that will hold the data.
+ * @param[in] len Length of the data to be retrieved.
+ *
+ * @return N/A.
+ */
+
+inline void virtio_device_read_config(struct virtio_device *vdev,
+		 uint32_t offset, void *dst, int length)
+{
+	vdev->func->read_config(vdev, offset, dst, length);
+}
+
+/**
+ * @brief Write configuration data to the device.
+ *
+ * @param[in] dev Pointer to device structure.
+ * @param[in] offset Offset of the data within the configuration area.
+ * @param[in] src Address of the buffer that holds the data to write.
+ * @param[in] len Length of the data to be written.
+ *
+ * @return N/A.
+ */
+inline void virtio_device_write_config(struct virtio_device *vdev,
+		 uint32_t offset, void *src, int length)
+{
+	vdev->func->write_config(vdev, offset, src, length);
+}
+
+/**
+ * @brief Retrieve features supported by both the VIRTIO driver and the VIRTIO device.
+ *
+ * @param[in] dev Pointer to device structure.
+ *
+ * @return Features supported by both the driver and the device as a bitfield.
+ */
+
+inline uint32_t virtio_device_get_features(struct virtio_device *vdev)
+{
+	return vdev->func->get_features(vdev);
+}
+
+/**
+ * @brief Set features supported by the VIRTIO driver.
+ *
+ * @param[in] dev Pointer to device structure.
+ * @param[in] features Features supported by the driver as a bitfield.
+ *
+ * @return N/A.
+ */
+
+inline void virtio_device_set_features(struct virtio_device *vdev, uint32_t features)
+{
+	return vdev->func->set_features(vdev, features);
+}
+
+/**
+ * @brief Reset virtio device.
+ * @param[in] vdev Pointer to virtio_device structure.
+ * @return N/A.
+ */
+inline void virtio_device_reset(struct virtio_device *vdev)
+{
+	vdev->func->reset_device(vdev);
+}
+
 #if defined __cplusplus
 }
 #endif

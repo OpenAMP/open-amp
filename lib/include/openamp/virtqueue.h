@@ -63,6 +63,7 @@ struct virtqueue {
 	uint16_t vq_queue_index;
 	uint16_t vq_nentries;
 	void (*callback)(struct virtqueue *vq);
+	void *cb_arg;
 	void (*notify)(struct virtqueue *vq);
 	struct vring vq_ring;
 	uint16_t vq_free_cnt;
@@ -228,6 +229,16 @@ void virtqueue_notification(struct virtqueue *vq);
 uint32_t virtqueue_get_desc_size(struct virtqueue *vq);
 
 uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx);
+
+static inline int virtqueue_empty(struct virtqueue *vq)
+{
+	return (vq->vq_nentries == vq->vq_free_cnt);
+}
+
+static inline int virtqueue_full(struct virtqueue *vq)
+{
+	return (vq->vq_free_cnt == 0);
+}
 
 #if defined __cplusplus
 }
