@@ -63,6 +63,7 @@ struct virtqueue {
 	uint16_t vq_queue_index;
 	uint16_t vq_nentries;
 	void (*callback)(struct virtqueue *vq);
+	void *cb_arg;
 	void (*notify)(struct virtqueue *vq);
 	struct vring vq_ring;
 	uint16_t vq_free_cnt;

@@ -3054,8 +3054,9 @@ sub process {
 				    $newindent ne $goodspaceindent) {
 
 					if (CHK("PARENTHESIS_ALIGNMENT",
-						"Alignment should match open parenthesis\n" . $hereprev) &&
+						"Alignment should match open parenthesis newindent = " . "$newindent" . "gt =  " . "$goodtabindent" . "gs = " . "$goodspaceindent" . "\n" . $hereprev) &&
 					    $fix && $line =~ /^\+/) {
+                                                #report("CHECK", "PARENTHESIS_ALIGNMENT", "===== newindent = " . $newindent . "gt =  " . $goodtabindent . "gs = " . $goodspaceindent . "\n");
 						$fixed[$fixlinenr] =~
 						    s/^\+[ \t]*/\+$goodtabindent/;
 					}
