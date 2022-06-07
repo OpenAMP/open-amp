@@ -10,6 +10,7 @@ collect (PROJECT_LIB_SOURCES version.c)
 add_subdirectory (virtio)
 add_subdirectory (rpmsg)
 add_subdirectory (remoteproc)
+add_subdirectory (virtio_mmio)
 
 if (WITH_PROXY)
   add_subdirectory (proxy)
