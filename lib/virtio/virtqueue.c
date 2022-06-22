@@ -609,6 +609,9 @@ static int vq_ring_must_notify(struct virtqueue *vq)
 {
 	uint16_t new_idx, prev_idx, event_idx;
 
+	if (vq->vq_dev->features & VIRTIO_RING_F_MUST_NOTIFY)
+		return 1;
+
 	if (vq->vq_dev->features & VIRTIO_RING_F_EVENT_IDX) {
 		if (VIRTIO_ROLE_IS_DRIVER(vq->vq_dev)) {
 			/* CACHE: no need to invalidate avail */
