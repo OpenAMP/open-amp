@@ -288,10 +288,16 @@ static int _rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 
 static void rpmsg_virtio_hold_rx_buffer(struct rpmsg_device *rdev, void *rxbuf)
 {
+	struct rpmsg_virtio_device *rvdev;
 	struct rpmsg_hdr *rp_hdr;
 
-	(void)rdev;
+	rvdev = metal_container_of(rdev, struct rpmsg_virtio_device, rdev);
 
+	if ((rxbuf < ((struct metal_io_region *)rvdev->rvq->shm_io)->virt + sizeof(struct rpmsg_hdr)) ||
+	    (rxbuf >= (((struct metal_io_region *)rvdev->rvq->shm_io)->virt +
+	    ((struct metal_io_region *)rvdev->rvq->shm_io)->size)))
+		return;
+		
 	rp_hdr = RPMSG_LOCATE_HDR(rxbuf);
 
 	/* Set held status to keep buffer */
@@ -307,6 +313,12 @@ static void rpmsg_virtio_release_rx_buffer(struct rpmsg_device *rdev,
 	uint32_t len;
 
 	rvdev = metal_container_of(rdev, struct rpmsg_virtio_device, rdev);
+	
+	if ((rxbuf < ((struct metal_io_region *)rvdev->rvq->shm_io)->virt + sizeof(struct rpmsg_hdr)) ||
+	    (rxbuf >= (((struct metal_io_region *)rvdev->rvq->shm_io)->virt +
+	    ((struct metal_io_region *)rvdev->rvq->shm_io)->size)))
+		return;
+		
 	rp_hdr = RPMSG_LOCATE_HDR(rxbuf);
 	/* The reserved field contains buffer index */
 	idx = (uint16_t)(rp_hdr->reserved & ~RPMSG_BUF_HELD);
@@ -376,6 +388,11 @@ static int rpmsg_virtio_send_offchannel_nocopy(struct rpmsg_device *rdev,
 
 	/* Get the associated remote device for channel. */
 	rvdev = metal_container_of(rdev, struct rpmsg_virtio_device, rdev);
+	
+	if ((data < ((struct metal_io_region *)rvdev->rvq->shm_io)->virt + sizeof(struct rpmsg_hdr)) ||
+	    ((data + len) > (((struct metal_io_region *)rvdev->rvq->shm_io)->virt +
+	    ((struct metal_io_region *)rvdev->rvq->shm_io)->size))) 
+		return RPMSG_ERR_PARAM;
 
 	hdr = RPMSG_LOCATE_HDR(data);
 	/* The reserved field contains buffer index */
