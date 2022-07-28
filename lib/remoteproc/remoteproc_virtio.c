@@ -223,9 +223,11 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 		unsigned int num_extra_desc = 0;
 
 		vring_rsc = &vdev_rsc->vring[i];
+#ifndef VIRTIO_DEVICE_ONLY
 		if (role == VIRTIO_DEV_DRIVER) {
 			num_extra_desc = vring_rsc->num;
 		}
+#endif
 		vq = virtqueue_allocate(num_extra_desc);
 		if (!vq)
 			goto err1;
@@ -335,6 +337,7 @@ void rproc_virtio_wait_remote_ready(struct virtio_device *vdev)
 {
 	uint8_t status;
 
+#ifndef VIRTIO_DEVICE_ONLY
 	/*
 	 * No status available for remote. As virtio driver has not to wait
 	 * remote action, we can return. Behavior should be updated
@@ -342,7 +345,7 @@ void rproc_virtio_wait_remote_ready(struct virtio_device *vdev)
 	 */
 	if (vdev->role == VIRTIO_DEV_DRIVER)
 		return;
-
+#endif
 	while (1) {
 		status = rproc_virtio_get_status(vdev);
 		if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK)
