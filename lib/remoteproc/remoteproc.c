@@ -372,7 +372,7 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 	if (mem) {
 		if (lpa != METAL_BAD_PHYS)
 			lda = remoteproc_patoda(mem, lpa);
-		else if (lda != METAL_BAD_PHYS)
+		else
 			lpa = remoteproc_datopa(mem, lda);
 		if (io)
 			*io = mem->io;
