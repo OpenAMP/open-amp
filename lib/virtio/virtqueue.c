@@ -302,7 +302,7 @@ int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 	struct vring_used_elem *used_desc = NULL;
 	uint16_t used_idx;
 
-	if (head_idx > vq->vq_nentries) {
+	if (head_idx >= vq->vq_nentries) {
 		return ERROR_VRING_NO_BUFF;
 	}
 
