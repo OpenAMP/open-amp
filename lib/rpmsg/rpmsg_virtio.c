@@ -161,12 +161,13 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 
 #ifndef VIRTIO_DEVICE_ONLY
 	if (role == RPMSG_HOST) {
-		data = virtqueue_get_buffer(rvdev->svq, len, idx);
-		if (!data && rvdev->svq->vq_free_cnt) {
-			data = rpmsg_virtio_shm_pool_get_buffer(rvdev->shpool,
-					rvdev->config.h2r_buf_size);
+		data = rpmsg_virtio_shm_pool_get_buffer(rvdev->shpool,
+						rvdev->config.h2r_buf_size);
+		if (data) {
 			*len = rvdev->config.h2r_buf_size;
 			*idx = 0;
+		} else {
+			data = virtqueue_get_buffer(rvdev->svq, len, idx);
 		}
 	}
 #endif /*!VIRTIO_DEVICE_ONLY*/
