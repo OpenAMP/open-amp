@@ -316,6 +316,8 @@ static void rpmsg_virtio_release_rx_buffer(struct rpmsg_device *rdev,
 	/* Return buffer on virtqueue. */
 	len = virtqueue_get_buffer_length(rvdev->rvq, idx);
 	rpmsg_virtio_return_buffer(rvdev, rp_hdr, len, idx);
+	/* Tell peer we return some rx buffers */
+	virtqueue_kick(rvdev->rvq);
 	metal_mutex_release(&rdev->lock);
 }
 
