@@ -4,10 +4,11 @@ readonly TARGET="$1"
 
 ZEPHYR_TOOLCHAIN_VARIANT=zephyr
 ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
-ZEPHYR_SDK_VERSION=0.13.1
+ZEPHYR_SDK_VERSION=0.15.0
 ZEPHYR_SDK_DOWNLOAD_FOLDER=https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION
-ZEPHYR_SDK_SETUP_BINARY=zephyr-sdk-$ZEPHYR_SDK_VERSION-linux-x86_64-setup.run
-ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
+ZEPHYR_SDK_SETUP_DIR=zephyr-sdk-$ZEPHYR_SDK_VERSION
+ZEPHYR_SDK_SETUP_TAR=${ZEPHYR_SDK_SETUP_DIR}_linux-x86_64.tar.gz
+ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_TAR
 
 FREERTOS_ZIP_URL=https://cfhcable.dl.sourceforge.net/project/freertos/FreeRTOS/V10.0.1/FreeRTOSv10.0.1.zip
 
@@ -77,9 +78,9 @@ build_zephyr(){
 	source ~/.bashrc
 
 	wget $ZEPHYR_SDK_DOWNLOAD_URL || exit 1
-	chmod +x $ZEPHYR_SDK_SETUP_BINARY || exit 1
+	tar xvf $ZEPHYR_SDK_SETUP_TAR || exit 1
 	rm -rf $ZEPHYR_SDK_INSTALL_DIR || exit 1
-	./$ZEPHYR_SDK_SETUP_BINARY --quiet -- -y -d $ZEPHYR_SDK_INSTALL_DIR 2> /dev/null || exit 1
+	yes | ./$ZEPHYR_SDK_SETUP_DIR/setup.sh || exit 1
 	west init ./zephyrproject || exit 1
 	cd ./zephyrproject || exit 1
 	west update || exit 1
