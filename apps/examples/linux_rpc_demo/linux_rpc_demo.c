@@ -19,7 +19,6 @@
 #include <unistd.h>
 #include <openamp/open_amp.h>
 #include <openamp/rpmsg_rpc_client_server.h>
-#include "rsc_table.h"
 #include "platform_info.h"
 #include "linux-rpmsg-rpc-demo.h"
 
