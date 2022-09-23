@@ -201,6 +201,9 @@ size_t find_rsc(void *rsc_table, unsigned int rsc_type, unsigned int index)
 	unsigned int lrsc_type;
 
 	metal_assert(r_table);
+	if (!r_table)
+		return 0;
+
 	/* Loop through the offset array and parse each resource entry */
 	rsc_index = 0;
 	for (i = 0; i < r_table->num; i++) {

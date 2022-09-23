@@ -44,7 +44,7 @@ rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
 {
 	void *buffer;
 
-	if (shpool->avail < size)
+	if (!shpool || size == 0 || shpool->avail < size)
 		return NULL;
 	buffer = (char *)shpool->base + shpool->size - shpool->avail;
 	shpool->avail -= size;
@@ -56,7 +56,7 @@ rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
 void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
 				void *shb, size_t size)
 {
-	if (!shpool)
+	if (!shpool || !shb || size == 0)
 		return;
 	shpool->base = shb;
 	shpool->size = size;
@@ -644,6 +644,9 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	int status;
 	unsigned int i, role;
 
+	if (!rvdev || !vdev || !shm_io)
+		return RPMSG_ERR_PARAM;
+
 	rdev = &rvdev->rdev;
 	memset(rdev, 0, sizeof(*rdev));
 	metal_mutex_init(&rdev->lock);
@@ -797,15 +800,17 @@ void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev)
 	struct rpmsg_device *rdev;
 	struct rpmsg_endpoint *ept;
 
-	rdev = &rvdev->rdev;
-	while (!metal_list_is_empty(&rdev->endpoints)) {
-		node = rdev->endpoints.next;
-		ept = metal_container_of(node, struct rpmsg_endpoint, node);
-		rpmsg_destroy_ept(ept);
+	if (rvdev) {
+		rdev = &rvdev->rdev;
+		while (!metal_list_is_empty(&rdev->endpoints)) {
+			node = rdev->endpoints.next;
+			ept = metal_container_of(node, struct rpmsg_endpoint, node);
+			rpmsg_destroy_ept(ept);
+		}
+
+		rvdev->rvq = 0;
+		rvdev->svq = 0;
+
+		metal_mutex_deinit(&rdev->lock);
 	}
-
-	rvdev->rvq = 0;
-	rvdev->svq = 0;
-
-	metal_mutex_deinit(&rdev->lock);
 }
