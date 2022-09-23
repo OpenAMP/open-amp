@@ -20,6 +20,9 @@
 extern "C" {
 #endif
 
+/* maximum number of vring descriptors for a vdev limited by 16-bit data type */
+#define	RPROC_MAX_VRING_DESC	USHRT_MAX
+
 /* define vdev notification function user should implement */
 typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
 
