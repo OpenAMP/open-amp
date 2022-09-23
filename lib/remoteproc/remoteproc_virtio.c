@@ -285,7 +285,8 @@ void rproc_virtio_remove_vdev(struct virtio_device *vdev)
 		if (vq)
 			metal_free_memory(vq);
 	}
-	metal_free_memory(vdev->vrings_info);
+	if (vdev->vrings_info)
+		metal_free_memory(vdev->vrings_info);
 	metal_free_memory(rpvdev);
 }
 

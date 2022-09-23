@@ -535,7 +535,7 @@ remoteproc_init_mem(struct remoteproc_mem *mem, const char *name,
 		    metal_phys_addr_t pa, metal_phys_addr_t da,
 		    size_t size, struct metal_io_region *io)
 {
-	if (!mem)
+	if (!mem || !io || size == 0)
 		return;
 	if (name)
 		strncpy(mem->name, name, sizeof(mem->name));

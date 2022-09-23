@@ -240,6 +240,9 @@ void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
 static inline struct rpmsg_device *
 rpmsg_virtio_get_rpmsg_device(struct rpmsg_virtio_device *rvdev)
 {
+	if (!rvdev)
+		return NULL;
+
 	return &rvdev->rdev;
 }
 

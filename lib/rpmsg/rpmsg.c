@@ -115,7 +115,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 {
 	struct rpmsg_device *rdev;
 
-	if (!ept || !ept->rdev || !data || dst == RPMSG_ADDR_ANY)
+	if (!ept || !ept->rdev || !data || dst == RPMSG_ADDR_ANY || len < 0)
 		return RPMSG_ERR_PARAM;
 
 	rdev = ept->rdev;
@@ -191,7 +191,7 @@ int rpmsg_send_offchannel_nocopy(struct rpmsg_endpoint *ept, uint32_t src,
 {
 	struct rpmsg_device *rdev;
 
-	if (!ept || !ept->rdev || !data || dst == RPMSG_ADDR_ANY)
+	if (!ept || !ept->rdev || !data || dst == RPMSG_ADDR_ANY || len < 0)
 		return RPMSG_ERR_PARAM;
 
 	rdev = ept->rdev;
@@ -269,7 +269,7 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 	int status = RPMSG_SUCCESS;
 	uint32_t addr = src;
 
-	if (!ept)
+	if (!ept || !rdev || !cb)
 		return RPMSG_ERR_PARAM;
 
 	metal_mutex_acquire(&rdev->lock);
@@ -328,12 +328,10 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 {
 	struct rpmsg_device *rdev;
 
-	if (!ept)
+	if (!ept || !ept->rdev)
 		return;
 
 	rdev = ept->rdev;
-	if (!rdev)
-		return;
 
 	if (ept->name[0] && rdev->support_ns &&
 	    ept->addr >= RPMSG_RESERVED_ADDRESSES)
