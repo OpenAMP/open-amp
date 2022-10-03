@@ -875,7 +875,7 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 
 	if (start == RSC_NOTIFY_ID_ANY)
 		start = 0;
-	if (end == 0)
+	if (end == RSC_NOTIFY_ID_ANY)
 		end = METAL_BITS_PER_ULONG;
 	if ((start < (8U * sizeof(rproc->bitmap))) &&
 	    (end <= (8U * sizeof(rproc->bitmap)))) {

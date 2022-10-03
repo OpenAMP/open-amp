@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#define RSC_NOTIFY_ID_ANY 0xFFFFFFFFUL
+#define RSC_NOTIFY_ID_ANY 0xFFFFFFFFU
 
 #define RPROC_MAX_NAME_LEN 32
 
