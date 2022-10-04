@@ -288,9 +288,14 @@ static int _rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
 
 static void rpmsg_virtio_hold_rx_buffer(struct rpmsg_device *rdev, void *rxbuf)
 {
+	struct rpmsg_virtio_device *rvdev;
 	struct rpmsg_hdr *rp_hdr;
 
-	(void)rdev;
+	rvdev = metal_container_of(rdev, struct rpmsg_virtio_device, rdev);
+
+	if (!metal_io_is_block_valid(rvdev->rvq->shm_io, sizeof(struct rpmsg_hdr),
+				     rxbuf, 0))
+		return;
 
 	rp_hdr = RPMSG_LOCATE_HDR(rxbuf);
 
@@ -307,6 +312,11 @@ static void rpmsg_virtio_release_rx_buffer(struct rpmsg_device *rdev,
 	uint32_t len;
 
 	rvdev = metal_container_of(rdev, struct rpmsg_virtio_device, rdev);
+
+	if (!metal_io_is_block_valid(rvdev->rvq->shm_io, sizeof(struct rpmsg_hdr),
+				     rxbuf, 0))
+		return;
+
 	rp_hdr = RPMSG_LOCATE_HDR(rxbuf);
 	/* The reserved field contains buffer index */
 	idx = (uint16_t)(rp_hdr->reserved & ~RPMSG_BUF_HELD);
@@ -376,6 +386,10 @@ static int rpmsg_virtio_send_offchannel_nocopy(struct rpmsg_device *rdev,
 
 	/* Get the associated remote device for channel. */
 	rvdev = metal_container_of(rdev, struct rpmsg_virtio_device, rdev);
+
+	if (!metal_io_is_block_valid(rvdev->rvq->shm_io, sizeof(struct rpmsg_hdr),
+				     data, len))
+		return RPMSG_ERR_PARAM;
 
 	hdr = RPMSG_LOCATE_HDR(data);
 	/* The reserved field contains buffer index */
