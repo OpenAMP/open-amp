@@ -3,9 +3,10 @@
  */
 
 /*
- * This is a sample demonstration application that showcases usage of proxy from the remote core.
- * This application is meant to run on the remote CPU running baremetal.
- * This application can print to the host console and perform file I/O using proxy mechanism.
+ * This sample code demonstrates how to use file system of host processor
+ * using proxy mechanism. Proxy service is implemented on host processor.
+ * This application can print to the host console, take input from host console
+ * and perform regular file I/O such as open, read, write and close.
  */
 
 #include <stdio.h>
