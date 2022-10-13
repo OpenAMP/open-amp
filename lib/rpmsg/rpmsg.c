@@ -219,8 +219,7 @@ struct rpmsg_endpoint *rpmsg_get_endpoint(struct rpmsg_device *rdev,
 			return ept;
 		/* else use name service and destination address */
 		if (name)
-			name_match = !strncmp(ept->name, name,
-					      sizeof(ept->name));
+			name_match = !strcmp(ept->name, name);
 		if (!name || !name_match)
 			continue;
 		/* destination address is known, equal to ept remote address */
