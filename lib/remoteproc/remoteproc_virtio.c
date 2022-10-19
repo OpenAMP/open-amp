@@ -219,11 +219,13 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 
 	for (i = 0; i < num_vrings; i++) {
 		struct virtqueue *vq;
+#ifndef VIRTIO_DEVICE_ONLY
 		struct fw_rsc_vdev_vring *vring_rsc;
+#endif
 		unsigned int num_extra_desc = 0;
 
-		vring_rsc = &vdev_rsc->vring[i];
 #ifndef VIRTIO_DEVICE_ONLY
+		vring_rsc = &vdev_rsc->vring[i];
 		if (role == VIRTIO_DEV_DRIVER) {
 			num_extra_desc = vring_rsc->num;
 		}
