@@ -27,28 +27,33 @@ extern uint32_t virtio_device_get_features(struct virtio_device *vdev);
 extern void virtio_device_set_features(struct virtio_device *vdev, uint32_t features);
 extern void virtio_device_reset(struct virtio_device *vdev);
 
+void virtio_mmio_isr(struct virtio_device *vdev);
+
 static inline void virtio_mmio_write32(struct virtio_device *vdev, int offset, uint32_t value)
 {
-	struct virtio_mmio_device *vmdev = (struct virtio_mmio_device *)vdev->priv;
+	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
+							      struct virtio_mmio_device, vdev);
 
 	metal_io_write32(vmdev->cfg_io, offset, value);
 }
 
 static inline uint32_t virtio_mmio_read32(struct virtio_device *vdev, int offset)
 {
-	struct virtio_mmio_device *vmdev = (struct virtio_mmio_device *)vdev->priv;
+	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
+							      struct virtio_mmio_device, vdev);
 
 	return metal_io_read32(vmdev->cfg_io, offset);
 }
 
 static inline uint8_t virtio_mmio_read8(struct virtio_device *vdev, int offset)
 {
-	struct virtio_mmio_device *vmdev = (struct virtio_mmio_device *)vdev->priv;
+	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
+							      struct virtio_mmio_device, vdev);
 
 	return metal_io_read8(vmdev->cfg_io, offset);
 }
 
-static void virtio_mmio_set_status(struct virtio_device *vdev, uint8_t status)
+static inline void virtio_mmio_set_status(struct virtio_device *vdev, uint8_t status)
 {
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_STATUS, status);
 }
@@ -114,7 +119,7 @@ static void virtio_mmio_set_features(struct virtio_device *vdev, uint32_t featur
 
 static void virtio_mmio_reset_device(struct virtio_device *vdev)
 {
-	virtio_mmio_write32(vdev, VIRTIO_MMIO_STATUS, 0);
+	virtio_mmio_set_status(vdev, 0);
 }
 
 static void virtio_mmio_notify(struct virtqueue *vq)
@@ -141,7 +146,8 @@ static int virtio_mmio_get_metal_io(struct virtio_device *vdev, uintptr_t virt_m
 	struct metal_device *device;
 	int32_t err;
 	int device_idx = 0;
-	struct virtio_mmio_device *vmdev = vdev->priv;
+	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
+							      struct virtio_mmio_device, vdev);
 
 	metal_params.log_level = METAL_LOG_DEBUG;
 
@@ -149,6 +155,10 @@ static int virtio_mmio_get_metal_io(struct virtio_device *vdev, uintptr_t virt_m
 	vmdev->shm_device.regions[0].physmap = (metal_phys_addr_t *)&vmdev->shm_mem.base;
 	vmdev->shm_device.regions[0].virt = (void *)virt_mem_ptr;
 	vmdev->shm_device.regions[0].size = vmdev->shm_mem.size;
+
+	VIRTIO_ASSERT((METAL_MAX_DEVICE_REGIONS > 1),
+		      "METAL_MAX_DEVICE_REGIONS must be greater that 1");
+
 	vmdev->shm_device.regions[1].physmap = (metal_phys_addr_t *)&vmdev->cfg_mem.base;
 	vmdev->shm_device.regions[1].virt = (void *)cfg_mem_ptr;
 	vmdev->shm_device.regions[1].size = vmdev->cfg_mem.size;
@@ -323,7 +333,8 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 	struct virtio_vring_info *vring_info = &_vring_info;
 	struct vring_alloc_info *vring_alloc_info;
 	int offset;
-	struct virtio_mmio_device *vmdev = vdev->priv;
+	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
+							      struct virtio_mmio_device, vdev);
 
 	vq->vq_dev = vdev;
 	vring_info->io = vmdev->shm_io;
@@ -333,8 +344,8 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 	offset = 0;
 
 	if (!vq) {
-		if (vdev->role == (unsigned int)VIRTIO_DEV_MASTER) {
-			/* Master preallocated buffer before vring */
+		if (vdev->role == (unsigned int)VIRTIO_DEV_DRIVER) {
+			/* Driver preallocated buffer before vring */
 			offset += vring_info->info.num_descs * virtio_mmio_max_data_size_get(vdev);
 		}
 
@@ -360,8 +371,8 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 	vring_alloc_info = &vring_info->info;
 
 	unsigned int role_bk = vdev->role;
-	/* Assign OA VIRTIO_DEV_MASTER master role to allow virtio guests to setup the vrings */
-	vdev->role = (unsigned int)VIRTIO_DEV_MASTER;
+	/* Assign OA VIRTIO_DEV_DRIVER role to allow virtio guests to setup the vrings */
+	vdev->role = (unsigned int)VIRTIO_DEV_DRIVER;
 	if (virtqueue_create(vdev, idx, vq_name, vring_alloc_info, (void (*)(struct virtqueue *))cb,
 			     vdev->func->notify, vring_info->vq)) {
 		metal_log(METAL_LOG_ERROR, "virtqueue_create failed\n");
@@ -386,6 +397,7 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 				    (char *)vq->vq_ring.desc)) / 4096);
 	}
 
+	vdev->vrings_info[vdev->vrings_num].vq = vq;
 	vdev->vrings_num++;
 	virtqueue_enable_cb(vq);
 
