@@ -83,6 +83,12 @@ if (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
 	add_definitions(-DVIRTIO_DRIVER_ONLY)
 endif (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
 
+option (WITH_VIRTIO_MMIO "Build with virtio mmio (front end) enabled" ON)
+
+if (WITH_VIRTIO_MMIO)
+  add_definitions(-DWITH_VIRTIO_MMIO)
+endif (WITH_VIRTIO_MMIO)
+
 option (WITH_DCACHE_VRINGS "Build with vrings cache operations enabled" OFF)
 
 if (WITH_DCACHE_VRINGS)
