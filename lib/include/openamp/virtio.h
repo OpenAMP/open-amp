@@ -106,6 +106,20 @@ struct virtio_device_id {
  */
 #define VIRTIO_F_RING_PACKED          34
 
+#ifdef VIRTIO_DEBUG
+#include <metal/log.h>
+
+#define VIRTIO_ASSERT(_exp, _msg) do { \
+		if (!(_exp)) { \
+			metal_log(METAL_LOG_EMERGENCY, \
+				  "FATAL: %s - "_msg, __func__); \
+			metal_assert(_exp); \
+		} \
+	} while (0)
+#else
+#define VIRTIO_ASSERT(_exp, _msg) metal_assert(_exp)
+#endif /* VIRTIO_DEBUG */
+
 typedef void (*virtio_dev_reset_cb)(struct virtio_device *vdev);
 
 struct virtio_dispatch;
