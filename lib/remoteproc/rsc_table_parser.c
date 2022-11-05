@@ -144,8 +144,6 @@ int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
 
 	num_vrings = vdev_rsc->num_of_vrings;
 	for (i = 0; i < num_vrings; i++) {
-		struct fw_rsc_vdev_vring *vring_rsc;
-
 		vring_rsc = &vdev_rsc->vring[i];
 		notifyid = vring_rsc->notifyid;
 		notifyid = remoteproc_allocate_id(rproc,
