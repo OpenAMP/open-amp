@@ -48,10 +48,10 @@ static int ept_deleted;
 extern int init_system(void);
 extern void cleanup_system(void);
 
-static int rpmsg_check_rcv_msg(struct rpmsg_rcv_msg *rcv_msg, uint32_t exp_num)
+static int rpmsg_check_rcv_msg(struct rpmsg_rcv_msg *msg, uint32_t exp_num)
 {
 	int i, ret = RPMSG_SUCCESS;
-	struct _payload *r_payload = rcv_msg->payload;
+	struct _payload *r_payload = msg->payload;
 
 	if (r_payload->num != exp_num) {
 		LPERROR("Invalid message number received %ld, expected %d\r\n",
@@ -75,7 +75,7 @@ static int rpmsg_check_rcv_msg(struct rpmsg_rcv_msg *rcv_msg, uint32_t exp_num)
 		}
 	}
 out:
-	rpmsg_release_rx_buffer(rcv_msg->ept, r_payload);
+	rpmsg_release_rx_buffer(msg->ept, r_payload);
 
 	return ret;
 }

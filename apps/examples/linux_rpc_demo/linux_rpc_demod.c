@@ -37,14 +37,14 @@
 
 static void *platform;
 static struct rpmsg_device *rpdev;
-static struct rpmsg_rpc_svr rpcs;
+static struct rpmsg_rpc_svr rpc_svr;
 int request_termination;
 int ept_deleted;
 
 void rpmsg_service_server_unbind(struct rpmsg_endpoint *ept)
 {
 	(void)ept;
-	rpmsg_destroy_ept(&rpcs.ept);
+	rpmsg_destroy_ept(&rpc_svr.ept);
 	LPRINTF("Endpoint is destroyed\r\n");
 	ept_deleted = 1;
 }
@@ -53,7 +53,7 @@ void terminate_rpc_app(void)
 {
 	LPRINTF("Destroying endpoint.\r\n");
 	if (!ept_deleted)
-		rpmsg_destroy_ept(&rpcs.ept);
+		rpmsg_destroy_ept(&rpc_svr.ept);
 }
 
 void exit_action_handler(int signum)
@@ -260,7 +260,7 @@ int app(struct rpmsg_device *rdev, void *priv)
 	/* Initialize RPMSG framework */
 	LPRINTF("Try to create rpmsg endpoint.\r\n");
 
-	ret = rpmsg_rpc_server_init(&rpcs, rdev, rpc_table,
+	ret = rpmsg_rpc_server_init(&rpc_svr, rdev, rpc_table,
 				    (int)sizeof(rpc_table) / sizeof(
 				    struct rpmsg_rpc_services),
 				    rpmsg_service_server_unbind);

@@ -34,7 +34,7 @@
 #define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
 
 static struct rpmsg_rpc_clt *rpmsg_default_rpc;
-static int fd, bytes_written, bytes_read;
+static int file_d, bytes_written, bytes_read;
 static struct polling poll;
 static atomic_int wait_resp;
 
@@ -72,9 +72,9 @@ void rpmsg_open_cb(struct rpmsg_rpc_clt *rpc, int status, void *data,
 
 	/* Assign value from return args */
 	if (status)
-		fd = 0;
+		file_d = 0;
 	else
-		fd = resp->fd;
+		file_d = resp->fd;
 
 	/* to clear the flag set in the caller function */
 	atomic_flag_clear(&wait_resp);
@@ -487,25 +487,25 @@ int app(struct rpmsg_device *rdev, void *priv)
 	printf("\nRemote>Creating a file on host and writing to it..\r\n");
 	rpmsg_open(fname, REDEF_O_CREAT | REDEF_O_WRONLY | REDEF_O_APPEND,
 		   S_IRUSR | S_IWUSR);
-	printf("\nRemote>Opened file '%s' with fd = %d\r\n", fname, fd);
+	printf("\nRemote>Opened file '%s' with fd = %d\r\n", fname, file_d);
 	sprintf(wbuff, "This is a test string being written to file..");
-	rpmsg_write(fd, wbuff, strlen(wbuff));
-	printf("\nRemote>Wrote to fd = %d, size = %d, content = %s\r\n", fd,
+	rpmsg_write(file_d, wbuff, strlen(wbuff));
+	printf("\nRemote>Wrote to fd = %d, size = %d, content = %s\r\n", file_d,
 	       bytes_written, wbuff);
-	rpmsg_close(fd);
-	printf("\nRemote>Closed fd = %d\r\n", fd);
+	rpmsg_close(file_d);
+	printf("\nRemote>Closed fd = %d\r\n", file_d);
 
 	/* Remote performing file IO on Host */
 	printf("\nRemote>Reading a file on host and displaying its "
 	"contents..\r\n");
 	rpmsg_open(fname, REDEF_O_RDONLY, S_IRUSR | S_IWUSR);
-	printf("\nRemote>Opened file '%s' with fd = %d\r\n", fname, fd);
-	rpmsg_read(fd, rbuff, sizeof(rbuff));
+	printf("\nRemote>Opened file '%s' with fd = %d\r\n", fname, file_d);
+	rpmsg_read(file_d, rbuff, sizeof(rbuff));
 	*(char *)(&rbuff[0] + bytes_read) = 0;
 	printf("\nRemote>Read from fd = %d, size = %d, "
-	"printing contents below .. %s\r\n", fd, bytes_read, rbuff);
-	rpmsg_close(fd);
-	printf("\nRemote>Closed fd = %d\r\n", fd);
+	"printing contents below .. %s\r\n", file_d, bytes_read, rbuff);
+	rpmsg_close(file_d);
+	printf("\nRemote>Closed fd = %d\r\n", file_d);
 
 	while (1) {
 		/* Remote performing STDIO on Host */
