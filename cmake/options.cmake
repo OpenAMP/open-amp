@@ -84,10 +84,16 @@ if (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
 endif (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
 
 option (WITH_VIRTIO_MMIO "Build with virtio mmio (front end) enabled" ON)
+option (WITH_HVL_VIRTIO "Build with hypervisor-less virtio (front end) enabled" OFF)
 
 if (WITH_VIRTIO_MMIO)
   add_definitions(-DWITH_VIRTIO_MMIO)
 endif (WITH_VIRTIO_MMIO)
+
+if (WITH_HVL_VIRTIO)
+  set (WITH_VIRTIO_MMIO ON)
+  add_definitions(-DHVL_VIRTIO)
+endif (WITH_HVL_VIRTIO)
 
 option (WITH_DCACHE_VRINGS "Build with vrings cache operations enabled" OFF)
 

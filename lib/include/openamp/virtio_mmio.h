@@ -11,7 +11,9 @@
 #include <openamp/virtqueue.h>
 #include <openamp/virtio.h>
 #include <metal/device.h>
-
+#if defined(HVL_VIRTIO)
+#include <openamp/virtio_mmio_hvl.h>
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -161,6 +163,15 @@ static struct vring __vring_##name = { \
 		(n + 1) * sizeof(uint16_t) + align - 1) & ~(align - 1))), \
 }
 
+#if defined(HVL_VIRTIO)  /* vrings in individual sections */
+#define VRBUF_DECLARE(name, n, align, section_name) \
+static char __vrbuf_##name[VRING_SIZE(n, align)] __aligned(4096) \
+	__attribute((__section__(".shared.vring."#section_name)))
+#else
+#define VRBUF_DECLARE(name, n, align, section_name) \
+static char __vrbuf_##name[VRING_SIZE(n, align)] __aligned(4096)
+#endif
+
 /**
  * @endcond
  */
@@ -174,7 +185,7 @@ static struct vring __vring_##name = { \
  */
 
 #define VQ_DECLARE(name, n, align) \
-	static char __vrbuf_##name[VRING_SIZE(n, align)] __aligned(4096); \
+	VRBUF_DECLARE(name, n, align, name); \
 	static struct { \
 	struct virtqueue vq; \
 	struct vq_desc_extra extra[n]; \
@@ -229,6 +240,12 @@ struct virtio_mmio_device {
 	unsigned int device_mode;
 	unsigned int irq;
 	void *user_data;
+#if defined(HVL_VIRTIO)
+	unsigned int hvl_mode;
+	struct metal_list bounce_buf_list;
+	virtio_mmio_hvl_ipi_t ipi;
+	void *ipi_param;
+#endif
 };
 
 /**

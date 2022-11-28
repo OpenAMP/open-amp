@@ -12,6 +12,9 @@
 #include <metal/log.h>
 #include <metal/alloc.h>
 #include <metal/cache.h>
+#if defined(HVL_VIRTIO)
+#include <openamp/virtio_mmio_hvl.h>
+#endif
 
 /* Prototype for internal functions. */
 static void vq_ring_init(struct virtqueue *, void *, int);
@@ -211,6 +214,11 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 	vq_ring_free_chain(vq, desc_idx);
 
 	cookie = vq->vq_descx[desc_idx].cookie;
+
+#if defined(HVL_VIRTIO)
+	virtio_mmio_hvl_get_bounce_buf(vq, &vq->vq_ring.desc[desc_idx], cookie);
+#endif
+
 	vq->vq_descx[desc_idx].cookie = NULL;
 
 	if (idx)
@@ -523,6 +531,14 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 	struct vring_desc *dp;
 	int i, needed;
 	uint16_t idx;
+#if defined(HVL_VIRTIO)
+	uint64_t addr = 0;
+	struct vq_desc_extra *dxp = NULL;
+	void *cookie = NULL;
+
+	dxp = &vq->vq_descx[head_idx];
+	cookie = dxp->cookie;
+#endif
 
 	(void)vq;
 
@@ -548,6 +564,12 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 		if (i >= readable)
 			dp->flags |= VRING_DESC_F_WRITE;
 
+#if defined(HVL_VIRTIO)
+		addr = virtio_mmio_hvl_add_bounce_buf(vq, cookie, buf_list[i].buf, buf_list[i].len);
+		if (addr != 0) {
+			dp->addr = addr;
+		}
+#endif
 		/*
 		 * Instead of flushing the whole desc region, we flush only the
 		 * single entry hopefully saving some cycles
