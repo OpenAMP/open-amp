@@ -114,4 +114,6 @@ if (DEFINED RPMSG_BUFFER_SIZE)
   add_definitions( -DRPMSG_BUFFER_SIZE=${RPMSG_BUFFER_SIZE} )
 endif (DEFINED RPMSG_BUFFER_SIZE)
 
+option (WITH_DOC "Build with documentation" OFF)
+
 message ("-- C_FLAGS : ${CMAKE_C_FLAGS}")
