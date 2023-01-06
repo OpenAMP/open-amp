@@ -180,16 +180,15 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 		r_desc = metal_container_of(node, struct vbuff_reclaimer_t, node);
 		metal_list_del(node);
 		data = r_desc;
+		*idx = r_desc->idx;
 
 #ifndef VIRTIO_DEVICE_ONLY
 		if (role == RPMSG_HOST)
 			*len = rvdev->config.h2r_buf_size;
 #endif /*!VIRTIO_DEVICE_ONLY*/
 #ifndef VIRTIO_DRIVER_ONLY
-		if (role == RPMSG_REMOTE) {
-			*idx = r_desc->idx;
+		if (role == RPMSG_REMOTE)
 			*len = virtqueue_get_buffer_length(rvdev->svq, *idx);
-		}
 #endif /*!VIRTIO_DRIVER_ONLY*/
 #ifndef VIRTIO_DEVICE_ONLY
 	} else if (role == RPMSG_HOST) {
