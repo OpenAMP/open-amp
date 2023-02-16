@@ -244,7 +244,8 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 
 #ifdef VIRTIO_CACHED_BUFFERS
 	/* Invalidate the buffer before returning it */
-	metal_cache_invalidate(data, *len);
+	if (data)
+		metal_cache_invalidate(data, *len);
 #endif /* VIRTIO_CACHED_BUFFERS */
 
 	return data;
