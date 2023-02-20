@@ -270,49 +270,6 @@ static int rpmsg_virtio_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
 }
 #endif /*!VIRTIO_DRIVER_ONLY*/
 
-/**
- * @internal
- *
- * @brief Returns buffer size available for sending messages.
- *
- * @param rvdev	Pointer to rpmsg device
- *
- * @return Buffer size
- */
-static int _rpmsg_virtio_get_buffer_size(struct rpmsg_virtio_device *rvdev)
-{
-	unsigned int role = rpmsg_virtio_get_role(rvdev);
-	int length = 0;
-
-#ifndef VIRTIO_DEVICE_ONLY
-	if (role == RPMSG_HOST) {
-		/*
-		 * If device role is host then buffers are provided by us,
-		 * so just provide the macro.
-		 */
-		length = rvdev->config.h2r_buf_size - sizeof(struct rpmsg_hdr);
-	}
-#endif /*!VIRTIO_DEVICE_ONLY*/
-
-#ifndef VIRTIO_DRIVER_ONLY
-	if (role == RPMSG_REMOTE) {
-		/*
-		 * If other core is host then buffers are provided by it,
-		 * so get the buffer size from the virtqueue.
-		 */
-		length =
-		    (int)virtqueue_get_desc_size(rvdev->svq) -
-		    sizeof(struct rpmsg_hdr);
-	}
-#endif /*!VIRTIO_DRIVER_ONLY*/
-
-	if (length <= 0) {
-		length = RPMSG_ERR_NO_BUFF;
-	}
-
-	return length;
-}
-
 static void rpmsg_virtio_hold_rx_buffer(struct rpmsg_device *rdev, void *rxbuf)
 {
 	struct rpmsg_hdr *rp_hdr;
@@ -661,17 +618,87 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	return RPMSG_SUCCESS;
 }
 
-int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev)
+int rpmsg_virtio_get_tx_buffer_size(struct rpmsg_device *rdev)
 {
-	int size;
 	struct rpmsg_virtio_device *rvdev;
+	unsigned int role;
+	int size = 0;
 
 	if (!rdev)
 		return RPMSG_ERR_PARAM;
+
 	metal_mutex_acquire(&rdev->lock);
 	rvdev = (struct rpmsg_virtio_device *)rdev;
-	size = _rpmsg_virtio_get_buffer_size(rvdev);
+	role = rpmsg_virtio_get_role(rvdev);
+
+#ifndef VIRTIO_DEVICE_ONLY
+	if (role == RPMSG_HOST) {
+		/*
+		 * If device role is host then buffers are provided by us,
+		 * so just provide the macro.
+		 */
+		size = rvdev->config.h2r_buf_size - sizeof(struct rpmsg_hdr);
+	}
+#endif /*!VIRTIO_DEVICE_ONLY*/
+
+#ifndef VIRTIO_DRIVER_ONLY
+	if (role == RPMSG_REMOTE) {
+		/*
+		 * If other core is host then buffers are provided by it,
+		 * so get the buffer size from the virtqueue.
+		 */
+		size = (int)virtqueue_get_desc_size(rvdev->svq) -
+		       sizeof(struct rpmsg_hdr);
+	}
+#endif /*!VIRTIO_DRIVER_ONLY*/
+
+	if (size <= 0)
+		size = RPMSG_ERR_NO_BUFF;
+
 	metal_mutex_release(&rdev->lock);
+
+	return size;
+}
+
+int rpmsg_virtio_get_rx_buffer_size(struct rpmsg_device *rdev)
+{
+	struct rpmsg_virtio_device *rvdev;
+	unsigned int role;
+	int size = 0;
+
+	if (!rdev)
+		return RPMSG_ERR_PARAM;
+
+	metal_mutex_acquire(&rdev->lock);
+	rvdev = (struct rpmsg_virtio_device *)rdev;
+	role = rpmsg_virtio_get_role(rvdev);
+
+#ifndef VIRTIO_DEVICE_ONLY
+	if (role == RPMSG_HOST) {
+		/*
+		 * If device role is host then buffers are provided by us,
+		 * so just provide the macro.
+		 */
+		size = rvdev->config.r2h_buf_size - sizeof(struct rpmsg_hdr);
+	}
+#endif /*!VIRTIO_DEVICE_ONLY*/
+
+#ifndef VIRTIO_DRIVER_ONLY
+	if (role == RPMSG_REMOTE) {
+		/*
+		 * If other core is host then buffers are provided by it,
+		 * so get the buffer size from the virtqueue.
+		 */
+		size = (int)virtqueue_get_desc_size(rvdev->rvq) -
+		       sizeof(struct rpmsg_hdr);
+	}
+#endif /*!VIRTIO_DRIVER_ONLY*/
+
+	if (size <= 0)
+		size = RPMSG_ERR_NO_BUFF;
+
+	metal_mutex_release(&rdev->lock);
+
 	return size;
 }
 

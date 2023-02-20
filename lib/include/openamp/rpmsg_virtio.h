@@ -166,13 +166,37 @@ rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device *rvdev,
 }
 
 /**
- * @brief Get rpmsg virtio buffer size
+ * @brief Get rpmsg virtio Tx buffer size
  *
  * @param rdev	Pointer to the rpmsg device
  *
  * @return Next available buffer size for text, negative value for failure
  */
-int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev);
+int rpmsg_virtio_get_tx_buffer_size(struct rpmsg_device *rdev);
+
+/**
+ * @brief  Get rpmsg virtio Rx buffer size
+ *
+ * @param rdev	Pointer to the rpmsg device
+ *
+ * @return Next available buffer size for text, negative value for failure
+ */
+int rpmsg_virtio_get_rx_buffer_size(struct rpmsg_device *rdev);
+
+/**
+ * @brief Get rpmsg virtio Tx buffer size
+ *
+ * This function is same as rpmsg_virtio_get_tx_buffer_size(), keep it here
+ * to maintain the forward compatibility.
+ *
+ * @param rdev	Pointer to the rpmsg device.
+ *
+ * @return Next available buffer size for text, negative value for failure.
+ */
+static inline int rpmsg_virtio_get_buffer_size(struct rpmsg_device *rdev)
+{
+	return rpmsg_virtio_get_tx_buffer_size(rdev);
+}
 
 /**
  * @brief Initialize rpmsg virtio device
