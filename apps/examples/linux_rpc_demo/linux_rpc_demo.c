@@ -36,7 +36,7 @@
 static struct rpmsg_rpc_clt *rpmsg_default_rpc;
 static int file_d, bytes_written, bytes_read;
 static struct polling poll;
-static atomic_int wait_resp;
+static atomic_flag wait_resp;
 
 static void rpmsg_rpc_shutdown(struct rpmsg_rpc_clt *rpc)
 {
@@ -464,7 +464,8 @@ int app(struct rpmsg_device *rdev, void *priv)
 	/* redirect I/Os */
 	LPRINTF("Initializating I/Os redirection...\r\n");
 	table_len = (int)sizeof(rpc_table) / sizeof(struct rpmsg_rpc_services);
-	atomic_init(&wait_resp, 1);
+	wait_resp = (atomic_flag)ATOMIC_FLAG_INIT;
+	atomic_flag_test_and_set(&wait_resp);
 
 	ret = rpmsg_rpc_client_init(&rpc, rdev,
 				    rpmsg_rpc_shutdown, rpc_table, table_len);

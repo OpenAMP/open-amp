@@ -51,7 +51,7 @@ struct vring_ipi_info {
 	/* Socket file path */
 	const char *path;
 	int fd;
-	atomic_int sync;
+	atomic_flag sync;
 };
 
 struct remoteproc_priv {
