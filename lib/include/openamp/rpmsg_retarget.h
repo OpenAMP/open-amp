@@ -46,7 +46,7 @@ struct rpmsg_rpc_syscall {
 struct rpmsg_rpc_data {
 	struct rpmsg_endpoint ept;
 	int ept_destroyed;
-	atomic_int nacked;
+	atomic_flag nacked;
 	void *respbuf;
 	size_t respbuf_len;
 	rpmsg_rpc_poll poll;
