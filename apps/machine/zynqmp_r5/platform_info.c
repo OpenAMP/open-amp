@@ -58,6 +58,26 @@
 #define _rproc_wait() asm volatile("wfi")
 #endif /* !RPMSG_NO_IPI */
 
+#ifdef versal /* Versal case */
+#define	IPI_VALS	5
+unsigned int ipi_info[IPI_VALS][3] = {
+	{ 0xff330000,	0x4,		62U},
+	{ 0xFF340000,	0x8,		63U},
+	{ 0xFF350000,	0x10,		64U},
+	{ 0xFF360000,	0x20,		65U},
+	{ 0xFF370000,	0x40,		66U};
+#else /* ZynqMP case */
+#define	IPI_VALS	8
+unsigned int ipi_info[IPI_VALS][3] = {
+	{ 0xff300000,	0x1,		67U},
+	{ 0xff310000,	0x100,		65U},
+	{ 0xff320000,	0x200,		66U},
+	{ 0xFF340000,	0x1000000,	61U},
+	{ 0xFF350000,	0x2000000,	62U},
+	{ 0xFF360000,	0x4000000,	63U},
+	{ 0xFF370000,	0x8000000,	64U} };
+#endif /* !versal */
+
 /* Polling information used by remoteproc operations.
  */
 static metal_phys_addr_t poll_phys_addr = POLL_BASE_ADDR;
@@ -182,6 +202,60 @@ int platform_init(int argc, char *argv[], void **platform)
 	}
 	*platform = rproc;
 	return 0;
+
+}
+static void report_setup(unsigned int role)
+{
+	/* R5 is remote and Linux is host */
+	unsigned int i, remote, host, len;
+	void *rsc_table = get_resource_table(0, &len);
+
+	xil_printf("### OPENAMP APP CONFIGURATION REPORT ###\n");
+	xil_printf("### APP ROLE: %s ###################\n",
+		   role == RPMSG_REMOTE ? "REMOTE" : "HOST");
+	for (i = 0; i < IPI_VALS; i++) {
+		if (ipi_info[i][1] == IPI_CHN_BITMASK) {
+			host = i;
+			break;
+		}
+	}
+
+	if (i == IPI_VALS) {
+		xil_printf("### UNEXPECTED REMOTE IPI BITMASK VALUE: 0x%x\n", IPI_CHN_BITMASK);
+		return;
+	}
+
+	for (i = 0; i < IPI_VALS; i++) {
+		if (ipi_info[i][0] == POLL_BASE_ADDR) {
+			remote = i;
+			break;
+		}
+	}
+
+	if (i == IPI_VALS) {
+		xil_printf("### UNEXPECTED POLL_BASE_ADDR for REMOTE to HOST: 0x%x\n",
+			   IPI_CHN_BITMASK);
+		return;
+	}
+
+	xil_printf("### REMOTE IPI_IRQ_VECT_ID 0x%x\n", IPI_IRQ_VECT_ID);
+	xil_printf("### REMOTE POLL_BASE_ADDR 0x%x\n", POLL_BASE_ADDR);
+	xil_printf("### REMOTE IPI_CHN_BITMASK 0x%x\n", IPI_CHN_BITMASK);
+	xil_printf("### REMOTE SHARED_MEM_PA: 0x%lx\n", SHARED_MEM_PA);
+	xil_printf("### REMOTE SHARED_BUF_OFFSET: 0x%lx\n", SHARED_BUF_OFFSET);
+	xil_printf("########################################\n");
+	xil_printf("######## EXPECTED VALUES FOR HOST: #####\n");
+	xil_printf("########################################\n");
+	xil_printf("### HOST IPI_DEV_NAME: %x.ipi\n", ipi_info[host][0]);
+	xil_printf("### HOST SHM_DEV_NAME: %x.shm\n", rsc_table);
+	xil_printf("### HOST RSC_MEM_PA: 0%lx\n", rsc_table);
+	xil_printf("### HOST VRING_MEM_PA: 0%lx\n", SHARED_MEM_PA);
+	xil_printf("### HOST SHARED_BUF_PA: 0%lx\n", SHARED_MEM_PA + SHARED_BUF_OFFSET);
+	xil_printf("### HOST IPI_CHN_BITMASK: 0x%x\n", ipi_info[remote][1]);
+	xil_printf("### EXPECTED IPI VALUES FOR HOST (RPMSG USERSPACE ONLY): ######\n");
+	xil_printf("### HOST IPI_DEV_NAME: %x.ipi\n", ipi_info[host][0]);
+	xil_printf("### HOST IPI REG VALUE: <0 %d 4>\n", ipi_info[host][2] - 32);
+	xil_printf("########################################\n");
 }
 
 struct  rpmsg_device *
@@ -229,6 +303,7 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 		goto err2;
 	}
 	xil_printf("initializing rpmsg vdev\r\n");
+	report_setup(role);
 	return rpmsg_virtio_get_rpmsg_device(rpmsg_vdev);
 err2:
 	remoteproc_remove_virtio(rproc, vdev);
