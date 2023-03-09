@@ -80,6 +80,26 @@
 #define SHARED_BUF_SIZE     0x40000UL
 #endif /* !SHARED_BUF_SIZE */
 
+#ifdef versal /* Versal case */
+#define	IPI_VALS	5
+unsigned int ipi_info[IPI_VALS][3] = {
+	{ 0xff330000,	0x4,		62U},
+	{ 0xFF340000,	0x8,		63U},
+	{ 0xFF350000,	0x10,		64U},
+	{ 0xFF360000,	0x20,		65U},
+	{ 0xFF370000,	0x40,		66U};
+#else /* ZynqMP case */
+#define	IPI_VALS	8
+unsigned int ipi_info[IPI_VALS][3] = {
+	{ 0xff300000,	0x1,		67U},
+	{ 0xff310000,	0x100,		65U},
+	{ 0xff320000,	0x200,		66U},
+	{ 0xFF340000,	0x1000000,	61U},
+	{ 0xFF350000,	0x2000000,	62U},
+	{ 0xFF360000,	0x4000000,	63U},
+	{ 0xFF370000,	0x8000000,	64U} };
+#endif
+
 struct remoteproc_priv rproc_priv = {
 	.shm_name = SHM_DEV_NAME,
 	.shm_bus_name = DEV_BUS_NAME,
@@ -181,6 +201,66 @@ int platform_init(int argc, char *argv[], void **platform)
 	return 0;
 }
 
+static void report_setup(unsigned int role)
+{
+	/* R5 is remote and Linux is host */
+	unsigned int i, remote, host, host_ipi;
+
+	printf("### OPENAMP APP CONFIGURATION REPORT ###\n");
+	printf("### APP ROLE: %s ###################\n", role == RPMSG_REMOTE ? "REMOTE" : "HOST");
+	for (i = 0; i < IPI_VALS; i++) {
+		if (ipi_info[i][1] == IPI_CHN_BITMASK) {
+			remote = i;
+			break;
+		}
+	}
+
+	/* Parse IPI from name */
+	host_ipi = (unsigned int)strtol(IPI_DEV_NAME, NULL, 16);
+
+	if (i == IPI_VALS) {
+		printf("### UNEXPECTED REMOTE IPI BITMASK VALUE: 0x%x\n", IPI_CHN_BITMASK);
+		return;
+	}
+
+	for (i = 0; i < IPI_VALS; i++) {
+		if (ipi_info[i][0] == host_ipi) {
+			host = i;
+			break;
+		}
+	}
+
+	if (i == IPI_VALS) {
+		printf("### UNEXPECTED IPI_CHN_BITMASK for REMOTE to HOST: 0x%x\n",
+		       IPI_CHN_BITMASK);
+		return;
+	}
+	printf("########################################\n");
+	printf("### EXPECTED VALUES FOR REMOTE: ########\n");
+	printf("########################################\n");
+	printf("### REMOTE IPI_IRQ_VECT_ID 0x%x\n", ipi_info[remote][2]);
+	printf("### REMOTE POLL_BASE_ADDR 0x%x\n", ipi_info[remote][0]);
+	printf("### REMOTE IPI_CHN_BITMASK 0x%x\n", ipi_info[host][1]);
+	printf("### REMOTE RESOURCE TABLE LOCATION: 0%lx\n", RSC_MEM_PA);
+	printf("### REMOTE TX RING: 0x%lx (RPMSG USERSPACE ONLY)\n", VRING_MEM_PA);
+	printf("### REMOTE RX RING: 0x%lx (RPMSG USERSPACE ONLY)\n",
+	       VRING_MEM_PA + VRING_MEM_SIZE / 2);
+	printf("### REMOTE SHARED_MEM_PA: 0x%lx\n", VRING_MEM_PA);
+	printf("### REMOTE SHARED_BUF_OFFSET: 0x%lx\n", VRING_MEM_SIZE);
+	printf("########################################\n");
+	printf("### HOST IPI_DEV_NAME: %s\n", IPI_DEV_NAME);
+	printf("### HOST SHM_DEV_NAME: %s\n", SHM_DEV_NAME);
+	printf("### HOST RSC_MEM_PA: 0%lx\n", RSC_MEM_PA);
+	printf("### HOST VRING_MEM_PA: 0%lx\n", VRING_MEM_PA);
+	printf("### HOST SHARED_BUF_PA: 0%lx\n", SHARED_BUF_PA);
+	printf("### HOST IPI_CHN_BITMASK: 0x%x\n", IPI_CHN_BITMASK);
+	printf("### EXPECTED IPI VALUES FOR HOST (RPMSG USERSPACE ONLY): ######\n");
+	printf("### HOST IPI_DEV_NAME: %x.ipi\n", ipi_info[host][0]);
+	printf("### HOST IPI REG VALUE: <0 %d 4>\n", ipi_info[host][2] - 32);
+	printf("########################################\n");
+}
+
+
 struct  rpmsg_device *
 platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 			   unsigned int role,
@@ -223,6 +303,7 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
 		printf("failed rpmsg_init_vdev\r\n");
 		goto err2;
 	}
+	report_setup(role);
 	return rpmsg_virtio_get_rpmsg_device(rpmsg_vdev);
 err2:
 	remoteproc_remove_virtio(rproc, vdev);
