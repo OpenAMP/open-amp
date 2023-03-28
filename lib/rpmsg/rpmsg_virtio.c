@@ -93,6 +93,11 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
 				       uint16_t idx)
 {
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
+
+#ifdef VIRTIO_CACHED_BUFFERS
+	metal_cache_invalidate(buffer, len);
+#endif
+
 #ifndef VIRTIO_DEVICE_ONLY
 	if (role == RPMSG_HOST) {
 		struct virtqueue_buf vqbuf;
