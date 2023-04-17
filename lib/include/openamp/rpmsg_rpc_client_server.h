@@ -122,29 +122,32 @@ struct rpmsg_rpc_clt {
 };
 
 /**
- * rpmsg_rpc_client_release - release RPMsg remote procedure call
+ * @internal
+ *
+ * @brief Release RPMsg remote procedure call
  *
  * This function is to release remoteproc procedure call service
  *
- * @rpc: pointer to the client remote procedure call data
- *
+ * @param rpc	Pointer to the client remote procedure call data
  */
 void rpmsg_rpc_client_release(struct rpmsg_rpc_clt *rpc);
 
 /**
- * rpmsg_rpc_client_init - initialize RPMsg remote procedure call
+ * @internal
+ *
+ * @brief Initialize RPMsg remote procedure call
  *
  * This function is to initialize the remote procedure call
  * client data. RPMsg RPC will send request to remote and
  * wait for callback and load services to table
  *
- * @rpc: pointer to the client remote procedure call data
- * @rdev: pointer to the rpmsg device
- * @shutdown_cb: shutdown callback function
- * @services: pointer to service table
- * @len: length of table
+ * @param rpc		Pointer to the client remote procedure call data
+ * @param rdev		Pointer to the rpmsg device
+ * @param shutdown_cb	Shutdown callback function
+ * @param services	Pointer to service table
+ * @param len		Length of table
  *
- * return 0 for success, and negative value for failure
+ * @return 0 for success, and negative value for failure
  */
 int rpmsg_rpc_client_init(struct rpmsg_rpc_clt *rpc,
 			  struct rpmsg_device *rdev,
@@ -153,48 +156,55 @@ int rpmsg_rpc_client_init(struct rpmsg_rpc_clt *rpc,
 			  int len);
 
 /**
- * rpmsg_rpc_server_init - initialize RPMsg rpc for server
+ * @internal
+ *
+ * @brief Initialize RPMsg rpc for server
  *
  * This function create endpoint and loads services into table
  *
- * @rpcs: pointer to the server rpc
- * @rdev: pointer to the rpmsg device
- * @services: pointer to service table
- * @len: length of table
- * @rpmsg_service_server_unbind: unbind function callback
+ * @param rpcs				Pointer to the server rpc
+ * @param rdev				Pointer to the rpmsg device
+ * @param services			Pointer to service table
+ * @param len				Length of table
+ * @param rpmsg_service_server_unbind	Unbind function callback
  *
- * return 0 for success, and negative value for failure
+ * @return 0 for success, and negative value for failure
  */
 int rpmsg_rpc_server_init(struct rpmsg_rpc_svr *rpcs, struct rpmsg_device *rdev,
 			  const struct rpmsg_rpc_services *services, int len,
 			  rpmsg_ns_unbind_cb rpmsg_service_server_unbind);
 
 /**
- * rpmsg_rpc_client_send - Request RPMsg RPC call
+ * @internal
  *
- * @rpc: pointer to client remoteproc procedure call data
- * @rpc_id:  function id
- * @request_param: pointer to request buffer
- * @req_param_size: length of the request data
+ * @brief Request RPMsg RPC call
  *
- * return length of the received response, negative value for failure.
+ * @param rpc			Pointer to client remoteproc procedure call
+ *				data
+ * @param rpc_id		Function id
+ * @param request_param		Pointer to request buffer
+ * @param req_param_size	Length of the request data
+ *
+ * @return Length of the received response, negative value for failure.
  */
 int rpmsg_rpc_client_send(struct rpmsg_rpc_clt *rpc,
 			  unsigned int rpc_id, void *request_param,
 			  size_t req_param_size);
 
 /**
- * rpmsg_rpc_server_send - Request RPMsg RPC call
+ * @internal
+ *
+ * @brief Request RPMsg RPC call
  *
  * This function sends RPC request
  *
- * @rpcs: pointer to server rpc data
- * @rpc_id:  function id
- * @status: status of rpc
- * @request_param: pointer to request buffer
- * @param_size: length of the request data
+ * @param rpcs		Pointer to server rpc data
+ * @param rpc_id	Function id
+ * @param status	Status of rpc
+ * @param request_param	Pointer to request buffer
+ * @param param_size	Length of the request data
  *
- * return length of the received response, negative value for failure.
+ * @return Length of the received response, negative value for failure.
  */
 int rpmsg_rpc_server_send(struct rpmsg_rpc_svr *rpcs, uint32_t rpc_id,
 			  int status, void *request_param,

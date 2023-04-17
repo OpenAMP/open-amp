@@ -55,21 +55,6 @@ static inline metal_phys_addr_t virtqueue_virt_to_phys(struct virtqueue *vq,
 	return metal_io_virt_to_phys(io, buf);
 }
 
-/**
- * virtqueue_create - Creates new VirtIO queue
- *
- * @param device    - Pointer to VirtIO device
- * @param id        - VirtIO queue ID , must be unique
- * @param name      - Name of VirtIO queue
- * @param ring      - Pointer to vring_alloc_info control block
- * @param callback  - Pointer to callback function, invoked
- *                    when message is available on VirtIO queue
- * @param notify    - Pointer to notify function, used to notify
- *                    other side that there is job available for it
- * @param vq        - Created VirtIO queue.
- *
- * @return          - Function status
- */
 int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     const char *name, struct vring_alloc_info *ring,
 		     void (*callback)(struct virtqueue *vq),
@@ -105,19 +90,6 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 	return status;
 }
 
-/**
- * virtqueue_add_buffer()   - Enqueues new buffer in vring for consumption
- *                            by other side. Readable buffers are always
- *                            inserted before writable buffers
- *
- * @param vq                - Pointer to VirtIO queue control block.
- * @param buf_list          - Pointer to a list of virtqueue buffers.
- * @param readable          - Number of readable buffers
- * @param writable          - Number of writable buffers
- * @param cookie            - Pointer to hold call back data
- *
- * @return                  - Function status
- */
 int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
 			 int readable, int writable, void *cookie)
 {
@@ -173,15 +145,6 @@ int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
 	return status;
 }
 
-/**
- * virtqueue_get_buffer - Returns used buffers from VirtIO queue
- *
- * @param vq            - Pointer to VirtIO queue control block
- * @param len           - Length of conumed buffer
- * @param idx           - index of the buffer
- *
- * @return              - Pointer to used buffer
- */
 void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 {
 	struct vring_used_elem *uep;
@@ -232,12 +195,6 @@ void *virtqueue_get_buffer_addr(struct virtqueue *vq, uint16_t idx)
 	return virtqueue_phys_to_virt(vq, vq->vq_ring.desc[idx].addr);
 }
 
-/**
- * virtqueue_free   - Frees VirtIO queue resources
- *
- * @param vq        - Pointer to VirtIO queue control block
- *
- */
 void virtqueue_free(struct virtqueue *vq)
 {
 	if (vq) {
@@ -251,16 +208,6 @@ void virtqueue_free(struct virtqueue *vq)
 	}
 }
 
-/**
- * virtqueue_get_available_buffer   - Returns buffer available for use in the
- *                                    VirtIO queue
- *
- * @param vq                        - Pointer to VirtIO queue control block
- * @param avail_idx                 - Pointer to index used in vring desc table
- * @param len                       - Length of buffer
- *
- * @return                          - Pointer to available buffer
- */
 void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 				     uint32_t *len)
 {
@@ -293,15 +240,6 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 	return buffer;
 }
 
-/**
- * virtqueue_add_consumed_buffer - Returns consumed buffer back to VirtIO queue
- *
- * @param vq                     - Pointer to VirtIO queue control block
- * @param head_idx               - Index of vring desc containing used buffer
- * @param len                    - Length of buffer
- *
- * @return                       - Function status
- */
 int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 				  uint32_t len)
 {
@@ -338,24 +276,11 @@ int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 	return VQUEUE_SUCCESS;
 }
 
-/**
- * virtqueue_enable_cb  - Enables callback generation
- *
- * @param vq            - Pointer to VirtIO queue control block
- *
- * @return              - Function status
- */
 int virtqueue_enable_cb(struct virtqueue *vq)
 {
 	return vq_ring_enable_interrupt(vq, 0);
 }
 
-/**
- * virtqueue_disable_cb - Disables callback generation
- *
- * @param vq           - Pointer to VirtIO queue control block
- *
- */
 void virtqueue_disable_cb(struct virtqueue *vq)
 {
 	VQUEUE_BUSY(vq);
@@ -393,11 +318,6 @@ void virtqueue_disable_cb(struct virtqueue *vq)
 	VQUEUE_IDLE(vq);
 }
 
-/**
- * virtqueue_kick - Notifies other side that there is buffer available for it.
- *
- * @param vq      - Pointer to VirtIO queue control block
- */
 void virtqueue_kick(struct virtqueue *vq)
 {
 	VQUEUE_BUSY(vq);
@@ -413,11 +333,6 @@ void virtqueue_kick(struct virtqueue *vq)
 	VQUEUE_IDLE(vq);
 }
 
-/**
- * virtqueue_dump Dumps important virtqueue fields , use for debugging purposes
- *
- * @param vq - Pointer to VirtIO queue control block
- */
 void virtqueue_dump(struct virtqueue *vq)
 {
 	if (!vq)
@@ -437,13 +352,6 @@ void virtqueue_dump(struct virtqueue *vq)
 		  vq->vq_ring.used->flags);
 }
 
-/**
- * virtqueue_get_desc_size - Returns vring descriptor size
- *
- * @param vq            - Pointer to VirtIO queue control block
- *
- * @return              - Descriptor length
- */
 uint32_t virtqueue_get_desc_size(struct virtqueue *vq)
 {
 	uint16_t head_idx = 0;
@@ -479,7 +387,7 @@ uint32_t virtqueue_get_desc_size(struct virtqueue *vq)
  *                            Helper Functions                            *
  **************************************************************************/
 
-/**
+/*
  *
  * vq_ring_add_buffer
  *
@@ -528,7 +436,7 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 	return idx;
 }
 
-/**
+/*
  *
  * vq_ring_free_chain
  *
@@ -572,7 +480,7 @@ static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx)
 	vq->vq_desc_head_idx = desc_idx;
 }
 
-/**
+/*
  *
  * vq_ring_init
  *
@@ -598,7 +506,7 @@ static void vq_ring_init(struct virtqueue *vq, void *ring_mem, int alignment)
 #endif /*VIRTIO_DEVICE_ONLY*/
 }
 
-/**
+/*
  *
  * vq_ring_update_avail
  *
@@ -633,7 +541,7 @@ static void vq_ring_update_avail(struct virtqueue *vq, uint16_t desc_idx)
 	vq->vq_queued_cnt++;
 }
 
-/**
+/*
  *
  * vq_ring_enable_interrupt
  *
@@ -699,7 +607,7 @@ static int vq_ring_enable_interrupt(struct virtqueue *vq, uint16_t ndesc)
 	return 0;
 }
 
-/**
+/*
  *
  * virtqueue_interrupt
  *
@@ -711,7 +619,7 @@ void virtqueue_notification(struct virtqueue *vq)
 		vq->callback(vq);
 }
 
-/**
+/*
  *
  * vq_ring_must_notify
  *
@@ -763,7 +671,7 @@ static int vq_ring_must_notify(struct virtqueue *vq)
 	return 0;
 }
 
-/**
+/*
  *
  * vq_ring_notify
  *
@@ -774,7 +682,7 @@ static void vq_ring_notify(struct virtqueue *vq)
 		vq->notify(vq);
 }
 
-/**
+/*
  *
  * virtqueue_nused
  *
@@ -795,7 +703,7 @@ static int virtqueue_nused(struct virtqueue *vq)
 }
 #endif /*VIRTIO_DEVICE_ONLY*/
 
-/**
+/*
  *
  * virtqueue_navail
  *

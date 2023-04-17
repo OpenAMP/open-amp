@@ -493,42 +493,36 @@ enum remoteproc_state {
 };
 
 /**
- * remoteproc_init
+ * @brief Initializes remoteproc resource.
  *
- * Initializes remoteproc resource.
+ * @param rproc	Pointer to remoteproc instance
+ * @param ops	Pointer to remoteproc operations
+ * @param priv	Pointer to private data
  *
- * @rproc - pointer to remoteproc instance
- * @ops - pointer to remoteproc operations
- * @priv - pointer to private data
- *
- * @returns created remoteproc pointer
+ * @return Created remoteproc pointer
  */
 struct remoteproc *remoteproc_init(struct remoteproc *rproc,
 				   const struct remoteproc_ops *ops,
 				   void *priv);
 
 /**
- * remoteproc_remove
+ * @brief Remove remoteproc resource
  *
- * Remove remoteproc resource
+ * @param rproc	Pointer to remoteproc instance
  *
- * @rproc - pointer to remoteproc instance
- *
- * returns 0 for success, negative value for failure
+ * @return 0 for success, negative value for failure
  */
 int remoteproc_remove(struct remoteproc *rproc);
 
 /**
- * remoteproc_init_mem
+ * @brief Initialize remoteproc memory
  *
- * Initialize remoteproc memory
- *
- * @mem - pointer to remoteproc memory
- * @name - memory name
- * @pa - physical address
- * @da - device address
- * @size - memory size
- * @io - pointer to the I/O region
+ * @param mem	Pointer to remoteproc memory
+ * @param name	Memory name
+ * @param pa	Physical address
+ * @param da	Device address
+ * @param size	Memory size
+ * @param io	Pointer to the I/O region
  */
 static inline void
 remoteproc_init_mem(struct remoteproc_mem *mem, const char *name,
@@ -548,12 +542,10 @@ remoteproc_init_mem(struct remoteproc_mem *mem, const char *name,
 }
 
 /**
- * remoteproc_add_mem
+ * @brief Add remoteproc memory
  *
- * Add remoteproc memory
- *
- * @rproc - pointer to remoteproc
- * @mem - pointer to remoteproc memory
+ * @param rproc	Pointer to remoteproc
+ * @param mem	Pointer to remoteproc memory
  */
 static inline void
 remoteproc_add_mem(struct remoteproc *rproc, struct remoteproc_mem *mem)
@@ -564,44 +556,37 @@ remoteproc_add_mem(struct remoteproc *rproc, struct remoteproc_mem *mem)
 }
 
 /**
- * remoteproc_get_io_with_name
+ * @brief Get remoteproc memory I/O region with name
  *
- * get remoteproc memory I/O region with name
+ * @param rproc	Pointer to the remote processor
+ * @param name	Name of the shared memory
  *
- * @rproc - pointer to the remote processor
- * @name - name of the shared memory
- * @io - pointer to the pointer of the I/O region
- *
- * returns metal I/O region pointer, NULL for failure
+ * @return Metal I/O region pointer, NULL for failure
  */
 struct metal_io_region *
 remoteproc_get_io_with_name(struct remoteproc *rproc,
 			    const char *name);
 
 /**
- * remoteproc_get_io_with_pa
+ * @brief Get remoteproc memory I/O region with physical address
  *
- * get remoteproc memory I/O region with physical address
+ * @param rproc	Pointer to the remote processor
+ * @param pa	Physical address
  *
- * @rproc - pointer to the remote processor
- * @pa - physical address
- *
- * returns metal I/O region pointer, NULL for failure
+ * @return Metal I/O region pointer, NULL for failure
  */
 struct metal_io_region *
 remoteproc_get_io_with_pa(struct remoteproc *rproc,
 			  metal_phys_addr_t pa);
 
 /**
- * remoteproc_get_io_with_da
+ * @brief Get remoteproc memory I/O region with device address
  *
- * get remoteproc memory I/O region with device address
+ * @param rproc		Pointer to the remote processor
+ * @param da		Device address
+ * @param offset	I/O region offset of the device address
  *
- * @rproc - pointer to the remote processor
- * @da - device address
- * @offset - I/O region offset of the device address
- *
- * returns metal I/O region pointer, NULL for failure
+ * @return Metal I/O region pointer, NULL for failure
  */
 struct metal_io_region *
 remoteproc_get_io_with_da(struct remoteproc *rproc,
@@ -609,32 +594,28 @@ remoteproc_get_io_with_da(struct remoteproc *rproc,
 			  unsigned long *offset);
 
 /**
- * remoteproc_get_io_with_va
+ * @brief Get remoteproc memory I/O region with virtual address
  *
- * get remoteproc memory I/O region with virtual address
+ * @param rproc	Pointer to the remote processor
+ * @param va	Virtual address
  *
- * @rproc - pointer to the remote processor
- * @va - virtual address
- *
- * returns metal I/O region pointer, NULL for failure
+ * @return Metal I/O region pointer, NULL for failure
  */
 struct metal_io_region *
 remoteproc_get_io_with_va(struct remoteproc *rproc,
 			  void *va);
 
 /**
- * remoteproc_mmap
+ * @brief Remoteproc mmap memory
  *
- * remoteproc mmap memory
+ * @param rproc		Pointer to the remote processor
+ * @param pa		Physical address pointer
+ * @param da		Device address pointer
+ * @param size		Size of the memory
+ * @param attribute	Memory attribute
+ * @param io		Pointer to the I/O region
  *
- * @rproc - pointer to the remote processor
- * @pa - physical address pointer
- * @da - device address pointer
- * @size - size of the memory
- * @attribute - memory attribute
- * @io - pointer to the I/O region
- *
- * returns pointer to the memory
+ * @return Pointer to the memory
  */
 void *remoteproc_mmap(struct remoteproc *rproc,
 		      metal_phys_addr_t *pa, metal_phys_addr_t *da,
@@ -642,93 +623,83 @@ void *remoteproc_mmap(struct remoteproc *rproc,
 		      struct metal_io_region **io);
 
 /**
- * remoteproc_set_rsc_table
+ * @brief Parse and set resource table of remoteproc
  *
- * Parse and set resource table of remoteproc
+ * @param rproc		Pointer to remoteproc instance
+ * @param rsc_table	Pointer to resource table
+ * @param rsc_size	Resource table size
  *
- * @rproc - pointer to remoteproc instance
- * @rsc_table - pointer to resource table
- * @rsc_size - resource table size
- *
- * returns 0 for success and negative value for errors
+ * @return 0 for success and negative value for errors
  */
 int remoteproc_set_rsc_table(struct remoteproc *rproc,
 			     struct resource_table *rsc_table,
 			     size_t rsc_size);
 
 /**
- * remoteproc_config
- *
- * This function configures the remote processor to get it
+ * @brief This function configures the remote processor to get it
  * ready to load and run executable.
  *
- * @rproc - pointer to remoteproc instance to start
- * @data - configuration data
+ * @param rproc	Pointer to remoteproc instance to start
+ * @param data	Configuration data
  *
- * returns 0 for success and negative value for errors
+ * @return 0 for success and negative value for errors
  */
 int remoteproc_config(struct remoteproc *rproc, void *data);
 
 /**
- * remoteproc_start
+ * @brief This function starts the remote processor.
+ * It assumes the firmware is already loaded.
  *
- * This function starts the remote processor.
- * It assumes the firmware is already loaded,
+ * @param rproc	Pointer to remoteproc instance to start
  *
- * @rproc - pointer to remoteproc instance to start
- *
- * returns 0 for success and negative value for errors
+ * @return 0 for success and negative value for errors
  */
 int remoteproc_start(struct remoteproc *rproc);
 
 /**
- * remoteproc_stop
- *
- * This function stops the remote processor but it
+ * @brief This function stops the remote processor but it
  * will not release its resource.
  *
- * @rproc - pointer to remoteproc instance
+ * @param rproc	Pointer to remoteproc instance
  *
- * returns 0 for success and negative value for errors
+ * @return 0 for success and negative value for errors
  */
 int remoteproc_stop(struct remoteproc *rproc);
 
 /**
- * remoteproc_shutdown
+ * @brief This function shuts down the remote processor and
+ * releases its resources.
  *
- * This function shutdown the remote processor and
- * release its resources.
+ * @param rproc	Pointer to remoteproc instance
  *
- * @rproc - pointer to remoteproc instance
- *
- * returns 0 for success and negative value for errors
+ * @return 0 for success and negative value for errors
  */
 int remoteproc_shutdown(struct remoteproc *rproc);
 
 /**
- * remoteproc_load
+ * @brief Loads the executable
  *
- * load executable, it expects the user application defines how to
- * open the executable file and how to get data from the executable file
- * and how to load data to the target memory.
+ * Expects the user application defines how to open the executable file and how
+ * to get data from the executable file and how to load data to the target
+ * memory.
  *
- * @rproc: pointer to the remoteproc instance
- * @path: optional path to the image file
- * @store: pointer to user defined image store argument
- * @store_ops: pointer to image store operations
- * @image_info: pointer to memory which stores image information used
- *              by remoteproc loader
+ * @param rproc		Pointer to the remoteproc instance
+ * @param path		Optional path to the image file
+ * @param store		Pointer to user defined image store argument
+ * @param store_ops	Pointer to image store operations
+ * @param img_info	Pointer to memory which stores image information used
+ *			by remoteproc loader
  *
- * return 0 for success and negative value for failure
+ * @return 0 for success and negative value for failure
  */
 int remoteproc_load(struct remoteproc *rproc, const char *path,
 		    void *store, const struct image_store_ops *store_ops,
 		    void **img_info);
 
 /**
- * remoteproc_load_noblock
+ * @brief Loads the executable
  *
- * load executable, it expects the caller has loaded image data to local
+ * Expects the caller has loaded image data to local
  * memory and passed to the this function. If the function needs more
  * image data it will return the next expected image data offset and
  * the next expected image data length. If the function requires the
@@ -745,35 +716,35 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
  * this function will parse the resource table after it loads the binary
  * to target memory.
  *
- * @rproc: pointer to the remoteproc instance
- * @img_data: pointer to image data for remoteproc loader to parse
- * @offset: image data offset to the beginning of the image file
- * @len: image data length
- * @image_info: pointer to memory which stores image information used
- *              by remoteproc loader
- * @pa: pointer to the target memory physical address. If the next expected
- *      data doesn't need to load to the target memory, the function will
- *      set it to ANY.
- * @io: pointer to the io region. If the next expected
- *      data doesn't need to load to the target memory, the function will
- *      set it to NULL.
- * @noffset: pointer to the next image data offset to the beginning of
- *           the image file needs to load to local or to the target
- *           memory.
- * @nlen: pointer to the next image data length needs to load to local
- *        or to the target memory.
- * @nmlen: pointer to the memory size. It is only used when the next
- *         expected data is going to be loaded to the target memory. E.g.
- *         in ELF, it is possible that loadable segment in memory is
- *         larger that the segment data in the ELF file. In this case,
- *         application will need to pad the rest of the memory with
- *         padding.
- * @padding: pointer to the padding value. It is only used when the next
- *           expected data is going to be loaded to the target memory.
- *           and the target memory size is larger than the segment data in
- *           the executable file.
+ * @param rproc		Pointer to the remoteproc instance
+ * @param img_data	Pointer to image data for remoteproc loader to parse
+ * @param offset	Image data offset to the beginning of the image file
+ * @param len		Image data length
+ * @param img_info	Pointer to memory which stores image information used
+ *			by remoteproc loader
+ * @param pa		Pointer to the target memory physical address. If the
+ *			next expected data doesn't need to load to the target
+ *			memory, the function will set it to ANY.
+ * @param io		Pointer to the io region. If the next expected data
+ *			doesn't need to load to the target memory, the function
+ *			will set it to NULL.
+ * @param noffset	Pointer to the next image data offset to the beginning
+ *			of the image file needs to load to local or to the
+ *			target memory.
+ * @param nlen		Pointer to the next image data length needs to load to
+ *			local or to the target memory.
+ * @param nmlen		Pointer to the memory size. It is only used when the
+ *			next expected data is going to be loaded to the target
+ *			memory. E.g. in ELF, it is possible that loadable
+ *			segment in memory is larger that the segment data in
+ *			the ELF file. In this case, application will need to
+ *			pad the rest of the memory with padding.
+ * @param padding	Pointer to the padding value. It is only used when the
+ *			next expected data is going to be loaded to the target
+ *			memory and the target memory size is larger than the
+ *			segment data in the executable file.
  *
- * return 0 for success and negative value for failure
+ * @return 0 for success and negative value for failure
  */
 int remoteproc_load_noblock(struct remoteproc *rproc,
 			    const void *img_data, size_t offset, size_t len,
@@ -783,56 +754,51 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
 			    size_t *nmlen, unsigned char *padding);
 
 /**
- * remoteproc_allocate_id
+ * @brief Allocate notifyid for resource
  *
- * allocate notifyid for resource
+ * @param rproc	Pointer to the remoteproc instance
+ * @param start	Start of the id range
+ * @param end	End of the id range
  *
- * @rproc - pointer to the remoteproc instance
- * @start - start of the id range
- * @end - end of the id range
- *
- * return allocated notify id
+ * @return Allocated notify id
  */
 unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 				    unsigned int start,
 				    unsigned int end);
 
-/* remoteproc_create_virtio
+/**
+ * @brief Create virtio device, it returns pointer to the created virtio
+ * device.
  *
- * create virtio device, it returns pointer to the created virtio device.
+ * @param rproc		Pointer to the remoteproc instance
+ * @param vdev_id	virtio device ID
+ * @param role		virtio device role
+ * @param rst_cb	virtio device reset callback
  *
- * @rproc: pointer to the remoteproc instance
- * @vdev_id: virtio device ID
- * @role: virtio device role
- * @rst_cb: virtio device reset callback
- *
- * return pointer to the created virtio device, NULL for failure.
+ * @return Pointer to the created virtio device, NULL for failure.
  */
 struct virtio_device *
 remoteproc_create_virtio(struct remoteproc *rproc,
 			 int vdev_id, unsigned int role,
 			 void (*rst_cb)(struct virtio_device *vdev));
 
-/* remoteproc_remove_virtio
+/**
+ * @brief Remove virtio device
  *
- * Remove virtio device
- *
- * @rproc: pointer to the remoteproc instance
- * @vdev: pointer to the virtio device
- *
+ * @param rproc	Pointer to the remoteproc instance
+ * @param vdev	Pointer to the virtio device
  */
 void remoteproc_remove_virtio(struct remoteproc *rproc,
 			      struct virtio_device *vdev);
 
-/* remoteproc_get_notification
- *
- * remoteproc is got notified, it will check its subdevices
+/**
+ * @brief remoteproc is got notified, it will check its subdevices
  * for the notification
  *
- * @rproc -  pointer to the remoteproc instance
- * @notifyid - notification id
+ * @param rproc		Pointer to the remoteproc instance
+ * @param notifyid	Notification id
  *
- * return 0 for succeed, negative value for failure
+ * @return 0 for succeed, negative value for failure
  */
 int remoteproc_get_notification(struct remoteproc *rproc,
 				uint32_t notifyid);
