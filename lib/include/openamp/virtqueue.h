@@ -162,6 +162,23 @@ typedef void (*vq_notify)(struct virtqueue *);
 
 #endif
 
+/**
+ * @internal
+ *
+ * @brief Creates new VirtIO queue
+ *
+ * @param device	Pointer to VirtIO device
+ * @param id		VirtIO queue ID , must be unique
+ * @param name		Name of VirtIO queue
+ * @param ring		Pointer to vring_alloc_info control block
+ * @param callback	Pointer to callback function, invoked
+ *			when message is available on VirtIO queue
+ * @param notify	Pointer to notify function, used to notify
+ *			other side that there is job available for it
+ * @param vq		Created VirtIO queue.
+ *
+ * @return Function status
+ */
 int virtqueue_create(struct virtio_device *device, unsigned short id,
 		     const char *name, struct vring_alloc_info *ring,
 		     void (*callback)(struct virtqueue *vq),
@@ -182,21 +199,91 @@ static inline void virtqueue_set_shmem_io(struct virtqueue *vq,
 	vq->shm_io = io;
 }
 
+/**
+ * @internal
+ *
+ * @brief Enqueues new buffer in vring for consumption by other side. Readable
+ * buffers are always inserted before writable buffers
+ *
+ * @param vq		Pointer to VirtIO queue control block.
+ * @param buf_list	Pointer to a list of virtqueue buffers.
+ * @param readable	Number of readable buffers
+ * @param writable	Number of writable buffers
+ * @param cookie	Pointer to hold call back data
+ *
+ * @return Function status
+ */
 int virtqueue_add_buffer(struct virtqueue *vq, struct virtqueue_buf *buf_list,
 			 int readable, int writable, void *cookie);
 
+/**
+ * @internal
+ *
+ * @brief Returns used buffers from VirtIO queue
+ *
+ * @param vq	Pointer to VirtIO queue control block
+ * @param len	Length of conumed buffer
+ * @param idx	Index of the buffer
+ *
+ * @return Pointer to used buffer
+ */
 void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx);
 
+/**
+ * @internal
+ *
+ * @brief Returns buffer available for use in the VirtIO queue
+ *
+ * @param vq		Pointer to VirtIO queue control block
+ * @param avail_idx	Pointer to index used in vring desc table
+ * @param len		Length of buffer
+ *
+ * @return Pointer to available buffer
+ */
 void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 				     uint32_t *len);
 
+/**
+ * @internal
+ *
+ * @brief Returns consumed buffer back to VirtIO queue
+ *
+ * @param vq		Pointer to VirtIO queue control block
+ * @param head_idx	Index of vring desc containing used buffer
+ * @param len		Length of buffer
+ *
+ * @return Function status
+ */
 int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 				  uint32_t len);
 
+/**
+ * @internal
+ *
+ * @brief Disables callback generation
+ *
+ * @param vq	Pointer to VirtIO queue control block
+ */
 void virtqueue_disable_cb(struct virtqueue *vq);
 
+/**
+ * @internal
+ *
+ * @brief Enables callback generation
+ *
+ * @param vq	Pointer to VirtIO queue control block
+ *
+ * @return Function status
+ */
 int virtqueue_enable_cb(struct virtqueue *vq);
 
+/**
+ * @internal
+ *
+ * @brief Notifies other side that there is buffer available for it.
+ *
+ * @param vq	Pointer to VirtIO queue control block
+ */
 void virtqueue_kick(struct virtqueue *vq);
 
 static inline struct virtqueue *virtqueue_allocate(unsigned int num_desc_extra)
@@ -213,12 +300,35 @@ static inline struct virtqueue *virtqueue_allocate(unsigned int num_desc_extra)
 	return vqs;
 }
 
+/**
+ * @internal
+ *
+ * @brief Frees VirtIO queue resources
+ *
+ * @param vq	Pointer to VirtIO queue control block
+ */
 void virtqueue_free(struct virtqueue *vq);
 
+/**
+ * @internal
+ *
+ * @brief Dumps important virtqueue fields , use for debugging purposes
+ *
+ * @param vq	Pointer to VirtIO queue control block
+ */
 void virtqueue_dump(struct virtqueue *vq);
 
 void virtqueue_notification(struct virtqueue *vq);
 
+/**
+ * @internal
+ *
+ * @brief Returns vring descriptor size
+ *
+ * @param vq	Pointer to VirtIO queue control block
+ *
+ * @return Descriptor length
+ */
 uint32_t virtqueue_get_desc_size(struct virtqueue *vq);
 
 uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx);
