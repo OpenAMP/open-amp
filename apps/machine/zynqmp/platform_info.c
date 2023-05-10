@@ -36,7 +36,14 @@
 			       * one CPU in the example. We set the CPU
 			       * index to 0.
 			       */
-#ifdef versal
+#ifdef VERSAL_NET
+#ifndef IPI_CHN_BITMASK
+#define IPI_CHN_BITMASK	    0x08
+#endif /* !IPI_CHN_BITMASK */
+#ifndef IPI_DEV_NAME
+#define IPI_DEV_NAME	    "eb360000.ipi"
+#endif /* !IPI_DEV_NAME */
+#elif defined(versal)
 #ifndef IPI_CHN_BITMASK
 #define IPI_CHN_BITMASK     0x08 /* IPI channel bit mask for IPI
 					* from/to RPU0 */
