@@ -11,10 +11,16 @@
 #include <openamp/remoteproc.h>
 #include <openamp/virtio.h>
 #include <openamp/rpmsg.h>
+#include <xparameters.h>
 
 #if defined __cplusplus
 extern "C" {
 #endif
+
+#define RING_TX                     FW_RSC_U32_ADDR_ANY
+#define RING_RX                     FW_RSC_U32_ADDR_ANY
+#define NUM_VRINGS                  0x02
+#define VRING_ALIGN                 0x1000
 
 /* SGIs */
 #define SGI_TO_NOTIFY		15 /* SGI to notify the remote */
@@ -33,6 +39,17 @@ extern "C" {
 
 /* Zynq CPU ID mask */
 #define ZYNQ_CPU_ID_MASK 0x1UL
+
+/* Another APU core ID. In this demo, the other APU core is 0. */
+#define A9_CPU_ID	0UL
+
+/* scugic device, used to raise soft irq */
+#define SCUGIC_DEV_NAME	"scugic_dev"
+#define SCUGIC_BUS_NAME	"generic"
+
+/* scugic base address */
+#define SCUGIC_PERIPH_BASE	0xF8F00000
+#define SCUGIC_DIST_BASE	(SCUGIC_PERIPH_BASE + 0x00001000)
 
 /* Remoteproc private data struct */
 struct remoteproc_priv {

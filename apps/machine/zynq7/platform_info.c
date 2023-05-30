@@ -27,18 +27,7 @@
 #include "platform_info.h"
 #include "rsc_table.h"
 #include <errno.h>
-#include <xparameters.h>
 
-/* Another APU core ID. In this demo, the other APU core is 0. */
-#define A9_CPU_ID	0UL
-
-/* scugic device, used to raise soft irq */
-#define SCUGIC_DEV_NAME	"scugic_dev"
-#define SCUGIC_BUS_NAME	"generic"
-
-/* scugic base address */
-#define SCUGIC_PERIPH_BASE	0xF8F00000
-#define SCUGIC_DIST_BASE	(SCUGIC_PERIPH_BASE + 0x00001000)
 
 #define _rproc_wait() asm volatile("wfi")
 
