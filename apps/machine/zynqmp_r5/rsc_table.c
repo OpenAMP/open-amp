@@ -13,6 +13,7 @@
 
 #include <openamp/open_amp.h>
 #include "rsc_table.h"
+#include "platform_info.h"
 
 /* Place resource table in special ELF section */
 #define __section_t(S)          __attribute__((__section__(#S)))
@@ -22,16 +23,6 @@
 
 /* VirtIO rpmsg device id */
 #define VIRTIO_ID_RPMSG_             7
-
-#define NUM_VRINGS                  0x02
-#define VRING_ALIGN                 0x1000
-#ifndef RING_TX
-#define RING_TX                     FW_RSC_U32_ADDR_ANY
-#endif /* !RING_TX */
-#ifndef RING_RX
-#define RING_RX                     FW_RSC_U32_ADDR_ANY
-#endif /* RING_RX */
-#define VRING_SIZE                  256
 
 #define NUM_TABLE_ENTRIES           1
 

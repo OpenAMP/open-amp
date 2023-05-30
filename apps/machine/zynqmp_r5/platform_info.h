@@ -12,6 +12,7 @@
 #include <openamp/remoteproc.h>
 #include <openamp/virtio.h>
 #include <openamp/rpmsg.h>
+#include "xparameters.h"
 
 #if defined __cplusplus
 extern "C" {
@@ -61,6 +62,33 @@ extern "C" {
 #define POLL_BASE_ADDR 0x3EE40000
 #define POLL_STOP 0x1U
 #endif /* RPMSG_NO_IPI */
+
+#ifndef RING_TX
+#define RING_TX                     FW_RSC_U32_ADDR_ANY
+#endif /* !RING_TX */
+#ifndef RING_RX
+#define RING_RX                     FW_RSC_U32_ADDR_ANY
+#endif /* RING_RX */
+
+#define NUM_VRINGS                  0x02
+#define VRING_ALIGN                 0x1000
+#define VRING_SIZE                  256
+
+#ifndef SHARED_MEM_PA
+#if XPAR_CPU_ID == 0
+#define SHARED_MEM_PA  0x3ED40000UL
+#else
+#define SHARED_MEM_PA  0x3EF40000UL
+#endif /* XPAR_CPU_ID */
+#endif /* !SHARED_MEM_PA */
+
+#ifndef SHARED_MEM_SIZE
+#define SHARED_MEM_SIZE 0x100000UL
+#endif /* !SHARED_MEM_SIZE */
+
+#ifndef SHARED_BUF_OFFSET
+#define SHARED_BUF_OFFSET 0x8000UL
+#endif /* !SHARED_BUF_OFFSET */
 
 struct remoteproc_priv {
 	const char *kick_dev_name;
