@@ -51,6 +51,63 @@ struct remoteproc_priv {
 #define POLL_STOP 0x1U
 #endif /* RPMSG_NO_IPI */
 
+#define RPU_CPU_ID          0 /* RPU remote CPU Index. We only talk to
+			       * one CPU in the example. We set the CPU
+			       * index to 0.
+			       */
+#ifdef VERSAL_NET
+#ifndef IPI_CHN_BITMASK
+#define IPI_CHN_BITMASK	    0x08
+#endif /* !IPI_CHN_BITMASK */
+#ifndef IPI_DEV_NAME
+#define IPI_DEV_NAME	    "eb360000.ipi"
+#endif /* !IPI_DEV_NAME */
+#elif defined(versal)
+#ifndef IPI_CHN_BITMASK
+#define IPI_CHN_BITMASK     0x08 /* IPI channel bit mask from/to RPU0 */
+#endif /* !IPI_CHN_BITMASK */
+#ifndef IPI_DEV_NAME
+#define IPI_DEV_NAME        "ff360000.ipi" /* IPI device name */
+#endif /* !IPI_DEV_NAME */
+#else
+#ifndef IPI_CHN_BITMASK
+#define IPI_CHN_BITMASK	    0x00000100
+#endif /* !IPI_CHN_BITMASK */
+#ifndef IPI_DEV_NAME
+#define IPI_DEV_NAME	    "ff340000.ipi"
+#endif /* !IPI_DEV_NAME */
+#endif /* versal */
+
+/* Device bus name. The "platform" bus is used in Linux kernel for generic
+ * devices.
+ */
+#define DEV_BUS_NAME        "platform"
+
+/* libmetal devices names used in the examples.
+ * They are platform devices, you find them in Linux sysfs
+ * sys/bus/platform/devices
+ */
+#ifndef SHM_DEV_NAME
+#define SHM_DEV_NAME        "3ed20000.shm" /* shared device name */
+#endif /* SHM_DEV_NAME */
+#ifndef RSC_MEM_PA
+#define RSC_MEM_PA          0x3ED20000UL
+#endif /* !RSC_MEM_PA */
+#ifndef RSC_MEM_SIZE
+#define RSC_MEM_SIZE        0x2000UL
+#endif /* !RSC_MEM_SIZE */
+#ifndef VRING_MEM_PA
+#define VRING_MEM_PA        0x3ED40000UL
+#endif /* !VRING_MEM_PA */
+#ifndef VRING_MEM_SIZE
+#define VRING_MEM_SIZE      0x8000UL
+#endif /* !VRING_MEM_SIZE */
+#ifndef SHARED_BUF_PA
+#define SHARED_BUF_PA       0x3ED48000UL
+#endif /* !SHARED_BUF_PA */
+#ifndef SHARED_BUF_SIZE
+#define SHARED_BUF_SIZE     0x40000UL
+#endif /* !SHARED_BUF_SIZE */
 
 /**
  * platform_init - initialize the platform
