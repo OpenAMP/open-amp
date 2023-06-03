@@ -91,6 +91,7 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
 				       uint16_t idx)
 {
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
+	int ret;
 
 	BUFFER_INVALIDATE(buffer, len);
 
@@ -102,14 +103,16 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
 		/* Initialize buffer node */
 		vqbuf.buf = buffer;
 		vqbuf.len = len;
-		virtqueue_add_buffer(rvdev->rvq, &vqbuf, 0, 1, buffer);
+		ret = virtqueue_add_buffer(rvdev->rvq, &vqbuf, 0, 1, buffer);
+		RPMSG_ASSERT(ret == VQUEUE_SUCCESS, "add buffer failed\r\n");
 	}
 #endif /*VIRTIO_DEVICE_ONLY*/
 
 #ifndef VIRTIO_DRIVER_ONLY
 	if (role == RPMSG_REMOTE) {
 		(void)buffer;
-		virtqueue_add_consumed_buffer(rvdev->rvq, idx, len);
+		ret = virtqueue_add_consumed_buffer(rvdev->rvq, idx, len);
+		RPMSG_ASSERT(ret == VQUEUE_SUCCESS, "add consumed buffer failed\r\n");
 	}
 #endif /*VIRTIO_DRIVER_ONLY*/
 }
