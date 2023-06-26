@@ -256,6 +256,7 @@ int remoteproc_stop(struct remoteproc *rproc)
 			if (rproc->ops->stop)
 				ret = rproc->ops->stop(rproc);
 			rproc->state = RPROC_STOPPED;
+			rproc->bitmap = 0;
 		} else {
 			ret = 0;
 		}
