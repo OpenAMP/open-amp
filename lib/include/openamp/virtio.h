@@ -8,6 +8,7 @@
 #define _VIRTIO_H_
 
 #include <openamp/virtqueue.h>
+#include <metal/errno.h>
 #include <metal/spinlock.h>
 
 #if defined __cplusplus
@@ -176,6 +177,11 @@ void virtio_describe(struct virtio_device *dev, const char *msg,
  */
 
 struct virtio_dispatch {
+	int (*create_virtqueues)(struct virtio_device *vdev,
+				 unsigned int flags,
+				 unsigned int nvqs, const char *names[],
+				 vq_callback callbacks[]);
+	void (*delete_virtqueues)(struct virtio_device *vdev);
 	uint8_t (*get_status)(struct virtio_device *dev);
 	void (*set_status)(struct virtio_device *dev, uint8_t status);
 	uint32_t (*get_features)(struct virtio_device *dev);
@@ -196,9 +202,210 @@ struct virtio_dispatch {
 	void (*notify)(struct virtqueue *vq);
 };
 
+/**
+ * @brief Create the virtio device virtqueue.
+ *
+ * @param vdev		Pointer to virtio device structure.
+ * @param flags		Create flag.
+ * @param nvqs		The virtqueue number.
+ * @param names		Virtqueue names.
+ * @param callbacks	Virtqueue callback functions.
+ *
+ * @return 0 on success, otherwise error code.
+ */
 int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 			     unsigned int nvqs, const char *names[],
 			     vq_callback callbacks[]);
+
+/**
+ * @brief Delete the virtio device virtqueue.
+ *
+ * @param vdev	Pointer to virtio device structure.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_delete_virtqueues(struct virtio_device *vdev)
+{
+	if (!vdev)
+		return -EINVAL;
+
+	if (!vdev->func || !vdev->func->delete_virtqueues)
+		return -ENXIO;
+
+	vdev->func->delete_virtqueues(vdev);
+	return 0;
+}
+
+/**
+ * @brief Retrieve device status.
+ *
+ * @param dev		Pointer to device structure.
+ * @param status	Pointer to the virtio device status.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_get_status(struct virtio_device *vdev, uint8_t *status)
+{
+	if (!vdev || !status)
+		return -EINVAL;
+
+	if (!vdev->func || !vdev->func->get_status)
+		return -ENXIO;
+
+	*status = vdev->func->get_status(vdev);
+	return 0;
+}
+
+/**
+ * @brief Set device status.
+ *
+ * @param dev		Pointer to device structure.
+ * @param status	Value to be set as device status.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_set_status(struct virtio_device *vdev, uint8_t status)
+{
+	if (!vdev)
+		return -EINVAL;
+
+	if (!vdev->func || !vdev->func->set_status)
+		return -ENXIO;
+
+	vdev->func->set_status(vdev, status);
+	return 0;
+}
+
+/**
+ * @brief Retrieve configuration data from the device.
+ *
+ * @param dev		Pointer to device structure.
+ * @param offset	Offset of the data within the configuration area.
+ * @param dst		Address of the buffer that will hold the data.
+ * @param len		Length of the data to be retrieved.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_read_config(struct virtio_device *vdev,
+				     uint32_t offset, void *dst, int len)
+{
+	if (!vdev || !dst)
+		return -EINVAL;
+
+	if (!vdev->func || !vdev->func->read_config)
+		return -ENXIO;
+
+	vdev->func->read_config(vdev, offset, dst, len);
+	return 0;
+}
+
+/**
+ * @brief Write configuration data to the device.
+ *
+ * @param dev		Pointer to device structure.
+ * @param offset	Offset of the data within the configuration area.
+ * @param src		Address of the buffer that holds the data to write.
+ * @param len		Length of the data to be written.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_write_config(struct virtio_device *vdev,
+				      uint32_t offset, void *src, int len)
+{
+	if (!vdev || !src)
+		return -EINVAL;
+
+	if (!vdev->func || !vdev->func->write_config)
+		return -ENXIO;
+
+	vdev->func->write_config(vdev, offset, src, len);
+	return 0;
+}
+
+/**
+ * @brief Get the virtio device features.
+ *
+ * @param dev		Pointer to device structure.
+ * @param features	Pointer to features supported by both the driver and
+ *			the device as a bitfield.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_get_features(struct virtio_device *vdev,
+				      uint32_t *features)
+{
+	if (!vdev || !features)
+		return -EINVAL;
+
+	if (!vdev->func || !vdev->func->get_features)
+		return -ENXIO;
+
+	*features = vdev->func->get_features(vdev);
+	return 0;
+}
+
+/**
+ * @brief Set features supported by the VIRTIO driver.
+ *
+ * @param dev		Pointer to device structure.
+ * @param features	Features supported by the driver as a bitfield.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_set_features(struct virtio_device *vdev,
+				      uint32_t features)
+{
+	if (!vdev)
+		return -EINVAL;
+
+	if (!vdev->func || !vdev->func->set_features)
+		return -ENXIO;
+
+	vdev->func->set_features(vdev, features);
+	return 0;
+}
+
+/**
+ * @brief Negotiate features between virtio device and driver.
+ *
+ * @param dev			Pointer to device structure.
+ * @param features		Supported features.
+ * @param final_features	Pointer to the final features after negotiate.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_negotiate_features(struct virtio_device *vdev,
+					    uint32_t features,
+					    uint32_t *final_features)
+{
+	if (!vdev || !final_features)
+		return -EINVAL;
+
+	if (!vdev->func || !vdev->func->negotiate_features)
+		return -ENXIO;
+
+	*final_features = vdev->func->negotiate_features(vdev, features);
+	return 0;
+}
+
+/**
+ * @brief Reset virtio device.
+ *
+ * @param vdev	Pointer to virtio_device structure.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_reset_device(struct virtio_device *vdev)
+{
+	if (!vdev)
+		return -EINVAL;
+
+	if (!vdev->func || !vdev->func->reset_device)
+		return -ENXIO;
+
+	vdev->func->reset_device(vdev);
+	return 0;
+}
 
 #if defined __cplusplus
 }
