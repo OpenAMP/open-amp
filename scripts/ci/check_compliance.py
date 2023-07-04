@@ -3,55 +3,47 @@
 # Copyright (c) 2018,2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import argparse
 import collections
-import sys
-import subprocess
-import re
-import os
 from email.utils import parseaddr
 import logging
-import argparse
-from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure, Attr
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
 import tempfile
 import traceback
-from pathlib import Path
+import shlex
 
-# '*' makes it italic
-EDIT_TIP = "\n\n*Tip: The bot edits this comment instead of posting a new " \
-           "one, so you can check the comment's history to see earlier " \
-           "messages.*"
+from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
+import magic
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 logger = None
 
-
-def git(*args, cwd=None):
+def git(*args, cwd=None, ignore_non_zero=False):
     # Helper for running a Git command. Returns the rstrip()ed stdout output.
     # Called like git("diff"). Exits with SystemError (raised by sys.exit()) on
-    # errors. 'cwd' is the working directory to use (default: current
-    # directory).
+    # errors if 'ignore_non_zero' is set to False (default: False). 'cwd' is the
+    # working directory to use (default: current directory).
 
     git_cmd = ("git",) + args
     try:
-        git_process = subprocess.Popen(
-            git_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
+        cp = subprocess.run(git_cmd, capture_output=True, cwd=cwd)
     except OSError as e:
         err(f"failed to run '{cmd2str(git_cmd)}': {e}")
 
-    stdout, stderr = git_process.communicate()
-    stdout = stdout.decode("utf-8")
-    stderr = stderr.decode("utf-8")
-    if git_process.returncode or stderr:
-        err(f"""\
-'{cmd2str(git_cmd)}' exited with status {git_process.returncode} and/or wrote
-to stderr.
+    if not ignore_non_zero and (cp.returncode or cp.stderr):
+        err(f"'{cmd2str(git_cmd)}' exited with status {cp.returncode} and/or "
+            f"wrote to stderr.\n"
+            f"==stdout==\n"
+            f"{cp.stdout.decode('utf-8')}\n"
+            f"==stderr==\n"
+            f"{cp.stderr.decode('utf-8')}\n")
 
-==stdout==
-{stdout}
-==stderr==
-{stderr}""")
-
-    return stdout.rstrip()
-
+    return cp.stdout.decode("utf-8").rstrip()
 
 def get_shas(refspec):
     """
@@ -61,19 +53,40 @@ def get_shas(refspec):
     :return:
     """
     return git('rev-list',
-               '--max-count={}'.format(-1 if "." in refspec else 1),
-               refspec).split()
+               f'--max-count={-1 if "." in refspec else 1}', refspec).split()
 
+def get_files(filter=None, paths=None):
+    filter_arg = (f'--diff-filter={filter}',) if filter else ()
+    paths_arg = ('--', *paths) if paths else ()
+    out = git('diff', '--name-only', *filter_arg, COMMIT_RANGE, *paths_arg)
+    files = out.splitlines()
+    for file in list(files):
+        if not os.path.isfile(os.path.join(GIT_TOP, file)):
+            # Drop submodule directories from the list.
+            files.remove(file)
+    return files
 
-class MyCase(TestCase):
-    """
-    Custom junitparser.TestCase for our tests that adds some extra <testcase>
-    XML attributes. These will be preserved when tests are saved and loaded.
-    """
-    classname = Attr()
-    # Remembers informational messages. These can appear on successful tests
-    # too, where TestCase.result isn't set.
-    info_msg = Attr()
+class FmtdFailure(Failure):
+
+    def __init__(self, severity, title, file, line=None, col=None, desc=""):
+        self.severity = severity
+        self.title = title
+        self.file = file
+        self.line = line
+        self.col = col
+        self.desc = desc
+        description = f':{desc}' if desc else ''
+        msg_body = desc or title
+
+        txt = f'\n{title}{description}\nFile:{file}' + \
+              (f'\nLine:{line}' if line else '') + \
+              (f'\nColumn:{col}' if col else '')
+        msg = f'{file}' + (f':{line}' if line else '') + f' {msg_body}'
+        typ = severity.lower()
+
+        super().__init__(msg, typ)
+
+        self.text = txt
 
 
 class ComplianceTest:
@@ -92,81 +105,61 @@ class ComplianceTest:
       directory. This avoids running 'git' to find the top-level directory
       before main() runs (class variable assignments run when the 'class ...'
       statement runs). That avoids swallowing errors, because main() reports
-      them to GitHub.
+      them to GitHub
     """
     def __init__(self):
-        self.case = MyCase(self.name)
-        self.case.classname = "Guidelines"
+        self.case = TestCase(type(self).name, "Guidelines")
+        # This is necessary because Failure can be subclassed, but since it is
+        # always restored form the element tree, the subclass is lost upon
+        # restoring
+        self.fmtd_failures = []
 
-    def error(self, msg):
+    def _result(self, res, text):
+        res.text = text.rstrip()
+        self.case.result += [res]
+
+    def error(self, text, msg=None, type_="error"):
         """
         Signals a problem with running the test, with message 'msg'.
 
         Raises an exception internally, so you do not need to put a 'return'
         after error().
-
-        Any failures generated prior to the error() are included automatically
-        in the message. Usually, any failures would indicate problems with the
-        test code.
         """
-        if self.case.result:
-            msg += "\n\nFailures before error: " + self.case.result._elem.text
-
-        self.case.result = Error(msg, "error")
+        err = Error(msg or f'{type(self).name} error', type_)
+        self._result(err, text)
 
         raise EndTest
 
-    def skip(self, msg):
+    def skip(self, text, msg=None, type_="skip"):
         """
         Signals that the test should be skipped, with message 'msg'.
 
         Raises an exception internally, so you do not need to put a 'return'
         after skip().
-
-        Any failures generated prior to the skip() are included automatically
-        in the message. Usually, any failures would indicate problems with the
-        test code.
         """
-        if self.case.result:
-            msg += "\n\nFailures before skip: " + self.case.result._elem.text
-
-        self.case.result = Skipped(msg, "skipped")
+        skpd = Skipped(msg or f'{type(self).name} skipped', type_)
+        self._result(skpd, text)
 
         raise EndTest
 
-    def add_failure(self, msg):
+    def failure(self, text, msg=None, type_="failure"):
         """
         Signals that the test failed, with message 'msg'. Can be called many
         times within the same test to report multiple failures.
         """
-        if not self.case.result:
-            # First reported failure
-            self.case.result = Failure(self.name + " issues", "failure")
-            self.case.result._elem.text = msg.rstrip()
-        else:
-            # If there are multiple Failures, concatenate their messages
-            self.case.result._elem.text += "\n\n" + msg.rstrip()
+        fail = Failure(msg or f'{type(self).name} issues', type_)
+        self._result(fail, text)
 
-    def add_info(self, msg):
+    def fmtd_failure(self, severity, title, file, line=None, col=None, desc=""):
         """
-        Adds an informational message without failing the test. The message is
-        shown on GitHub, and is shown regardless of whether the test passes or
-        fails. If the test fails, then both the informational message and the
-        failure message are shown.
-
-        Can be called many times within the same test to add multiple messages.
+        Signals that the test failed, and store the information in a formatted
+        standardized manner. Can be called many times within the same test to
+        report multiple failures.
         """
-        def escape(s):
-            # Hack to preserve e.g. newlines and tabs in the attribute when
-            # tests are saved to .xml and reloaded. junitparser doesn't seem to
-            # handle it correctly, though it does escape stuff like quotes.
-            # unicode-escape replaces newlines with \n (two characters), etc.
-            return s.encode("unicode-escape").decode("utf-8")
+        fail = FmtdFailure(severity, title, file, line, col, desc)
+        self._result(fail, fail.text)
+        self.fmtd_failures.append(fail)
 
-        if not self.case.info_msg:
-            self.case.info_msg = escape(msg)
-        else:
-            self.case.info_msg += r"\n\n" + escape(msg)
 
 class EndTest(Exception):
     """
@@ -176,32 +169,45 @@ class EndTest(Exception):
     within a nested function call.
     """
 
+
 class CheckPatch(ComplianceTest):
     """
     Runs checkpatch and reports found issues
 
     """
-    name = "checkpatch"
+    name = "Checkpatch"
     path_hint = "<git-top>"
 
     def run(self):
-        checkpatch = os.path.join(GIT_TOP, 'scripts',
-                                  'checkpatch.pl')
+        checkpatch = os.path.join(GIT_TOP, 'scripts', 'checkpatch.pl')
         if not os.path.exists(checkpatch):
-            self.skip(checkpatch + " not found")
+            self.skip(f'{checkpatch} not found')
 
-        # git diff's output doesn't depend on the current (sub)directory
         diff = subprocess.Popen(('git', 'diff', COMMIT_RANGE),
-                                stdout=subprocess.PIPE)
+                                stdout=subprocess.PIPE,
+                                cwd=GIT_TOP)
         try:
-            subprocess.check_output(checkpatch + ' --mailback' + ' --codespell' +
-                                    ' --no-tree' + ' -',
-                                    stdin=diff.stdout,
-                                    stderr=subprocess.STDOUT,
-                                    shell=True, cwd=GIT_TOP)
+            subprocess.run(checkpatch + ' --strict' + ' --codespell' + ' --no-tree' + ' -',
+                           check=True,
+                           stdin=diff.stdout,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT,
+                           shell=True, cwd=GIT_TOP)
+
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
-            self.add_failure(output)
+            regex = r'^\s*\S+:(\d+):\s*(ERROR|WARNING|CHECK):(.+?):(.+)(?:\n|\r\n?)+' \
+                    r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
+
+            matches = re.findall(regex, output, re.MULTILINE)
+            for m in matches:
+                self.fmtd_failure(m[1].lower(), m[2], m[5], m[6], col=None,
+                        desc=m[3])
+
+            # If the regex has not matched add the whole output as a failure
+            if len(matches) == 0:
+                self.failure(output)
+
 
 class GitLint(ComplianceTest):
     """
@@ -214,18 +220,15 @@ class GitLint(ComplianceTest):
     def run(self):
         # By default gitlint looks for .gitlint configuration only in
         # the current directory
-        proc = subprocess.Popen('gitlint --commits ' + COMMIT_RANGE,
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                shell=True, cwd=GIT_TOP)
+        try:
+            subprocess.run('gitlint --commits ' + COMMIT_RANGE,
+                           check=True,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT,
+                           shell=True, cwd=GIT_TOP)
 
-        msg = ""
-        if proc.wait() != 0:
-            msg = proc.stdout.read()
-
-        if msg != "":
-            self.add_failure(msg.decode("utf-8"))
-
-
+        except subprocess.CalledProcessError as ex:
+            self.failure(ex.output.decode("utf-8"))
 
 
 class Identity(ComplianceTest):
@@ -256,12 +259,12 @@ class Identity(ComplianceTest):
                 if match:
                     signed.append(match.group(1))
 
-            error1 = "%s: author email (%s) needs to match one of the signed-off-by entries." % (
-                sha, author)
-            error2 = "%s: author email (%s) does not follow the syntax: First Last <email>." % (
-                sha, author)
-            error3 = "%s: author email (%s) must be a real email and cannot end in @users.noreply.github.com" % (
-                sha, author)
+            error1 = f"{sha}: author email ({author}) needs to match one of " \
+                     f"the signed-off-by entries."
+            error2 = f"{sha}: author email ({author}) does not follow the " \
+                     f"syntax: First Last <email>."
+            error3 = f"{sha}: author email ({author}) must be a real email " \
+                     f"and cannot end in @users.noreply.github.com"
             failure = None
             if author not in signed:
                 failure = error1
@@ -276,14 +279,11 @@ class Identity(ComplianceTest):
                 failure = error3
 
             if failure:
-                self.add_failure(failure)
+                self.failure(failure)
 
 
 def init_logs(cli_arg):
     # Initializes logging
-
-    # TODO: there may be a shorter version thanks to:
-    # logging.basicConfig(...)
 
     global logger
 
@@ -294,44 +294,75 @@ def init_logs(cli_arg):
 
     logger = logging.getLogger('')
     logger.addHandler(console)
-    logger.setLevel(cli_arg if cli_arg else level)
+    logger.setLevel(cli_arg or level)
 
-    logging.info("Log init completed, level=%s",
+    logger.info("Log init completed, level=%s",
                  logging.getLevelName(logger.getEffectiveLevel()))
 
 
+def inheritors(klass):
+    subclasses = set()
+    work = [klass]
+    while work:
+        parent = work.pop()
+        for child in parent.__subclasses__():
+            if child not in subclasses:
+                subclasses.add(child)
+                work.append(child)
+    return subclasses
 
-def parse_args():
+
+def annotate(res):
+    """
+    https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#about-workflow-commands
+    """
+    notice = f'::{res.severity} file={res.file}' + \
+             (f',line={res.line}' if res.line else '') + \
+             (f',col={res.col}' if res.col else '') + \
+             f',title={res.title}::{res.message}'
+    print(notice)
+
+
+def resolve_path_hint(hint):
+    if hint == "<zephyr-base>":
+        return ZEPHYR_BASE
+    elif hint == "<git-top>":
+        return GIT_TOP
+    else:
+        return hint
+
+
+def parse_args(argv):
+
+    default_range = 'HEAD~1..HEAD'
     parser = argparse.ArgumentParser(
-        description="Check for coding style and documentation warnings.")
-    parser.add_argument('-c', '--commits', default="HEAD~1..",
-                        help='''Commit range in the form: a..[b], default is
-                        HEAD~1..HEAD''')
-    parser.add_argument('-r', '--repo', default=None,
-                        help="GitHub repository")
-    parser.add_argument('-p', '--pull-request', default=0, type=int,
-                        help="Pull request number")
-    parser.add_argument('-S', '--sha', default=None, help="Commit SHA")
+        description="Check for coding style and documentation warnings.", allow_abbrev=False)
+    parser.add_argument('-c', '--commits', default=default_range,
+                        help=f'''Commit range in the form: a..[b], default is
+                        {default_range}''')
     parser.add_argument('-o', '--output', default="compliance.xml",
                         help='''Name of outfile in JUnit format,
                         default is ./compliance.xml''')
-
+    parser.add_argument('-n', '--no-case-output', action="store_true",
+                        help="Do not store the individual test case output.")
     parser.add_argument('-l', '--list', action="store_true",
                         help="List all checks and exit")
-
-    parser.add_argument("-v", "--loglevel", help="python logging level")
-
+    parser.add_argument("-v", "--loglevel", choices=['DEBUG', 'INFO', 'WARNING',
+                                                     'ERROR', 'CRITICAL'],
+                        help="python logging level")
     parser.add_argument('-m', '--module', action="append", default=[],
-                        help="Checks to run. All checks by default.")
-
+                        help="Checks to run. All checks by default. (case " \
+                        "insensitive)")
     parser.add_argument('-e', '--exclude-module', action="append", default=[],
-                        help="Do not run the specified checks")
-
+                        help="Do not run the specified checks (case " \
+                        "insensitive)")
     parser.add_argument('-j', '--previous-run', default=None,
                         help='''Pre-load JUnit results in XML format
                         from a previous run and combine with new results.''')
+    parser.add_argument('--annotate', action="store_true",
+                        help="Print GitHub Actions-compatible annotations.")
 
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 def _main(args):
     # The "real" main(), which is wrapped to catch exceptions and report them
@@ -348,8 +379,10 @@ def _main(args):
 
     init_logs(args.loglevel)
 
+    logger.info(f'Running tests on commit range {COMMIT_RANGE}')
+
     if args.list:
-        for testcase in ComplianceTest.__subclasses__():
+        for testcase in inheritors(ComplianceTest):
             print(testcase.name)
         return 0
 
@@ -361,82 +394,103 @@ def _main(args):
             # repo). Since that earlier pass might've posted an error to
             # GitHub, avoid generating a GitHub comment here, by avoiding
             # sys.exit() (which gets caught in main()).
-            print("error: '{}' not found".format(args.previous_run),
+            print(f"error: '{args.previous_run}' not found",
                   file=sys.stderr)
             return 1
 
-        logging.info("Loading previous results from " + args.previous_run)
+        logging.info(f"Loading previous results from {args.previous_run}")
         for loaded_suite in JUnitXml.fromfile(args.previous_run):
             suite = loaded_suite
             break
     else:
         suite = TestSuite("Compliance")
 
-    for testcase in ComplianceTest.__subclasses__():
+    included = list(map(lambda x: x.lower(), args.module))
+    excluded = list(map(lambda x: x.lower(), args.exclude_module))
+
+    for testcase in inheritors(ComplianceTest):
         # "Modules" and "testcases" are the same thing. Better flags would have
         # been --tests and --exclude-tests or the like, but it's awkward to
         # change now.
 
-        if args.module and testcase.name not in args.module:
+        if included and testcase.name.lower() not in included:
             continue
 
-        if testcase.name in args.exclude_module:
+        if testcase.name.lower() in excluded:
             print("Skipping " + testcase.name)
             continue
 
         test = testcase()
         try:
             print(f"Running {test.name:16} tests in "
-                  f"{GIT_TOP if test.path_hint == '<git-top>' else test.path_hint} ...")
+                  f"{resolve_path_hint(test.path_hint)} ...")
             test.run()
         except EndTest:
             pass
 
+        # Annotate if required
+        if args.annotate:
+            for res in test.fmtd_failures:
+                annotate(res)
+
         suite.add_testcase(test.case)
 
-    xml = JUnitXml()
-    xml.add_testsuite(suite)
-    xml.update_statistics()
-    xml.write(args.output, pretty=True)
+    if args.output:
+        xml = JUnitXml()
+        xml.add_testsuite(suite)
+        xml.update_statistics()
+        xml.write(args.output, pretty=True)
 
     failed_cases = []
 
     for case in suite:
         if case.result:
-            if case.result.type == 'skipped':
-                logging.warning("Skipped %s, %s", case.name, case.result.message)
+            if case.is_skipped:
+                logging.warning(f"Skipped {case.name}")
             else:
                 failed_cases.append(case)
         else:
             # Some checks like codeowners can produce no .result
-            logging.info("No JUnit result for %s", case.name)
+            logging.info(f"No JUnit result for {case.name}")
 
     n_fails = len(failed_cases)
 
     if n_fails:
-        print("{} checks failed".format(n_fails))
+        print(f"{n_fails} checks failed")
         for case in failed_cases:
-            # not clear why junitxml doesn't clearly expose the most
-            # important part of its underlying etree.Element
-            errmsg = case.result._elem.text
-            logging.error("Test %s failed: %s", case.name,
-                          errmsg.strip() if errmsg else case.result.message)
-
+            for res in case.result:
+                errmsg = res.text.strip()
+                logging.error(f"Test {case.name} failed: \n{errmsg}")
+            if args.no_case_output:
+                continue
             with open(f"{case.name}.txt", "w") as f:
-                f.write(errmsg.strip() if errmsg else case.result.message)
+                for res in case.result:
+                    errmsg = res.text.strip()
+                    f.write(f'\n {errmsg}')
 
-    print("\nComplete results in " + args.output)
+    if args.output:
+        print(f"\nComplete results in {args.output}")
     return n_fails
 
-def main():
-    args = parse_args()
+
+def main(argv=None):
+    args = parse_args(argv)
+
+    try:
+        # pylint: disable=unused-import
+        from lxml import etree
+    except ImportError:
+        print("\nERROR: Python module lxml not installed, unable to proceed")
+        print("See https://github.com/weiwei/junitparser/issues/99")
+        return 1
 
     try:
         n_fails = _main(args)
     except BaseException:
         # Catch BaseException instead of Exception to include stuff like
         # SystemExit (raised by sys.exit())
-        print(format(__file__, traceback.format_exc()))
+        print(f"Python exception in `{__file__}`:\n\n"
+              f"```\n{traceback.format_exc()}\n```")
 
         raise
 
@@ -454,8 +508,8 @@ def err(msg):
     cmd = sys.argv[0]  # Empty if missing
     if cmd:
         cmd += ": "
-    sys.exit(cmd + "error: " + msg)
+    sys.exit(f"{cmd} error: {msg}")
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

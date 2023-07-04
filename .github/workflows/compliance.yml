@@ -16,11 +16,15 @@ jobs:
     name: checkpatch review
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout the code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
     - name: Install python dependencies
       run: |
         pip3 install setuptools
-        pip3 install junitparser==1.6.3 gitlint codespell
+        pip3 install python-magic junitparser gitlint codespell lxml
     - name: Run Compliance Tests
       continue-on-error: true
       id: compliance
@@ -32,7 +36,8 @@ jobs:
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
         git rebase origin/${BASE_REF}
-        ./scripts/ci/check_compliance.py -m checkpatch  -m Gitlint -m Identity -c origin/${BASE_REF}..
+        git log  --pretty=oneline | head -n 10
+        ./scripts/ci/check_compliance.py --annotate -c origin/${BASE_REF}..
 
     - name: upload-results
       uses: actions/upload-artifact@main
@@ -47,13 +52,15 @@ jobs:
           exit 1;
         fi
 
-        for file in checkpatch.txt Identity.txt Gitlint.txt; do
-          if [[ -s $file ]]; then
-            errors=$(cat $file)
+        files=($(./scripts/ci/check_compliance.py -l))
+        for file in "${files[@]}"; do
+          f="${file}.txt"
+          if [[ -s $f ]]; then
+            errors=$(cat $f)
             errors="${errors//'%'/'%25'}"
             errors="${errors//$'\n'/'%0A'}"
             errors="${errors//$'\r'/'%0D'}"
-            echo "::error file=${file}::$errors"
+            echo "::error file=${f}::$errors"
             exit=1
           fi
         done
