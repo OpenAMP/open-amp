@@ -26,12 +26,15 @@ extern "C" {
 
 /* cache invalidation helpers for resource table */
 #ifdef VIRTIO_CACHED_RSC_TABLE
+#warning "VIRTIO_CACHED_RSC_TABLE is deprecated, please use VIRTIO_USE_DCACHE"
+#endif
+#if defined(VIRTIO_CACHED_RSC_TABLE) || defined(VIRTIO_USE_DCACHE)
 #define RSC_TABLE_FLUSH(x, s)		CACHE_FLUSH(x, s)
 #define RSC_TABLE_INVALIDATE(x, s)	CACHE_INVALIDATE(x, s)
 #else
 #define RSC_TABLE_FLUSH(x, s)		do { } while (0)
 #define RSC_TABLE_INVALIDATE(x, s)	do { } while (0)
-#endif /* VIRTIO_CACHED_RSC_TABLE */
+#endif /* VIRTIO_CACHED_RSC_TABLE || VIRTIO_USE_DCACHE */
 
 /* define vdev notification function user should implement */
 typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
