@@ -90,7 +90,7 @@ if (WITH_DCACHE_VRINGS)
   add_definitions(-DVIRTIO_CACHED_VRINGS)
 endif (WITH_DCACHE_VRINGS)
 
-option (WITH_DCACHE_BUFFERS "Build with vrings cache operations enabled" OFF)
+option (WITH_DCACHE_BUFFERS "Build with buffers cache operations enabled" OFF)
 
 if (WITH_DCACHE_BUFFERS)
   add_definitions(-DVIRTIO_CACHED_BUFFERS)
