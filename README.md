@@ -96,6 +96,9 @@ library for it project:
   enabled on buffers.
 * **WITH_DCACHE_RSC_TABLE** (default OFF): Build with data cache operations
   enabled on resource table.
+* **WITH_DCACHE** (default OFF): Build with all cache operations
+  enabled. When set to ON, cache operations for vrings, buffers and resource
+  table are enabled.
 * **RPMSG_BUFFER_SIZE** (default 512): adjust the size of the RPMsg buffers.
   The default value of the RPMsg size is compatible with the Linux Kernel hard
   coded value. If you AMP configuration is Linux kernel host/ OpenAMP remote,

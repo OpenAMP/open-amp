@@ -31,12 +31,15 @@ extern "C" {
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
 
 #ifdef VIRTIO_CACHED_BUFFERS
+#warning "VIRTIO_CACHED_BUFFERS is deprecated, please use VIRTIO_USE_DCACHE"
+#endif
+#if defined(VIRTIO_CACHED_BUFFERS) || defined(VIRTIO_USE_DCACHE)
 #define BUFFER_FLUSH(x, s)		CACHE_FLUSH(x, s)
 #define BUFFER_INVALIDATE(x, s)		CACHE_INVALIDATE(x, s)
 #else
 #define BUFFER_FLUSH(x, s)		do { } while (0)
 #define BUFFER_INVALIDATE(x, s)		do { } while (0)
-#endif /* VIRTIO_CACHED_BUFFERS */
+#endif /* VIRTIO_CACHED_BUFFERS || VIRTIO_USE_DCACHE */
 
 /**
  * struct rpmsg_virtio_shm_pool - shared memory pool used for rpmsg buffers
