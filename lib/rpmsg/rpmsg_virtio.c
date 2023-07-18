@@ -9,7 +9,6 @@
  */
 
 #include <metal/alloc.h>
-#include <metal/cache.h>
 #include <metal/sleep.h>
 #include <metal/utilities.h>
 #include <openamp/rpmsg_virtio.h>
@@ -93,9 +92,7 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
 {
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
 
-#ifdef VIRTIO_CACHED_BUFFERS
-	metal_cache_invalidate(buffer, len);
-#endif
+	BUFFER_INVALIDATE(buffer, len);
 
 #ifndef VIRTIO_DEVICE_ONLY
 	if (role == RPMSG_HOST) {
@@ -135,9 +132,7 @@ static int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev,
 {
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
 
-#ifdef VIRTIO_CACHED_BUFFERS
-	metal_cache_flush(buffer, len);
-#endif /* VIRTIO_CACHED_BUFFERS */
+	BUFFER_FLUSH(buffer, len);
 
 #ifndef VIRTIO_DEVICE_ONLY
 	if (role == RPMSG_HOST) {
@@ -245,11 +240,9 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 	}
 #endif /*!VIRTIO_DRIVER_ONLY*/
 
-#ifdef VIRTIO_CACHED_BUFFERS
 	/* Invalidate the buffer before returning it */
 	if (data)
-		metal_cache_invalidate(data, *len);
-#endif /* VIRTIO_CACHED_BUFFERS */
+		BUFFER_INVALIDATE(data, *len);
 
 	return data;
 }
