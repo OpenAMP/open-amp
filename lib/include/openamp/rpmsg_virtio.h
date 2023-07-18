@@ -31,8 +31,8 @@ extern "C" {
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
 
 #ifdef VIRTIO_CACHED_BUFFERS
-#define BUFFER_FLUSH(x, s)		metal_cache_flush(x, s)
-#define BUFFER_INVALIDATE(x, s)		metal_cache_invalidate(x, s)
+#define BUFFER_FLUSH(x, s)		CACHE_FLUSH(x, s)
+#define BUFFER_INVALIDATE(x, s)		CACHE_INVALIDATE(x, s)
 #else
 #define BUFFER_FLUSH(x, s)		do { } while (0)
 #define BUFFER_INVALIDATE(x, s)		do { } while (0)
