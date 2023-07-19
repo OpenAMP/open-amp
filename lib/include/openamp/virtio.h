@@ -98,6 +98,7 @@ __deprecated static inline int deprecated_virtio_dev_slave(void)
 struct virtio_device_id {
 	uint32_t device;
 	uint32_t vendor;
+	uint32_t version;
 };
 
 /*
@@ -119,6 +120,45 @@ struct virtio_device_id {
  */
 #define VIRTIO_TRANSPORT_F_START      28
 #define VIRTIO_TRANSPORT_F_END        32
+
+#ifdef VIRTIO_DEBUG
+#include <metal/log.h>
+
+#define VIRTIO_ASSERT(_exp, _msg) do { \
+		int exp = (_exp); \
+		if (!(exp)) { \
+			metal_log(METAL_LOG_EMERGENCY, \
+				  "FATAL: %s - " _msg, __func__); \
+			metal_assert(exp); \
+		} \
+	} while (0)
+#else
+#define VIRTIO_ASSERT(_exp, _msg) metal_assert(_exp)
+#endif /* VIRTIO_DEBUG */
+
+#define VRING_ALIGNMENT           4096
+
+#define VIRTIO_RING_SIZE(n, align) \
+	(( \
+		( \
+		sizeof(struct vring_desc) * n + \
+		sizeof(struct vring_avail) + \
+		sizeof(uint16_t) * (n + 1) + \
+		align - 1 \
+		) \
+		& ~(align - 1) \
+	) + \
+	sizeof(struct vring_used) + \
+	sizeof(struct vring_used_elem) * n + sizeof(uint16_t))
+
+#define VRING_DECLARE(name, n, align) \
+static char __vrbuf_##name[VIRTIO_RING_SIZE(n, align)] __aligned(VRING_ALIGNMENT); \
+static struct vring __vring_##name = { \
+	.desc = (void *)__vrbuf_##name, \
+	.avail = (void *)((unsigned long)__vrbuf_##name + n * sizeof(struct vring_desc)), \
+	.used = (void *)((unsigned long)__vrbuf_##name + ((n * sizeof(struct vring_desc) + \
+		(n + 1) * sizeof(uint16_t) + align - 1) & ~(align - 1))), \
+}
 
 typedef void (*virtio_dev_reset_cb)(struct virtio_device *vdev);
 
@@ -180,7 +220,8 @@ struct virtio_dispatch {
 	int (*create_virtqueues)(struct virtio_device *vdev,
 				 unsigned int flags,
 				 unsigned int nvqs, const char *names[],
-				 vq_callback callbacks[]);
+				 vq_callback callbacks[],
+				 void *callback_args[]);
 	void (*delete_virtqueues)(struct virtio_device *vdev);
 	uint8_t (*get_status)(struct virtio_device *dev);
 	void (*set_status)(struct virtio_device *dev, uint8_t status);
@@ -205,17 +246,18 @@ struct virtio_dispatch {
 /**
  * @brief Create the virtio device virtqueue.
  *
- * @param vdev		Pointer to virtio device structure.
- * @param flags		Create flag.
- * @param nvqs		The virtqueue number.
- * @param names		Virtqueue names.
- * @param callbacks	Virtqueue callback functions.
+ * @param vdev			Pointer to virtio device structure.
+ * @param flags			Create flag.
+ * @param nvqs			The virtqueue number.
+ * @param names			Virtqueue names.
+ * @param callbacks		Virtqueue callback functions.
+ * @param callback_args	Virtqueue callback function arguments.
  *
  * @return 0 on success, otherwise error code.
  */
 int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 			     unsigned int nvqs, const char *names[],
-			     vq_callback callbacks[]);
+			     vq_callback callbacks[], void *callback_args[]);
 
 /**
  * @brief Delete the virtio device virtqueue.
@@ -234,6 +276,20 @@ static inline int virtio_delete_virtqueues(struct virtio_device *vdev)
 
 	vdev->func->delete_virtqueues(vdev);
 	return 0;
+}
+
+/**
+ * @brief Get device ID.
+ *
+ * @param dev Pointer to device structure.
+ *
+ * @return Device ID value.
+ */
+static inline uint32_t virtio_get_devid(const struct virtio_device *vdev)
+{
+	if (!vdev)
+		return 0;
+	return vdev->id.device;
 }
 
 /**
