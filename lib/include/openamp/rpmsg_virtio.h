@@ -142,7 +142,7 @@ rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device *rvdev,
 			       vq_callback *callbacks)
 {
 	return virtio_create_virtqueues(rvdev->vdev, flags, nvqs, names,
-					callbacks);
+					callbacks, NULL);
 }
 
 /**

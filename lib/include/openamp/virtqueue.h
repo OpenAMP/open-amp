@@ -63,6 +63,7 @@ struct virtqueue {
 	uint16_t vq_queue_index;
 	uint16_t vq_nentries;
 	void (*callback)(struct virtqueue *vq);
+	void *priv;
 	void (*notify)(struct virtqueue *vq);
 	struct vring vq_ring;
 	uint16_t vq_free_cnt;
@@ -333,6 +334,30 @@ uint32_t virtqueue_get_desc_size(struct virtqueue *vq);
 
 uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx);
 void *virtqueue_get_buffer_addr(struct virtqueue *vq, uint16_t idx);
+
+/**
+ * @brief Test if virtqueue is empty
+ *
+ * @param vq	Pointer to VirtIO queue control block
+ *
+ * @return 1 if virtqueue is empty, 0 otherwise
+ */
+static inline int virtqueue_empty(struct virtqueue *vq)
+{
+	return (vq->vq_nentries == vq->vq_free_cnt);
+}
+
+/**
+ * @brief Test if virtqueue is full
+ *
+ * @param vq	Pointer to VirtIO queue control block
+ *
+ * @return 1 if virtqueue is full, 0 otherwise
+ */
+static inline int virtqueue_full(struct virtqueue *vq)
+{
+	return (vq->vq_free_cnt == 0);
+}
 
 #if defined __cplusplus
 }
