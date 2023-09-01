@@ -28,7 +28,9 @@ extern "C" {
 #define RPMSG_ASSERT(_exp, _msg) metal_assert(_exp)
 #endif
 
-#define RPMSG_BUF_HELD (1U << 31) /* Flag to suggest to hold the buffer */
+/* Mask to get the rpmsg buffer held counter from rpmsg_hdr reserved field */
+#define RPMSG_BUF_HELD_SHIFT 16
+#define RPMSG_BUF_HELD_MASK  (0xFFFFU << RPMSG_BUF_HELD_SHIFT)
 
 #define RPMSG_LOCATE_HDR(p) \
 	((struct rpmsg_hdr *)((unsigned char *)(p) - sizeof(struct rpmsg_hdr)))
