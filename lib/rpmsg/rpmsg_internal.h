@@ -109,6 +109,31 @@ rpmsg_get_ept_from_addr(struct rpmsg_device *rdev, uint32_t addr)
 	return rpmsg_get_endpoint(rdev, NULL, addr, RPMSG_ADDR_ANY);
 }
 
+/**
+ * @internal
+ *
+ * @brief Increase the endpoint reference count
+ *
+ * This function is used to avoid calling ept_cb after release lock causes race condition
+ * it should be called under lock protection.
+ *
+ * @param ept	pointer to rpmsg endpoint
+ *
+ */
+void rpmsg_ept_incref(struct rpmsg_endpoint *ept);
+
+/**
+ * @internal
+ *
+ * @brief Decrease the end point reference count
+ *
+ * This function is used to avoid calling ept_cb after release lock causes race condition
+ * it should be called under lock protection.
+ *
+ * @param ept	pointer to rpmsg endpoint
+ */
+void rpmsg_ept_decref(struct rpmsg_endpoint *ept);
+
 #if defined __cplusplus
 }
 #endif

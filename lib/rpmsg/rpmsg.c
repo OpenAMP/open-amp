@@ -97,6 +97,25 @@ static int rpmsg_set_address(unsigned long *bitmap, int size, int addr)
 	}
 }
 
+void rpmsg_ept_incref(struct rpmsg_endpoint *ept)
+{
+	if (ept)
+		ept->refcnt++;
+}
+
+void rpmsg_ept_decref(struct rpmsg_endpoint *ept)
+{
+	if (ept) {
+		ept->refcnt--;
+		if (!ept->refcnt) {
+			if (ept->release_cb)
+				ept->release_cb(ept);
+			else
+				ept->rdev = NULL;
+		}
+	}
+}
+
 int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 			      uint32_t dst, const void *data, int len,
 			      int wait)
@@ -245,7 +264,7 @@ static void rpmsg_unregister_endpoint(struct rpmsg_endpoint *ept)
 		rpmsg_release_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE,
 				      ept->addr);
 	metal_list_del(&ept->node);
-	ept->rdev = NULL;
+	rpmsg_ept_decref(ept);
 	metal_mutex_release(&rdev->lock);
 }
 
@@ -257,6 +276,7 @@ void rpmsg_register_endpoint(struct rpmsg_device *rdev,
 			     rpmsg_ns_unbind_cb ns_unbind_cb)
 {
 	strncpy(ept->name, name ? name : "", sizeof(ept->name));
+	ept->refcnt = 1;
 	ept->addr = src;
 	ept->dest_addr = dest;
 	ept->cb = cb;
