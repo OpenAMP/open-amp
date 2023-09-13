@@ -50,6 +50,7 @@ struct rpmsg_device;
 /* Returns positive value on success or negative error value on failure */
 typedef int (*rpmsg_ept_cb)(struct rpmsg_endpoint *ept, void *data,
 			    size_t len, uint32_t src, void *priv);
+typedef void (*rpmsg_ept_release_cb)(struct rpmsg_endpoint *ept);
 typedef void (*rpmsg_ns_unbind_cb)(struct rpmsg_endpoint *ept);
 typedef void (*rpmsg_ns_bind_cb)(struct rpmsg_device *rdev,
 				 const char *name, uint32_t dest);
@@ -72,6 +73,12 @@ struct rpmsg_endpoint {
 
 	/** Address of the default remote endpoint binded */
 	uint32_t dest_addr;
+
+	/** Reference count for determining whether the endpoint can be deallocated */
+	uint32_t refcnt;
+
+	/** Callback to inform the user that the endpoint allocation can be safely removed */
+	rpmsg_ept_release_cb release_cb;
 
 	/**
 	 * User rx callback, return value of this callback is reserved for future

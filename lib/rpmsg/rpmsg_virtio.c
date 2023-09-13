@@ -514,6 +514,7 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 		/* Get the channel node from the remote device channels list. */
 		metal_mutex_acquire(&rdev->lock);
 		ept = rpmsg_get_ept_from_addr(rdev, rp_hdr->dst);
+		rpmsg_ept_incref(ept);
 		metal_mutex_release(&rdev->lock);
 
 		if (ept) {
@@ -532,6 +533,7 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 		}
 
 		metal_mutex_acquire(&rdev->lock);
+		rpmsg_ept_decref(ept);
 
 		/* Check whether callback wants to hold buffer */
 		if (!(rp_hdr->reserved & RPMSG_BUF_HELD)) {
@@ -571,6 +573,7 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	struct rpmsg_endpoint *_ept;
 	struct rpmsg_ns_msg *ns_msg;
 	uint32_t dest;
+	bool ept_to_release;
 	char name[RPMSG_NAME_SIZE];
 
 	(void)priv;
@@ -589,14 +592,27 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	metal_mutex_acquire(&rdev->lock);
 	_ept = rpmsg_get_endpoint(rdev, name, RPMSG_ADDR_ANY, dest);
 
+	/*
+	 * If ept-release callback is not implemented, ns_unbind_cb() can free the ept.
+	 * Test _ept->release_cb before calling ns_unbind_cb() callbacks.
+	 */
+	ept_to_release = _ept && _ept->release_cb;
+
 	if (ns_msg->flags & RPMSG_NS_DESTROY) {
 		if (_ept)
 			_ept->dest_addr = RPMSG_ADDR_ANY;
+		if (ept_to_release)
+			rpmsg_ept_incref(_ept);
 		metal_mutex_release(&rdev->lock);
 		if (_ept && _ept->ns_unbind_cb)
 			_ept->ns_unbind_cb(_ept);
 		if (rdev->ns_unbind_cb)
 			rdev->ns_unbind_cb(rdev, name, dest);
+		if (ept_to_release) {
+			metal_mutex_acquire(&rdev->lock);
+			rpmsg_ept_decref(_ept);
+			metal_mutex_release(&rdev->lock);
+		}
 	} else {
 		if (!_ept) {
 			/*
