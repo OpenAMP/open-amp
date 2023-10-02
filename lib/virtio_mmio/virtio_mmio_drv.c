@@ -286,7 +286,7 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 
 	vring_info->io = vmdev->shm_io;
 	vring_info->info.num_descs = virtio_mmio_get_max_elem(vdev, idx);
-	vring_info->info.align = VRING_ALIGNMENT;
+	vring_info->info.align = VIRTIO_MMIO_VRING_ALIGNMENT;
 
 	/* Check if vrings are already configured */
 	if (vq->vq_nentries != 0 && vq->vq_nentries == vq->vq_free_cnt &&
