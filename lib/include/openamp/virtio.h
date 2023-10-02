@@ -136,29 +136,7 @@ struct virtio_device_id {
 #define VIRTIO_ASSERT(_exp, _msg) metal_assert(_exp)
 #endif /* VIRTIO_DEBUG */
 
-#define VRING_ALIGNMENT           4096
-
-#define VIRTIO_RING_SIZE(n, align) \
-	(( \
-		( \
-		sizeof(struct vring_desc) * n + \
-		sizeof(struct vring_avail) + \
-		sizeof(uint16_t) * (n + 1) + \
-		align - 1 \
-		) \
-		& ~(align - 1) \
-	) + \
-	sizeof(struct vring_used) + \
-	sizeof(struct vring_used_elem) * n + sizeof(uint16_t))
-
-#define VRING_DECLARE(name, n, align) \
-static char __vrbuf_##name[VIRTIO_RING_SIZE(n, align)] __aligned(VRING_ALIGNMENT); \
-static struct vring __vring_##name = { \
-	.desc = (void *)__vrbuf_##name, \
-	.avail = (void *)((unsigned long)__vrbuf_##name + n * sizeof(struct vring_desc)), \
-	.used = (void *)((unsigned long)__vrbuf_##name + ((n * sizeof(struct vring_desc) + \
-		(n + 1) * sizeof(uint16_t) + align - 1) & ~(align - 1))), \
-}
+#define VIRTIO_MMIO_VRING_ALIGNMENT           4096
 
 typedef void (*virtio_dev_reset_cb)(struct virtio_device *vdev);
 
