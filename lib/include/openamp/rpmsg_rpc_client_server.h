@@ -47,77 +47,70 @@ struct rpmsg_rpc_request {
 	unsigned char params[MAX_BUF_LEN];
 };
 
-/**
- * struct rpmsg_rpc_answer - rpc request message
- *
- * @id: service id
- * @status: status of rpc
- * @params: answer params
- *
- */
+/** @brief RPC request message */
 METAL_PACKED_BEGIN
 struct rpmsg_rpc_answer {
+	/** Service ID */
 	uint32_t id;
+
+	/** Status of RPC */
 	int32_t status;
+
+	/** Answer params */
 	unsigned char params[MAX_BUF_LEN];
 } METAL_PACKED_END;
 
-/**
- * struct rpmsg_rpc_services - table for services
- *
- * @id: service id
- * @cb_function: id callback
- *
- */
+/** @brief Table for services */
 struct rpmsg_rpc_services {
+	/** Service ID */
 	uint32_t id;
+
+	/** ID callback */
 	rpmsg_rpc_syscall_cb cb_function;
 };
 
-/**
- * struct rpmsg_rpc_client_services - table for client services
- *
- * @id: service id
- * @app_cb: id callback
- *
- */
+/** @brief Table for client services */
 struct rpmsg_rpc_client_services {
+	/** Service ID */
 	uint32_t id;
+
+	/** ID callback */
 	app_cb cb;
 };
 
 /**
- * struct rpmsg_rpc_svr - server remote procedure call data
+ * @brief Server remote procedure call data
  *
  * RPMsg RPC will send request to endpoint
- *
- * @ept: rpmsg_endpoint structure
- * @services: service table
- * @n_services: number of services
- *
  */
 struct rpmsg_rpc_svr {
+	/** RPMsg destination endpoint structure */
 	struct rpmsg_endpoint ept;
+
+	/** Service table */
 	const struct rpmsg_rpc_services *services;
+
+	/** Number of services */
 	unsigned int n_services;
 };
 
 /**
- * struct rpmsg_rpc_clt - client remote procedure call data
+ * @brief Client remote procedure call data
  *
  * RPMsg RPC will send request to remote and
  * wait for callback.
- *
- * @ept: rpmsg_endpoint structure
- * @shutdown_cb: shutdown callback function
- * @services: service table
- * @n_services: number of services
- *
  */
 struct rpmsg_rpc_clt {
+	/** RPMsg endpoint associated with the call */
 	struct rpmsg_endpoint ept;
+
+	/** Shutdown callback function */
 	rpmsg_rpc_shutdown_cb shutdown_cb;
+
+	/** Service table */
 	const struct rpmsg_rpc_client_services *services;
+
+	/** Number of services */
 	unsigned int n_services;
 };
 

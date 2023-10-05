@@ -128,37 +128,42 @@ extern "C" {
 /* Data buffer size for preallocated buffers before vring */
 #define VIRTIO_MMIO_MAX_DATA_SIZE 128
 
-/**
- * struct virtio_mmio_dev_mem: VIRTIO MMIO memory area
- * @base memory region physical address
- * @size memory region size
- */
+/** @brief VIRTIO MMIO memory area */
 struct virtio_mmio_dev_mem {
+	/** Memory region physical address */
 	void *base;
+
+	/** Memory region size */
 	size_t size;
 };
 
-/**
- * struct virtio_mmio_device: representation of a VIRTIO MMIO device
- * @vdev	base virtio device struct
- * @cfg_io	device configuration space metal_io_region
- * @shm_io	pre-shared memory space metal_io_region
- * @shm_device	shared memory device
- * @cfg_mem	VIRTIO device configuration space
- * @shm_mem	VIRTIO device pre-shared memory
- * @device_mode	VIRTIO_DEV_DRIVER or VIRTIO_DEV_DEVICE
- * @irq		interrupt number
- * @user_data	custom user data
- */
+/** @brief A VIRTIO MMIO device */
 struct virtio_mmio_device {
+	/** Base virtio device structure */
 	struct virtio_device vdev;
+
+	/** Device configuration space metal_io_region */
 	struct metal_io_region *cfg_io;
+
+	/** Pre-shared memory space metal_io_region */
 	struct metal_io_region *shm_io;
+
+	/** Shared memory device */
 	struct metal_device shm_device;
+
+	/** VIRTIO device configuration space */
 	struct virtio_mmio_dev_mem cfg_mem;
+
+	/** VIRTIO device pre-shared memory */
 	struct virtio_mmio_dev_mem shm_mem;
+
+	/** VIRTIO_DEV_DRIVER or VIRTIO_DEV_DEVICE */
 	unsigned int device_mode;
+
+	/** Interrupt number */
 	unsigned int irq;
+
+	/** Custom user data */
 	void *user_data;
 };
 

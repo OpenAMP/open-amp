@@ -39,21 +39,24 @@ extern "C" {
 /* define vdev notification function user should implement */
 typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
 
-/**
- * struct remoteproc_virtio
- * @priv pointer to private data
- * @vdev_rsc address of vdev resource
- * @vdev_rsc_io metal I/O region of vdev_info, can be NULL
- * @notify notification function
- * @vdev virtio device
- * @node list node
- */
+/** @brief Virtio structure for remoteproc instance */
 struct remoteproc_virtio {
+	/** Pointer to private data */
 	void *priv;
+
+	/** Address of vdev resource */
 	void *vdev_rsc;
+
+	/** Metal I/O region of vdev_info, can be NULL */
 	struct metal_io_region *vdev_rsc_io;
+
+	/** Notification function */
 	rpvdev_notify_func notify;
+
+	/** Virtio device */
 	struct virtio_device vdev;
+
+	/** List node */
 	struct metal_list node;
 };
 
