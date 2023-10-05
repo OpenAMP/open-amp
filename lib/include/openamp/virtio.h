@@ -169,36 +169,48 @@ struct virtio_feature_desc {
 	const char *vfd_str;
 };
 
-/**
- * struct virtio_vring_info
- * @vq virtio queue
- * @info vring alloc info
- * @notifyid vring notify id
- * @io metal I/O region of the vring memory, can be NULL
- */
+/** @brief Virtio vring data structure */
 struct virtio_vring_info {
+	/** Virtio queue */
 	struct virtqueue *vq;
+
+	/** Vring alloc info */
 	struct vring_alloc_info info;
+
+	/** Vring notify id */
 	uint32_t notifyid;
+
+	/** Metal I/O region of the vring memory, can be NULL */
 	struct metal_io_region *io;
 };
 
-/*
- * Structure definition for virtio devices for use by the
- * applications/drivers
- */
-
+/** @brief Structure definition for virtio devices for use by the applications/drivers */
 struct virtio_device {
-	uint32_t notifyid; /**< unique position on the virtio bus */
-	struct virtio_device_id id; /**< the device type identification
-				      *  (used to match it with a driver
-				      */
-	uint64_t features; /**< the features supported by both ends. */
-	unsigned int role; /**< if it is virtio backend or front end. */
-	virtio_dev_reset_cb reset_cb; /**< user registered device callback */
-	const struct virtio_dispatch *func; /**< Virtio dispatch table */
-	void *priv; /**< TODO: remove pointer to virtio_device private data */
-	unsigned int vrings_num; /**< number of vrings */
+	/** Unique position on the virtio bus */
+	uint32_t notifyid;
+
+	/** The device type identification used to match it with a driver */
+	struct virtio_device_id id;
+
+	/** The features supported by both ends. */
+	uint64_t features;
+
+	/** If it is virtio backend or front end. */
+	unsigned int role;
+
+	/** User-registered device callback */
+	virtio_dev_reset_cb reset_cb;
+
+	/** Virtio dispatch table */
+	const struct virtio_dispatch *func;
+
+	/** Private data */
+	void *priv;
+
+	/** Number of vrings */
+	unsigned int vrings_num;
+
+	/** Pointer to the virtio vring structure */
 	struct virtio_vring_info *vrings_info;
 };
 

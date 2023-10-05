@@ -41,54 +41,62 @@ extern "C" {
 #define BUFFER_INVALIDATE(x, s)		do { } while (0)
 #endif /* VIRTIO_CACHED_BUFFERS || VIRTIO_USE_DCACHE */
 
-/**
- * struct rpmsg_virtio_shm_pool - shared memory pool used for rpmsg buffers
- * @base: base address of the memory pool
- * @avail: available memory size
- * @size: total pool size
- */
+/** @brief Shared memory pool used for RPMsg buffers */
 struct rpmsg_virtio_shm_pool {
+	/** Base address of the memory pool */
 	void *base;
+
+	/** Available memory size */
 	size_t avail;
+
+	/** Total pool size */
 	size_t size;
 };
 
 /**
- * struct rpmsg_virtio_config - configuration of rpmsg device based on virtio
+ * @brief Configuration of RPMsg device based on virtio
  *
- * This structure is used by the rpmsg virtio host to configure the virtiio
+ * This structure is used by the RPMsg virtio host to configure the virtiio
  * layer.
- *
- * @h2r_buf_size: the size of the buffer used to send data from host to remote
- * @r2h_buf_size: the size of the buffer used to send data from remote to host
- * @split_shpool: the flag that splitting share memory pool to TX and RX
  */
 struct rpmsg_virtio_config {
+	/** The size of the buffer used to send data from host to remote */
 	uint32_t h2r_buf_size;
+
+	/** The size of the buffer used to send data from remote to host */
 	uint32_t r2h_buf_size;
+
+	/** The flag for splitting shared memory pool to TX and RX */
 	bool split_shpool;
 };
 
-/**
- * struct rpmsg_virtio_device - representation of a rpmsg device based on virtio
- * @rdev: rpmsg device, first property in the struct
- * @config: structure containing virtio configuration
- * @vdev: pointer to the virtio device
- * @rvq: pointer to receive virtqueue
- * @svq: pointer to send virtqueue
- * @shbuf_io: pointer to the shared buffer I/O region
- * @shpool: pointer to the shared buffers pool
- * @reclaimer: Rpmsg buffer reclaimer that contains buffers released by
- *             the rpmsg_virtio_release_tx_buffer function.
- */
+/** @brief Representation of a RPMsg device based on virtio */
 struct rpmsg_virtio_device {
+	/** RPMsg device */
 	struct rpmsg_device rdev;
+
+	/** Structure containing virtio configuration */
 	struct rpmsg_virtio_config config;
+
+	/** Pointer to the virtio device */
 	struct virtio_device *vdev;
+
+	/** Pointer to receive virtqueue */
 	struct virtqueue *rvq;
+
+	/** Pointer to send virtqueue */
 	struct virtqueue *svq;
+
+	/** Pointer to the shared buffer I/O region */
 	struct metal_io_region *shbuf_io;
+
+	/** Pointer to the shared buffers pool */
 	struct rpmsg_virtio_shm_pool *shpool;
+
+	/**
+	 * RPMsg buffer reclaimer that contains buffers released by the
+	 * \ref rpmsg_virtio_release_tx_buffer function
+	 */
 	struct metal_list reclaimer;
 };
 

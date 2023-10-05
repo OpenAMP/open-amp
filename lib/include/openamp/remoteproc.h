@@ -25,19 +25,15 @@ extern "C" {
 #define RPROC_MAX_NAME_LEN 32
 
 /**
- * struct resource_table - firmware resource table header
- * @ver: version number
- * @num: number of resource entries
- * @reserved: reserved (must be zero)
- * @offset: array of offsets pointing at the various resource entries
+ * @brief Resource table header
  *
  * A resource table is essentially a list of system resources required
  * by the remote remoteproc. It may also include configuration entries.
  * If needed, the remote remoteproc firmware should contain this table
  * as a dedicated ".resource_table" ELF section.
  *
- * Some resources entries are mere announcements, where the host is informed
- * of specific remoteproc configuration. Other entries require the host to
+ * Some resource entries are mere announcements, where the host is informed
+ * of specific remoteproc configurations. Other entries require the host to
  * do something (e.g. allocate a system resource). Sometimes a negotiation
  * is expected, where the firmware requests a resource, and once allocated,
  * the host should provide back its details (e.g. address of an allocated
@@ -49,28 +45,36 @@ extern "C" {
  * in the table.
  *
  * Immediately following this header are the resource entries themselves,
- * each of which begins with a resource entry header (as described below).
+ * each of which begins with a resource entry header.
  */
 METAL_PACKED_BEGIN
 struct resource_table {
+	/** Version number */
 	uint32_t ver;
+
+	/** Number of resource entries */
 	uint32_t num;
+
+	/** Reserved (must be zero) */
 	uint32_t reserved[2];
+
+	/** Array of offsets pointing at the various resource entries */
 	uint32_t offset[0];
 } METAL_PACKED_END;
 
 /**
- * struct fw_rsc_hdr - firmware resource entry header
- * @type: resource type
- * @data: resource data
+ * @brief Resource table entry header
  *
- * Every resource entry begins with a 'struct fw_rsc_hdr' header providing
- * its @type. The content of the entry itself will immediately follow
+ * Every resource entry begins with this firmware resource header providing
+ * its \ref type. The content of the entry itself will immediately follow
  * this header, and it should be parsed according to the resource type.
  */
 METAL_PACKED_BEGIN
 struct fw_rsc_hdr {
+	/** Resource type matching the type field of the structure in \ref data */
 	uint32_t type;
+
+	/** Resource data */
 	uint8_t data[0];
 } METAL_PACKED_END;
 
@@ -110,13 +114,7 @@ enum fw_resource_type {
 #define FW_RSC_U32_ADDR_ANY 0xFFFFFFFFUL
 
 /**
- * struct fw_rsc_carveout - physically contiguous memory request
- * @da: device address
- * @pa: physical address
- * @len: length (in bytes)
- * @flags: iommu protection flags
- * @reserved: reserved (must be zero)
- * @name: human-readable name of the requested memory region
+ * @brief Resource table physically contiguous memory request entry
  *
  * This resource entry requests the host to allocate a physically contiguous
  * memory region.
@@ -127,64 +125,61 @@ enum fw_resource_type {
  *
  * Allocating memory this way helps utilizing the reserved physical memory
  * (e.g. CMA) more efficiently, and also minimizes the number of TLB entries
- * needed to map it (in case @rproc is using an IOMMU). Reducing the TLB
+ * needed to map it (in case rproc is using an IOMMU). Reducing the TLB
  * pressure is important; it may have a substantial impact on performance.
  *
- * If the firmware is compiled with static addresses, then @da should specify
- * the expected device address of this memory region. If @da is set to
+ * If the firmware is compiled with static addresses, then \ref da should specify
+ * the expected device address of this memory region. If \ref da is set to
  * FW_RSC_ADDR_ANY, then the host will dynamically allocate it, and then
- * overwrite @da with the dynamically allocated address.
+ * overwrite \ref da with the dynamically allocated address.
  *
- * We will always use @da to negotiate the device addresses, even if it
- * isn't using an iommu. In that case, though, it will obviously contain
+ * We will always use \ref da to negotiate the device addresses, even if it
+ * isn't using an IOMMU. In that case, though, it will obviously contain
  * physical addresses.
  *
- * Some remote remoteprocs needs to know the allocated physical address
- * even if they do use an iommu. This is needed, e.g., if they control
+ * Some remote remoteprocs need to know the allocated physical address
+ * even if they do use an IOMMU. This is needed, e.g., if they control
  * hardware accelerators which access the physical memory directly (this
  * is the case with OMAP4 for instance). In that case, the host will
- * overwrite @pa with the dynamically allocated physical address.
+ * overwrite \ref pa with the dynamically allocated physical address.
  * Generally we don't want to expose physical addresses if we don't have to
  * (remote remoteprocs are generally _not_ trusted), so we might want to
  * change this to happen _only_ when explicitly required by the hardware.
- *
- * @flags is used to provide IOMMU protection flags, and @name should
- * (optionally) contain a human readable name of this carveout region
- * (mainly for debugging purposes).
  */
 METAL_PACKED_BEGIN
 struct fw_rsc_carveout {
+	/** Resource carveout has type 0 */
 	uint32_t type;
+
+	/** Device address */
 	uint32_t da;
+
+	/** Physical address */
 	uint32_t pa;
+
+	/** Length in bytes */
 	uint32_t len;
+
+	/** IOMMU protection flags */
 	uint32_t flags;
+
+	/** Reserved (must be zero) */
 	uint32_t reserved;
+
+	/** Optional human-readable name of the requested memory region used for debugging */
 	uint8_t name[RPROC_MAX_NAME_LEN];
 } METAL_PACKED_END;
 
 /**
- * struct fw_rsc_devmem - iommu mapping request
- * @da: device address
- * @pa: physical address
- * @len: length (in bytes)
- * @flags: iommu protection flags
- * @reserved: reserved (must be zero)
- * @name: human-readable name of the requested region to be mapped
+ * @brief Resource table IOMMU mapping request entry
  *
- * This resource entry requests the host to iommu map a physically contiguous
+ * This resource entry requests the host to IOMMU map a physically contiguous
  * memory region. This is needed in case the remote remoteproc requires
  * access to certain memory-based peripherals; _never_ use it to access
  * regular memory.
  *
  * This is obviously only needed if the remote remoteproc is accessing memory
- * via an iommu.
- *
- * @da should specify the required device address, @pa should specify
- * the physical address we want to map, @len should specify the size of
- * the mapping and @flags is the IOMMU protection flags. As always, @name may
- * (optionally) contain a human readable name of this mapping (mainly for
- * debugging purposes).
+ * via an IOMMU.
  *
  * Note: at this point we just "trust" those devmem entries to contain valid
  * physical addresses, but this isn't safe and will be changed: eventually we
@@ -194,81 +189,89 @@ struct fw_rsc_carveout {
  */
 METAL_PACKED_BEGIN
 struct fw_rsc_devmem {
+	/** IOMMU mapping request has type 1 */
 	uint32_t type;
+
+	/** Device address */
 	uint32_t da;
+
+	/** Physical address to map */
 	uint32_t pa;
+
+	/** Length of the mapping in bytes */
 	uint32_t len;
+
+	/** IOMMU protection flags */
 	uint32_t flags;
+
+	/** Reserved (must be zero) */
 	uint32_t reserved;
+
+	/** Optional human-readable name of the requested memory region used for debugging */
 	uint8_t name[RPROC_MAX_NAME_LEN];
 } METAL_PACKED_END;
 
 /**
- * struct fw_rsc_trace - trace buffer declaration
- * @da: device address
- * @len: length (in bytes)
- * @reserved: reserved (must be zero)
- * @name: human-readable name of the trace buffer
+ * @brief Resource table trace buffer declaration entry
  *
  * This resource entry provides the host information about a trace buffer
  * into which the remote remoteproc will write log messages.
- *
- * @da specifies the device address of the buffer, @len specifies
- * its size, and @name may contain a human readable name of the trace buffer.
  *
  * After booting the remote remoteproc, the trace buffers are exposed to the
  * user via debugfs entries (called trace0, trace1, etc..).
  */
 METAL_PACKED_BEGIN
 struct fw_rsc_trace {
+	/** Trace buffer entry has type 2 */
 	uint32_t type;
+
+	/** Device address of the buffer */
 	uint32_t da;
+
+	/** Length of the buffer in bytes */
 	uint32_t len;
+
+	/** Reserved (must be zero) */
 	uint32_t reserved;
+
+	/** Optional human-readable name of the requested memory region used for debugging */
 	uint8_t name[RPROC_MAX_NAME_LEN];
 } METAL_PACKED_END;
 
 /**
- * struct fw_rsc_vdev_vring - vring descriptor entry
- * @da: device address
- * @align: the alignment between the consumer and producer parts of the vring
- * @num: num of buffers supported by this vring (must be power of two)
- * @notifyid is a unique rproc-wide notify index for this vring. This notify
- * index is used when kicking a remote remoteproc, to let it know that this
- * vring is triggered.
- * @reserved: reserved (must be zero)
+ * @brief Resource table vring descriptor entry
  *
  * This descriptor is not a resource entry by itself; it is part of the
- * vdev resource type (see below).
- *
- * Note that @da should either contain the device address where
- * the remote remoteproc is expecting the vring, or indicate that
- * dynamically allocation of the vring's device address is supported.
+ * \ref fw_rsc_vdev resource type.
  */
 METAL_PACKED_BEGIN
 struct fw_rsc_vdev_vring {
+	/**
+	 * The device address where the remoteproc is expecting the vring, or
+	 * FW_RSC_U32_ADDR_ANY/FW_RSC_U64_ADDR_ANY to indicate that dynamic
+	 * allocation of the vring's device address is supported
+	 */
 	uint32_t da;
+
+	/** The alignment between the consumer and producer parts of the vring */
 	uint32_t align;
+
+	/** Number of buffers supported by this vring (must be power of two) */
 	uint32_t num;
+
+	/**
+	 * A unique rproc-wide notify index for this vring. This notify index is
+	 * used when kicking a remote remoteproc, to let it know that this vring
+	 * is triggered
+	 */
 	uint32_t notifyid;
+
+	/** Reserved (must be zero) */
 	uint32_t reserved;
 } METAL_PACKED_END;
 
 /**
- * struct fw_rsc_vdev - virtio device header
- * @id: virtio device id (as in virtio_ids.h)
- * @notifyid is a unique rproc-wide notify index for this vdev. This notify
- * index is used when kicking a remote remoteproc, to let it know that the
- * status/features of this vdev have changes.
- * @dfeatures specifies the virtio device features supported by the firmware
- * @gfeatures is a place holder used by the host to write back the
- * negotiated features that are supported by both sides.
- * @config_len is the size of the virtio config space of this vdev. The config
- * space lies in the resource table immediate after this vdev header.
- * @status is a place holder where the host will indicate its virtio progress.
- * @num_of_vrings indicates how many vrings are described in this vdev header
- * @reserved: reserved (must be zero)
- * @vring is an array of @num_of_vrings entries of 'struct fw_rsc_vdev_vring'.
+ * @brief Resource table virtio device entry
  *
  * This resource is a virtio device header: it provides information about
  * the vdev, and is then used by the host and its peer remote remoteprocs
@@ -283,29 +286,56 @@ struct fw_rsc_vdev_vring {
  * remoteprocs. We use the name 'gfeatures' to comply with virtio's terms,
  * though there isn't really any virtualized guest OS here: it's the host
  * which is responsible for negotiating the final features.
- * Yeah, it's a bit confusing.
  *
  * Note: immediately following this structure is the virtio config space for
  * this vdev (which is specific to the vdev; for more info, read the virtio
- * spec). the size of the config space is specified by @config_len.
+ * spec).
  */
 METAL_PACKED_BEGIN
 struct fw_rsc_vdev {
+	/** Virtio device header has type 3 */
 	uint32_t type;
+
+	/** Virtio device id (as in virtio_ids.h) */
 	uint32_t id;
+
+	/**
+	 * A unique rproc-wide notify index for this vdev. This notify index is
+	 * used when kicking a remote remoteproc, to let it know that the
+	 * status/features of this vdev have changes.
+	 */
 	uint32_t notifyid;
+
+	/** The virtio device features supported by the firmware */
 	uint32_t dfeatures;
+
+	/**
+	 * A place holder used by the host to write back the negotiated features
+	 * that are supported by both sides
+	 */
 	uint32_t gfeatures;
+
+	/**
+	 * The size of the virtio config space of this vdev. The config space lies
+	 * in the resource table immediate after this vdev header
+	 */
 	uint32_t config_len;
+
+	/** A place holder where the host will indicate its virtio progress */
 	uint8_t status;
+
+	/** Number of vrings described in this vdev header */
 	uint8_t num_of_vrings;
+
+	/** Reserved (must be zero) */
 	uint8_t reserved[2];
+
+	/** An array of \ref num_of_vrings entries of \ref fw_rsc_vdev_vring */
 	struct fw_rsc_vdev_vring vring[0];
 } METAL_PACKED_END;
 
 /**
- * struct fw_rsc_vendor - remote processor vendor specific resource
- * @len: length of the resource
+ * @brief Resource table remote processor vendor specific entry
  *
  * This resource entry tells the host the vendor specific resource
  * required by the remote.
@@ -315,7 +345,10 @@ struct fw_rsc_vdev {
  */
 METAL_PACKED_BEGIN
 struct fw_rsc_vendor {
+	/** Vendor specific resource type can be values 128-512 */
 	uint32_t type;
+
+	/** Length of the resource */
 	uint32_t len;
 } METAL_PACKED_END;
 
@@ -323,109 +356,125 @@ struct loader_ops;
 struct image_store_ops;
 struct remoteproc_ops;
 
-/**
- * struct remoteproc_mem
- *
- * This structure presents the memory used by the remote processor
- *
- * @da: device memory
- * @pa: physical memory
- * @size: size of the memory
- * @io: pointer to the I/O region
- * @node: list node
- */
+/** @brief Memory used by the remote processor */
 struct remoteproc_mem {
+	/** Device memory */
 	metal_phys_addr_t da;
+
+	/** Physical memory */
 	metal_phys_addr_t pa;
+
+	/** Size of the memory */
 	size_t size;
+
+	/** Optional human-readable name of the memory region */
 	char name[RPROC_MAX_NAME_LEN];
+
+	/** Pointer to the I/O region */
 	struct metal_io_region *io;
+
+	/** List node */
 	struct metal_list node;
 };
 
 /**
- * struct remoteproc
+ * @brief A remote processor instance
  *
  * This structure is maintained by the remoteproc to represent the remote
  * processor instance. This structure acts as a prime parameter to use
  * the remoteproc APIs.
- *
- * @bootaddr: boot address
- * @loader: executable loader
- * @lock: mutex lock
- * @ops: remoteproc operations
- * @rsc_table: pointer to resource table
- * @rsc_len: length of resource table
- * @rsc_io: metal I/O region of resource table
- * @mems: remoteproc memories
- * @vdevs: remoteproc virtio devices
- * @bitmap: bitmap for notify IDs for remoteproc subdevices
- * @state: remote processor state
- * @priv: private data
  */
 struct remoteproc {
+	/** Mutex lock */
 	metal_mutex_t lock;
+
+	/** Pointer to the resource table */
 	void *rsc_table;
+
+	/** Length of the resource table */
 	size_t rsc_len;
+
+	/** Metal I/O region of the resource table */
 	struct metal_io_region *rsc_io;
+
+	/** Remoteproc memories */
 	struct metal_list mems;
+
+	/** Remoteproc virtio devices */
 	struct metal_list vdevs;
+
+	/** Bitmap for notify IDs for remoteproc subdevices */
 	unsigned long bitmap;
+
+	/** Remoteproc operations */
 	const struct remoteproc_ops *ops;
+
+	/** Boot address */
 	metal_phys_addr_t bootaddr;
+
+	/** Executable loader */
 	const struct loader_ops *loader;
+
+	/** Remote processor state */
 	unsigned int state;
+
+	/** Private data */
 	void *priv;
 };
 
 /**
- * struct remoteproc_ops
+ * @brief Remoteproc operations to manage a remoteproc instance
  *
- * remoteproc operations needs to be implemented by each remoteproc driver
- *
- * @init: initialize the remoteproc instance
- * @remove: remove the remoteproc instance
- * @mmap: memory mapped the memory with physical address or destination
- *        address as input.
- * @handle_rsc: handle the vendor specific resource
- * @config: configure the remoteproc to make it ready to load and run
- *          executable
- * @start: kick the remoteproc to run application
- * @stop: stop the remoteproc from running application, the resource such as
- *        memory may not be off.
- * @shutdown: shutdown the remoteproc and release its resources.
- * @notify: notify the remote
- * @get_mem: get remoteproc memory I/O region.
+ * Remoteproc operations need to be implemented by each remoteproc driver
  */
 struct remoteproc_ops {
+	/** Initialize the remoteproc instance */
 	struct remoteproc *(*init)(struct remoteproc *rproc,
 				   const struct remoteproc_ops *ops, void *arg);
+
+	/** Remove the remoteproc instance */
 	void (*remove)(struct remoteproc *rproc);
+
+	/** Memory map the memory with physical address or destination address as input */
 	void *(*mmap)(struct remoteproc *rproc,
 		      metal_phys_addr_t *pa, metal_phys_addr_t *da,
 		      size_t size, unsigned int attribute,
 		      struct metal_io_region **io);
+
+	/** Handle the vendor specific resource */
 	int (*handle_rsc)(struct remoteproc *rproc, void *rsc, size_t len);
+
+	/** Configure the remoteproc to make it ready to load and run the executable */
 	int (*config)(struct remoteproc *rproc, void *data);
+
+	/** Kick the remoteproc to run the application */
 	int (*start)(struct remoteproc *rproc);
-	int (*stop)(struct remoteproc *rproc);
-	int (*shutdown)(struct remoteproc *rproc);
-	int (*notify)(struct remoteproc *rproc, uint32_t id);
+
 	/**
-	 * get_mem
-	 *
-	 * get remoteproc memory I/O region by either name, virtual
+	 * Stop the remoteproc from running the application, the resource such as
+	 * memory may not be off
+	 */
+	int (*stop)(struct remoteproc *rproc);
+
+	/** Shutdown the remoteproc and release its resources */
+	int (*shutdown)(struct remoteproc *rproc);
+
+	/** Notify the remote */
+	int (*notify)(struct remoteproc *rproc, uint32_t id);
+
+	/**
+	 * @brief Get remoteproc memory I/O region by either name, virtual
 	 * address, physical address or device address.
 	 *
-	 * @rproc - pointer to remoteproc instance
-	 * @name - memory name
-	 * @pa - physical address
-	 * @da - device address
-	 * @va - virtual address
-	 * @size - memory size
-	 * @buf - pointer to remoteproc_mem struct object to store result
+	 * @param rproc		Pointer to remoteproc instance
+	 * @param name		Memory name
+	 * @param pa		Physical address
+	 * @param da		Device address
+	 * @param va		Virtual address
+	 * @param size		Memory size
+	 * @param buf		Pointer to remoteproc_mem struct object to store result
 	 *
-	 * @returns remoteproc memory pointed by buf if success, otherwise NULL
+	 * @return remoteproc memory pointed by buf if success, otherwise NULL
 	 */
 	struct remoteproc_mem *(*get_mem)(struct remoteproc *rproc,
 					  const char *name,

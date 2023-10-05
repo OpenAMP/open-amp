@@ -55,76 +55,90 @@ typedef void (*rpmsg_ns_bind_cb)(struct rpmsg_device *rdev,
 				 const char *name, uint32_t dest);
 
 /**
- * struct rpmsg_endpoint - binds a local rpmsg address to its user
- * @name: name of the service supported
- * @rdev: pointer to the rpmsg device
- * @addr: local address of the endpoint
- * @dest_addr: address of the default remote endpoint binded.
- * @cb: user rx callback, return value of this callback is reserved
- *      for future use, for now, only allow RPMSG_SUCCESS as return value.
- * @ns_unbind_cb: end point service unbind callback, called when remote
- *                ept is destroyed.
- * @node: end point node.
- * @priv: private data for the driver's use
+ * @brief Structure that binds a local RPMsg address to its user
  *
- * In essence, an rpmsg endpoint represents a listener on the rpmsg bus, as
- * it binds an rpmsg address with an rx callback handler.
+ * In essence, an RPMsg endpoint represents a listener on the RPMsg bus, as
+ * it binds an RPMsg address with an rx callback handler.
  */
 struct rpmsg_endpoint {
+	/** Name of the service supported */
 	char name[RPMSG_NAME_SIZE];
+
+	/** Pointer to the RPMsg device */
 	struct rpmsg_device *rdev;
+
+	/** Local address of the endpoint */
 	uint32_t addr;
+
+	/** Address of the default remote endpoint binded */
 	uint32_t dest_addr;
+
+	/**
+	 * User rx callback, return value of this callback is reserved for future
+	 * use, for now, only allow RPMSG_SUCCESS as return value
+	 */
 	rpmsg_ept_cb cb;
+
+	/** Endpoint service unbind callback, called when remote ept is destroyed */
 	rpmsg_ns_unbind_cb ns_unbind_cb;
+
+	/** Endpoint node */
 	struct metal_list node;
+
+	/** Private data for the driver's use */
 	void *priv;
 };
 
-/**
- * struct rpmsg_device_ops - RPMsg device operations
- * @send_offchannel_raw: send RPMsg data
- * @hold_rx_buffer: hold RPMsg RX buffer
- * @release_rx_buffer: release RPMsg RX buffer
- * @get_tx_payload_buffer: get RPMsg TX buffer
- * @send_offchannel_nocopy: send RPMsg data without copy
- * @release_tx_buffer: release RPMsg TX buffer
- */
+/** @brief RPMsg device operations */
 struct rpmsg_device_ops {
+	/** Send RPMsg data */
 	int (*send_offchannel_raw)(struct rpmsg_device *rdev,
 				   uint32_t src, uint32_t dst,
 				   const void *data, int len, int wait);
+
+	/** Hold RPMsg RX buffer */
 	void (*hold_rx_buffer)(struct rpmsg_device *rdev, void *rxbuf);
+
+	/** Release RPMsg RX buffer */
 	void (*release_rx_buffer)(struct rpmsg_device *rdev, void *rxbuf);
+
+	/** Get RPMsg TX buffer */
 	void *(*get_tx_payload_buffer)(struct rpmsg_device *rdev,
 				       uint32_t *len, int wait);
+
+	/** Send RPMsg data without copy */
 	int (*send_offchannel_nocopy)(struct rpmsg_device *rdev,
 				      uint32_t src, uint32_t dst,
-				       const void *data, int len);
+				      const void *data, int len);
+
+	/** Release RPMsg TX buffer */
 	int (*release_tx_buffer)(struct rpmsg_device *rdev, void *txbuf);
 };
 
-/**
- * struct rpmsg_device - representation of a RPMsg device
- * @endpoints: list of endpoints
- * @ns_ept: name service endpoint
- * @bitmap: table endpoint address allocation.
- * @lock: mutex lock for rpmsg management
- * @ns_bind_cb: callback handler for name service announcement without local
- *              endpoints waiting to bind.
- * @ns_unbind_cb: callback handler for name service announcement, called when
- *                remote ept is destroyed.
- * @ops: RPMsg device operations
- * @support_ns: create/destroy namespace message
- */
+/** @brief Representation of a RPMsg device */
 struct rpmsg_device {
+	/** List of endpoints */
 	struct metal_list endpoints;
+
+	/** Name service endpoint */
 	struct rpmsg_endpoint ns_ept;
+
+	/** Table endpoint address allocation */
 	unsigned long bitmap[metal_bitmap_longs(RPMSG_ADDR_BMP_SIZE)];
+
+	/** Mutex lock for RPMsg management */
 	metal_mutex_t lock;
+
+	/** Callback handler for name service announcement without local epts waiting to bind */
 	rpmsg_ns_bind_cb ns_bind_cb;
+
+	/** Callback handler for name service announcement, called when remote ept is destroyed */
 	rpmsg_ns_bind_cb ns_unbind_cb;
+
+	/** RPMsg device operations */
 	struct rpmsg_device_ops ops;
+
+	/** Create/destroy namespace message */
 	bool support_ns;
 };
 
