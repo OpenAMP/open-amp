@@ -205,6 +205,14 @@ struct virtio_device {
 /*
  * Helper functions.
  */
+
+/**
+ * @brief Get the name of a virtio device.
+ *
+ * @param devid Id of the device.
+ *
+ * @return pointer to the device name string if found, otherwise null.
+ */
 const char *virtio_dev_name(uint16_t devid);
 void virtio_describe(struct virtio_device *dev, const char *msg,
 		     uint32_t features,
