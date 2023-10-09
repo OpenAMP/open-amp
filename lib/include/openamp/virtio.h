@@ -218,9 +218,10 @@ struct virtio_device {
  * Helper functions.
  */
 const char *virtio_dev_name(uint16_t devid);
-void virtio_describe(struct virtio_device *dev, const char *msg,
-		     uint32_t features,
-		     struct virtio_feature_desc *feature_desc);
+
+__deprecated void virtio_describe(struct virtio_device *dev, const char *msg,
+				  uint32_t features,
+				  struct virtio_feature_desc *feature_desc);
 
 /*
  * Functions for virtio device configuration as defined in Rusty Russell's
