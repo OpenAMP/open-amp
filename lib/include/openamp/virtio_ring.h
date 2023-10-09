@@ -122,22 +122,8 @@ struct vring_used {
  * index into the available ring. It then notifies the device. When the device
  * has finished a buffer, it writes the descriptor index into the used ring,
  * and sends an interrupt.
- */
-struct vring {
-	/** The number of descriptors in the virtqueue */
-	unsigned int num;
-
-	/** The actual descriptors, 16 bytes each */
-	struct vring_desc *desc;
-
-	/** A ring of available descriptor heads with free-running index */
-	struct vring_avail *avail;
-
-	/** A ring of used descriptor heads with free-running index */
-	struct vring_used *used;
-};
-
-/* The standard layout for the ring is a continuous chunk of memory which
+ *
+ * The standard layout for the ring is a continuous chunk of memory which
  * looks like this.  We assume num is a power of 2.
  *
  * struct vring {
@@ -162,6 +148,22 @@ struct vring {
  *
  * NOTE: for VirtIO PCI, align is 4096.
  */
+struct vring {
+	/**
+	 * The maximum number of buffer descriptors in the virtqueue.
+	 * The value is always a power of 2.
+	 */
+	unsigned int num;
+
+	/** The actual buffer descriptors, 16 bytes each */
+	struct vring_desc *desc;
+
+	/** A ring of available descriptor heads with free-running index */
+	struct vring_avail *avail;
+
+	/** A ring of used descriptor heads with free-running index */
+	struct vring_used *used;
+};
 
 /*
  * We publish the used event index at the end of the available ring, and vice
