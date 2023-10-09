@@ -95,9 +95,15 @@ __deprecated static inline int deprecated_virtio_dev_slave(void)
 #warning "VIRTIO_SLAVE_ONLY is deprecated, please use VIRTIO_DEVICE_ONLY"
 #endif
 
+/** @brief Virtio device identifier. */
 struct virtio_device_id {
+	/** Virtio subsystem device ID. */
 	uint32_t device;
+
+	/** Virtio subsystem vendor ID. */
 	uint32_t vendor;
+
+	/** Virtio subsystem device version. */
 	uint32_t version;
 };
 
@@ -142,8 +148,12 @@ typedef void (*virtio_dev_reset_cb)(struct virtio_device *vdev);
 
 struct virtio_dispatch;
 
+/** @brief Device features. */
 struct virtio_feature_desc {
+	/** Unique feature ID, defined in the virtio specification. */
 	uint32_t vfd_val;
+
+	/** Name of the feature (for debug). */
 	const char *vfd_str;
 };
 
@@ -200,36 +210,61 @@ void virtio_describe(struct virtio_device *dev, const char *msg,
 		     uint32_t features,
 		     struct virtio_feature_desc *feature_desc);
 
-/*
- * Functions for virtio device configuration as defined in Rusty Russell's
- * paper.
- * Drivers are expected to implement these functions in their respective codes.
+/**
+ * @brief Virtio device dispatcher functions.
+ *
+ * Functions for virtio device configuration as defined in Rusty Russell's paper.
+ * The virtio transport layers are expected to implement these functions in their respective codes.
  */
 
 struct virtio_dispatch {
+	/** Create virtio queue instances. */
 	int (*create_virtqueues)(struct virtio_device *vdev,
 				 unsigned int flags,
 				 unsigned int nvqs, const char *names[],
 				 vq_callback callbacks[],
 				 void *callback_args[]);
+
+	/** Delete virtio queue instances. */
 	void (*delete_virtqueues)(struct virtio_device *vdev);
+
+	/** Get the status of the virtio device. */
 	uint8_t (*get_status)(struct virtio_device *dev);
+
+	/** Set the status of the virtio device. */
 	void (*set_status)(struct virtio_device *dev, uint8_t status);
+
+	/** Get the feature exposed by the virtio device. */
 	uint32_t (*get_features)(struct virtio_device *dev);
+
+	/** Set the supported feature (virtio driver only). */
 	void (*set_features)(struct virtio_device *dev, uint32_t feature);
+
+	/**
+	 * Set the supported feature negotiate between the \ref features parameter and features
+	 * supported by the device (virtio driver only).
+	 */
 	uint32_t (*negotiate_features)(struct virtio_device *dev,
 				       uint32_t features);
 
-	/*
-	 * Read/write a variable amount from the device specific (ie, network)
-	 * configuration region. This region is encoded in the same endian as
-	 * the guest.
+	/**
+	 * Read a variable amount from the device specific (ie, network)
+	 * configuration region.
 	 */
 	void (*read_config)(struct virtio_device *dev, uint32_t offset,
 			    void *dst, int length);
+
+	/**
+	 * Write a variable amount from the device specific (ie, network)
+	 * configuration region.
+	 */
 	void (*write_config)(struct virtio_device *dev, uint32_t offset,
 			     void *src, int length);
+
+	/** Request a reset of the virtio device. */
 	void (*reset_device)(struct virtio_device *dev);
+
+	/** Notify the other side that a virtio vring as been updated. */
 	void (*notify)(struct virtqueue *vq);
 };
 

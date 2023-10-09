@@ -63,66 +63,98 @@ extern "C" {
 #define VRING_INVALIDATE(x, s)		do { } while (0)
 #endif /* VIRTIO_CACHED_VRINGS || VIRTIO_USE_DCACHE */
 
+/** @brief Buffer descriptor. */
 struct virtqueue_buf {
+	/** Address of the buffer. */
 	void *buf;
+
+	/** Size of the buffer. */
 	int len;
 };
 
+/** @brief Vring descriptor extra information for buffer list management. */
 struct vq_desc_extra {
+	/** Pointer to first descriptor. */
 	void *cookie;
+
+	/** Number of chained descriptors. */
 	uint16_t ndescs;
 };
 
+/** @brief Local virtio queue to manage a virtio ring for sending or receiving. */
 struct virtqueue {
+	/** Associated virtio device. */
 	struct virtio_device *vq_dev;
-	const char *vq_name;
-	uint16_t vq_queue_index;
-	uint16_t vq_nentries;
-	void (*callback)(struct virtqueue *vq);
-	void *priv;
-	void (*notify)(struct virtqueue *vq);
-	struct vring vq_ring;
-	uint16_t vq_free_cnt;
-	uint16_t vq_queued_cnt;
-	void *shm_io; /* opaque pointer to data needed to allow v2p & p2v */
 
-	/*
-	 * Head of the free chain in the descriptor table. If
-	 * there are no free descriptors, this will be set to
-	 * VQ_RING_DESC_CHAIN_END.
+	/** Name of the virtio queue. */
+	const char *vq_name;
+
+	/** Index of the virtio queue. */
+	uint16_t vq_queue_index;
+
+	/** Max number of buffers in the virtio queue. */
+	uint16_t vq_nentries;
+
+	/** Function to invoke, when message is available on the virtio queue. */
+	void (*callback)(struct virtqueue *vq);
+
+	/** Private data associated to the virtio queue. */
+	void *priv;
+
+	/** Function to invoke, to inform the other side about an update in the virtio queue. */
+	void (*notify)(struct virtqueue *vq);
+
+	/** Associated virtio ring. */
+	struct vring vq_ring;
+
+	/** Number of free descriptor in the virtio ring. */
+	uint16_t vq_free_cnt;
+
+	/** Number of queued buffer in the virtio ring. */
+	uint16_t vq_queued_cnt;
+
+	/**
+	 * Metal I/O region of the vrings and buffers.
+	 * This structure is used for conversion between virtual and physical addresses.
+	 */
+	void *shm_io;
+
+	/**
+	 * Head of the free chain in the descriptor table. If there are no free descriptors,
+	 * this will be set to VQ_RING_DESC_CHAIN_END.
 	 */
 	uint16_t vq_desc_head_idx;
 
-	/*
-	 * Last consumed descriptor in the used table,
-	 * trails vq_ring.used->idx.
-	 */
+	/** Last consumed descriptor in the used table, trails vq_ring.used->idx. */
 	uint16_t vq_used_cons_idx;
 
-	/*
-	 * Last consumed descriptor in the available table -
-	 * used by the consumer side.
-	 */
+	/** Last consumed descriptor in the available table, used by the consumer side. */
 	uint16_t vq_available_idx;
 
 #ifdef VQUEUE_DEBUG
+	/** Debug counter for virtqueue reentrance check. */
 	bool vq_inuse;
 #endif
 
-	/*
-	 * Used by the host side during callback. Cookie
-	 * holds the address of buffer received from other side.
-	 * Other fields in this structure are not used currently.
+	/**
+	 * Used by the host side during callback. Cookie holds the address of buffer received from
+	 * other side. Other fields in this structure are not used currently.
 	 */
-
 	struct vq_desc_extra vq_descx[0];
 };
 
-/* struct to hold vring specific information */
+/** @brief Virtio ring specific information. */
 struct vring_alloc_info {
+	/** Vring address. */
 	void *vaddr;
+
+	/** Vring alignment. */
 	uint32_t align;
+
+	/** Number of descriptors in the vring. */
 	uint16_t num_descs;
+
+	/** Padding */
 	uint16_t pad;
 };
 
