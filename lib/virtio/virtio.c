@@ -83,8 +83,8 @@ static const char *virtio_feature_name(unsigned long val,
 	return NULL;
 }
 
-void virtio_describe(struct virtio_device *dev, const char *msg,
-		     uint32_t features, struct virtio_feature_desc *desc)
+__deprecated void virtio_describe(struct virtio_device *dev, const char *msg,
+				  uint32_t features, struct virtio_feature_desc *desc)
 {
 	(void)dev;
 	(void)msg;
