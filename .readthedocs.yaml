@@ -1,0 +1,36 @@
+version: 2
+formats: all
+build:
+  os: "ubuntu-22.04"
+  tools:
+    python: "3.10"
+  apt_packages:
+    - cmake
+    - libhugetlbfs-dev
+    - libsysfs-dev
+  # here it would be nice to tell them that the conf.py will be in openamp-docs/conf.py
+  # sphinx:
+  #   configuration: openamp-docs/conf.py
+  # HOWEVER, if we say this they check right after they do checkout and it does not exist yet
+  # As of now they find it well enough right before the build stage
+  jobs:
+    post_checkout:
+      # we ignore the checkout they did and make a new one of the whole openamp-docs project
+      - env
+      - git log -n 1 --oneline
+      - git rev-parse HEAD
+      - git clone --recurse-submodules https://github.com/OpenAMP/openamp-docs.git
+      # now adjust the focused submodule to the PR in progress
+      - echo "URL=${READTHEDOCS_GIT_CLONE_URL} COMMIT=${READTHEDOCS_GIT_COMMIT_HASH}"
+      - (cd openamp-docs/open-amp; git remote add this_pr ../../.git )
+      - (cd openamp-docs/open-amp; git fetch this_pr $(cd ../..; git rev-parse HEAD) )
+      - (cd openamp-docs/open-amp; git checkout $(cd ../..; git rev-parse HEAD) )
+      - (cd openamp-docs/open-amp; git log -n 1 --oneline)
+      - (cd openamp-docs; git submodule status)
+    post_install:
+      - python -m pip install --exists-action=w --no-cache-dir -r openamp-docs/requirements.txt
+    pre_build:
+      - echo "READTHEDOCS_OUTPUT=$READTHEDOCS_OUTPUT"
+      - make -C openamp-docs BUILDDIR=$READTHEDOCS_OUTPUT doxygen
+    post_build:
+      - make -C openamp-docs BUILDDIR=$READTHEDOCS_OUTPUT doxygen_copy
