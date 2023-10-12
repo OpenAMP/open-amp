@@ -24,12 +24,12 @@
  *
  * @return A unique address
  */
-static uint32_t rpmsg_get_address(unsigned long *bitmap, int size)
+static uint32_t rpmsg_get_address(unsigned long *bitmap, unsigned int start, int size)
 {
 	unsigned int addr = RPMSG_ADDR_ANY;
 	unsigned int nextbit;
 
-	nextbit = metal_bitmap_next_clear_bit(bitmap, 0, size);
+	nextbit = metal_bitmap_next_clear_bit(bitmap, start, size);
 	if (nextbit < (uint32_t)size) {
 		addr = RPMSG_RESERVED_ADDRESSES + nextbit;
 		metal_bitmap_set_bit(bitmap, nextbit);
@@ -277,11 +277,12 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 
 	metal_mutex_acquire(&rdev->lock);
 	if (src == RPMSG_ADDR_ANY) {
-		addr = rpmsg_get_address(rdev->bitmap, RPMSG_ADDR_BMP_SIZE);
+		addr = rpmsg_get_address(rdev->bitmap, rdev->bitnext, RPMSG_ADDR_BMP_SIZE);
 		if (addr == RPMSG_ADDR_ANY) {
 			status = RPMSG_ERR_ADDR;
 			goto ret_status;
 		}
+		rdev->bitnext = (addr + 1) % RPMSG_ADDR_BMP_SIZE;
 	} else if (src >= RPMSG_RESERVED_ADDRESSES) {
 		status = rpmsg_is_address_set(rdev->bitmap,
 					      RPMSG_ADDR_BMP_SIZE, src);

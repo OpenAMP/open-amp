@@ -125,6 +125,7 @@ struct rpmsg_device {
 
 	/** Table endpoint address allocation */
 	unsigned long bitmap[metal_bitmap_longs(RPMSG_ADDR_BMP_SIZE)];
+	unsigned int bitnext;
 
 	/** Mutex lock for RPMsg management */
 	metal_mutex_t lock;
