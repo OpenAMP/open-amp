@@ -118,29 +118,64 @@ __deprecated static inline int deprecated_rpmsg_slave(void)
 	return RPMSG_REMOTE;
 }
 
+/**
+ * @brief Get rpmsg virtio device role.
+ *
+ * @param rvdev	Pointer to rpmsg virtio device.
+ *
+ * @return RPMSG_REMOTE or RPMSG_HOST
+ */
 static inline unsigned int
 rpmsg_virtio_get_role(struct rpmsg_virtio_device *rvdev)
 {
 	return rvdev->vdev->role;
 }
 
+/**
+ * @brief Set rpmsg virtio device status.
+ *
+ * @param rvdev		Pointer to rpmsg virtio device.
+ * @param status	Value to be set as rpmsg virtio device status.
+ */
 static inline void rpmsg_virtio_set_status(struct rpmsg_virtio_device *rvdev,
 					   uint8_t status)
 {
 	rvdev->vdev->func->set_status(rvdev->vdev, status);
 }
 
+/**
+ * @brief Retrieve rpmsg virtio device status.
+ *
+ * @param rvdev	Pointer to rpmsg virtio device.
+ *
+ * @return The rpmsg virtio device status.
+ */
 static inline uint8_t rpmsg_virtio_get_status(struct rpmsg_virtio_device *rvdev)
 {
 	return rvdev->vdev->func->get_status(rvdev->vdev);
 }
 
+/**
+ * @brief Get the rpmsg virtio device features.
+ *
+ * @param rvdev	Pointer to the rpmsg virtio device.
+ *
+ * @return The features supported by both the rpmsg driver and rpmsg device.
+ */
 static inline uint32_t
 rpmsg_virtio_get_features(struct rpmsg_virtio_device *rvdev)
 {
 	return rvdev->vdev->func->get_features(rvdev->vdev);
 }
 
+/**
+ * @brief Retrieve configuration data from the rpmsg virtio device.
+ *
+ * @param rvdev		Pointer to the rpmsg virtio device.
+ * @param offset	Offset of the data within the configuration area.
+ * @param dst		Address of the buffer that will hold the data.
+ * @param length	Length of the data to be retrieved.
+ */
 static inline void
 rpmsg_virtio_read_config(struct rpmsg_virtio_device *rvdev,
 			 uint32_t offset, void *dst, int length)
@@ -148,13 +183,34 @@ rpmsg_virtio_read_config(struct rpmsg_virtio_device *rvdev,
 	rvdev->vdev->func->read_config(rvdev->vdev, offset, dst, length);
 }
 
+/**
+ * @brief Write configuration data to the rpmsg virtio device.
+ *
+ * @param rvdev		Pointer to the rpmsg virtio device.
+ * @param offset	Offset of the data within the configuration area.
+ * @param src		Address of the buffer that holds the data to write.
+ * @param length	Length of the data to be written.
+ *
+ * @return 0 on success, otherwise error code.
+ */
 static inline void
 rpmsg_virtio_write_config(struct rpmsg_virtio_device *rvdev,
-			 uint32_t offset, void *dst, int length)
+			 uint32_t offset, void *src, int length)
 {
-	rvdev->vdev->func->write_config(rvdev->vdev, offset, dst, length);
+	rvdev->vdev->func->write_config(rvdev->vdev, offset, src, length);
 }
 
+/**
+ * @brief Create the rpmsg virtio device virtqueue.
+ *
+ * @param rvdev		Pointer to the rpmsg virtio device.
+ * @param flags		Create flag.
+ * @param nvqs		The virtqueue number.
+ * @param names		Virtqueue names.
+ * @param callbacks	Virtqueue callback functions.
+ *
+ * @return 0 on success, otherwise error code.
+ */
 static inline int
 rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device *rvdev,
 			       int flags, unsigned int nvqs,
@@ -166,7 +222,18 @@ rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device *rvdev,
 }
 
 /**
- * @brief Get rpmsg virtio Tx buffer size
+ * @brief Delete the virtqueues created in rpmsg_virtio_create_virtqueues()
+ *
+ * @param rvdev	Pointer to the rpmsg virtio device
+ */
+static inline void
+rpmsg_virtio_delete_virtqueues(struct rpmsg_virtio_device *rvdev)
+{
+	virtio_delete_virtqueues(rvdev->vdev);
+}
+
+/**
+ * @brief Get rpmsg virtio buffer size
  *
  * @param rdev	Pointer to the rpmsg device
  *
