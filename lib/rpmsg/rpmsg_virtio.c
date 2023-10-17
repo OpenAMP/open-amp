@@ -862,6 +862,8 @@ void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev)
 			node = rdev->endpoints.next;
 			ept = metal_container_of(node, struct rpmsg_endpoint, node);
 			rpmsg_destroy_ept(ept);
+			if (ept->ns_unbind_cb)
+				ept->ns_unbind_cb(ept);
 		}
 
 		rvdev->rvq = 0;
