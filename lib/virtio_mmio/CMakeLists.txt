@@ -1,3 +1,6 @@
 if (WITH_VIRTIO_MMIO_DRV)
 collect (PROJECT_LIB_SOURCES virtio_mmio_drv.c)
+collect (PROJECT_LIB_SOURCES virtio_rng.c)
+collect (PROJECT_LIB_SOURCES virtio_net.c)
+collect (PROJECT_LIB_SOURCES virtio_serial.c)
 endif (WITH_VIRTIO_MMIO_DRV)
