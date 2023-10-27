@@ -312,4 +312,5 @@ We use standard github mechanism for pull request. Please refer to github docume
 ## Communication and Collaboration
 [Subscribe](https://lists.openampproject.org/mailman3/lists/openamp-rp.lists.openampproject.org/) to the OpenAMP mailing list(openamp-rp@lists.openampproject.org).
 
-For more details on the framework please refer to the the [OpenAMP wiki](https://github.com/OpenAMP/open-amp/wiki).
+For more details on the framework please refer to the
+[OpenAMP Docs](https://openamp.readthedocs.io/en/latest/).
