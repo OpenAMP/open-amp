@@ -16,6 +16,29 @@
 #include <metal/utilities.h>
 #include <metal/alloc.h>
 
+static void *rproc_virtio_alloc_buf(struct virtio_device *vdev,
+				    size_t size, size_t align)
+{
+	struct remoteproc_virtio *rpvdev;
+
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	if (!rpvdev->alloc_buf)
+		return NULL;
+
+	return rpvdev->alloc_buf(rpvdev, size, align);
+}
+
+static void rproc_virtio_free_buf(struct virtio_device *vdev, void *buf)
+{
+	struct remoteproc_virtio *rpvdev;
+
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	if (!rpvdev->free_buf)
+		return;
+
+	rpvdev->free_buf(rpvdev, buf);
+}
+
 static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 {
 	struct remoteproc_virtio *rpvdev;
@@ -183,6 +206,8 @@ static void rproc_virtio_reset_device(struct virtio_device *vdev)
 #endif
 
 static const struct virtio_dispatch remoteproc_virtio_dispatch_funcs = {
+	.alloc_buf = rproc_virtio_alloc_buf,
+	.free_buf = rproc_virtio_free_buf,
 	.get_status = rproc_virtio_get_status,
 	.get_features = rproc_virtio_get_features,
 	.read_config = rproc_virtio_read_config,
@@ -363,4 +388,20 @@ void rproc_virtio_wait_remote_ready(struct virtio_device *vdev)
 			return;
 		metal_cpu_yield();
 	}
+}
+
+int rproc_virtio_set_mm_callback(struct virtio_device *vdev,
+				 rpvdev_alloc_buf alloc_buf,
+				 rpvdev_free_buf free_buf)
+{
+	struct remoteproc_virtio *rpvdev;
+
+	if (!vdev || !alloc_buf || !free_buf)
+		return -RPROC_EINVAL;
+
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	rpvdev->alloc_buf = alloc_buf;
+	rpvdev->free_buf = free_buf;
+
+	return 0;
 }
