@@ -270,6 +270,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 	rpvdev->vdev_rsc_io = rsc_io;
 
 	vdev->notifyid = notifyid;
+	vdev->id.device = vdev_rsc->id;
 	vdev->role = role;
 	vdev->reset_cb = rst_cb;
 	vdev->vrings_num = num_vrings;
