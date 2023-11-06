@@ -128,12 +128,14 @@ int app (struct rpmsg_device *rdev, void *priv)
 	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
 			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
 			       rpmsg_endpoint_cb, rpmsg_service_unbind);
-
 	if (ret) {
 		LPERROR("Failed to create RPMsg endpoint.\r\n");
 		metal_free_memory(i_payload);
 		return ret;
 	}
+
+	LPRINTF("RPMsg driver TX buffer size: %#x\r\n", rpmsg_virtio_get_tx_buffer_size(rdev));
+	LPRINTF("RPMsg driver RX buffer size: %#x\r\n", rpmsg_virtio_get_rx_buffer_size(rdev));
 
 	while (!is_rpmsg_ept_ready(&lept))
 		platform_poll(priv);
