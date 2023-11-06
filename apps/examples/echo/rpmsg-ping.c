@@ -88,7 +88,6 @@ static void rpmsg_name_service_bind_cb(struct rpmsg_device *rdev,
 				       RPMSG_ADDR_ANY, dest,
 				       rpmsg_endpoint_cb,
 				       rpmsg_service_unbind);
-
 }
 
 /*-----------------------------------------------------------------------------*
@@ -130,6 +129,9 @@ int app (struct rpmsg_device *rdev, void *priv)
 		metal_free_memory(i_payload);
 		return ret;
 	}
+
+	LPRINTF("RPMsg driver TX buffer size: %#x\r\n", rpmsg_virtio_get_tx_buffer_size(rdev));
+	LPRINTF("RPMsg driver RX buffer size: %#x\r\n", rpmsg_virtio_get_rx_buffer_size(rdev));
 
 	while (!is_rpmsg_ept_ready(&lept))
 		platform_poll(priv);

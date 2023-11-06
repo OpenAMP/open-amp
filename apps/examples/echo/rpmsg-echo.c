@@ -75,6 +75,10 @@ int app(struct rpmsg_device *rdev, void *priv)
 	}
 
 	LPRINTF("Successfully created rpmsg endpoint.\r\n");
+
+	LPRINTF("RPMsg device TX buffer size: %#x\r\n", rpmsg_virtio_get_tx_buffer_size(rdev));
+	LPRINTF("RPMsg device RX buffer size: %#x\r\n", rpmsg_virtio_get_rx_buffer_size(rdev));
+
 	while(1) {
 		platform_poll(priv);
 		/* we got a shutdown request, exit */
