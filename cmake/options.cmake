@@ -79,10 +79,15 @@ if (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
 endif (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
 
 option (WITH_VIRTIO_MMIO_DRV "Build with virtio mmio driver support enabled" OFF)
+option (WITH_VIRTIO_MMIO_DEV "Build with virtio mmio device support enabled" OFF)
 
 if (WITH_VIRTIO_MMIO_DRV)
   add_definitions(-DWITH_VIRTIO_MMIO_DRV)
 endif (WITH_VIRTIO_MMIO_DRV)
+
+if (WITH_VIRTIO_MMIO_DEV)
+  add_definitions(-DWITH_VIRTIO_MMIO_DEV)
+endif (WITH_VIRTIO_MMIO_DEV)
 
 option (WITH_DCACHE "Build with all cache operations enabled" OFF)
 
