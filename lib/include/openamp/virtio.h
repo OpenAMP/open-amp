@@ -227,6 +227,12 @@ __deprecated void virtio_describe(struct virtio_device *dev, const char *msg,
  */
 
 struct virtio_dispatch {
+	/** Alloc buffer from transport layer heap */
+	void *(*alloc_buf)(struct virtio_device *vdev, size_t size, size_t align);
+
+	/** Free buffer to transport layer heap */
+	void (*free_buf)(struct virtio_device *vdev, void *buf);
+
 	/** Create virtio queue instances. */
 	int (*create_virtqueues)(struct virtio_device *vdev,
 				 unsigned int flags,
@@ -276,6 +282,54 @@ struct virtio_dispatch {
 	/** Notify the other side that a virtio vring as been updated. */
 	void (*notify)(struct virtqueue *vq);
 };
+
+/**
+ * @brief Alloc a buffer from virtio transport layer.
+ *
+ * @param vdev		Pointer to virtio device structure.
+ * @param size		Alloc buffer size.
+ * @param align		Buffer alignment.
+ *
+ * @return Pointer to the return buffer. NULL indicates no enough buffer
+ *         or some errors happened.
+ */
+static inline void *virtio_alloc_buf(struct virtio_device *vdev,
+				     size_t size, size_t align)
+{
+	return vdev->func->alloc_buf(vdev, size, align);
+}
+
+/**
+ * @brief Alloc a buffer from virtio transport layer with zero value.
+ *
+ * @param vdev		Pointer to virtio device structure.
+ * @param size		Alloc buffer size.
+ * @param align		Buffer alignment.
+ *
+ * @return Pointer to the return buffer. NULL indicates no enough buffer
+ *         or some errors happened.
+ */
+static inline void *virtio_zalloc_buf(struct virtio_device *vdev,
+				      size_t size, size_t align)
+{
+	void *ptr = virtio_alloc_buf(vdev, size, align);
+
+	if (ptr)
+		memset(ptr, 0, size);
+
+	return ptr;
+}
+
+/**
+ * @brief Free a buffer alloced from transport layer.
+ *
+ * @param vdev		Pointer to virtio device structure.
+ * @param buf		Pointer to an allocated buffer from transport layer.
+ */
+static inline void virtio_free_buf(struct virtio_device *vdev, void *buf)
+{
+	vdev->func->free_buf(vdev, buf);
+}
 
 /**
  * @brief Create the virtio device virtqueue.

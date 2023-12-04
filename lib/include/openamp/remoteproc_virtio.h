@@ -39,6 +39,11 @@ extern "C" {
 /* define vdev notification function user should implement */
 typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
 
+/* Define remoteproc virtio memory management function */
+struct remoteproc_virtio;
+typedef void *(*rpvdev_alloc_buf)(struct remoteproc_virtio *rpvdev, size_t size, size_t align);
+typedef void (*rpvdev_free_buf)(struct remoteproc_virtio *rpvdev, void *buf);
+
 /** @brief Virtio structure for remoteproc instance */
 struct remoteproc_virtio {
 	/** Pointer to private data */
@@ -55,6 +60,12 @@ struct remoteproc_virtio {
 
 	/** Virtio device */
 	struct virtio_device vdev;
+
+	/** Share memory alloc function */
+	rpvdev_alloc_buf alloc_buf;
+
+	/** Share memory free function */
+	rpvdev_free_buf free_buf;
 
 	/** List node */
 	struct metal_list node;
@@ -125,6 +136,21 @@ int rproc_virtio_notified(struct virtio_device *vdev, uint32_t notifyid);
  * @return true when remote processor is ready.
  */
 void rproc_virtio_wait_remote_ready(struct virtio_device *vdev);
+
+/**
+ * rproc_virtio_set_mm_callback
+ *
+ * Set the share memory management callback function
+ *
+ * @param vdev		Pointer to the virtio device
+ * @param alloc_buf	Alloc buffer callback function
+ * @param free_buf	Free buffer callback function
+ *
+ * return 0 for success, negative value for failure.
+ */
+int rproc_virtio_set_mm_callback(struct virtio_device *vdev,
+				 rpvdev_alloc_buf alloc_buf,
+				 rpvdev_free_buf free_buf);
 
 #if defined __cplusplus
 }
