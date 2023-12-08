@@ -8,6 +8,7 @@
 #ifndef OPENAMP_VIRTIO_MMIO_H
 #define OPENAMP_VIRTIO_MMIO_H
 
+#include <metal/utilities.h>
 #include <metal/device.h>
 #include <openamp/virtio.h>
 #include <openamp/virtqueue.h>
@@ -168,6 +169,73 @@ struct virtio_mmio_device {
 };
 
 /**
+ * @brief This is called when the driver side should be notifyed
+ *
+ * @param dev The device that need to notify the other side
+ */
+typedef void (*virtio_mmio_notify)(struct virtio_device *dev);
+
+#ifdef WITH_VIRTIO_MMIO_DEV
+/**
+ * @brief Define an Empty MMIO register table with only the strict necessary
+ * for a driver to recognise the device
+ *
+ * @note The initial state NOT_READY is the current approach to block the
+ * device side usage from driver until it gets properly configured.
+ */
+#define EMPTY_MMIO_TABLE {					\
+	.magic = VIRTIO_MMIO_MAGIC_VALUE_STRING,		\
+	.version = 2,						\
+	.status = VIRTIO_CONFIG_STATUS_NOT_READY,		\
+}
+
+/** @brief MMIO Device Registers: 256 bytes in practice */
+struct virtio_mmio_dev_table {
+
+	/* 0x00 R should be 0x74726976 */
+	uint32_t magic;
+
+	/* 0x04 R */
+	uint32_t version;
+
+	/* padding */
+	uint32_t padding[26];
+
+	/* 0x70 RW Writing non-zero values to this register sets the status flags,
+	 * indicating the driver progress.
+	 * Writing zero (0x0) to this register triggers a device reset.
+	 */
+	uint32_t status;
+};
+
+#endif
+
+/** @brief VirtIO mmio dev instance, should be init with mmio_dev_init */
+struct virtio_mmio_dev {
+
+	/** VirtIO device instance */
+	struct virtio_device vdev;
+
+	/** Number of descriptors per ring */
+	int vring_size;
+
+	/** Array of virtqueues */
+	struct virtqueue *vqs;
+
+	/** Metal IO Region used to access the MMIO registers */
+	struct metal_io_region *io;
+
+	/** Called when an interrupt should be sent to the other side */
+	virtio_mmio_notify notify;
+
+	/** The features supported by this device */
+	uint64_t device_features;
+
+	/** The features supported by the driver from the other side */
+	uint64_t driver_features;
+};
+
+/**
  * @brief Register a VIRTIO device with the VIRTIO stack.
  *
  * @param dev		Pointer to device structure.
@@ -213,6 +281,24 @@ int virtio_mmio_device_init(struct virtio_mmio_device *vmdev, uintptr_t virt_mem
  * @param vdev Pointer to virtio_device structure.
  */
 void virtio_mmio_isr(struct virtio_device *vdev);
+
+/**
+ * @brief This should be called to initialize a virtio mmio device,
+ * the configure function should be called next by the device driver
+ *
+ * @param dev The device to initialize
+ * @param io The memory region in wich the device should operate
+ * @param callback The callback that will be called when the other side should be notifyed
+ */
+void virtio_mmio_dev_init(struct virtio_mmio_dev *dev, struct metal_io_region *io, virtio_mmio_notify callback);
+
+/**
+ * @brief Should be called by the app when it receive an interrupt for the mmio device
+ *
+ * @param dev The virtio mmio device
+ */
+void virtio_mmio_dev_interrupt(struct virtio_mmio_dev *dev);
+
 
 #ifdef __cplusplus
 }
