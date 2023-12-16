@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <errno.h>
 #include <openamp/rpmsg_rpc_client_server.h>
 
 #define LPERROR(format, ...) metal_log(METAL_LOG_ERROR, format, ##__VA_ARGS__)

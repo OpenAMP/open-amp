@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <errno.h>
 #include <openamp/rpmsg_rpc_client_server.h>
 
 static int rpmsg_endpoint_client_cb(struct rpmsg_endpoint *, void *, size_t,
