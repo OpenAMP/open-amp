@@ -61,6 +61,7 @@ else (WITH_ZEPHYR)
   if (WITH_STATIC_LIB)
     set (_lib ${OPENAMP_LIB}-static)
     add_library (${_lib} STATIC ${_sources})
+    target_include_directories(${_lib} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
     install (TARGETS ${_lib} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
     set_target_properties (${_lib} PROPERTIES
       OUTPUT_NAME       "${OPENAMP_LIB}"
