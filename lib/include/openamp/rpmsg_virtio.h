@@ -41,6 +41,9 @@ extern "C" {
 #define BUFFER_INVALIDATE(x, s)		do { } while (0)
 #endif /* VIRTIO_CACHED_BUFFERS || VIRTIO_USE_DCACHE */
 
+/* Callback handler for rpmsg virtio service */
+typedef int (*rpmsg_virtio_notify_wait_cb)(struct rpmsg_device *rdev, uint32_t id);
+
 /** @brief Shared memory pool used for RPMsg buffers */
 struct rpmsg_virtio_shm_pool {
 	/** Base address of the memory pool */
@@ -98,6 +101,12 @@ struct rpmsg_virtio_device {
 	 * \ref rpmsg_virtio_release_tx_buffer function
 	 */
 	struct metal_list reclaimer;
+
+	/**
+	 * Callback handler for rpmsg virtio service, called when service
+	 * can't get tx buffer
+	 */
+	rpmsg_virtio_notify_wait_cb notify_wait_cb;
 };
 
 #define RPMSG_REMOTE	VIRTIO_DEV_DEVICE

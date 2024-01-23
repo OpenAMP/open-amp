@@ -43,6 +43,7 @@ extern "C" {
 #define RPMSG_ERR_INIT			(RPMSG_ERROR_BASE - 6)
 #define RPMSG_ERR_ADDR			(RPMSG_ERROR_BASE - 7)
 #define RPMSG_ERR_PERM			(RPMSG_ERROR_BASE - 8)
+#define RPMSG_EOPNOTSUPP		(RPMSG_ERROR_BASE - 9)
 
 struct rpmsg_endpoint;
 struct rpmsg_device;
