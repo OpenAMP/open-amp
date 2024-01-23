@@ -354,3 +354,11 @@ void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 		(void)rpmsg_send_ns_message(ept, RPMSG_NS_DESTROY);
 	rpmsg_unregister_endpoint(ept);
 }
+
+int rpmsg_notify_wait(struct rpmsg_device *rdev, uint32_t id)
+{
+	if (rdev->notify_wait_cb)
+		return rdev->notify_wait_cb(rdev, id);
+
+	return RPMSG_ERR_NXIO;
+}

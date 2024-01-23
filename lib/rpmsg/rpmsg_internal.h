@@ -111,6 +111,8 @@ rpmsg_get_ept_from_addr(struct rpmsg_device *rdev, uint32_t addr)
 	return rpmsg_get_endpoint(rdev, NULL, addr, RPMSG_ADDR_ANY);
 }
 
+int rpmsg_notify_wait(struct rpmsg_device *rdev, uint32_t id);
+
 /**
  * @internal
  *

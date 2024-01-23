@@ -275,9 +275,6 @@ struct virtio_dispatch {
 
 	/** Notify the other side that a virtio vring as been updated. */
 	void (*notify)(struct virtqueue *vq);
-
-	/** Customize the wait, when no Tx buffer is available (optional) */
-	int (*wait_notified)(struct virtio_device *dev, struct virtqueue *vq);
 };
 
 /**

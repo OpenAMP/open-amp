@@ -55,6 +55,7 @@ typedef void (*rpmsg_ept_release_cb)(struct rpmsg_endpoint *ept);
 typedef void (*rpmsg_ns_unbind_cb)(struct rpmsg_endpoint *ept);
 typedef void (*rpmsg_ns_bind_cb)(struct rpmsg_device *rdev,
 				 const char *name, uint32_t dest);
+typedef int (*rpmsg_notify_wait_cb)(struct rpmsg_device *rdev, uint32_t id);
 
 /**
  * @brief Structure that binds a local RPMsg address to its user
@@ -143,6 +144,9 @@ struct rpmsg_device {
 
 	/** Callback handler for name service announcement, called when remote ept is destroyed */
 	rpmsg_ns_bind_cb ns_unbind_cb;
+
+	/** callback handler for rpmsg service, called when service can't get tx buffer */
+	rpmsg_notify_wait_cb notify_wait_cb;
 
 	/** RPMsg device operations */
 	struct rpmsg_device_ops ops;
@@ -357,7 +361,7 @@ void rpmsg_hold_rx_buffer(struct rpmsg_endpoint *ept, void *rxbuf);
  * @see rpmsg_hold_rx_buffer
  */
 void rpmsg_release_rx_buffer(struct rpmsg_endpoint *ept, void *rxbuf);
-
+ *                  
 /**
  * @brief Gets the tx buffer for message payload.
  *
