@@ -342,16 +342,14 @@ static void rpmsg_virtio_release_rx_buffer(struct rpmsg_device *rdev,
 	metal_mutex_release(&rdev->lock);
 }
 
-static int rpmsg_virtio_notify_wait(struct rpmsg_virtio_device *rvdev, struct virtqueue *vq)
+static int rpmsg_virtio_notify_wait(struct rpmsg_virtio_device *rvdev,
+				    struct virtqueue *vq)
 {
 	struct virtio_vring_info *vring_info;
 
 	vring_info = &rvdev->vdev->vrings_info[vq->vq_queue_index];
 
-	if (!rvdev->notify_wait_cb)
-		return RPMSG_EOPNOTSUPP;
-
-	return rvdev->notify_wait_cb(&rvdev->rdev, vring_info->notifyid);
+	return rpmsg_notify_wait(&rvdev->rdev, vring_info->notifyid);
 }
 
 static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
