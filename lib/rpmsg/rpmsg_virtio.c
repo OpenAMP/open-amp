@@ -358,14 +358,6 @@ static void rpmsg_virtio_release_rx_buffer(struct rpmsg_device *rdev,
 	metal_mutex_release(&rdev->lock);
 }
 
-static int rpmsg_virtio_wait_notified(struct rpmsg_virtio_device *rvdev,
-				      struct virtqueue *vq)
-{
-	return rvdev->vdev->func->wait_notified ?
-	       rvdev->vdev->func->wait_notified(rvdev->vdev, vq) :
-	       RPMSG_EOPNOTSUPP;
-}
-
 static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 						uint32_t *len, int wait)
 {
@@ -395,16 +387,8 @@ static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 		metal_mutex_release(&rdev->lock);
 		if (rp_hdr || !tick_count)
 			break;
-
-		/*
-		 * Try to use wait loop implemented in the virtio dispatcher and
-		 * use metal_sleep_usec() method by default.
-		 */
-		status = rpmsg_virtio_wait_notified(rvdev, rvdev->rvq);
-		if (status != RPMSG_SUCCESS) {
-			metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
-			tick_count--;
-		}
+		metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
+		tick_count--;
 	}
 
 	if (!rp_hdr)

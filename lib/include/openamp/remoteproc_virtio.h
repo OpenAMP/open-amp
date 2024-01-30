@@ -39,12 +39,6 @@ extern "C" {
 /* define vdev notification function user should implement */
 typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
 
-/*
- * Define vdev wait notified function, user can implement this
- * function to wait available Tx buffers.
- */
-typedef int (*rpvdev_wait_notified_func)(void *priv, uint32_t id);
-
 /** @brief Virtio structure for remoteproc instance */
 struct remoteproc_virtio {
 	/** Pointer to private data */
@@ -58,9 +52,6 @@ struct remoteproc_virtio {
 
 	/** Notification function */
 	rpvdev_notify_func notify;
-
-	/** Wait notification function (optional) */
-	rpvdev_wait_notified_func wait_notified;
 
 	/** Virtio device */
 	struct virtio_device vdev;
@@ -134,20 +125,6 @@ int rproc_virtio_notified(struct virtio_device *vdev, uint32_t notifyid);
  * @return true when remote processor is ready.
  */
 void rproc_virtio_wait_remote_ready(struct virtio_device *vdev);
-
-/**
- * @brief Set the remoteproc virtio wait notified function.
- *
- * This \ref wait_notified_cb function will be called to customize the wait, when
- * no Tx buffer is available.
- *
- * @param vdev			Pointer to the virtio device.
- * @param wait_notified_cb	The wait notified callback function.
- *
- * @return 0 for successful, negative value for failure.
- */
-int rproc_virtio_set_wait_notified(struct virtio_device *vdev,
-				   rpvdev_wait_notified_func wait_notified_cb);
 
 #if defined __cplusplus
 }
