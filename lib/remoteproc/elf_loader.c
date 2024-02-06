@@ -368,7 +368,7 @@ static const void *elf_next_load_segment(void *elf_info, int *nseg,
 		if (!phdr)
 			return NULL;
 		elf_parse_segment(elf_info, phdr, &p_type, noffset,
-				  da, NULL, nfsize, nmsize);
+				  NULL, da, nfsize, nmsize);
 		*nseg = *nseg + 1;
 	}
 	return phdr;
