@@ -238,7 +238,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 	if (!vrings_info)
 		goto err0;
 	memset(rpvdev, 0, sizeof(*rpvdev));
-	memset(vrings_info, 0, sizeof(*vrings_info));
+	memset(vrings_info, 0, sizeof(*vrings_info) * num_vrings);
 	vdev = &rpvdev->vdev;
 
 	for (i = 0; i < num_vrings; i++) {
