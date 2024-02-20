@@ -96,7 +96,7 @@ int load_exectuable_noblock(struct remoteproc *rproc,
 				offset, len);
 			return ret;
 		}
-		if (nlen == 0)
+		if (nlen == 0 && nmlen == 0)
 			break;
 		offset = noffset;
 		len = nlen;
