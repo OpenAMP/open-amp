@@ -892,8 +892,8 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	metal_list_init(&rvdev->reclaimer);
 
 	/* Create virtqueues for remote device */
-	status = rpmsg_virtio_create_virtqueues(rvdev, 0, RPMSG_NUM_VRINGS,
-						vq_names, callback);
+	status = virtio_create_virtqueues(rvdev->vdev, 0, RPMSG_NUM_VRINGS,
+					  vq_names, callback, NULL);
 	if (status != RPMSG_SUCCESS)
 		return status;
 
@@ -982,7 +982,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 
 #ifndef VIRTIO_DEVICE_ONLY
 err:
-	rpmsg_virtio_delete_virtqueues(rvdev);
+	virtio_delete_virtqueues(rvdev->vdev);
 	return status;
 #endif /*!VIRTIO_DEVICE_ONLY*/
 }
@@ -1004,7 +1004,7 @@ void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev)
 		rvdev->rvq = 0;
 		rvdev->svq = 0;
 
-		rpmsg_virtio_delete_virtqueues(rvdev);
+		virtio_delete_virtqueues(rvdev->vdev);
 		metal_mutex_deinit(&rdev->lock);
 	}
 }
