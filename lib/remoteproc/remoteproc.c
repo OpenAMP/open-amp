@@ -939,12 +939,14 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	unsigned int num_vrings, i;
 	struct metal_list *node;
 
-#ifdef VIRTIO_DRIVER_ONLY
-	role = (role != VIRTIO_DEV_DRIVER) ? 0xFFFFFFFFUL : role;
+#if !VIRTIO_DRIVER_SUPPORT
+	if (role == VIRTIO_DEV_DRIVER)
+		return NULL;
 #endif
 
-#ifdef VIRTIO_DEVICE_ONLY
-	role = (role != VIRTIO_DEV_DEVICE) ? 0xFFFFFFFFUL : role;
+#if !VIRTIO_DEVICE_SUPPORT
+	if (role == VIRTIO_DEV_DEVICE)
+		return NULL;
 #endif
 
 	if (!rproc || (role != VIRTIO_DEV_DEVICE && role != VIRTIO_DEV_DRIVER))
