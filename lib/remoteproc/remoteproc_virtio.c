@@ -55,14 +55,13 @@ static int rproc_virtio_create_virtqueue(struct virtio_device *vdev,
 	if (!vring_info->vq)
 		return ERROR_NO_MEM;
 
-#ifndef VIRTIO_DEVICE_ONLY
-	if (vdev->role == VIRTIO_DEV_DRIVER) {
+	if (VIRTIO_DRIVER_SUPPORT && vdev->role == VIRTIO_DEV_DRIVER) {
 		size_t offset = metal_io_virt_to_offset(vring_info->io, vring_alloc->vaddr);
 		size_t size = vring_size(vring_alloc->num_descs, vring_alloc->align);
 
 		metal_io_block_set(vring_info->io, offset, 0, size);
 	}
-#endif
+
 	ret = virtqueue_create(vdev, idx, name, vring_alloc, callback,
 			       vdev->func->notify, vring_info->vq);
 	if (ret)
@@ -129,7 +128,7 @@ static unsigned char rproc_virtio_get_status(struct virtio_device *vdev)
 	return status;
 }
 
-#ifndef VIRTIO_DEVICE_ONLY
+#if VIRTIO_DRIVER_SUPPORT
 static void rproc_virtio_set_status(struct virtio_device *vdev,
 				    unsigned char status)
 {
@@ -184,7 +183,7 @@ static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
 	return dfeatures & gfeatures;
 }
 
-#ifndef VIRTIO_DEVICE_ONLY
+#if VIRTIO_DRIVER_SUPPORT
 static void rproc_virtio_set_features(struct virtio_device *vdev,
 				      uint32_t features)
 {
@@ -234,7 +233,7 @@ static void rproc_virtio_read_config(struct virtio_device *vdev,
 	}
 }
 
-#ifndef VIRTIO_DEVICE_ONLY
+#if VIRTIO_DRIVER_SUPPORT
 static void rproc_virtio_write_config(struct virtio_device *vdev,
 				      uint32_t offset, void *src, int length)
 {
@@ -272,7 +271,7 @@ static const struct virtio_dispatch remoteproc_virtio_dispatch_funcs = {
 	.get_features = rproc_virtio_get_features,
 	.read_config = rproc_virtio_read_config,
 	.notify = rproc_virtio_virtqueue_notify,
-#ifndef VIRTIO_DEVICE_ONLY
+#if VIRTIO_DRIVER_SUPPORT
 	/*
 	 * We suppose here that the vdev is in a shared memory so that can
 	 * be access only by one core: the host. In this case salve core has
@@ -327,7 +326,7 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
 	vdev->vrings_num = num_vrings;
 	vdev->func = &remoteproc_virtio_dispatch_funcs;
 
-#ifndef VIRTIO_DEVICE_ONLY
+#if VIRTIO_DRIVER_SUPPORT
 	if (role == VIRTIO_DEV_DRIVER) {
 		uint32_t dfeatures = rproc_virtio_get_dfeatures(vdev);
 		/* Assume the virtio driver support all remote features */
@@ -401,15 +400,14 @@ void rproc_virtio_wait_remote_ready(struct virtio_device *vdev)
 {
 	uint8_t status;
 
-#ifndef VIRTIO_DEVICE_ONLY
 	/*
 	 * No status available for remote. As virtio driver has not to wait
 	 * remote action, we can return. Behavior should be updated
 	 * in future if a remote status is added.
 	 */
-	if (vdev->role == VIRTIO_DEV_DRIVER)
+	if (VIRTIO_DRIVER_SUPPORT && vdev->role == VIRTIO_DEV_DRIVER)
 		return;
-#endif
+
 	while (1) {
 		status = rproc_virtio_get_status(vdev);
 		if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK)

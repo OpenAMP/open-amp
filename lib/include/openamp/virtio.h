@@ -85,14 +85,12 @@ __deprecated static inline int deprecated_virtio_dev_slave(void)
 	return VIRTIO_DEV_DEVICE;
 }
 
-#ifdef VIRTIO_MASTER_ONLY
-#define VIRTIO_DRIVER_ONLY
-#warning "VIRTIO_MASTER_ONLY is deprecated, please use VIRTIO_DRIVER_ONLY"
+#if defined(VIRTIO_MASTER_ONLY) || defined(VIRTIO_DRIVER_ONLY)
+#warning "VIRTIO_MASTER_ONLY and VIRTIO_DRIVER_ONLY are deprecated, please use VIRTIO_DEVICE_SUPPORT=0"
 #endif
 
-#ifdef VIRTIO_SLAVE_ONLY
-#define VIRTIO_DEVICE_ONLY
-#warning "VIRTIO_SLAVE_ONLY is deprecated, please use VIRTIO_DEVICE_ONLY"
+#if defined(VIRTIO_SLAVE_ONLY) || defined(VIRTIO_DEVICE_ONLY)
+#warning "VIRTIO_SLAVE_ONLY and VIRTIO_DEVICE_ONLY are deprecated, please use VIRTIO_DRIVER_SUPPORT=0"
 #endif
 
 /** @brief Virtio device identifier. */
