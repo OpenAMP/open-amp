@@ -23,7 +23,31 @@
  *
  * @return 0 for success, or negative value for failure
  */
-static int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc);
+static int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc)
+{
+	struct fw_rsc_carveout *carve_rsc = rsc;
+	metal_phys_addr_t da;
+	metal_phys_addr_t pa;
+	size_t size;
+	unsigned int attribute;
+
+	/* Validate resource fields */
+	if (!carve_rsc) {
+		return -RPROC_ERR_RSC_TAB_NP;
+	}
+
+	if (carve_rsc->reserved) {
+		return -RPROC_ERR_RSC_TAB_RSVD;
+	}
+	pa = carve_rsc->pa;
+	da = carve_rsc->da;
+	size = carve_rsc->len;
+	attribute = carve_rsc->flags;
+	if (remoteproc_mmap(rproc, &pa, &da, size, attribute, NULL))
+		return 0;
+	else
+		return -RPROC_EINVAL;
+}
 
 /**
  * @internal
@@ -35,10 +59,90 @@ static int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc);
  *
  * @return No service error
  */
-static int handle_trace_rsc(struct remoteproc *rproc, void *rsc);
-static int handle_vdev_rsc(struct remoteproc *rproc, void *rsc);
-static int handle_vendor_rsc(struct remoteproc *rproc, void *rsc);
-static int handle_dummy_rsc(struct remoteproc *rproc, void *rsc);
+static int handle_trace_rsc(struct remoteproc *rproc, void *rsc)
+{
+	struct fw_rsc_trace *vdev_rsc = rsc;
+	(void)rproc;
+
+	if (vdev_rsc->da != FW_RSC_U32_ADDR_ANY && vdev_rsc->len != 0)
+		return 0;
+	/* FIXME: The host should allocated a memory used by remote */
+
+	return -RPROC_ERR_RSC_TAB_NS;
+}
+
+static int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
+{
+	struct fw_rsc_vdev *vdev_rsc = rsc;
+	int i, num_vrings;
+	unsigned int notifyid;
+	struct fw_rsc_vdev_vring *vring_rsc;
+
+	/* only assign notification IDs but do not initialize vdev */
+	notifyid = vdev_rsc->notifyid;
+	notifyid = remoteproc_allocate_id(rproc,
+					  notifyid,
+					  notifyid == RSC_NOTIFY_ID_ANY ?
+					  RSC_NOTIFY_ID_ANY : notifyid + 1);
+	if (notifyid != RSC_NOTIFY_ID_ANY)
+		vdev_rsc->notifyid = notifyid;
+	else
+		return -RPROC_ERR_RSC_TAB_NP;
+
+	num_vrings = vdev_rsc->num_of_vrings;
+	for (i = 0; i < num_vrings; i++) {
+		vring_rsc = &vdev_rsc->vring[i];
+		notifyid = vring_rsc->notifyid;
+		notifyid = remoteproc_allocate_id(rproc,
+						  notifyid,
+						  notifyid == RSC_NOTIFY_ID_ANY ?
+						  RSC_NOTIFY_ID_ANY : notifyid + 1);
+		if (notifyid != RSC_NOTIFY_ID_ANY)
+			vring_rsc->notifyid = notifyid;
+		else
+			goto err;
+	}
+
+	return 0;
+
+err:
+	for (i--; i >= 0; i--) {
+		vring_rsc = &vdev_rsc->vring[i];
+		metal_bitmap_clear_bit(&rproc->bitmap, vring_rsc->notifyid);
+	}
+	metal_bitmap_clear_bit(&rproc->bitmap, vdev_rsc->notifyid);
+
+	return -RPROC_ERR_RSC_TAB_NP;
+}
+
+static int handle_vendor_rsc(struct remoteproc *rproc, void *rsc)
+{
+	if (rproc && rproc->ops->handle_rsc) {
+		struct fw_rsc_vendor *vend_rsc = rsc;
+		size_t len = vend_rsc->len;
+
+		return rproc->ops->handle_rsc(rproc, rsc, len);
+	}
+	return -RPROC_ERR_RSC_TAB_NS;
+}
+
+/**
+ * @internal
+ *
+ * @brief Dummy resource handler.
+ *
+ * @param rproc	Pointer to remote remoteproc
+ * @param rsc	Pointer to trace resource
+ *
+ * @return No service error
+ */
+static int handle_dummy_rsc(struct remoteproc *rproc, void *rsc)
+{
+	(void)rproc;
+	(void)rsc;
+
+	return -RPROC_ERR_RSC_TAB_NS;
+}
 
 /* Standard control request handling. */
 typedef int (*rsc_handler)(struct remoteproc *rproc, void *rsc);
@@ -105,117 +209,6 @@ int handle_rsc_table(struct remoteproc *rproc,
 	}
 
 	return status;
-}
-
-static int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc)
-{
-	struct fw_rsc_carveout *carve_rsc = rsc;
-	metal_phys_addr_t da;
-	metal_phys_addr_t pa;
-	size_t size;
-	unsigned int attribute;
-
-	/* Validate resource fields */
-	if (!carve_rsc) {
-		return -RPROC_ERR_RSC_TAB_NP;
-	}
-
-	if (carve_rsc->reserved) {
-		return -RPROC_ERR_RSC_TAB_RSVD;
-	}
-	pa = carve_rsc->pa;
-	da = carve_rsc->da;
-	size = carve_rsc->len;
-	attribute = carve_rsc->flags;
-	if (remoteproc_mmap(rproc, &pa, &da, size, attribute, NULL))
-		return 0;
-	else
-		return -RPROC_EINVAL;
-}
-
-static int handle_vendor_rsc(struct remoteproc *rproc, void *rsc)
-{
-	if (rproc && rproc->ops->handle_rsc) {
-		struct fw_rsc_vendor *vend_rsc = rsc;
-		size_t len = vend_rsc->len;
-
-		return rproc->ops->handle_rsc(rproc, rsc, len);
-	}
-	return -RPROC_ERR_RSC_TAB_NS;
-}
-
-static int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
-{
-	struct fw_rsc_vdev *vdev_rsc = rsc;
-	int i, num_vrings;
-	unsigned int notifyid;
-	struct fw_rsc_vdev_vring *vring_rsc;
-
-	/* only assign notification IDs but do not initialize vdev */
-	notifyid = vdev_rsc->notifyid;
-	notifyid = remoteproc_allocate_id(rproc,
-					  notifyid,
-					  notifyid == RSC_NOTIFY_ID_ANY ?
-					  RSC_NOTIFY_ID_ANY : notifyid + 1);
-	if (notifyid != RSC_NOTIFY_ID_ANY)
-		vdev_rsc->notifyid = notifyid;
-	else
-		return -RPROC_ERR_RSC_TAB_NP;
-
-	num_vrings = vdev_rsc->num_of_vrings;
-	for (i = 0; i < num_vrings; i++) {
-		vring_rsc = &vdev_rsc->vring[i];
-		notifyid = vring_rsc->notifyid;
-		notifyid = remoteproc_allocate_id(rproc,
-						  notifyid,
-						  notifyid == RSC_NOTIFY_ID_ANY ?
-						  RSC_NOTIFY_ID_ANY : notifyid + 1);
-		if (notifyid != RSC_NOTIFY_ID_ANY)
-			vring_rsc->notifyid = notifyid;
-		else
-			goto err;
-	}
-
-	return 0;
-
-err:
-	for (i--; i >= 0; i--) {
-		vring_rsc = &vdev_rsc->vring[i];
-		metal_bitmap_clear_bit(&rproc->bitmap, vring_rsc->notifyid);
-	}
-	metal_bitmap_clear_bit(&rproc->bitmap, vdev_rsc->notifyid);
-
-	return -RPROC_ERR_RSC_TAB_NP;
-}
-
-static int handle_trace_rsc(struct remoteproc *rproc, void *rsc)
-{
-	struct fw_rsc_trace *vdev_rsc = rsc;
-	(void)rproc;
-
-	if (vdev_rsc->da != FW_RSC_U32_ADDR_ANY && vdev_rsc->len != 0)
-		return 0;
-	/* FIXME: The host should allocated a memory used by remote */
-
-	return -RPROC_ERR_RSC_TAB_NS;
-}
-
-/**
- * @internal
- *
- * @brief Dummy resource handler.
- *
- * @param rproc	Pointer to remote remoteproc
- * @param rsc	Pointer to trace resource
- *
- * @return No service error
- */
-static int handle_dummy_rsc(struct remoteproc *rproc, void *rsc)
-{
-	(void)rproc;
-	(void)rsc;
-
-	return -RPROC_ERR_RSC_TAB_NS;
 }
 
 size_t find_rsc(void *rsc_table, unsigned int rsc_type, unsigned int index)
