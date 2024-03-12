@@ -326,6 +326,8 @@ static bool rpmsg_virtio_release_rx_buffer_nolock(struct rpmsg_virtio_device *rv
 	/* Return buffer on virtqueue. */
 	len = virtqueue_get_buffer_length(rvdev->rvq, idx);
 	rpmsg_virtio_return_buffer(rvdev, rp_hdr, len, idx);
+	/* Tell peer we returned an rx buffer */
+	virtqueue_kick(rvdev->rvq);
 
 	return true;
 }
@@ -340,11 +342,8 @@ static void rpmsg_virtio_release_rx_buffer(struct rpmsg_device *rdev,
 	rp_hdr = RPMSG_LOCATE_HDR(rxbuf);
 
 	metal_mutex_acquire(&rdev->lock);
-	if (rpmsg_virtio_buf_held_dec_test(rp_hdr)) {
+	if (rpmsg_virtio_buf_held_dec_test(rp_hdr))
 		rpmsg_virtio_release_rx_buffer_nolock(rvdev, rp_hdr);
-		/* Tell peer we return some rx buffers */
-		virtqueue_kick(rvdev->rvq);
-	}
 	metal_mutex_release(&rdev->lock);
 }
 
@@ -608,10 +607,6 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 			rpmsg_virtio_release_rx_buffer_nolock(rvdev, rp_hdr);
 
 		rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
-		if (!rp_hdr) {
-			/* tell peer we return some rx buffer */
-			virtqueue_kick(rvdev->rvq);
-		}
 		metal_mutex_release(&rdev->lock);
 	}
 }
