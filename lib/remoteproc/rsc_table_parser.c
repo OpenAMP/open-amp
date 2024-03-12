@@ -10,7 +10,37 @@
 #include <metal/utilities.h>
 #include <openamp/rsc_table_parser.h>
 
+#define RSC_TAB_SUPPORTED_VERSION 1
+
+/**
+ * @internal
+ *
+ * @brief Carveout resource handler.
+ *
+ * @param rproc	Pointer to remote remoteproc
+ * @param rsc	Pointer to carveout resource
+ *
+ * @return 0 for success, or negative value for failure
+ */
+static int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc);
+
+/**
+ * @internal
+ *
+ * @brief Trace resource handler.
+ *
+ * @param rproc	Pointer to remote remoteproc
+ * @param rsc	Pointer to trace resource
+ *
+ * @return No service error
+ */
+static int handle_trace_rsc(struct remoteproc *rproc, void *rsc);
+static int handle_vdev_rsc(struct remoteproc *rproc, void *rsc);
+static int handle_vendor_rsc(struct remoteproc *rproc, void *rsc);
 static int handle_dummy_rsc(struct remoteproc *rproc, void *rsc);
+
+/* Standard control request handling. */
+typedef int (*rsc_handler)(struct remoteproc *rproc, void *rsc);
 
 /* Resources handler */
 static const rsc_handler rsc_handler_table[] = {
@@ -76,7 +106,7 @@ int handle_rsc_table(struct remoteproc *rproc,
 	return status;
 }
 
-int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc)
+static int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc)
 {
 	struct fw_rsc_carveout *carve_rsc = rsc;
 	metal_phys_addr_t da;
@@ -102,7 +132,7 @@ int handle_carve_out_rsc(struct remoteproc *rproc, void *rsc)
 		return -RPROC_EINVAL;
 }
 
-int handle_vendor_rsc(struct remoteproc *rproc, void *rsc)
+static int handle_vendor_rsc(struct remoteproc *rproc, void *rsc)
 {
 	if (rproc && rproc->ops->handle_rsc) {
 		struct fw_rsc_vendor *vend_rsc = rsc;
@@ -113,7 +143,7 @@ int handle_vendor_rsc(struct remoteproc *rproc, void *rsc)
 	return -RPROC_ERR_RSC_TAB_NS;
 }
 
-int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
+static int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
 {
 	struct fw_rsc_vdev *vdev_rsc = rsc;
 	int i, num_vrings;
@@ -157,7 +187,7 @@ err:
 	return -RPROC_ERR_RSC_TAB_NP;
 }
 
-int handle_trace_rsc(struct remoteproc *rproc, void *rsc)
+static int handle_trace_rsc(struct remoteproc *rproc, void *rsc)
 {
 	struct fw_rsc_trace *vdev_rsc = rsc;
 	(void)rproc;
