@@ -125,6 +125,20 @@ static void linux_proc_block_set(struct metal_io_region *io,
 	return;
 }
 
+static metal_phys_addr_t linux_proc_offset_to_phys(struct metal_io_region *io,
+						   unsigned long offset)
+{
+	/* offset and phys are the same here */
+	return (offset < metal_io_region_size(io) ? offset : METAL_BAD_OFFSET);
+}
+
+static unsigned long linux_proc_phys_to_offset(struct metal_io_region *io,
+					       metal_phys_addr_t phys)
+{
+	/* offset and phys are the same here */
+	return (phys < metal_io_region_size(io) ? phys : METAL_BAD_PHYS);
+}
+
 static struct metal_io_ops linux_proc_io_ops = {
 	.write = NULL,
 	.read = NULL,
@@ -132,6 +146,8 @@ static struct metal_io_ops linux_proc_io_ops = {
 	.block_write = linux_proc_block_write,
 	.block_set = linux_proc_block_set,
 	.close = NULL,
+	.offset_to_phys = linux_proc_offset_to_phys,
+	.phys_to_offset = linux_proc_phys_to_offset,
 };
 
 static int sk_unix_client(const char *descr)
@@ -228,7 +244,6 @@ linux_proc_init(struct remoteproc *rproc,
 {
 	struct remoteproc_priv *prproc = arg;
 	struct metal_io_region *io;
-	struct remoteproc_mem *shm;
 	struct vring_ipi_info *ipi;
 	int ret;
 
@@ -243,13 +258,12 @@ linux_proc_init(struct remoteproc *rproc,
 		return NULL;
 	}
 	prproc->shm_old_io = io;
-	shm = &prproc->shm;
-	shm->pa = 0;
-	shm->da = 0;
-	shm->size = prproc->shm_size;
-	metal_io_init(&prproc->shm_new_io, io->virt, &shm->pa,
-		      shm->size, -1, 0, &linux_proc_io_ops);
-	shm->io = &prproc->shm_new_io;
+
+	metal_io_init(&prproc->shm_new_io, io->virt, NULL,
+		      prproc->shm_size, -1, 0, &linux_proc_io_ops);
+
+	remoteproc_init_mem(&prproc->shm, NULL, 0, 0,
+			    prproc->shm_size, &prproc->shm_new_io);
 
 	/* Open IPI */
 	ipi = &prproc->ipi;
@@ -329,7 +343,7 @@ linux_proc_mmap(struct remoteproc *rproc, metal_phys_addr_t *pa,
 	if (va) {
 		if (io)
 			*io = mem->io;
-		metal_list_add_tail(&rproc->mems, &mem->node);
+		remoteproc_add_mem(rproc, mem);
 	}
 	return va;
 }
