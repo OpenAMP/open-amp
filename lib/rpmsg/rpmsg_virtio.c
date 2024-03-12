@@ -569,14 +569,16 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 	uint16_t idx;
 	int status;
 
-	metal_mutex_acquire(&rdev->lock);
+	while (1) {
+		/* Process the received data from remote node */
+		metal_mutex_acquire(&rdev->lock);
+		rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
+		metal_mutex_release(&rdev->lock);
 
-	/* Process the received data from remote node */
-	rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
+		/* No more filled rx buffers */
+		if (!rp_hdr)
+			break;
 
-	metal_mutex_release(&rdev->lock);
-
-	while (rp_hdr) {
 		rp_hdr->reserved = idx;
 
 		/* Get the channel node from the remote device channels list. */
@@ -605,8 +607,6 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 		rpmsg_ept_decref(ept);
 		if (rpmsg_virtio_buf_held_dec_test(rp_hdr))
 			rpmsg_virtio_release_rx_buffer_nolock(rvdev, rp_hdr);
-
-		rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
 		metal_mutex_release(&rdev->lock);
 	}
 }
