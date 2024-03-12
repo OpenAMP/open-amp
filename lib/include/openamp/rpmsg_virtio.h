@@ -143,9 +143,12 @@ rpmsg_virtio_get_role(struct rpmsg_virtio_device *rvdev)
 /**
  * @brief Set rpmsg virtio device status.
  *
+ * Deprecated: Use virtio_set_status() instead
+ *
  * @param rvdev		Pointer to rpmsg virtio device.
  * @param status	Value to be set as rpmsg virtio device status.
  */
+__deprecated
 static inline void rpmsg_virtio_set_status(struct rpmsg_virtio_device *rvdev,
 					   uint8_t status)
 {
@@ -155,10 +158,13 @@ static inline void rpmsg_virtio_set_status(struct rpmsg_virtio_device *rvdev,
 /**
  * @brief Retrieve rpmsg virtio device status.
  *
+ * Deprecated: Use virtio_get_status() instead
+ *
  * @param rvdev	Pointer to rpmsg virtio device.
  *
  * @return The rpmsg virtio device status.
  */
+__deprecated
 static inline uint8_t rpmsg_virtio_get_status(struct rpmsg_virtio_device *rvdev)
 {
 	return rvdev->vdev->func->get_status(rvdev->vdev);
@@ -167,10 +173,13 @@ static inline uint8_t rpmsg_virtio_get_status(struct rpmsg_virtio_device *rvdev)
 /**
  * @brief Get the rpmsg virtio device features.
  *
+ * Deprecated: Use virtio_get_features() instead
+ *
  * @param rvdev	Pointer to the rpmsg virtio device.
  *
  * @return The features supported by both the rpmsg driver and rpmsg device.
  */
+__deprecated
 static inline uint32_t
 rpmsg_virtio_get_features(struct rpmsg_virtio_device *rvdev)
 {
@@ -180,11 +189,14 @@ rpmsg_virtio_get_features(struct rpmsg_virtio_device *rvdev)
 /**
  * @brief Retrieve configuration data from the rpmsg virtio device.
  *
+ * Deprecated: Use virtio_read_config() instead
+ *
  * @param rvdev		Pointer to the rpmsg virtio device.
  * @param offset	Offset of the data within the configuration area.
  * @param dst		Address of the buffer that will hold the data.
  * @param length	Length of the data to be retrieved.
  */
+__deprecated
 static inline void
 rpmsg_virtio_read_config(struct rpmsg_virtio_device *rvdev,
 			 uint32_t offset, void *dst, int length)
@@ -195,6 +207,8 @@ rpmsg_virtio_read_config(struct rpmsg_virtio_device *rvdev,
 /**
  * @brief Write configuration data to the rpmsg virtio device.
  *
+ * Deprecated: Use virtio_write_config() instead
+ *
  * @param rvdev		Pointer to the rpmsg virtio device.
  * @param offset	Offset of the data within the configuration area.
  * @param src		Address of the buffer that holds the data to write.
@@ -202,6 +216,7 @@ rpmsg_virtio_read_config(struct rpmsg_virtio_device *rvdev,
  *
  * @return 0 on success, otherwise error code.
  */
+__deprecated
 static inline void
 rpmsg_virtio_write_config(struct rpmsg_virtio_device *rvdev,
 			 uint32_t offset, void *src, int length)
