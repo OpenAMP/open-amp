@@ -177,6 +177,7 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 
 uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx)
 {
+	/* Invalidate the desc entry written by driver before accessing it */
 	VRING_INVALIDATE(&vq->vq_ring.desc[idx].len,
 			 sizeof(vq->vq_ring.desc[idx].len));
 	return vq->vq_ring.desc[idx].len;
@@ -184,6 +185,7 @@ uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx)
 
 void *virtqueue_get_buffer_addr(struct virtqueue *vq, uint16_t idx)
 {
+	/* Invalidate the desc entry written by driver before accessing it */
 	VRING_INVALIDATE(&vq->vq_ring.desc[idx].addr,
 			 sizeof(vq->vq_ring.desc[idx].addr));
 	return virtqueue_phys_to_virt(vq, vq->vq_ring.desc[idx].addr);
@@ -225,11 +227,8 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 			 sizeof(vq->vq_ring.avail->ring[head_idx]));
 	*avail_idx = vq->vq_ring.avail->ring[head_idx];
 
-	/* Invalidate the desc entry written by driver before accessing it */
-	VRING_INVALIDATE(&vq->vq_ring.desc[*avail_idx],
-			 sizeof(vq->vq_ring.desc[*avail_idx]));
-	buffer = virtqueue_phys_to_virt(vq, vq->vq_ring.desc[*avail_idx].addr);
-	*len = vq->vq_ring.desc[*avail_idx].len;
+	buffer = virtqueue_get_buffer_addr(vq, *avail_idx);
+	*len = virtqueue_get_buffer_length(vq, *avail_idx);
 
 	VQUEUE_IDLE(vq);
 
