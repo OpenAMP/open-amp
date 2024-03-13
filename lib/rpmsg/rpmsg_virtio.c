@@ -120,7 +120,7 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
 
 		(void)idx;
 		/* Initialize buffer node */
-		vqbuf.buf = buffer;
+		vqbuf.buf = metal_io_virt_to_phys(rvdev->shbuf_io, buffer);
 		vqbuf.len = len;
 		ret = virtqueue_add_buffer(rvdev->rvq, &vqbuf, 0, 1, buffer);
 		RPMSG_ASSERT(ret == VQUEUE_SUCCESS, "add buffer failed\r\n");
@@ -162,7 +162,7 @@ static int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev,
 		(void)idx;
 
 		/* Initialize buffer node */
-		vqbuf.buf = buffer;
+		vqbuf.buf = metal_io_virt_to_phys(rvdev->shbuf_io, buffer);
 		vqbuf.len = len;
 		return virtqueue_add_buffer(rvdev->svq, &vqbuf, 1, 0, buffer);
 	}
@@ -224,7 +224,12 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 #endif /*!VIRTIO_DEVICE_ONLY*/
 #ifndef VIRTIO_DRIVER_ONLY
 	} else if (role == RPMSG_REMOTE) {
-		data = virtqueue_get_available_buffer(rvdev->svq, idx, len);
+		uint64_t phys_data;
+		int status;
+
+		status = virtqueue_get_available_buffer(rvdev->svq, idx, &phys_data, len);
+		if (!status)
+			data = metal_io_phys_to_virt(rvdev->shbuf_io, phys_data);
 #endif /*!VIRTIO_DRIVER_ONLY*/
 	}
 
@@ -256,8 +261,12 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 
 #ifndef VIRTIO_DRIVER_ONLY
 	if (role == RPMSG_REMOTE) {
-		data =
-		    virtqueue_get_available_buffer(rvdev->rvq, idx, len);
+		uint64_t phys_data;
+		int status;
+
+		status = virtqueue_get_available_buffer(rvdev->rvq, idx, &phys_data, len);
+		if (!status)
+			data = metal_io_phys_to_virt(rvdev->shbuf_io, phys_data);
 	}
 #endif /*!VIRTIO_DRIVER_ONLY*/
 
@@ -815,7 +824,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	const char *vq_names[RPMSG_NUM_VRINGS];
 	vq_callback callback[RPMSG_NUM_VRINGS];
 	int status;
-	unsigned int i, role;
+	unsigned int role;
 
 	if (!rvdev || !vdev || !shm_io)
 		return RPMSG_ERR_PARAM;
@@ -918,14 +927,6 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	 */
 	virtqueue_disable_cb(rvdev->svq);
 
-	/* TODO: can have a virtio function to set the shared memory I/O */
-	for (i = 0; i < RPMSG_NUM_VRINGS; i++) {
-		struct virtqueue *vq;
-
-		vq = vdev->vrings_info[i].vq;
-		vq->shm_io = shm_io;
-	}
-
 #ifndef VIRTIO_DEVICE_ONLY
 	if (role == RPMSG_HOST) {
 		struct virtqueue_buf vqbuf;
@@ -943,7 +944,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 				goto err;
 			}
 
-			vqbuf.buf = buffer;
+			vqbuf.buf = metal_io_virt_to_phys(shm_io, buffer);
 
 			metal_io_block_set(shm_io,
 					   metal_io_virt_to_offset(shm_io,
