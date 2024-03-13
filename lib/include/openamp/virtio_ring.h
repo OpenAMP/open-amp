@@ -186,31 +186,6 @@ static inline int vring_size(unsigned int num, unsigned long align)
 	return size;
 }
 
-static inline void
-vring_init(struct vring *vr, unsigned int num, uint8_t *p, unsigned long align)
-{
-	vr->num = num;
-	vr->desc = (struct vring_desc *)p;
-	vr->avail = (struct vring_avail *)(p + num * sizeof(struct vring_desc));
-	vr->used = (struct vring_used *)
-	    (((unsigned long)&vr->avail->ring[num] + sizeof(uint16_t) +
-	      align - 1) & ~(align - 1));
-}
-
-/*
- * The following is used with VIRTIO_RING_F_EVENT_IDX.
- *
- * Assuming a given event_idx value from the other size, if we have
- * just incremented index from old to new_idx, should we trigger an
- * event?
- */
-static inline int
-vring_need_event(uint16_t event_idx, uint16_t new_idx, uint16_t old)
-{
-	return (uint16_t)(new_idx - event_idx - 1) <
-	    (uint16_t)(new_idx - old);
-}
-
 #if defined __cplusplus
 }
 #endif
