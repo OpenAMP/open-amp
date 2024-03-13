@@ -8,7 +8,8 @@
 
 #include <metal/io.h>
 #include <metal/utilities.h>
-#include <openamp/rsc_table_parser.h>
+
+#include "rsc_table_parser.h"
 
 #define RSC_TAB_SUPPORTED_VERSION 1
 
