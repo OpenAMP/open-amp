@@ -115,7 +115,6 @@ struct remoteproc *r5_rproc_init(struct remoteproc *rproc,
 	priv->rproc = rproc;
 	priv->cpu_id = cpu_id;
 	priv->rproc->ops = ops;
-	metal_list_init(&priv->rproc->mems);
 	priv->rproc->priv = priv;
 	priv->rpu_base = RPU_BASE_ADDR;
 	metal_io_init(&priv->rpu_io, (void *)RPU_BASE_ADDR, &priv->rpu_base,
