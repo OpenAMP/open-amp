@@ -81,7 +81,6 @@ static void *apu_rproc_mmap(struct remoteproc *rproc,
 	if (!mem)
 		return NULL;
 	mem->pa = lpa;
-	mem->da = lda;
 
 	*io = metal_allocate_memory(sizeof(struct metal_io_region));
 	if (!*io) {
@@ -95,11 +94,10 @@ static void *apu_rproc_mmap(struct remoteproc *rproc,
 	 */
 	metal_io_init(*io, (void *)mem->pa, &mem->pa, size,
 		      sizeof(metal_phys_addr_t)<<3, attribute, NULL);
-	mem->io = *io;
-	metal_list_add_tail(&rproc->mems, &mem->node);
+	remoteproc_init_mem(mem, NULL, lpa, lda, size, *io);
+	remoteproc_add_mem(rproc, mem);
 	*pa = lpa;
 	*da = lda;
-	mem->size = size;
 	return metal_io_phys_to_virt(*io, mem->pa);
 }
 
