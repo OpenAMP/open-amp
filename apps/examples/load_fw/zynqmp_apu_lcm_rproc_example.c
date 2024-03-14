@@ -27,7 +27,6 @@ static struct remoteproc *apu_rproc_init(struct remoteproc *rproc,
 	priv->rproc = rproc;
 	priv->cpu_id = cpu_id;
 	priv->rproc->ops = ops;
-	metal_list_init(&priv->rproc->mems);
 	priv->rproc->priv = priv;
 	rproc->state = RPROC_READY;
 	return priv->rproc;
