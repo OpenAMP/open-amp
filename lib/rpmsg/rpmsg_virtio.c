@@ -277,10 +277,10 @@ static int rpmsg_virtio_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
 	uint8_t status;
 
 	while (1) {
-		status = rpmsg_virtio_get_status(rvdev);
+		virtio_get_status(rvdev->vdev, &status);
 		/* Busy wait until the remote is ready */
 		if (status & VIRTIO_CONFIG_STATUS_NEEDS_RESET) {
-			rpmsg_virtio_set_status(rvdev, 0);
+			virtio_set_status(rvdev->vdev, 0);
 			/* TODO notify remote processor */
 		} else if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK) {
 			return true;
@@ -375,6 +375,7 @@ static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 {
 	struct rpmsg_virtio_device *rvdev;
 	struct rpmsg_hdr *rp_hdr;
+	uint8_t virtio_status;
 	uint16_t idx;
 	int tick_count;
 	int status;
@@ -383,8 +384,8 @@ static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 	rvdev = metal_container_of(rdev, struct rpmsg_virtio_device, rdev);
 
 	/* Validate device state */
-	status = rpmsg_virtio_get_status(rvdev);
-	if (!(status & VIRTIO_CONFIG_STATUS_DRIVER_OK))
+	status = virtio_get_status(rvdev->vdev, &virtio_status);
+	if (status || !(virtio_status & VIRTIO_CONFIG_STATUS_DRIVER_OK))
 		return NULL;
 
 	if (wait)
@@ -814,6 +815,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	struct rpmsg_device *rdev;
 	const char *vq_names[RPMSG_NUM_VRINGS];
 	vq_callback callback[RPMSG_NUM_VRINGS];
+	uint32_t features;
 	int status;
 	unsigned int i, role;
 
@@ -857,8 +859,10 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 		rpmsg_virtio_wait_remote_ready(rvdev);
 	}
 #endif /*!VIRTIO_DRIVER_ONLY*/
-	vdev->features = rpmsg_virtio_get_features(rvdev);
-	rdev->support_ns = !!(vdev->features & (1 << VIRTIO_RPMSG_F_NS));
+	status = virtio_get_features(rvdev->vdev, &features);
+	if (status)
+		return status;
+	rdev->support_ns = !!(features & (1 << VIRTIO_RPMSG_F_NS));
 
 #ifndef VIRTIO_DEVICE_ONLY
 	if (role == RPMSG_HOST) {
@@ -974,8 +978,11 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	}
 
 #ifndef VIRTIO_DEVICE_ONLY
-	if (role == RPMSG_HOST)
-		rpmsg_virtio_set_status(rvdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
+	if (role == RPMSG_HOST) {
+		status = virtio_set_status(rvdev->vdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
+		if (status)
+			goto err;
+	}
 #endif /*!VIRTIO_DEVICE_ONLY*/
 
 	return RPMSG_SUCCESS;
