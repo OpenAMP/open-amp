@@ -212,6 +212,8 @@ rpmsg_virtio_write_config(struct rpmsg_virtio_device *rvdev,
 /**
  * @brief Create the rpmsg virtio device virtqueue.
  *
+ * Deprecated: Use virtio_create_virtqueues() instead
+ *
  * @param rvdev		Pointer to the rpmsg virtio device.
  * @param flags		Create flag.
  * @param nvqs		The virtqueue number.
@@ -220,6 +222,7 @@ rpmsg_virtio_write_config(struct rpmsg_virtio_device *rvdev,
  *
  * @return 0 on success, otherwise error code.
  */
+__deprecated
 static inline int
 rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device *rvdev,
 			       int flags, unsigned int nvqs,
@@ -233,8 +236,11 @@ rpmsg_virtio_create_virtqueues(struct rpmsg_virtio_device *rvdev,
 /**
  * @brief Delete the virtqueues created in rpmsg_virtio_create_virtqueues()
  *
+ * Deprecated: Use virtio_delete_virtqueues() instead
+ *
  * @param rvdev	Pointer to the rpmsg virtio device
  */
+__deprecated
 static inline void
 rpmsg_virtio_delete_virtqueues(struct rpmsg_virtio_device *rvdev)
 {
