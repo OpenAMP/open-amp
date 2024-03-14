@@ -656,7 +656,7 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 				    size_t len, uint32_t src, void *priv)
 {
-	struct rpmsg_device *rdev = ept->rdev;
+	struct rpmsg_device *rdev = priv;
 	struct rpmsg_virtio_device *rvdev = metal_container_of(rdev,
 							       struct rpmsg_virtio_device,
 							       rdev);
@@ -667,7 +667,7 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 	bool ept_to_release;
 	char name[RPMSG_NAME_SIZE];
 
-	(void)priv;
+	(void)ept;
 	(void)src;
 
 	ns_msg = data;
@@ -991,7 +991,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	if (rdev->support_ns) {
 		rpmsg_register_endpoint(rdev, &rdev->ns_ept, "NS",
 				     RPMSG_NS_EPT_ADDR, RPMSG_NS_EPT_ADDR,
-				     rpmsg_virtio_ns_callback, NULL, NULL);
+				     rpmsg_virtio_ns_callback, NULL, rvdev);
 	}
 
 #ifndef VIRTIO_DEVICE_ONLY
