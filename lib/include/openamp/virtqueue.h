@@ -114,10 +114,10 @@ struct virtqueue {
 	uint16_t vq_queued_cnt;
 
 	/**
-	 * Metal I/O region of the vrings and buffers.
+	 * Metal I/O region of the buffers.
 	 * This structure is used for conversion between virtual and physical addresses.
 	 */
-	void *shm_io;
+	struct metal_io_region *shm_io;
 
 	/**
 	 * Head of the free chain in the descriptor table. If there are no free descriptors,
