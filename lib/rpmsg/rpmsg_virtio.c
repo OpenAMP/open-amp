@@ -845,6 +845,8 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	rdev->ops.get_tx_payload_buffer = rpmsg_virtio_get_tx_payload_buffer;
 	rdev->ops.send_offchannel_nocopy = rpmsg_virtio_send_offchannel_nocopy;
 	rdev->ops.release_tx_buffer = rpmsg_virtio_release_tx_buffer;
+	rdev->ops.get_rx_buffer_size = rpmsg_virtio_get_rx_buffer_size;
+	rdev->ops.get_tx_buffer_size = rpmsg_virtio_get_tx_buffer_size;
 	role = rpmsg_virtio_get_role(rvdev);
 
 #ifndef VIRTIO_DEVICE_ONLY
