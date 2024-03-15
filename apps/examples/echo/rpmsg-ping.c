@@ -103,9 +103,20 @@ int app (struct rpmsg_device *rdev, void *priv)
 	LPRINTF(" 1 - Send data to remote core, retrieve the echo");
 	LPRINTF(" and validate its integrity ..\r\n");
 
-	max_size = rpmsg_virtio_get_buffer_size(rdev);
-	if (max_size < 0) {
+	/* Create RPMsg endpoint */
+	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
+			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			       rpmsg_endpoint_cb, rpmsg_service_unbind);
+
+	if (ret) {
+		LPERROR("Failed to create RPMsg endpoint.\r\n");
+		return ret;
+	}
+
+	max_size = rpmsg_get_tx_buffer_size(&lept);
+	if (max_size <= 0) {
 		LPERROR("No available buffer size.\r\n");
+		rpmsg_destroy_ept(&lept);
 		return -1;
 	}
 	max_size -= sizeof(struct _payload);
@@ -116,22 +127,12 @@ int app (struct rpmsg_device *rdev, void *priv)
 
 	if (!i_payload) {
 		LPERROR("memory allocation failed.\r\n");
+		rpmsg_destroy_ept(&lept);
 		return -1;
 	}
 
-	/* Create RPMsg endpoint */
-	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
-			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
-			       rpmsg_endpoint_cb, rpmsg_service_unbind);
-
-	if (ret) {
-		LPERROR("Failed to create RPMsg endpoint.\r\n");
-		metal_free_memory(i_payload);
-		return ret;
-	}
-
-	LPRINTF("RPMsg driver TX buffer size: %#x\r\n", rpmsg_virtio_get_tx_buffer_size(rdev));
-	LPRINTF("RPMsg driver RX buffer size: %#x\r\n", rpmsg_virtio_get_rx_buffer_size(rdev));
+	LPRINTF("RPMsg device TX buffer size: %#x\r\n", rpmsg_get_tx_buffer_size(&lept));
+	LPRINTF("RPMsg device RX buffer size: %#x\r\n", rpmsg_get_rx_buffer_size(&lept));
 
 	while (!is_rpmsg_ept_ready(&lept))
 		platform_poll(priv);

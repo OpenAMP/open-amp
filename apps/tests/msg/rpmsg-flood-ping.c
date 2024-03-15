@@ -116,18 +116,6 @@ int app (struct rpmsg_device *rdev, void *priv)
 	LPRINTF(" and validate its integrity ..\r\n");
 
 	num_pkgs = NUMS_PACKAGES;
-	max_size = rpmsg_virtio_get_buffer_size(rdev);
-	if (max_size < 0) {
-		LPERROR("No available buffer size.\r\n");
-		return -1;
-	}
-	i_payload = (struct _payload *)metal_allocate_memory(max_size);
-
-	if (!i_payload) {
-		LPERROR("memory allocation failed.\r\n");
-		return -1;
-	}
-	max_size -= sizeof(struct _payload);
 
 	/* Create RPMsg endpoint */
 	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME, APP_EPT_ADDR,
@@ -135,13 +123,27 @@ int app (struct rpmsg_device *rdev, void *priv)
 			       rpmsg_endpoint_cb, rpmsg_service_unbind);
 	if (ret) {
 		LPERROR("Failed to create RPMsg endpoint.\r\n");
-		metal_free_memory(i_payload);
 		return ret;
 	}
 
 	while (!is_rpmsg_ept_ready(&lept))
 		platform_poll(priv);
 	LPRINTF("RPMSG endpoint is binded with remote.\r\n");
+
+	max_size = rpmsg_get_tx_buffer_size(&lept);
+	if (max_size <= 0) {
+		LPERROR("No available buffer size.\r\n");
+		rpmsg_destroy_ept(&lept);
+		return -1;
+	}
+	i_payload = (struct _payload *)metal_allocate_memory(max_size);
+
+	if (!i_payload) {
+		LPERROR("memory allocation failed.\r\n");
+		rpmsg_destroy_ept(&lept);
+		return -1;
+	}
+	max_size -= sizeof(struct _payload);
 
 	memset(&(i_payload->data[0]), 0xA5, max_size);
 	for (s = PAYLOAD_MIN_SIZE; s <= max_size; s++) {
