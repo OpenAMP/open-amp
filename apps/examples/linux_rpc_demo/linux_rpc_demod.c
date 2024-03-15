@@ -223,8 +223,11 @@ int rpmsg_handle_term(void *data, struct rpmsg_rpc_svr *rpcs)
 	struct rpmsg_rpc_req_term *rpc_term_req = req_ptr;
 	struct rpmsg_endpoint *ept = &rpcs->ept;
 
-	printf("Received termination request at id %d from endpoint %s\r\n",
-	       rpc_term_req->id, ept->name);
+	if (!rpc_term_req || !ept)
+		return -EINVAL;
+
+	printf("Received termination request at id %d\r\n",
+	       rpc_term_req->id);
 	request_termination = 1;
 
 	return 0;
