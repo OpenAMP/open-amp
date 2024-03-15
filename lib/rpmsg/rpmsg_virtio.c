@@ -991,7 +991,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	if (rdev->support_ns) {
 		rpmsg_register_endpoint(rdev, &rdev->ns_ept, "NS",
 				     RPMSG_NS_EPT_ADDR, RPMSG_NS_EPT_ADDR,
-				     rpmsg_virtio_ns_callback, NULL);
+				     rpmsg_virtio_ns_callback, NULL, NULL);
 	}
 
 #ifndef VIRTIO_DEVICE_ONLY

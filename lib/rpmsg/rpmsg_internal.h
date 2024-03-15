@@ -103,7 +103,7 @@ void rpmsg_register_endpoint(struct rpmsg_device *rdev,
 			     const char *name,
 			     uint32_t src, uint32_t dest,
 			     rpmsg_ept_cb cb,
-			     rpmsg_ns_unbind_cb ns_unbind_cb);
+			     rpmsg_ns_unbind_cb ns_unbind_cb, void *priv);
 
 static inline struct rpmsg_endpoint *
 rpmsg_get_ept_from_addr(struct rpmsg_device *rdev, uint32_t addr)
