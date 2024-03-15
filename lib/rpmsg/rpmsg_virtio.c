@@ -657,7 +657,9 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 				    size_t len, uint32_t src, void *priv)
 {
 	struct rpmsg_device *rdev = ept->rdev;
-	struct rpmsg_virtio_device *rvdev = (struct rpmsg_virtio_device *)rdev;
+	struct rpmsg_virtio_device *rvdev = metal_container_of(rdev,
+							       struct rpmsg_virtio_device,
+							       rdev);
 	struct metal_io_region *io = rvdev->shbuf_io;
 	struct rpmsg_endpoint *_ept;
 	struct rpmsg_ns_msg *ns_msg;
