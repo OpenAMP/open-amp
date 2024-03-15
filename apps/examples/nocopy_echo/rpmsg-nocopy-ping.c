@@ -122,14 +122,6 @@ static int app(struct rpmsg_device *rdev, void *priv)
 	LPRINTF(" 1 - Send data to remote core, retrieve the echo");
 	LPRINTF(" and validate its integrity ..\r\n");
 
-	max_size = rpmsg_virtio_get_buffer_size(rdev);
-	if ((int32_t)max_size < 0) {
-		LPERROR("No available buffer size.\r\n");
-		return -1;
-	}
-	max_size -= sizeof(struct _payload);
-	num_payloads = max_size - PAYLOAD_MIN_SIZE + 1;
-
 	/* Create RPMsg endpoint */
 	ret = rpmsg_create_ept(&lept, rdev, RPMSG_SERVICE_NAME,
 			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
@@ -142,8 +134,17 @@ static int app(struct rpmsg_device *rdev, void *priv)
 
 	while (!is_rpmsg_ept_ready(&lept))
 		platform_poll(priv);
-
 	LPRINTF("RPMSG endpoint is binded with remote.\r\n");
+
+	max_size = rpmsg_get_tx_buffer_size(&lept);
+	if ((int32_t)max_size <= 0) {
+		LPERROR("No available buffer size.\r\n");
+		rpmsg_destroy_ept(&lept);
+		return -1;
+	}
+	max_size -= sizeof(struct _payload);
+	num_payloads = max_size - PAYLOAD_MIN_SIZE + 1;
+
 	for (i = 0, size = PAYLOAD_MIN_SIZE; i < num_payloads; i++, size++) {
 		struct _payload *i_payload;
 
