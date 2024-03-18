@@ -115,7 +115,6 @@ struct remoteproc *r5_rproc_init(struct remoteproc *rproc,
 	priv->rproc = rproc;
 	priv->cpu_id = cpu_id;
 	priv->rproc->ops = ops;
-	metal_list_init(&priv->rproc->mems);
 	priv->rproc->priv = priv;
 	priv->rpu_base = RPU_BASE_ADDR;
 	metal_io_init(&priv->rpu_io, (void *)RPU_BASE_ADDR, &priv->rpu_base,
@@ -202,7 +201,6 @@ void *r5_rproc_mmap(struct remoteproc *rproc,
 	if (!mem)
 		return NULL;
 	mem->pa = lpa;
-	mem->da = lda;
 
 	*io = metal_allocate_memory(sizeof(struct metal_io_region));
 	if (!*io) {
@@ -211,11 +209,10 @@ void *r5_rproc_mmap(struct remoteproc *rproc,
 	}
 	metal_io_init(*io, (void *)mem->pa, &mem->pa, size,
 		      sizeof(metal_phys_addr_t)<<3, attribute, NULL);
-	mem->io = *io;
-	metal_list_add_tail(&rproc->mems, &mem->node);
+	remoteproc_init_mem(mem, NULL, lpa, lda, size, *io);
+	remoteproc_add_mem(rproc, mem);
 	*pa = lpa;
 	*da = lda;
-	mem->size = size;
 	return metal_io_phys_to_virt(*io, mem->pa);
 }
 
