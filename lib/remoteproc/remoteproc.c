@@ -290,6 +290,29 @@ int remoteproc_shutdown(struct remoteproc *rproc)
 	return ret;
 }
 
+void remoteproc_init_mem(struct remoteproc_mem *mem, const char *name,
+			 metal_phys_addr_t pa, metal_phys_addr_t da,
+			 size_t size, struct metal_io_region *io)
+{
+	if (!mem || !io || size == 0)
+		return;
+	if (name)
+		strncpy(mem->name, name, sizeof(mem->name));
+	else
+		mem->name[0] = 0;
+	mem->pa = pa;
+	mem->da = da;
+	mem->io = io;
+	mem->size = size;
+}
+
+void remoteproc_add_mem(struct remoteproc *rproc, struct remoteproc_mem *mem)
+{
+	if (!rproc || !mem)
+		return;
+	metal_list_add_tail(&rproc->mems, &mem->node);
+}
+
 struct metal_io_region *
 remoteproc_get_io_with_name(struct remoteproc *rproc,
 			    const char *name)
