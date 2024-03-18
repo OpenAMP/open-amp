@@ -279,7 +279,6 @@ static void linux_proc_remove(struct remoteproc *rproc)
 {
 	struct remoteproc_priv *prproc;
 	struct vring_ipi_info *ipi;
-	struct metal_io_region *io;
 
 	if (!rproc)
 		return;
@@ -294,9 +293,8 @@ static void linux_proc_remove(struct remoteproc *rproc)
 	}
 
 	/* Close shared memory */
-	io = prproc->shm_old_io;
-	if (io && io->ops.close) {
-		io->ops.close(io);
+	if (prproc->shm_old_io) {
+		metal_io_finish(prproc->shm_old_io);
 		prproc->shm_old_io = NULL;
 	}
 }
@@ -383,8 +381,7 @@ static int platform_device_setup_resource_table(const char *shm_file,
 	}
 	rsc_shm = metal_io_virt(io, rsc_pa);
 	memcpy(rsc_shm, rsc_table, rsc_size);
-	io->ops.close(io);
-	free(io);
+	metal_io_finish(io);
 	return 0;
 }
 
