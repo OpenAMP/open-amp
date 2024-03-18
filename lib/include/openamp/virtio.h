@@ -101,6 +101,8 @@ __deprecated static inline int deprecated_virtio_dev_slave(void)
 #warning "VIRTIO_DEVICE_ONLY is deprecated, please use VIRTIO_DRIVER_SUPPORT=0"
 #endif
 
+#define VIRTIO_ENABLED(option) (option == 1)
+
 /** @brief Virtio device identifier. */
 struct virtio_device_id {
 	/** Virtio subsystem device ID. */
