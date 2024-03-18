@@ -58,7 +58,7 @@ struct vbuff_reclaimer_t {
 };
 
 /* Default configuration */
-#if VIRTIO_DRIVER_SUPPORT
+#if VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT)
 #define RPMSG_VIRTIO_DEFAULT_CONFIG                \
 	(&(const struct rpmsg_virtio_config) {     \
 		.h2r_buf_size = RPMSG_BUFFER_SIZE, \
@@ -69,7 +69,7 @@ struct vbuff_reclaimer_t {
 #define RPMSG_VIRTIO_DEFAULT_CONFIG          NULL
 #endif
 
-#if VIRTIO_DRIVER_SUPPORT
+#if VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT)
 metal_weak void *
 rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
 				 size_t size)
@@ -83,7 +83,7 @@ rpmsg_virtio_shm_pool_get_buffer(struct rpmsg_virtio_shm_pool *shpool,
 
 	return buffer;
 }
-#endif /*VIRTIO_DRIVER_SUPPORT*/
+#endif
 
 void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
 				void *shb, size_t size)
@@ -114,7 +114,7 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
 
 	BUFFER_INVALIDATE(buffer, len);
 
-	if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST) {
+	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST) {
 		struct virtqueue_buf vqbuf;
 
 		(void)idx;
@@ -125,7 +125,7 @@ static void rpmsg_virtio_return_buffer(struct rpmsg_virtio_device *rvdev,
 		RPMSG_ASSERT(ret == VQUEUE_SUCCESS, "add buffer failed\r\n");
 	}
 
-	if (VIRTIO_DEVICE_SUPPORT && role == RPMSG_REMOTE) {
+	if (VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && role == RPMSG_REMOTE) {
 		(void)buffer;
 		ret = virtqueue_add_consumed_buffer(rvdev->rvq, idx, len);
 		RPMSG_ASSERT(ret == VQUEUE_SUCCESS, "add consumed buffer failed\r\n");
@@ -152,7 +152,7 @@ static int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev,
 
 	BUFFER_FLUSH(buffer, len);
 
-	if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST) {
+	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST) {
 		struct virtqueue_buf vqbuf;
 		(void)idx;
 
@@ -162,7 +162,7 @@ static int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev,
 		return virtqueue_add_buffer(rvdev->svq, &vqbuf, 1, 0, buffer);
 	}
 
-	if (VIRTIO_DEVICE_SUPPORT && role == RPMSG_REMOTE) {
+	if (VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && role == RPMSG_REMOTE) {
 		(void)buffer;
 		return virtqueue_add_consumed_buffer(rvdev->svq, idx, len);
 	}
@@ -197,11 +197,11 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 		data = r_desc;
 		*idx = r_desc->idx;
 
-		if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST)
+		if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST)
 			*len = rvdev->config.h2r_buf_size;
-		if (VIRTIO_DEVICE_SUPPORT && role == RPMSG_REMOTE)
+		if (VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && role == RPMSG_REMOTE)
 			*len = virtqueue_get_buffer_length(rvdev->svq, *idx);
-	} else if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST) {
+	} else if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST) {
 		data = virtqueue_get_buffer(rvdev->svq, len, idx);
 		if (!data && rvdev->svq->vq_free_cnt) {
 			data = rpmsg_virtio_shm_pool_get_buffer(rvdev->shpool,
@@ -209,7 +209,7 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 			*len = rvdev->config.h2r_buf_size;
 			*idx = 0;
 		}
-	} else if (VIRTIO_DEVICE_SUPPORT && role == RPMSG_REMOTE) {
+	} else if (VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && role == RPMSG_REMOTE) {
 		data = virtqueue_get_available_buffer(rvdev->svq, idx, len);
 	}
 
@@ -233,11 +233,11 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 	unsigned int role = rpmsg_virtio_get_role(rvdev);
 	void *data = NULL;
 
-	if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST) {
+	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST) {
 		data = virtqueue_get_buffer(rvdev->rvq, len, idx);
 	}
 
-	if (VIRTIO_DEVICE_SUPPORT && role == RPMSG_REMOTE) {
+	if (VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && role == RPMSG_REMOTE) {
 		data =
 		    virtqueue_get_available_buffer(rvdev->rvq, idx, len);
 	}
@@ -452,7 +452,7 @@ static int rpmsg_virtio_send_offchannel_nocopy(struct rpmsg_device *rdev,
 
 	metal_mutex_acquire(&rdev->lock);
 
-	if (VIRTIO_DRIVER_SUPPORT && rpmsg_virtio_get_role(rvdev) == RPMSG_HOST)
+	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && rpmsg_virtio_get_role(rvdev) == RPMSG_HOST)
 		buff_len = rvdev->config.h2r_buf_size;
 	else
 		buff_len = virtqueue_get_buffer_length(rvdev->svq, idx);
@@ -714,7 +714,7 @@ int rpmsg_virtio_get_tx_buffer_size(struct rpmsg_device *rdev)
 	rvdev = (struct rpmsg_virtio_device *)rdev;
 	role = rpmsg_virtio_get_role(rvdev);
 
-	if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST) {
+	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST) {
 		/*
 		 * If device role is host then buffers are provided by us,
 		 * so just provide the macro.
@@ -722,7 +722,7 @@ int rpmsg_virtio_get_tx_buffer_size(struct rpmsg_device *rdev)
 		size = rvdev->config.h2r_buf_size - sizeof(struct rpmsg_hdr);
 	}
 
-	if (VIRTIO_DEVICE_SUPPORT && role == RPMSG_REMOTE) {
+	if (VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && role == RPMSG_REMOTE) {
 		/*
 		 * If other core is host then buffers are provided by it,
 		 * so get the buffer size from the virtqueue.
@@ -752,7 +752,7 @@ int rpmsg_virtio_get_rx_buffer_size(struct rpmsg_device *rdev)
 	rvdev = (struct rpmsg_virtio_device *)rdev;
 	role = rpmsg_virtio_get_role(rvdev);
 
-	if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST) {
+	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST) {
 		/*
 		 * If device role is host then buffers are provided by us,
 		 * so just provide the macro.
@@ -760,7 +760,7 @@ int rpmsg_virtio_get_rx_buffer_size(struct rpmsg_device *rdev)
 		size = rvdev->config.r2h_buf_size - sizeof(struct rpmsg_hdr);
 	}
 
-	if (VIRTIO_DEVICE_SUPPORT && role == RPMSG_REMOTE) {
+	if (VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && role == RPMSG_REMOTE) {
 		/*
 		 * If other core is host then buffers are provided by it,
 		 * so get the buffer size from the virtqueue.
@@ -821,7 +821,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	rdev->ops.get_tx_buffer_size = rpmsg_virtio_get_tx_buffer_size;
 	role = rpmsg_virtio_get_role(rvdev);
 
-	if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST) {
+	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST) {
 		/*
 		 * The virtio configuration contains only options applicable to
 		 * a virtio driver, implying rpmsg host role.
@@ -832,7 +832,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 		rvdev->config = *config;
 	}
 
-	if (VIRTIO_DEVICE_SUPPORT && role == RPMSG_REMOTE) {
+	if (VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && role == RPMSG_REMOTE) {
 		/* wait synchro with the host */
 		status = rpmsg_virtio_wait_remote_ready(rvdev);
 		if (status)
@@ -844,7 +844,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 		return status;
 	rdev->support_ns = !!(features & (1 << VIRTIO_RPMSG_F_NS));
 
-	if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST) {
+	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST) {
 		/*
 		 * Since device is RPMSG Remote so we need to manage the
 		 * shared buffers. Create shared memory pool to handle buffers.
@@ -861,7 +861,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 		callback[1] = rpmsg_virtio_tx_callback;
 	}
 
-	if (VIRTIO_DEVICE_SUPPORT && role == RPMSG_REMOTE) {
+	if (VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && role == RPMSG_REMOTE) {
 		vq_names[0] = "tx_vq";
 		vq_names[1] = "rx_vq";
 		callback[0] = rpmsg_virtio_tx_callback;
@@ -878,12 +878,12 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 		return status;
 
 	/* Create virtqueue success, assign back the virtqueue */
-	if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST) {
+	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST) {
 		rvdev->rvq  = vdev->vrings_info[0].vq;
 		rvdev->svq  = vdev->vrings_info[1].vq;
 	}
 
-	if (VIRTIO_DEVICE_SUPPORT && role == RPMSG_REMOTE) {
+	if (VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && role == RPMSG_REMOTE) {
 		rvdev->rvq  = vdev->vrings_info[1].vq;
 		rvdev->svq  = vdev->vrings_info[0].vq;
 	}
@@ -902,7 +902,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 		vq->shm_io = shm_io;
 	}
 
-	if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST) {
+	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST) {
 		struct virtqueue_buf vqbuf;
 		unsigned int idx;
 		void *buffer;
@@ -947,7 +947,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 				     rpmsg_virtio_ns_callback, NULL, rvdev);
 	}
 
-	if (VIRTIO_DRIVER_SUPPORT && role == RPMSG_HOST) {
+	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && role == RPMSG_HOST) {
 		status = virtio_set_status(rvdev->vdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
 		if (status)
 			goto err;
