@@ -208,6 +208,36 @@ void *rpmsg_get_tx_payload_buffer(struct rpmsg_endpoint *ept,
 	return NULL;
 }
 
+int rpmsg_get_tx_buffer_size(struct rpmsg_endpoint *ept)
+{
+	struct rpmsg_device *rdev;
+
+	if (!ept || !ept->rdev)
+		return RPMSG_ERR_PARAM;
+
+	rdev = ept->rdev;
+
+	if (rdev->ops.get_tx_buffer_size)
+		return rdev->ops.get_tx_buffer_size(rdev);
+
+	return RPMSG_EOPNOTSUPP;
+}
+
+int rpmsg_get_rx_buffer_size(struct rpmsg_endpoint *ept)
+{
+	struct rpmsg_device *rdev;
+
+	if (!ept || !ept->rdev)
+		return RPMSG_ERR_PARAM;
+
+	rdev = ept->rdev;
+
+	if (rdev->ops.get_rx_buffer_size)
+		return rdev->ops.get_rx_buffer_size(rdev);
+
+	return RPMSG_EOPNOTSUPP;
+}
+
 int rpmsg_send_offchannel_nocopy(struct rpmsg_endpoint *ept, uint32_t src,
 				 uint32_t dst, const void *data, int len)
 {

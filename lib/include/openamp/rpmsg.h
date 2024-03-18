@@ -121,6 +121,12 @@ struct rpmsg_device_ops {
 
 	/** Release RPMsg TX buffer */
 	int (*release_tx_buffer)(struct rpmsg_device *rdev, void *txbuf);
+
+	/** Get RPMsg RX buffer size */
+	int (*get_rx_buffer_size)(struct rpmsg_device *rdev);
+
+	/** Get RPMsg TX buffer size */
+	int (*get_tx_buffer_size)(struct rpmsg_device *rdev);
 };
 
 /** @brief Representation of a RPMsg device */
@@ -403,6 +409,30 @@ void *rpmsg_get_tx_payload_buffer(struct rpmsg_endpoint *ept,
  * @see rpmsg_get_tx_payload_buffer
  */
 int rpmsg_release_tx_buffer(struct rpmsg_endpoint *ept, void *txbuf);
+
+/**
+ * @brief Get RPMsg Tx buffer size
+ *
+ * @param ept	The rpmsg endpoint
+ *
+ * @return
+ *   - Next available Tx buffer size on success
+ *   - RPMSG_ERR_PARAM on invalid parameter
+ *   - RPMSG_ERR_PERM if service not implemented
+ */
+int rpmsg_get_tx_buffer_size(struct rpmsg_endpoint *ept);
+
+/**
+ * @brief Get RPMsg Rx buffer size
+ *
+ * @param ept	The rpmsg endpoint
+ *
+ * @return
+ *   - Next available Rx buffer size on success
+ *   - RPMSG_ERR_PARAM on invalid parameter
+ *   - RPMSG_ERR_PERM if service not implemented
+ */
+int rpmsg_get_rx_buffer_size(struct rpmsg_endpoint *ept);
 
 /**
  * @brief Send a message in tx buffer reserved by
