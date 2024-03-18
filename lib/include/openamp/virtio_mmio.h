@@ -148,9 +148,6 @@ struct virtio_mmio_device {
 	/** Pre-shared memory space metal_io_region */
 	struct metal_io_region *shm_io;
 
-	/** Shared memory device */
-	struct metal_device shm_device;
-
 	/** VIRTIO device configuration space */
 	struct virtio_mmio_dev_mem cfg_mem;
 

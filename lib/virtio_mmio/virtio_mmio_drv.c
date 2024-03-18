@@ -141,46 +141,20 @@ const struct virtio_dispatch virtio_mmio_dispatch = {
 static int virtio_mmio_get_metal_io(struct virtio_device *vdev, uintptr_t virt_mem_ptr,
 				    uintptr_t cfg_mem_ptr)
 {
-	struct metal_device *device;
-	int32_t err;
 	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
 							      struct virtio_mmio_device, vdev);
 
-	/* Setup shared memory device */
-	vmdev->shm_device.regions[0].physmap = (metal_phys_addr_t *)&vmdev->shm_mem.base;
-	vmdev->shm_device.regions[0].virt = (void *)virt_mem_ptr;
-	vmdev->shm_device.regions[0].size = vmdev->shm_mem.size;
+	/* Setup shared memory region */
+	vmdev->shm_io = metal_allocate_memory(sizeof(*vmdev->shm_io));
+	metal_io_init(vmdev->shm_io, (void *)virt_mem_ptr,
+		      (metal_phys_addr_t *)&vmdev->shm_mem.base,
+		      vmdev->shm_mem.size, -1, 0, NULL);
 
-	VIRTIO_ASSERT((METAL_MAX_DEVICE_REGIONS > 1),
-		      "METAL_MAX_DEVICE_REGIONS must be greater that 1");
-
-	vmdev->shm_device.regions[1].physmap = (metal_phys_addr_t *)&vmdev->cfg_mem.base;
-	vmdev->shm_device.regions[1].virt = (void *)cfg_mem_ptr;
-	vmdev->shm_device.regions[1].size = vmdev->cfg_mem.size;
-
-	err = metal_register_generic_device(&vmdev->shm_device);
-	if (err) {
-		metal_log(METAL_LOG_ERROR, "Couldn't register shared memory device: %d\n", err);
-		return err;
-	}
-
-	err = metal_device_open("generic", vmdev->shm_device.name, &device);
-	if (err) {
-		metal_log(METAL_LOG_ERROR, "metal_device_open failed: %d", err);
-		return err;
-	}
-
-	vmdev->shm_io = metal_device_io_region(device, 0);
-	if (!vmdev->shm_io) {
-		metal_log(METAL_LOG_ERROR, "metal_device_io_region failed to get region 0");
-		return err;
-	}
-
-	vmdev->cfg_io = metal_device_io_region(device, 1);
-	if (!vmdev->cfg_io) {
-		metal_log(METAL_LOG_ERROR, "metal_device_io_region failed to get region 1");
-		return err;
-	}
+	/* Setup configuration region */
+	vmdev->cfg_io = metal_allocate_memory(sizeof(*vmdev->cfg_io));
+	metal_io_init(vmdev->cfg_io, (void *)cfg_mem_ptr,
+		      (metal_phys_addr_t *)&vmdev->cfg_mem.base,
+		      vmdev->cfg_mem.size, -1, 0, NULL);
 
 	return 0;
 }
