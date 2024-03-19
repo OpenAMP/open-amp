@@ -13,7 +13,8 @@
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
 #include <openamp/remoteproc_virtio.h>
-#include <openamp/rsc_table_parser.h>
+
+#include "rsc_table_parser.h"
 
 /******************************************************************************
  *  static functions
