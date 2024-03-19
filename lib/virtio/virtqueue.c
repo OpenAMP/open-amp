@@ -28,24 +28,6 @@ static int virtqueue_nused(struct virtqueue *vq);
 static int virtqueue_navail(struct virtqueue *vq);
 #endif
 
-/* Default implementation of P2V based on libmetal */
-static inline void *virtqueue_phys_to_virt(struct virtqueue *vq,
-					   metal_phys_addr_t phys)
-{
-	struct metal_io_region *io = vq->shm_io;
-
-	return metal_io_phys_to_virt(io, phys);
-}
-
-/* Default implementation of V2P based on libmetal */
-static inline metal_phys_addr_t virtqueue_virt_to_phys(struct virtqueue *vq,
-						       void *buf)
-{
-	struct metal_io_region *io = vq->shm_io;
-
-	return metal_io_virt_to_phys(io, buf);
-}
-
 int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 		     const char *name, struct vring_alloc_info *ring,
 		     void (*callback)(struct virtqueue *vq),
@@ -182,11 +164,11 @@ uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx)
 	return vq->vq_ring.desc[idx].len;
 }
 
-void *virtqueue_get_buffer_addr(struct virtqueue *vq, uint16_t idx)
+uint64_t virtqueue_get_buffer_addr(struct virtqueue *vq, uint16_t idx)
 {
 	VRING_INVALIDATE(&vq->vq_ring.desc[idx].addr,
 			 sizeof(vq->vq_ring.desc[idx].addr));
-	return virtqueue_phys_to_virt(vq, vq->vq_ring.desc[idx].addr);
+	return vq->vq_ring.desc[idx].addr;
 }
 
 void virtqueue_free(struct virtqueue *vq)
@@ -202,18 +184,17 @@ void virtqueue_free(struct virtqueue *vq)
 	}
 }
 
-void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
-				     uint32_t *len)
+int virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
+				   uint64_t *buffer, uint32_t *len)
 {
 	uint16_t head_idx = 0;
-	void *buffer;
 
 	atomic_thread_fence(memory_order_seq_cst);
 
 	/* Avail.idx is updated by driver, invalidate it */
 	VRING_INVALIDATE(&vq->vq_ring.avail->idx, sizeof(vq->vq_ring.avail->idx));
 	if (vq->vq_available_idx == vq->vq_ring.avail->idx) {
-		return NULL;
+		return ERROR_VRING_NO_BUFF;
 	}
 
 	VQUEUE_BUSY(vq);
@@ -228,12 +209,12 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 	/* Invalidate the desc entry written by driver before accessing it */
 	VRING_INVALIDATE(&vq->vq_ring.desc[*avail_idx],
 			 sizeof(vq->vq_ring.desc[*avail_idx]));
-	buffer = virtqueue_phys_to_virt(vq, vq->vq_ring.desc[*avail_idx].addr);
+	*buffer = vq->vq_ring.desc[*avail_idx].addr;
 	*len = vq->vq_ring.desc[*avail_idx].len;
 
 	VQUEUE_IDLE(vq);
 
-	return buffer;
+	return 0;
 }
 
 int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
@@ -414,7 +395,7 @@ static uint16_t vq_ring_add_buffer(struct virtqueue *vq,
 
 		/* CACHE: No need to invalidate desc because it is only written by driver */
 		dp = &desc[idx];
-		dp->addr = virtqueue_virt_to_phys(vq, buf_list[i].buf);
+		dp->addr = buf_list[i].buf;
 		dp->len = buf_list[i].len;
 		dp->flags = 0;
 
