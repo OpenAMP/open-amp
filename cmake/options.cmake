@@ -80,10 +80,16 @@ endif (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
 
 option (WITH_VIRTIO_MMIO_DRV "Build with virtio mmio driver support enabled" OFF)
 option (WITH_VIRTIO_MMIO_DEV "Build with virtio mmio device support enabled" OFF)
+option (WITH_HVL_VIRTIO_DRV "Build with hypervisor-less virtio (front end) enabled" OFF)
 
 if (WITH_VIRTIO_MMIO_DRV)
   add_definitions(-DWITH_VIRTIO_MMIO_DRV)
 endif (WITH_VIRTIO_MMIO_DRV)
+
+if (WITH_HVL_VIRTIO_DRV)
+  set (WITH_VIRTIO_MMIO_DRV ON)
+  add_definitions(-DHVL_VIRTIO)
+endif (WITH_HVL_VIRTIO_DRV)
 
 if (WITH_VIRTIO_MMIO_DEV)
   add_definitions(-DWITH_VIRTIO_MMIO_DEV)
