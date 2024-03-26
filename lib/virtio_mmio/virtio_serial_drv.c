@@ -134,7 +134,15 @@ void virtio_serial_poll_out(const struct virtio_device *vdev, unsigned char out_
 	}
 
 	if (virtqueue_full(vq)) {
+#if !defined(HVL_VIRTIO)
 		virtqueue_get_buffer(vq, NULL, NULL);
+#else
+		void *cookie = virtqueue_get_buffer(vq, NULL, NULL);
+
+		while (!cookie) {
+			cookie = virtqueue_get_buffer(vq, NULL, NULL);
+		}
+#endif
 	}
 
 	if (virtqueue_full(vq)) {

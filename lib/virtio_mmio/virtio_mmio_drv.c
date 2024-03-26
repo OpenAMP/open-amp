@@ -45,7 +45,17 @@ static inline uint8_t virtio_mmio_read8(struct virtio_device *vdev, int offset)
 
 static inline void virtio_mmio_set_status(struct virtio_device *vdev, uint8_t status)
 {
+#if defined(HVL_VIRTIO)
+	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
+							      struct virtio_mmio_device, vdev);
+#endif
+
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_STATUS, status);
+#if defined(HVL_VIRTIO)
+	if (vmdev && vmdev->ipi && vmdev->hvl_mode == 1) {
+		vmdev->ipi(vmdev->ipi_param);
+	}
+#endif
 }
 
 static uint8_t virtio_mmio_get_status(struct virtio_device *vdev)
@@ -98,6 +108,10 @@ static void _virtio_mmio_set_features(struct virtio_device *vdev,
 				      uint32_t features, int idx)
 {
 	uint32_t hfeatures;
+#if defined(HVL_VIRTIO)
+	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
+							      struct virtio_mmio_device, vdev);
+#endif
 
 	/* Writing selection register VIRTIO_MMIO_DEVICE_FEATURES_SEL. In pure AMP
 	 * mode this needs to be followed by a synchronization w/ the device
@@ -108,6 +122,11 @@ static void _virtio_mmio_set_features(struct virtio_device *vdev,
 	features &= hfeatures;
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_DRIVER_FEATURES, features);
 	vdev->features = features;
+#if defined(HVL_VIRTIO)
+	if (vmdev && vmdev->ipi && vmdev->hvl_mode == 1) {
+		vmdev->ipi(vmdev->ipi_param);
+	}
+#endif
 }
 
 static void virtio_mmio_set_features(struct virtio_device *vdev, uint32_t features)
@@ -120,10 +139,19 @@ static void virtio_mmio_reset_device(struct virtio_device *vdev)
 	virtio_mmio_set_status(vdev, 0);
 }
 
-static void virtio_mmio_notify(struct virtqueue *vq)
+static void virtio_mmio_drv_notify(struct virtqueue *vq)
 {
+#if defined(HVL_VIRTIO)
+	struct virtio_mmio_device *vmdev = metal_container_of(vq->vq_dev,
+							      struct virtio_mmio_device, vdev);
+#endif
 	/* VIRTIO_F_NOTIFICATION_DATA is not supported for now */
 	virtio_mmio_write32(vq->vq_dev, VIRTIO_MMIO_QUEUE_NOTIFY, vq->vq_queue_index);
+#if defined(HVL_VIRTIO)
+	if (vmdev && vmdev->ipi && vmdev->hvl_mode == 1) {
+		vmdev->ipi(vmdev->ipi_param);
+	}
+#endif
 }
 
 const struct virtio_dispatch virtio_mmio_dispatch = {
@@ -135,7 +163,7 @@ const struct virtio_dispatch virtio_mmio_dispatch = {
 	.read_config = virtio_mmio_read_config,
 	.write_config = virtio_mmio_write_config,
 	.reset_device = virtio_mmio_reset_device,
-	.notify = virtio_mmio_notify,
+	.notify = virtio_mmio_drv_notify,
 };
 
 static int virtio_mmio_get_metal_io(struct virtio_device *vdev, uintptr_t virt_mem_ptr,
@@ -200,6 +228,9 @@ int virtio_mmio_device_init(struct virtio_mmio_device *vmdev, uintptr_t virt_mem
 {
 	struct virtio_device *vdev = &vmdev->vdev;
 	uint32_t magic, version, devid, vendor;
+#if defined(HVL_VIRTIO)
+	uint64_t shm_base, shm_len;
+#endif
 
 	vdev->role = vmdev->device_mode;
 	vdev->priv = vmdev;
@@ -234,6 +265,25 @@ int virtio_mmio_device_init(struct virtio_mmio_device *vmdev, uintptr_t virt_mem
 	vdev->id.device = devid;
 	vdev->id.vendor = vendor;
 
+#if defined(HVL_VIRTIO)
+	/* Check shared memory information.
+	 * This is just a flag for enabling hypervisorless mode for now.
+	 */
+	shm_base = virtio_mmio_read32(vdev, VIRTIO_MMIO_SHM_BASE_HIGH);
+	shm_base <<= 32;
+	shm_base |= virtio_mmio_read32(vdev, VIRTIO_MMIO_SHM_BASE_LOW);
+	shm_len = virtio_mmio_read32(vdev, VIRTIO_MMIO_SHM_LEN_HIGH);
+	shm_len <<= 32;
+	shm_len |= virtio_mmio_read32(vdev, VIRTIO_MMIO_SHM_LEN_LOW);
+
+	if (shm_base != 0 && shm_len != 0) {
+		vmdev->hvl_mode = 1;
+		virtio_mmio_hvl_cb_set((virtio_mmio_hvl_cb_t)virtio_mmio_isr, vdev);
+		virtio_mmio_hvl_init(vdev);
+		/* Initialize bounce buffer list for hypervisorless virtio */
+		metal_list_init(&vmdev->bounce_buf_list);
+	}
+#endif
 	virtio_mmio_set_status(vdev, VIRTIO_CONFIG_STATUS_ACK);
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_GUEST_PAGE_SIZE, 4096);
 
@@ -327,6 +377,24 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_QUEUE_PFN,
 			    ((uintptr_t)metal_io_virt_to_phys(vq->shm_io,
 			    (char *)vq->vq_ring.desc)) / 4096);
+#if defined(HVL_VIRTIO)
+		if (vmdev && vmdev->ipi && vmdev->hvl_mode == 1) {
+			vmdev->ipi(vmdev->ipi_param);
+			/*
+			 * For multi-virtqueue devices in hypervisorless mode, a custom
+			 * configuration acknowledgment mechanism is used to process
+			 * same-register configuration entries like QUEUE_PFN.
+			 */
+			if (virtio_mmio_hvl_wait_cfg(vdev, VIRTIO_MMIO_QUEUE_PFN,
+						     VIRTIO_MMIO_HVL_CFG_ACK) != 0) {
+				metal_log(METAL_LOG_ERROR, "HVL mode: configuration failed\n");
+				return NULL;
+			}
+			virtio_mmio_write32(vdev, VIRTIO_MMIO_QUEUE_PFN,
+					    ((uintptr_t)metal_io_virt_to_phys(vq->shm_io,
+					    (char *)vq->vq_ring.desc)) / 4096);
+		}
+#endif
 
 	vdev->vrings_info[vdev->vrings_num].vq = vq;
 	vdev->vrings_num++;
@@ -338,10 +406,24 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 void virtio_mmio_isr(struct virtio_device *vdev)
 {
 	struct virtio_vring_info *vrings_info = vdev->vrings_info;
-
+#if defined(HVL_VIRTIO)
+	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
+							      struct virtio_mmio_device, vdev);
+#endif
 	uint32_t isr = virtio_mmio_read32(vdev, VIRTIO_MMIO_INTERRUPT_STATUS);
 	struct virtqueue *vq;
 	unsigned int i;
+
+#if defined(HVL_VIRTIO)
+	if (vmdev && vmdev->hvl_mode == 1) {
+		uint32_t val;
+
+		val = metal_io_read32(vmdev->cfg_io, VIRTIO_MMIO_QUEUE_PFN);
+		if (val == VIRTIO_MMIO_HVL_CFG_ACK) {
+			metal_mutex_release(&vmdev->cfg_sem);
+		}
+	}
+#endif
 
 	if (isr & VIRTIO_MMIO_INT_VRING) {
 		for (i = 0; i < vdev->vrings_num; i++) {
@@ -355,6 +437,13 @@ void virtio_mmio_isr(struct virtio_device *vdev)
 		metal_log(METAL_LOG_WARNING, "Unhandled interrupt type: 0x%x\n", isr);
 
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_INTERRUPT_ACK, isr);
+#if defined(HVL_VIRTIO)
+	if (isr != 0) {
+		if (vmdev && vmdev->ipi && vmdev->hvl_mode == 1) {
+			vmdev->ipi(vmdev->ipi_param);
+		}
+	}
+#endif
 }
 
 static int virtio_mmio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,

@@ -12,7 +12,10 @@
 #include <metal/device.h>
 #include <openamp/virtio.h>
 #include <openamp/virtqueue.h>
-
+#if defined(HVL_VIRTIO)
+#include <metal/mutex.h>
+#include <openamp/virtio_mmio_hvl.h>
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -166,6 +169,26 @@ struct virtio_mmio_device {
 
 	/** Custom user data */
 	void *user_data;
+
+#if defined(HVL_VIRTIO)
+	/** Hypervisorless virtio mode flag */
+	unsigned int hvl_mode;
+
+	/** Hypervisorless virtio bounce buffer list */
+	struct metal_list bounce_buf_list;
+
+	/** Hypervisorless virtio inter-processor notification routine */
+	virtio_mmio_hvl_ipi_t ipi;
+
+	/** Hypervisorless virtio inter-processor notification routine parameter */
+	void *ipi_param;
+
+	/** Configuration synchronization semaphore usable in yield context */
+	metal_mutex_t cfg_sem;
+
+	/** Hypervisorless virtio dispatch table */
+	struct hvl_dispatch *hvl_func;
+#endif
 };
 
 /**
