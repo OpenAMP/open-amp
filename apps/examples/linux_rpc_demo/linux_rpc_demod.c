@@ -82,10 +82,9 @@ int rpmsg_handle_open(void *data, struct rpmsg_rpc_svr *rpcs)
 	char *buf;
 	struct rpmsg_rpc_resp_open rpc_open_resp;
 	int payload_size = sizeof(rpc_open_resp);
-	struct rpmsg_endpoint *ept = &rpcs->ept;
 	int fd, ret;
 
-	if (!rpc_open_req || !ept)
+	if (!rpc_open_req)
 		return -EINVAL;
 	buf = rpc_open_req->filename;
 
@@ -107,11 +106,10 @@ int rpmsg_handle_close(void *data, struct rpmsg_rpc_svr *rpcs)
 	void *req_ptr = data + MAX_FUNC_ID_LEN;
 	struct rpmsg_rpc_req_close *rpc_close_req = req_ptr;
 	struct rpmsg_rpc_resp_close rpc_close_resp;
-	struct rpmsg_endpoint *ept = &rpcs->ept;
 	int payload_size = sizeof(rpc_close_resp);
 	int ret;
 
-	if (!rpc_close_req || !ept)
+	if (!rpc_close_req)
 		return -EINVAL;
 
 	/* Close remote fd */
@@ -132,12 +130,11 @@ int rpmsg_handle_read(void *data, struct rpmsg_rpc_svr *rpcs)
 	void *req_ptr = data + MAX_FUNC_ID_LEN;
 	struct rpmsg_rpc_req_read *rpc_read_req = req_ptr;
 	struct rpmsg_rpc_resp_read rpc_read_resp;
-	struct rpmsg_endpoint *ept = &rpcs->ept;
 	unsigned long int bytes_read;
 	int payload_size = sizeof(rpc_read_resp);
 	int ret;
 
-	if (!rpc_read_req || !ept)
+	if (!rpc_read_req)
 		return -EINVAL;
 
 	if (rpc_read_req->fd == 0) {
@@ -168,12 +165,11 @@ int rpmsg_handle_write(void *data, struct rpmsg_rpc_svr *rpcs)
 	void *req_ptr = data + MAX_FUNC_ID_LEN;
 	struct rpmsg_rpc_req_write *rpc_write_req = req_ptr;
 	struct rpmsg_rpc_resp_write rpc_write_resp;
-	struct rpmsg_endpoint *ept = &rpcs->ept;
 	int payload_size = sizeof(rpc_write_resp);
 	int bytes_written;
 	int ret;
 
-	if (!rpc_write_req || !ept)
+	if (!rpc_write_req)
 		return -EINVAL;
 
 	/* Write to remote fd */
@@ -195,12 +191,11 @@ int rpmsg_handle_input(void *data, struct rpmsg_rpc_svr *rpcs)
 	void *req_ptr = data + MAX_FUNC_ID_LEN;
 	struct rpmsg_rpc_req_input *rpc_input_req = req_ptr;
 	struct rpmsg_rpc_resp_input rpc_input_resp;
-	struct rpmsg_endpoint *ept = &rpcs->ept;
 	int bytes_read;
 	int payload_size = sizeof(rpc_input_resp);
 	int ret;
 
-	if (!rpc_input_req || !ept)
+	if (!rpc_input_req)
 		return -EINVAL;
 
 	/* Input from remote */
@@ -221,9 +216,9 @@ int rpmsg_handle_term(void *data, struct rpmsg_rpc_svr *rpcs)
 {
 	void *req_ptr = data + MAX_FUNC_ID_LEN;
 	struct rpmsg_rpc_req_term *rpc_term_req = req_ptr;
-	struct rpmsg_endpoint *ept = &rpcs->ept;
+	(void)rpcs;
 
-	if (!rpc_term_req || !ept)
+	if (!rpc_term_req)
 		return -EINVAL;
 
 	printf("Received termination request at id %d\r\n",
