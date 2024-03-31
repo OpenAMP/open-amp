@@ -269,21 +269,32 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 }
 
 #ifndef VIRTIO_DRIVER_ONLY
-/*
- * check if the remote is ready to start RPMsg communication
+/**
+ * @internal
+ *
+ * @brief Check if the remote is ready to start RPMsg communication
+ *
+ * @param rvdev Pointer to rpmsg_virtio device
+ *
+ * @return 0 on success, otherwise error code.
  */
 static int rpmsg_virtio_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
 {
 	uint8_t status;
+	int ret;
 
 	while (1) {
-		virtio_get_status(rvdev->vdev, &status);
+		ret = virtio_get_status(rvdev->vdev, &status);
+		if (ret)
+			return ret;
 		/* Busy wait until the remote is ready */
 		if (status & VIRTIO_CONFIG_STATUS_NEEDS_RESET) {
-			virtio_set_status(rvdev->vdev, 0);
+			ret = virtio_set_status(rvdev->vdev, 0);
+			if (ret)
+				return ret;
 			/* TODO notify remote processor */
 		} else if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK) {
-			return true;
+			return 0;
 		}
 		/* TODO: clarify metal_cpu_yield usage*/
 		metal_cpu_yield();
@@ -856,7 +867,9 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 #ifndef VIRTIO_DRIVER_ONLY
 	if (role == RPMSG_REMOTE) {
 		/* wait synchro with the host */
-		rpmsg_virtio_wait_remote_ready(rvdev);
+		status = rpmsg_virtio_wait_remote_ready(rvdev);
+		if (status)
+			return status;
 	}
 #endif /*!VIRTIO_DRIVER_ONLY*/
 	status = virtio_get_features(rvdev->vdev, &features);
