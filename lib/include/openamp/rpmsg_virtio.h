@@ -128,6 +128,20 @@ __deprecated static inline int deprecated_rpmsg_slave(void)
 }
 
 /**
+ * @brief Set the virtio callback to manage the wait for TX buffer availability.
+ *
+ * @param rvdev			Pointer to rpmsg virtio device.
+ * @param notify_wait_cb	Callback handler to wait buffer notification.
+ *
+ * @return RPMSG_REMOTE or RPMSG_HOST
+ */
+static inline void rpmsg_virtio_set_wait_cb(struct rpmsg_virtio_device *rvdev,
+					    rpmsg_virtio_notify_wait_cb notify_wait_cb)
+{
+	rvdev->notify_wait_cb = notify_wait_cb;
+}
+
+/**
  * @brief Get rpmsg virtio device role.
  *
  * @param rvdev	Pointer to rpmsg virtio device.
