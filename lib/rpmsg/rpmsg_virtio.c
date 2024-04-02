@@ -836,6 +836,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 		return RPMSG_ERR_PARAM;
 
 	rdev = &rvdev->rdev;
+	rvdev->notify_wait_cb = NULL;
 	memset(rdev, 0, sizeof(*rdev));
 	metal_mutex_init(&rdev->lock);
 	rvdev->vdev = vdev;
