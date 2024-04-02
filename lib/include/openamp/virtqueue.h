@@ -65,8 +65,8 @@ extern "C" {
 
 /** @brief Buffer descriptor. */
 struct virtqueue_buf {
-	/** Address of the buffer. */
-	void *buf;
+	/** Address (guest-physical) */
+	uint64_t buf;
 
 	/** Size of the buffer. */
 	int len;
@@ -114,10 +114,10 @@ struct virtqueue {
 	uint16_t vq_queued_cnt;
 
 	/**
-	 * Metal I/O region of the vrings and buffers.
+	 * Metal I/O region of the buffers.
 	 * This structure is used for conversion between virtual and physical addresses.
 	 */
-	void *shm_io;
+	struct metal_io_region *shm_io;
 
 	/**
 	 * Head of the free chain in the descriptor table. If there are no free descriptors,
@@ -285,12 +285,13 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx);
  *
  * @param vq		Pointer to VirtIO queue control block
  * @param avail_idx	Pointer to index used in vring desc table
+ * @param buffer	Physical address of buffer
  * @param len		Length of buffer
  *
- * @return Pointer to available buffer
+ * @return Function status
  */
-void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
-				     uint32_t *len);
+int virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
+				   uint64_t *buffer, uint32_t *len);
 
 /**
  * @internal
@@ -381,7 +382,7 @@ void virtqueue_notification(struct virtqueue *vq);
 uint32_t virtqueue_get_desc_size(struct virtqueue *vq);
 
 uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx);
-void *virtqueue_get_buffer_addr(struct virtqueue *vq, uint16_t idx);
+uint64_t virtqueue_get_buffer_addr(struct virtqueue *vq, uint16_t idx);
 
 /**
  * @brief Test if virtqueue is empty
