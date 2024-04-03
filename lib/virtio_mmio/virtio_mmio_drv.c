@@ -325,7 +325,7 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_QUEUE_NUM, vq->vq_nentries);
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_QUEUE_ALIGN, 4096);
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_QUEUE_PFN,
-			    ((uintptr_t)metal_io_virt_to_phys(vq->shm_io,
+			    ((uintptr_t)metal_io_virt_to_phys(vmdev->shm_io,
 			    (char *)vq->vq_ring.desc)) / 4096);
 
 	vdev->vrings_info[vdev->vrings_num].vq = vq;
