@@ -103,6 +103,11 @@ __deprecated static inline int deprecated_virtio_dev_slave(void)
 
 #define VIRTIO_ENABLED(option) (option == 1)
 
+#define VIRTIO_ROLE_IS_DRIVER(vdev) \
+	(VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && (vdev->role) == VIRTIO_DEV_DRIVER)
+#define VIRTIO_ROLE_IS_DEVICE(vdev) \
+	(VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && (vdev->role) == VIRTIO_DEV_DEVICE)
+
 /** @brief Virtio device identifier. */
 struct virtio_device_id {
 	/** Virtio subsystem device ID. */
