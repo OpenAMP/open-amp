@@ -117,8 +117,6 @@ struct rpmsg_virtio_device {
  *
  * @param rvdev			Pointer to rpmsg virtio device.
  * @param notify_wait_cb	Callback handler to wait buffer notification.
- *
- * @return RPMSG_REMOTE or RPMSG_HOST
  */
 static inline void rpmsg_virtio_set_wait_cb(struct rpmsg_virtio_device *rvdev,
 					    rpmsg_virtio_notify_wait_cb notify_wait_cb)
@@ -131,7 +129,7 @@ static inline void rpmsg_virtio_set_wait_cb(struct rpmsg_virtio_device *rvdev,
  *
  * @param rvdev	Pointer to rpmsg virtio device.
  *
- * @return RPMSG_REMOTE or RPMSG_HOST
+ * @return VIRTIO_DEV_DEVICE or VIRTIO_DEV_DRIVER
  */
 static inline unsigned int
 rpmsg_virtio_get_role(struct rpmsg_virtio_device *rvdev)
