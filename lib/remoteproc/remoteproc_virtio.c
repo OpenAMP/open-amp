@@ -55,7 +55,7 @@ static int rproc_virtio_create_virtqueue(struct virtio_device *vdev,
 	if (!vring_info->vq)
 		return ERROR_NO_MEM;
 
-	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && vdev->role == VIRTIO_DEV_DRIVER) {
+	if (VIRTIO_ROLE_IS_DRIVER(vdev)) {
 		size_t offset = metal_io_virt_to_offset(vring_info->io, vring_alloc->vaddr);
 		size_t size = vring_size(vring_alloc->num_descs, vring_alloc->align);
 
@@ -405,7 +405,7 @@ void rproc_virtio_wait_remote_ready(struct virtio_device *vdev)
 	 * remote action, we can return. Behavior should be updated
 	 * in future if a remote status is added.
 	 */
-	if (VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && vdev->role == VIRTIO_DEV_DRIVER)
+	if (VIRTIO_ROLE_IS_DRIVER(vdev))
 		return;
 
 	while (1) {
