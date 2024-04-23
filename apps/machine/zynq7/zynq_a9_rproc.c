@@ -52,7 +52,8 @@ zynq_a9_proc_init(struct remoteproc *rproc,
 	unsigned int irq_vect;
 	int ret;
 
-	if (!rproc || !prproc || !ops)
+	(void)ops;
+	if (!rproc || !prproc)
 		return NULL;
 	ret = metal_device_open(prproc->gic_bus_name, prproc->gic_name,
 				&dev);
@@ -60,12 +61,10 @@ zynq_a9_proc_init(struct remoteproc *rproc,
 		xil_printf("failed to open GIC device: %d.\r\n", ret);
 		return NULL;
 	}
-	rproc->priv = prproc;
 	prproc->gic_dev = dev;
 	prproc->gic_io = metal_device_io_region(dev, 0);
 	if (!prproc->gic_io)
 		goto err1;
-	rproc->ops = ops;
 	atomic_flag_test_and_set(&prproc->nokick);
 
 	/* Register interrupt handler and enable interrupt */

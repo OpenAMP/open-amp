@@ -17,6 +17,7 @@ static struct remoteproc *rpu_rproc_init(struct remoteproc *rproc,
 		return NULL;
 	}
 
+	(void)ops;
 	LPRINTF("%s: node id: %d\n\r", __func__, cpu_id);
 	priv = metal_allocate_memory(sizeof(*priv));
 	if (!priv)
@@ -24,7 +25,6 @@ static struct remoteproc *rpu_rproc_init(struct remoteproc *rproc,
 	memset(priv, 0, sizeof(*priv));
 	priv->rproc = rproc;
 	priv->cpu_id = cpu_id;
-	priv->rproc->ops = ops;
 	priv->rproc->priv = priv;
 	rproc->state = RPROC_READY;
 	return priv->rproc;

@@ -107,6 +107,7 @@ struct remoteproc *r5_rproc_init(struct remoteproc *rproc,
 		return NULL;
 	}
 
+	(void)ops;
 	xil_printf("rproc init: node id: %d\r\n", cpu_id);
 	priv = metal_allocate_memory(sizeof(*priv));
 	if (!priv)
@@ -114,7 +115,6 @@ struct remoteproc *r5_rproc_init(struct remoteproc *rproc,
 	memset(priv, 0, sizeof(*priv));
 	priv->rproc = rproc;
 	priv->cpu_id = cpu_id;
-	priv->rproc->ops = ops;
 	priv->rproc->priv = priv;
 	priv->rpu_base = RPU_BASE_ADDR;
 	metal_io_init(&priv->rpu_io, (void *)RPU_BASE_ADDR, &priv->rpu_base,
