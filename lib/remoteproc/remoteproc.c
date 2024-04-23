@@ -179,10 +179,13 @@ struct remoteproc *remoteproc_init(struct remoteproc *rproc,
 
 	memset(rproc, 0, sizeof(*rproc));
 	rproc->state = RPROC_OFFLINE;
+	rproc->ops = ops;
+	rproc->priv = priv;
 	metal_mutex_init(&rproc->lock);
 	metal_list_init(&rproc->mems);
 	metal_list_init(&rproc->vdevs);
-	rproc = ops->init(rproc, ops, priv);
+	if (ops->init)
+		rproc = ops->init(rproc, ops, priv);
 	return rproc;
 }
 
