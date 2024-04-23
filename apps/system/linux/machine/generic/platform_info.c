@@ -247,9 +247,10 @@ linux_proc_init(struct remoteproc *rproc,
 	struct vring_ipi_info *ipi;
 	int ret;
 
+	(void)ops;
 	if (!rproc || !prproc)
 		return NULL;
-	rproc->priv = prproc;
+
 	/* Create shared memory io */
 	ret = metal_shmem_open(prproc->shm_file, prproc->shm_size, &io);
 	if (ret) {
@@ -281,7 +282,6 @@ linux_proc_init(struct remoteproc *rproc,
 	}
 	metal_irq_register(ipi->fd, linux_proc_irq_handler, ipi);
 	metal_irq_enable(ipi->fd);
-	rproc->ops = ops;
 	return rproc;
 
 err:

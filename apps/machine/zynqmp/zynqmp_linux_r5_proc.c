@@ -74,10 +74,9 @@ zynqmp_linux_r5_proc_init(struct remoteproc *rproc,
 	metal_phys_addr_t mem_pa;
 	int ret;
 
-	if (!rproc || !prproc || !ops)
+	(void)ops;
+	if (!rproc || !prproc)
 		return NULL;
-	rproc->priv = prproc;
-	rproc->ops = ops;
 	prproc->ipi_dev = NULL;
 	prproc->shm_dev = NULL;
 	/* Get shared memory device */

@@ -28,19 +28,6 @@
 #include <openamp/rpmsg_virtio.h>
 #include "platform_info.h"
 
-static struct remoteproc *
-zynqmp_mb_a53_proc_init(struct remoteproc *rproc,
-			const struct remoteproc_ops *ops, void *arg)
-{
-	struct remoteproc_priv *prproc = arg;
-
-	if (!rproc || !prproc || !ops)
-		return NULL;
-	rproc->priv = prproc;
-	rproc->ops = ops;
-	return rproc;
-}
-
 static inline void zynqmp_mb_a53_proc_remove(struct remoteproc *rproc)
 {
 	(void)rproc;
@@ -108,7 +95,7 @@ static int zynqmp_mb_a53_proc_notify(struct remoteproc *rproc, uint32_t id)
  * notification operation and remote processor management operations.
  */
 const struct remoteproc_ops zynqmp_mb_a53_proc_ops = {
-	.init = zynqmp_mb_a53_proc_init,
+	.init = NULL,
 	.remove = zynqmp_mb_a53_proc_remove,
 	.mmap = zynqmp_mb_a53_proc_mmap,
 	.notify = zynqmp_mb_a53_proc_notify,

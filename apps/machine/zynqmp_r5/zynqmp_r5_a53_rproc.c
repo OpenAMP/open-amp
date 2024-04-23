@@ -65,7 +65,8 @@ zynqmp_r5_a53_proc_init(struct remoteproc *rproc,
 	unsigned int irq_vect;
 	int ret;
 
-	if (!rproc || !prproc || !ops)
+	(void)ops;
+	if (!rproc || !prproc)
 		return NULL;
 	ret = metal_device_open(prproc->kick_dev_bus_name,
 				prproc->kick_dev_name,
@@ -74,7 +75,6 @@ zynqmp_r5_a53_proc_init(struct remoteproc *rproc,
 		xil_printf("failed to open polling device: %d.\r\n", ret);
 		return NULL;
 	}
-	rproc->priv = prproc;
 	prproc->kick_dev = kick_dev;
 	prproc->kick_io = metal_device_io_region(kick_dev, 0);
 	if (!prproc->kick_io)
@@ -91,7 +91,6 @@ zynqmp_r5_a53_proc_init(struct remoteproc *rproc,
 	(void)irq_vect;
 	metal_io_write32(prproc->kick_io, 0, !POLL_STOP);
 #endif /* !RPMSG_NO_IPI */
-	rproc->ops = ops;
 
 	return rproc;
 err1:
