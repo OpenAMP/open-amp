@@ -13,12 +13,19 @@ ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_TAR
 FREERTOS_ZIP_URL=https://cfhcable.dl.sourceforge.net/project/freertos/FreeRTOS/V10.0.1/FreeRTOSv10.0.1.zip
 
 pre_build(){
-	# fix issue related to tzdata install
+	# fix issue related to tzdata install, not needed for 24.04 but kept for 22.04 and earlier
 	echo 'Etc/UTC' > /etc/timezone || exit 1
-	ln -s /usr/share/zoneinfo/Etc/UTC /etc/localtime || exit 1
+	ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime || exit 1
+
+	#Create a new virtual environment
+	python3 -m venv ./.venv
+	source ./.venv/bin/activate
+
+	# add make and cmake
+	# cmake from packages will work for 22.04 and later but use pip3 to get the latest on any distro
 	apt update || exit 1
    	apt-get install -y make || exit 1
-   	sudo pip3 install cmake || exit 1
+	pip3 install cmake || exit 1
 }
 
 build_linux(){
@@ -77,13 +84,10 @@ build_zephyr(){
 	echo  " Build for Zephyr OS "
 	sudo apt-get install -y git cmake ninja-build gperf || exit 1
   	sudo apt-get install -y ccache dfu-util device-tree-compiler wget || exit 1
-  	sudo apt-get install -y python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file || exit 1
+	sudo apt-get install -y python3-dev python3-setuptools python3-tk python3-wheel xz-utils file || exit 1
   	sudo apt-get install -y make gcc gcc-multilib g++-multilib libsdl2-dev || exit 1
 	sudo apt-get install -y libc6-dev-i386 gperf g++ python3-ply python3-yaml device-tree-compiler ncurses-dev uglifyjs -qq || exit 1
-	sudo pip3 install pyelftools || exit 1
-	pip3 install --user -U west
-	echo 'export PATH=~/.local/bin:"$PATH"' >> ~/.bashrc
-	source ~/.bashrc
+	pip3 install west || exit 1
 
 	wget $ZEPHYR_SDK_DOWNLOAD_URL || exit 1
 	tar xvf $ZEPHYR_SDK_SETUP_TAR || exit 1
@@ -93,7 +97,7 @@ build_zephyr(){
 	cd ./zephyrproject || exit 1
 	west update || exit 1
 	west zephyr-export || exit 1
-	pip3 install --user -r ./zephyr/scripts/requirements.txt || exit 1
+	pip3 install  -r ./zephyr/scripts/requirements.txt || exit 1
 	echo  "Update zephyr OpenAMP repos"
 	#Update zephyr OpenAMP repos
 	cp -r ../lib modules/lib/open-amp/open-amp/ || exit 1
