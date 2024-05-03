@@ -48,7 +48,7 @@ int rpmsg_rpc_client_init(struct rpmsg_rpc_clt *rpc,
 }
 
 int rpmsg_rpc_client_send(struct rpmsg_rpc_clt *rpc,
-			  unsigned int rpc_id, void *request_param,
+			  uint32_t rpc_id, void *request_param,
 			  size_t req_param_size)
 {
 	unsigned char tmpbuf[MAX_BUF_LEN];
