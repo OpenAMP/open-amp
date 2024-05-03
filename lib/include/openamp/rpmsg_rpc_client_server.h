@@ -25,13 +25,13 @@ extern "C" {
  * Aligning to 64 bits -> 488UL
  */
 #define MAX_BUF_LEN	488UL
-#define MAX_FUNC_ID_LEN sizeof(unsigned long int)
+#define MAX_FUNC_ID_LEN sizeof(uint32_t)
 
 struct rpmsg_rpc_clt;
 struct rpmsg_rpc_svr;
 
 typedef void (*rpmsg_rpc_shutdown_cb)(struct rpmsg_rpc_clt *rpc);
-typedef void (*app_cb)(struct rpmsg_rpc_clt *rpc, int statust, void *data,
+typedef void (*app_cb)(struct rpmsg_rpc_clt *rpc, int status, void *data,
 		       size_t len);
 typedef int (*rpmsg_rpc_syscall_cb)(void *data, struct rpmsg_rpc_svr *rpcs);
 
@@ -181,7 +181,7 @@ int rpmsg_rpc_server_init(struct rpmsg_rpc_svr *rpcs, struct rpmsg_device *rdev,
  * @return Length of the received response, negative value for failure.
  */
 int rpmsg_rpc_client_send(struct rpmsg_rpc_clt *rpc,
-			  unsigned int rpc_id, void *request_param,
+			  uint32_t rpc_id, void *request_param,
 			  size_t req_param_size);
 
 /**
