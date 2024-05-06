@@ -35,7 +35,7 @@ extern struct hil_platform_ops zynq_a9_proc_ops;
 #define REMOTE_CPU_ID                     1
 
 /**
- * This array provdes defnition of CPU nodes for host and remote
+ * This array provides definition of CPU nodes for host and remote
  * context. It contains two nodes because the same file is intended
  * to use with both host and remote configurations. On zynq platform
  * only one node definition is required for host/remote as there
@@ -51,7 +51,7 @@ extern struct hil_platform_ops zynq_a9_proc_ops;
  * -Channel info.
  *
  * Although the channel info is not platform specific information
- * but it is conveneient to keep it in HIL so that user can easily
+ * but it is convenient to keep it in HIL so that user can easily
  * provide it without modifying the generic part.
  *
  * It is good idea to define hil_proc structure with platform
