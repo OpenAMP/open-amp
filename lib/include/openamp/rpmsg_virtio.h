@@ -112,21 +112,6 @@ struct rpmsg_virtio_device {
 #define RPMSG_REMOTE	VIRTIO_DEV_DEVICE
 #define RPMSG_HOST	VIRTIO_DEV_DRIVER
 
-#define RPMSG_SLAVE        deprecated_rpmsg_slave()
-#define RPMSG_MASTER       deprecated_rpmsg_master()
-
-__deprecated static inline int deprecated_rpmsg_master(void)
-{
-	/* "RPMSG_MASTER is deprecated, please use RPMSG_HOST" */
-	return RPMSG_HOST;
-}
-
-__deprecated static inline int deprecated_rpmsg_slave(void)
-{
-	/* "RPMSG_SLAVE is deprecated, please use RPMSG_REMOTE" */
-	return RPMSG_REMOTE;
-}
-
 /**
  * @brief Set the virtio callback to manage the wait for TX buffer availability.
  *
