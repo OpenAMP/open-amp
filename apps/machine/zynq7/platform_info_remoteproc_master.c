@@ -31,7 +31,7 @@ extern struct hil_platform_ops zynq_a9_proc_ops;
 #define SHM_SIZE                          0x00200000
 #define VRING0_IPI_VECT                   6
 #define VRING1_IPI_VECT                   3
-#define MASTER_CPU_ID                     0
+#define HOST_CPU_ID                       0
 #define REMOTE_CPU_ID                     1
 
 /**

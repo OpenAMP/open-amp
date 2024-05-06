@@ -140,7 +140,7 @@ int app(struct rpmsg_device *rdev, void *priv)
 			break;
 		}
 		while (rpmsg_list) {
-			/* Send data back to master */
+			/* Send data back to host */
 			ret = rpmsg_send(rpmsg_list->ept, rpmsg_list->data,
 					 rpmsg_list->len);
 			if (ret < 0) {
