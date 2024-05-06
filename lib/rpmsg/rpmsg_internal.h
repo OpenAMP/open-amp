@@ -37,15 +37,12 @@ extern "C" {
 #define RPMSG_LOCATE_DATA(p) ((unsigned char *)(p) + sizeof(struct rpmsg_hdr))
 
 /**
- * enum rpmsg_ns_flags - dynamic name service announcement flags
- *
- * @RPMSG_NS_CREATE: a new remote service was just created
- * @RPMSG_NS_DESTROY: a known remote service was just destroyed
- * @RPMSG_NS_CREATE_WITH_ACK: a new remote service was just created waiting
- *                            acknowledgment.
+ * @brief dynamic name service announcement flags
  */
 enum rpmsg_ns_flags {
+	/** A new remote service was just created */
 	RPMSG_NS_CREATE = 0,
+	/** A known remote service was just destroyed */
 	RPMSG_NS_DESTROY = 1,
 };
 

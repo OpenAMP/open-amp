@@ -49,8 +49,8 @@
  * This structure is used by the rpmsg virtio to store unused virtio buffer, as the
  * virtqueue structure has been already updated and memory allocated.
  *
- * @node: node in reclaimer list.
- * @idx:  virtio descriptor index containing the buffer information.
+ * @param node	node in reclaimer list.
+ * @param idx	virtio descriptor index containing the buffer information.
  */
 struct vbuff_reclaimer_t {
 	struct metal_list node;

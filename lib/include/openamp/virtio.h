@@ -300,7 +300,7 @@ static inline void virtio_delete_virtqueues(struct virtio_device *vdev)
 /**
  * @brief Get device ID.
  *
- * @param dev Pointer to device structure.
+ * @param vdev Pointer to device structure.
  *
  * @return Device ID value.
  */
@@ -314,7 +314,7 @@ static inline uint32_t virtio_get_devid(const struct virtio_device *vdev)
 /**
  * @brief Retrieve device status.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param status	Pointer to the virtio device status.
  *
  * @return 0 on success, otherwise error code.
@@ -334,7 +334,7 @@ static inline int virtio_get_status(struct virtio_device *vdev, uint8_t *status)
 /**
  * @brief Set device status.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param status	Value to be set as device status.
  *
  * @return 0 on success, otherwise error code.
@@ -354,7 +354,7 @@ static inline int virtio_set_status(struct virtio_device *vdev, uint8_t status)
 /**
  * @brief Retrieve configuration data from the device.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param offset	Offset of the data within the configuration area.
  * @param dst		Address of the buffer that will hold the data.
  * @param len		Length of the data to be retrieved.
@@ -377,7 +377,7 @@ static inline int virtio_read_config(struct virtio_device *vdev,
 /**
  * @brief Write configuration data to the device.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param offset	Offset of the data within the configuration area.
  * @param src		Address of the buffer that holds the data to write.
  * @param len		Length of the data to be written.
@@ -400,7 +400,7 @@ static inline int virtio_write_config(struct virtio_device *vdev,
 /**
  * @brief Get the virtio device features.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param features	Pointer to features supported by both the driver and
  *			the device as a bitfield.
  *
@@ -422,7 +422,7 @@ static inline int virtio_get_features(struct virtio_device *vdev,
 /**
  * @brief Set features supported by the VIRTIO driver.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param features	Features supported by the driver as a bitfield.
  *
  * @return 0 on success, otherwise error code.
@@ -443,7 +443,7 @@ static inline int virtio_set_features(struct virtio_device *vdev,
 /**
  * @brief Negotiate features between virtio device and driver.
  *
- * @param dev			Pointer to device structure.
+ * @param vdev			Pointer to device structure.
  * @param features		Supported features.
  * @param final_features	Pointer to the final features after negotiate.
  *
