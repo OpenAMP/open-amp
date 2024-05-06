@@ -38,8 +38,8 @@ typedef int (*rpmsg_rpc_syscall_cb)(void *data, struct rpmsg_rpc_svr *rpcs);
 /**
  * struct rpmsg_rpc_request - rpc request message
  *
- * @id: service id
- * @params: request params
+ * @param id		service id
+ * @param params	request params
  *
  */
 struct rpmsg_rpc_request {
