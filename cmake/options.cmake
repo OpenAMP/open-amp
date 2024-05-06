@@ -60,27 +60,19 @@ endif(NOT ${MACHINE} STREQUAL "zynqmp_r5")
 
 option (WITH_VIRTIO_DRIVER "Build with virtio driver (front end)  enabled" ON)
 option (WITH_VIRTIO_DEVICE "Build with virtio device (back end)  enabled" ON)
-option (WITH_VIRTIO_MASTER "Build with virtio driver (front end)  enabled" OFF)
-option (WITH_VIRTIO_SLAVE "Build with virtio device (back end)  enabled" OFF)
 
-if (WITH_VIRTIO_MASTER)
-  message(DEPRECATION "deprecated cmake option replaced by WITH_VIRTIO_DRIVER" ...)
-endif (WITH_VIRTIO_MASTER)
-if (WITH_VIRTIO_SLAVE)
-  message(DEPRECATION "deprecated cmake option replaced by WITH_VIRTIO_DEVICE" ...)
-endif (WITH_VIRTIO_SLAVE)
 
-if (NOT WITH_VIRTIO_DRIVER AND NOT WITH_VIRTIO_MASTER)
+if (NOT WITH_VIRTIO_DRIVER)
 	add_definitions(-DVIRTIO_DRIVER_SUPPORT=0)
-else (NOT WITH_VIRTIO_DRIVER AND NOT WITH_VIRTIO_MASTER)
+else (NOT WITH_VIRTIO_DRIVER)
 	add_definitions(-DVIRTIO_DRIVER_SUPPORT=1)
-endif (NOT WITH_VIRTIO_DRIVER AND NOT WITH_VIRTIO_MASTER)
+endif (NOT WITH_VIRTIO_DRIVER)
 
-if (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
+if (NOT WITH_VIRTIO_DEVICE)
 	add_definitions(-DVIRTIO_DEVICE_SUPPORT=0)
-else (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
+else (NOT WITH_VIRTIO_DEVICE)
 	add_definitions(-DVIRTIO_DEVICE_SUPPORT=1)
-endif (NOT WITH_VIRTIO_DEVICE AND NOT WITH_VIRTIO_SLAVE)
+endif (NOT WITH_VIRTIO_DEVICE)
 
 option (WITH_VIRTIO_MMIO_DRV "Build with virtio mmio driver support enabled" OFF)
 
