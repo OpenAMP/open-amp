@@ -161,8 +161,8 @@ struct rpmsg_device {
  * @brief Send a message across to the remote processor,
  * specifying source and destination address.
  *
- * This function sends @data of length @len to the remote @dst address from
- * the source @src address.
+ * This function sends `data` of length `len` to the remote `dst` address from
+ * the source `src` address.
  * The message will be sent to the remote processor which the channel belongs
  * to.
  *
@@ -182,9 +182,9 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 /**
  * @brief Send a message across to the remote processor
  *
- * This function sends @data of length @len based on the @ept.
+ * This function sends `data` of length `len` based on the `ept`.
  * The message will be sent to the remote processor which the channel belongs
- * to, using @ept's source and destination addresses.
+ * to, using `ept`'s source and destination addresses.
  * In case there are no TX buffers available, the function will block until
  * one becomes available, or a timeout of 15 seconds elapses. When the latter
  * happens, -ERESTARTSYS is returned.
@@ -208,9 +208,9 @@ static inline int rpmsg_send(struct rpmsg_endpoint *ept, const void *data,
 /**
  * @brief Send a message across to the remote processor, specify dst
  *
- * This function sends @data of length @len to the remote @dst address.
- * The message will be sent to the remote processor which the @ept
- * channel belongs to, using @ept's source address.
+ * This function sends `data` of length `len` to the remote `dst` address.
+ * The message will be sent to the remote processor which the `ept`
+ * channel belongs to, using `ept`'s source address.
  * In case there are no TX buffers available, the function will block until
  * one becomes available, or a timeout of 15 seconds elapses. When the latter
  * happens, -ERESTARTSYS is returned.
@@ -234,9 +234,9 @@ static inline int rpmsg_sendto(struct rpmsg_endpoint *ept, const void *data,
 /**
  * @brief Send a message using explicit src/dst addresses
  *
- * This function sends @data of length @len to the remote @dst address,
- * and uses @src as the source address.
- * The message will be sent to the remote processor which the @ept
+ * This function sends `data` of length `len` to the remote `dst` address,
+ * and uses `src` as the source address.
+ * The message will be sent to the remote processor which the `ept`
  * channel belongs to.
  * In case there are no TX buffers available, the function will block until
  * one becomes available, or a timeout of 15 seconds elapses. When the latter
@@ -260,9 +260,9 @@ static inline int rpmsg_send_offchannel(struct rpmsg_endpoint *ept,
 /**
  * @brief Send a message across to the remote processor
  *
- * This function sends @data of length @len on the @ept channel.
- * The message will be sent to the remote processor which the @ept
- * channel belongs to, using @ept's source and destination addresses.
+ * This function sends `data` of length `len` on the `ept` channel.
+ * The message will be sent to the remote processor which the `ept`
+ * channel belongs to, using `ept`'s source and destination addresses.
  * In case there are no TX buffers available, the function will immediately
  * return -ENOMEM without waiting until one becomes available.
  *
@@ -285,9 +285,9 @@ static inline int rpmsg_trysend(struct rpmsg_endpoint *ept, const void *data,
 /**
  * @brief Send a message across to the remote processor, specify dst
  *
- * This function sends @data of length @len to the remote @dst address.
- * The message will be sent to the remote processor which the @ept
- * channel belongs to, using @ept's source address.
+ * This function sends `data` of length `len` to the remote `dst` address.
+ * The message will be sent to the remote processor which the `ept`
+ * channel belongs to, using `ept`'s source address.
  * In case there are no TX buffers available, the function will immediately
  * return -ENOMEM without waiting until one becomes available.
  *
@@ -310,9 +310,9 @@ static inline int rpmsg_trysendto(struct rpmsg_endpoint *ept, const void *data,
 /**
  * @brief Send a message using explicit src/dst addresses
  *
- * This function sends @data of length @len to the remote @dst address,
- * and uses @src as the source address.
- * The message will be sent to the remote processor which the @ept
+ * This function sends `data` of length `len` to the remote `dst` address,
+ * and uses `src` as the source address.
+ * The message will be sent to the remote processor which the `ept`
  * channel belongs to.
  * In case there are no TX buffers available, the function will immediately
  * return -ENOMEM without waiting until one becomes available.
