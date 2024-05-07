@@ -236,11 +236,11 @@ struct virtio_dispatch {
 	/** Get the feature exposed by the virtio device. */
 	uint32_t (*get_features)(struct virtio_device *dev);
 
-	/** Set the supported feature (virtio driver only). */
+	/** Set the supported `feature` (virtio driver only). */
 	void (*set_features)(struct virtio_device *dev, uint32_t feature);
 
 	/**
-	 * Set the supported feature negotiate between the \ref features parameter and features
+	 * Set the supported features negotiate between the `features` parameter and features
 	 * supported by the device (virtio driver only).
 	 */
 	uint32_t (*negotiate_features)(struct virtio_device *dev,
