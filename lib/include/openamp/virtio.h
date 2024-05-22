@@ -70,13 +70,21 @@ extern "C" {
 #define VIRTIO_DEV_DRIVER	0UL
 #define VIRTIO_DEV_DEVICE	1UL
 
+#if !defined(VIRTIO_DRIVER_SUPPORT) && !defined(VIRTIO_DEVICE_SUPPORT)
 #ifdef VIRTIO_DRIVER_ONLY
 #warning "VIRTIO_DRIVER_ONLY is deprecated, please use VIRTIO_DEVICE_SUPPORT=0"
-#endif
-
-#ifdef VIRTIO_DEVICE_ONLY
+#define VIRTIO_DRIVER_SUPPORT 1
+#define VIRTIO_DEVICE_SUPPORT 0
+#elif VIRTIO_DEVICE_ONLY
 #warning "VIRTIO_DEVICE_ONLY is deprecated, please use VIRTIO_DRIVER_SUPPORT=0"
-#endif
+#define VIRTIO_DRIVER_SUPPORT 0
+#define VIRTIO_DEVICE_SUPPORT 1
+#else
+#warning "VIRTIO_DRIVER_SUPPORT and/or VIRTIO_DEVICE_SUPPORT should be defined"
+#define VIRTIO_DRIVER_SUPPORT 1
+#define VIRTIO_DEVICE_SUPPORT 1
+#endif /* VIRTIO_DRIVER_ONLY */
+#endif /*!defined(VIRTIO_DRIVER_SUPPORT) && !defined(VIRTIO_DEVICE_SUPPORT)*/
 
 #define VIRTIO_ENABLED(option) (option == 1)
 
