@@ -84,10 +84,21 @@ extern "C" {
 
 #define VIRTIO_ENABLED(option) (option == 1)
 
+#ifdef VIRTIO_DRIVER_SUPPORT
 #define VIRTIO_ROLE_IS_DRIVER(vdev) \
 	(VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && (vdev->role) == VIRTIO_DEV_DRIVER)
+#else
+/* Default definition without code size optimization */
+#define VIRTIO_ROLE_IS_DRIVER(vdev) (vdev->role == VIRTIO_DEV_DRIVER)
+#endif
+
+#ifdef VIRTIO_DEVICE_SUPPORT
 #define VIRTIO_ROLE_IS_DEVICE(vdev) \
 	(VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && (vdev->role) == VIRTIO_DEV_DEVICE)
+#else
+/* Default definition without code size optimization */
+#define VIRTIO_ROLE_IS_DEVICE(vdev) (vdev->role == VIRTIO_DEV_DEVICE)
+#endif
 
 /** @brief Virtio device identifier. */
 struct virtio_device_id {
