@@ -9,7 +9,6 @@
  */
 
 #include <metal/alloc.h>
-#include <metal/sleep.h>
 #include <metal/utilities.h>
 #include <openamp/rpmsg_virtio.h>
 #include <openamp/virtqueue.h>
@@ -17,12 +16,6 @@
 #include "rpmsg_internal.h"
 
 #define RPMSG_NUM_VRINGS                        2
-
-/* Total tick count for 15secs - 1usec tick. */
-#define RPMSG_TICK_COUNT                        15000000
-
-/* Time to wait - In multiple of 1 msecs. */
-#define RPMSG_TICKS_PER_INTERVAL                1000
 
 /*
  * Get the buffer held counter value.
