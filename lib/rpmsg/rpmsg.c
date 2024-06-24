@@ -354,7 +354,7 @@ int rpmsg_create_ept(struct rpmsg_endpoint *ept, struct rpmsg_device *rdev,
 		 */
 	}
 
-	rpmsg_register_endpoint(rdev, ept, name, addr, dest, cb, unbind_cb, NULL);
+	rpmsg_register_endpoint(rdev, ept, name, addr, dest, cb, unbind_cb, ept->priv);
 	metal_mutex_release(&rdev->lock);
 
 	/* Send NS announcement to remote processor */
