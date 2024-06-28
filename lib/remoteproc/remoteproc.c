@@ -222,7 +222,9 @@ int remoteproc_config(struct remoteproc *rproc, void *data)
 				ret = rproc->ops->config(rproc, data);
 			else
 				ret = 0;
-			rproc->state = RPROC_READY;
+
+			if (!ret)
+				rproc->state = RPROC_READY;
 		} else {
 			ret = -RPROC_EINVAL;
 		}
@@ -238,8 +240,10 @@ int remoteproc_start(struct remoteproc *rproc)
 	if (rproc) {
 		metal_mutex_acquire(&rproc->lock);
 		if (rproc->state == RPROC_READY) {
-			ret = rproc->ops->start(rproc);
-			rproc->state = RPROC_RUNNING;
+			if (rproc->ops->start)
+				ret = rproc->ops->start(rproc);
+			if (!ret)
+				rproc->state = RPROC_RUNNING;
 		} else {
 			ret = -RPROC_EINVAL;
 		}
@@ -258,8 +262,10 @@ int remoteproc_stop(struct remoteproc *rproc)
 		    rproc->state != RPROC_OFFLINE) {
 			if (rproc->ops->stop)
 				ret = rproc->ops->stop(rproc);
-			rproc->state = RPROC_STOPPED;
-			rproc->bitmap = 0;
+			if (!ret) {
+				rproc->state = RPROC_STOPPED;
+				rproc->bitmap = 0;
+			}
 		} else {
 			ret = 0;
 		}
