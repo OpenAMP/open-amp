@@ -143,13 +143,10 @@ struct virtio_mmio_device {
 	struct virtio_device vdev;
 
 	/** Device configuration space metal_io_region */
-	struct metal_io_region *cfg_io;
+	struct metal_io_region cfg_io;
 
 	/** Pre-shared memory space metal_io_region */
-	struct metal_io_region *shm_io;
-
-	/** Shared memory device */
-	struct metal_device shm_device;
+	struct metal_io_region shm_io;
 
 	/** VIRTIO device configuration space */
 	struct virtio_mmio_dev_mem cfg_mem;

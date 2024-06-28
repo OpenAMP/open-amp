@@ -24,7 +24,7 @@ static inline void virtio_mmio_write32(struct virtio_device *vdev, int offset, u
 	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
 							      struct virtio_mmio_device, vdev);
 
-	metal_io_write32(vmdev->cfg_io, offset, value);
+	metal_io_write32(&vmdev->cfg_io, offset, value);
 }
 
 static inline uint32_t virtio_mmio_read32(struct virtio_device *vdev, int offset)
@@ -32,7 +32,7 @@ static inline uint32_t virtio_mmio_read32(struct virtio_device *vdev, int offset
 	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
 							      struct virtio_mmio_device, vdev);
 
-	return metal_io_read32(vmdev->cfg_io, offset);
+	return metal_io_read32(&vmdev->cfg_io, offset);
 }
 
 static inline uint8_t virtio_mmio_read8(struct virtio_device *vdev, int offset)
@@ -40,7 +40,7 @@ static inline uint8_t virtio_mmio_read8(struct virtio_device *vdev, int offset)
 	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
 							      struct virtio_mmio_device, vdev);
 
-	return metal_io_read8(vmdev->cfg_io, offset);
+	return metal_io_read8(&vmdev->cfg_io, offset);
 }
 
 static inline void virtio_mmio_set_status(struct virtio_device *vdev, uint8_t status)
@@ -141,46 +141,18 @@ const struct virtio_dispatch virtio_mmio_dispatch = {
 static int virtio_mmio_get_metal_io(struct virtio_device *vdev, uintptr_t virt_mem_ptr,
 				    uintptr_t cfg_mem_ptr)
 {
-	struct metal_device *device;
-	int32_t err;
 	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
 							      struct virtio_mmio_device, vdev);
 
-	/* Setup shared memory device */
-	vmdev->shm_device.regions[0].physmap = (metal_phys_addr_t *)&vmdev->shm_mem.base;
-	vmdev->shm_device.regions[0].virt = (void *)virt_mem_ptr;
-	vmdev->shm_device.regions[0].size = vmdev->shm_mem.size;
+	/* Setup shared memory region */
+	metal_io_init(&vmdev->shm_io, (void *)virt_mem_ptr,
+		      (metal_phys_addr_t *)&vmdev->shm_mem.base,
+		      vmdev->shm_mem.size, -1, 0, NULL);
 
-	VIRTIO_ASSERT((METAL_MAX_DEVICE_REGIONS > 1),
-		      "METAL_MAX_DEVICE_REGIONS must be greater that 1");
-
-	vmdev->shm_device.regions[1].physmap = (metal_phys_addr_t *)&vmdev->cfg_mem.base;
-	vmdev->shm_device.regions[1].virt = (void *)cfg_mem_ptr;
-	vmdev->shm_device.regions[1].size = vmdev->cfg_mem.size;
-
-	err = metal_register_generic_device(&vmdev->shm_device);
-	if (err) {
-		metal_log(METAL_LOG_ERROR, "Couldn't register shared memory device: %d\n", err);
-		return err;
-	}
-
-	err = metal_device_open("generic", vmdev->shm_device.name, &device);
-	if (err) {
-		metal_log(METAL_LOG_ERROR, "metal_device_open failed: %d", err);
-		return err;
-	}
-
-	vmdev->shm_io = metal_device_io_region(device, 0);
-	if (!vmdev->shm_io) {
-		metal_log(METAL_LOG_ERROR, "metal_device_io_region failed to get region 0");
-		return err;
-	}
-
-	vmdev->cfg_io = metal_device_io_region(device, 1);
-	if (!vmdev->cfg_io) {
-		metal_log(METAL_LOG_ERROR, "metal_device_io_region failed to get region 1");
-		return err;
-	}
+	/* Setup configuration region */
+	metal_io_init(&vmdev->cfg_io, (void *)cfg_mem_ptr,
+		      (metal_phys_addr_t *)&vmdev->cfg_mem.base,
+		      vmdev->cfg_mem.size, -1, 0, NULL);
 
 	return 0;
 }
@@ -284,7 +256,7 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 		return NULL;
 	}
 
-	vring_info->io = vmdev->shm_io;
+	vring_info->io = &vmdev->shm_io;
 	vring_info->info.num_descs = virtio_mmio_get_max_elem(vdev, idx);
 	vring_info->info.align = VIRTIO_MMIO_VRING_ALIGNMENT;
 
@@ -310,7 +282,7 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 	}
 	vdev->role = role_bk;
 	vq->priv = cb_arg;
-	virtqueue_set_shmem_io(vq, vmdev->shm_io);
+	virtqueue_set_shmem_io(vq, &vmdev->shm_io);
 
 	/* Writing selection register VIRTIO_MMIO_QUEUE_SEL. In pure AMP
 	 * mode this needs to be followed by a synchronization w/ the device
@@ -325,7 +297,7 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_QUEUE_NUM, vq->vq_nentries);
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_QUEUE_ALIGN, 4096);
 	virtio_mmio_write32(vdev, VIRTIO_MMIO_QUEUE_PFN,
-			    ((uintptr_t)metal_io_virt_to_phys(vmdev->shm_io,
+			    ((uintptr_t)metal_io_virt_to_phys(&vmdev->shm_io,
 			    (char *)vq->vq_ring.desc)) / 4096);
 
 	vdev->vrings_info[vdev->vrings_num].vq = vq;
