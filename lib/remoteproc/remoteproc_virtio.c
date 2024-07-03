@@ -12,7 +12,7 @@
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_virtio.h>
 #include <openamp/virtqueue.h>
-#include <metal/cpu.h>
+#include <metal/sys.h>
 #include <metal/utilities.h>
 #include <metal/alloc.h>
 
@@ -412,6 +412,6 @@ void rproc_virtio_wait_remote_ready(struct virtio_device *vdev)
 		status = rproc_virtio_get_status(vdev);
 		if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK)
 			return;
-		metal_cpu_yield();
+		metal_yield();
 	}
 }
