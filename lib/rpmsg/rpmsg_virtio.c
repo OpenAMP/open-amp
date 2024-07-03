@@ -10,6 +10,7 @@
 
 #include <metal/alloc.h>
 #include <metal/sleep.h>
+#include <metal/sys.h>
 #include <metal/utilities.h>
 #include <openamp/rpmsg_virtio.h>
 #include <openamp/virtqueue.h>
@@ -271,8 +272,7 @@ static int rpmsg_virtio_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
 		} else if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK) {
 			return 0;
 		}
-		/* TODO: clarify metal_cpu_yield usage*/
-		metal_cpu_yield();
+		metal_yield();
 	}
 }
 
