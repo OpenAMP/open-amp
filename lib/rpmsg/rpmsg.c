@@ -141,7 +141,7 @@ int rpmsg_send_ns_message(struct rpmsg_endpoint *ept, unsigned long flags)
 
 	ns_msg.flags = flags;
 	ns_msg.addr = ept->addr;
-	strncpy(ns_msg.name, ept->name, sizeof(ns_msg.name));
+	strlcpy(ns_msg.name, ept->name, sizeof(ns_msg.name));
 	ret = rpmsg_send_offchannel_raw(ept, ept->addr,
 					RPMSG_NS_EPT_ADDR,
 					&ns_msg, sizeof(ns_msg), true);
@@ -305,7 +305,7 @@ void rpmsg_register_endpoint(struct rpmsg_device *rdev,
 			     rpmsg_ept_cb cb,
 			     rpmsg_ns_unbind_cb ns_unbind_cb, void *priv)
 {
-	strncpy(ept->name, name ? name : "", sizeof(ept->name));
+	strlcpy(ept->name, name ? name : "", sizeof(ept->name));
 	ept->refcnt = 1;
 	ept->addr = src;
 	ept->dest_addr = dest;
