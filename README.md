@@ -86,6 +86,9 @@ library for it project:
   This option can be set to OFF if the only the remote mode is implemented.
 * **WITH_VIRTIO_DEVICE** (default ON): Build with virtio device enabled.
   This option can be set to OFF if the only the driver mode is implemented.
+* **WITH_VQ_RX_EMPTY_NOTIFY** (default OFF): Choose notify mode. When set to
+  ON, only notify when there are no more Message in the RX queue. When set to
+  OFF, notify for each RX buffer released.
 * **WITH_STATIC_LIB** (default ON): Build with a static library.
 * **WITH_SHARED_LIB** (default ON): Build with a shared library.
 * **WITH_ZEPHYR** (default OFF): Build open-amp as a zephyr library. This option

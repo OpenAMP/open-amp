@@ -80,6 +80,14 @@ if (WITH_VIRTIO_MMIO_DRV)
   add_definitions(-DWITH_VIRTIO_MMIO_DRV)
 endif (WITH_VIRTIO_MMIO_DRV)
 
+option (WITH_VQ_RX_EMPTY_NOTIFY "Build with virtqueue rx empty notify enabled" OFF)
+
+if (NOT WITH_VQ_RX_EMPTY_NOTIFY)
+  add_definitions(-DVQ_RX_EMPTY_NOTIFY=0)
+else (NOT WITH_VQ_RX_EMPTY_NOTIFY)
+  add_definitions(-DVQ_RX_EMPTY_NOTIFY=1)
+endif (NOT WITH_VQ_RX_EMPTY_NOTIFY)
+
 option (WITH_DCACHE "Build with all cache operations enabled" OFF)
 
 if (WITH_DCACHE)
