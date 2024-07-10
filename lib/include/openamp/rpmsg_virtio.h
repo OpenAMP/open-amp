@@ -177,7 +177,7 @@ static inline uint8_t rpmsg_virtio_get_status(struct rpmsg_virtio_device *rvdev)
  * @return The features supported by both the rpmsg driver and rpmsg device.
  */
 __deprecated
-static inline uint32_t
+static inline uint64_t
 rpmsg_virtio_get_features(struct rpmsg_virtio_device *rvdev)
 {
 	return rvdev->vdev->func->get_features(rvdev->vdev);

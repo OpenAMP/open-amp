@@ -164,7 +164,7 @@ static uint32_t rproc_virtio_get_dfeatures(struct virtio_device *vdev)
 	return features;
 }
 
-static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
+static uint64_t rproc_virtio_get_features(struct virtio_device *vdev)
 {
 	struct remoteproc_virtio *rpvdev;
 	struct fw_rsc_vdev *vdev_rsc;
@@ -180,12 +180,12 @@ static uint32_t rproc_virtio_get_features(struct virtio_device *vdev)
 			metal_io_virt_to_offset(io, &vdev_rsc->gfeatures));
 	dfeatures = rproc_virtio_get_dfeatures(vdev);
 
-	return dfeatures & gfeatures;
+	return (uint64_t)(dfeatures & gfeatures);
 }
 
 #if VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT)
 static void rproc_virtio_set_features(struct virtio_device *vdev,
-				      uint32_t features)
+				      uint64_t features)
 {
 	struct remoteproc_virtio *rpvdev;
 	struct fw_rsc_vdev *vdev_rsc;
@@ -196,17 +196,17 @@ static void rproc_virtio_set_features(struct virtio_device *vdev,
 	io = rpvdev->vdev_rsc_io;
 	metal_io_write32(io,
 			 metal_io_virt_to_offset(io, &vdev_rsc->gfeatures),
-			 features);
+			 (uint32_t)features);
 	RSC_TABLE_FLUSH(vdev_rsc, sizeof(struct fw_rsc_vdev));
 	rpvdev->notify(rpvdev->priv, vdev->notifyid);
 }
 
-static uint32_t rproc_virtio_negotiate_features(struct virtio_device *vdev,
-						uint32_t features)
+static uint64_t rproc_virtio_negotiate_features(struct virtio_device *vdev,
+						uint64_t features)
 {
 	uint32_t dfeatures = rproc_virtio_get_dfeatures(vdev);
 
-	rproc_virtio_set_features(vdev, dfeatures & features);
+	rproc_virtio_set_features(vdev, dfeatures & (uint32_t)features);
 
 	return 0;
 }

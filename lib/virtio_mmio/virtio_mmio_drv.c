@@ -75,44 +75,43 @@ static void virtio_mmio_read_config(struct virtio_device *vdev,
 		d[i] = virtio_mmio_read8(vdev, VIRTIO_MMIO_CONFIG + i);
 }
 
-static uint32_t _virtio_mmio_get_features(struct virtio_device *vdev, int idx)
+static uint64_t virtio_mmio_get_features(struct virtio_device *vdev)
 {
-	uint32_t hfeatures;
+	uint32_t feature_hi;
+	uint32_t feature_lo;
 
 	/* Writing selection register VIRTIO_MMIO_DEVICE_FEATURES_SEL. In pure AMP
 	 * mode this needs to be followed by a synchronization w/ the device
 	 * before reading VIRTIO_MMIO_DEVICE_FEATURES
 	 */
-	virtio_mmio_write32(vdev, VIRTIO_MMIO_DEVICE_FEATURES_SEL, idx);
-	hfeatures = virtio_mmio_read32(vdev, VIRTIO_MMIO_DEVICE_FEATURES);
-	return hfeatures & vdev->features;
+	virtio_mmio_write32(vdev, VIRTIO_MMIO_DEVICE_FEATURES_SEL, 0);
+	feature_lo = virtio_mmio_read32(vdev, VIRTIO_MMIO_DEVICE_FEATURES);
+	virtio_mmio_write32(vdev, VIRTIO_MMIO_DEVICE_FEATURES_SEL, 1);
+	feature_hi = virtio_mmio_read32(vdev, VIRTIO_MMIO_DEVICE_FEATURES);
+	return (((uint64_t)feature_hi << 32) | (uint64_t)feature_lo) &
+		   vdev->features;
 }
 
-static uint32_t virtio_mmio_get_features(struct virtio_device *vdev)
+static void virtio_mmio_set_features(struct virtio_device *vdev, uint64_t features)
 {
-	return _virtio_mmio_get_features(vdev, 0);
-}
-
-/* This is more like negotiate_features */
-static void _virtio_mmio_set_features(struct virtio_device *vdev,
-				      uint32_t features, int idx)
-{
-	uint32_t hfeatures;
+	uint32_t feature_hi;
+	uint32_t feature_lo;
 
 	/* Writing selection register VIRTIO_MMIO_DEVICE_FEATURES_SEL. In pure AMP
 	 * mode this needs to be followed by a synchronization w/ the device
 	 * before reading VIRTIO_MMIO_DEVICE_FEATURES
 	 */
-	virtio_mmio_write32(vdev, VIRTIO_MMIO_DEVICE_FEATURES_SEL, idx);
-	hfeatures = virtio_mmio_read32(vdev, VIRTIO_MMIO_DEVICE_FEATURES);
-	features &= hfeatures;
-	virtio_mmio_write32(vdev, VIRTIO_MMIO_DRIVER_FEATURES, features);
-	vdev->features = features;
-}
+	virtio_mmio_write32(vdev, VIRTIO_MMIO_DEVICE_FEATURES_SEL, 0);
+	feature_lo = virtio_mmio_read32(vdev, VIRTIO_MMIO_DEVICE_FEATURES) &
+				 (uint32_t)features;
+	virtio_mmio_write32(vdev, VIRTIO_MMIO_DRIVER_FEATURES, feature_lo);
 
-static void virtio_mmio_set_features(struct virtio_device *vdev, uint32_t features)
-{
-	_virtio_mmio_set_features(vdev, features, 0);
+	virtio_mmio_write32(vdev, VIRTIO_MMIO_DEVICE_FEATURES_SEL, 1);
+	feature_hi = virtio_mmio_read32(vdev, VIRTIO_MMIO_DEVICE_FEATURES) &
+				 (uint32_t)(features >> 32);
+	virtio_mmio_write32(vdev, VIRTIO_MMIO_DRIVER_FEATURES, feature_hi);
+
+	vdev->features = ((uint64_t)feature_hi << 32) | (uint64_t)feature_lo;
 }
 
 static void virtio_mmio_reset_device(struct virtio_device *vdev)
