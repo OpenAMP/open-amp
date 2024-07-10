@@ -321,8 +321,6 @@ static bool rpmsg_virtio_release_rx_buffer_nolock(struct rpmsg_virtio_device *rv
 	/* Return buffer on virtqueue. */
 	len = virtqueue_get_buffer_length(rvdev->rvq, idx);
 	rpmsg_virtio_return_buffer(rvdev, rp_hdr, len, idx);
-	/* Tell peer we returned an rx buffer */
-	virtqueue_kick(rvdev->rvq);
 
 	return true;
 }
@@ -337,8 +335,11 @@ static void rpmsg_virtio_release_rx_buffer(struct rpmsg_device *rdev,
 	rp_hdr = RPMSG_LOCATE_HDR(rxbuf);
 
 	metal_mutex_acquire(&rdev->lock);
-	if (rpmsg_virtio_buf_held_dec_test(rp_hdr))
+	if (rpmsg_virtio_buf_held_dec_test(rp_hdr)) {
 		rpmsg_virtio_release_rx_buffer_nolock(rvdev, rp_hdr);
+		/* Tell peer we returned an rx buffer */
+		virtqueue_kick(rvdev->rvq);
+	}
 	metal_mutex_release(&rdev->lock);
 }
 
@@ -560,6 +561,7 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 	struct rpmsg_device *rdev = &rvdev->rdev;
 	struct rpmsg_endpoint *ept;
 	struct rpmsg_hdr *rp_hdr;
+	bool release = false;
 	uint32_t len;
 	uint16_t idx;
 	int status;
@@ -568,16 +570,19 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 		/* Process the received data from remote node */
 		metal_mutex_acquire(&rdev->lock);
 		rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
-		metal_mutex_release(&rdev->lock);
 
 		/* No more filled rx buffers */
-		if (!rp_hdr)
+		if (!rp_hdr) {
+			if (VIRTIO_ENABLED(VQ_RX_EMPTY_NOTIFY) && release)
+				/* Tell peer we returned some rx buffer */
+				virtqueue_kick(rvdev->rvq);
+			metal_mutex_release(&rdev->lock);
 			break;
+		}
 
 		rp_hdr->reserved = idx;
 
 		/* Get the channel node from the remote device channels list. */
-		metal_mutex_acquire(&rdev->lock);
 		ept = rpmsg_get_ept_from_addr(rdev, rp_hdr->dst);
 		rpmsg_ept_incref(ept);
 		RPMSG_BUF_HELD_INC(rp_hdr);
@@ -600,8 +605,15 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 
 		metal_mutex_acquire(&rdev->lock);
 		rpmsg_ept_decref(ept);
-		if (rpmsg_virtio_buf_held_dec_test(rp_hdr))
+		if (rpmsg_virtio_buf_held_dec_test(rp_hdr)) {
 			rpmsg_virtio_release_rx_buffer_nolock(rvdev, rp_hdr);
+			if (VIRTIO_ENABLED(VQ_RX_EMPTY_NOTIFY))
+				/* Kick will be sent only when last buffer is released */
+				release = true;
+			else
+				/* Tell peer we returned an rx buffer */
+				virtqueue_kick(rvdev->rvq);
+		}
 		metal_mutex_release(&rdev->lock);
 	}
 }
