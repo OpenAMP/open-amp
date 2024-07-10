@@ -159,7 +159,7 @@ static int sk_unix_client(const char *descr)
 
 	memset(&addr, 0, sizeof addr);
 	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, descr + strlen(UNIX_PREFIX),
+	strlcpy(addr.sun_path, descr + strlen(UNIX_PREFIX),
 		sizeof addr.sun_path);
 	if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) >= 0) {
 		printf("connected to %s\r\n", descr + strlen(UNIX_PREFIX));
@@ -178,7 +178,7 @@ static int sk_unix_server(const char *descr)
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, descr + strlen(UNIXS_PREFIX),
+	strlcpy(addr.sun_path, descr + strlen(UNIXS_PREFIX),
 		sizeof addr.sun_path);
 	unlink(addr.sun_path);
 	if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
