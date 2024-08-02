@@ -14,7 +14,7 @@ By default this option is `ON` when `WITH_APPS` is on.
 Here is an example:
 
 ```
-$ cmake ../open-amp -DCMAKE_TOOLCHAIN_FILE=zynq7_generic -DWITH_OBSOLETE=on -DWITH_APPS=ON
+$ cmake ../open-amp -DCMAKE_TOOLCHAIN_FILE=zynqmp_r5_generic -DWITH_OBSOLETE=on -DWITH_APPS=ON
 ```
 
 ### Linux Compilation
