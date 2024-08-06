@@ -957,6 +957,15 @@ void rpmsg_deinit_vdev(struct rpmsg_virtio_device *rvdev)
 			node = rdev->endpoints.next;
 			ept = metal_container_of(node, struct rpmsg_endpoint, node);
 			rpmsg_destroy_ept(ept);
+
+			/*
+			 * The first node will still be present because the
+			 * first node is created before endpoints. So
+			 * exit the loop if only this original node remains.
+			 */
+			if (!node->next) {
+				break;
+			}
 		}
 
 		rvdev->rvq = 0;
