@@ -152,6 +152,7 @@ struct virtio_device_id {
 typedef void (*virtio_dev_reset_cb)(struct virtio_device *vdev);
 
 struct virtio_dispatch;
+struct virtio_memory_ops;
 
 /** @brief Device features. */
 struct virtio_feature_desc {
@@ -196,6 +197,9 @@ struct virtio_device {
 
 	/** Virtio dispatch table */
 	const struct virtio_dispatch *func;
+
+	/**< Virtio device memory operations */
+	const struct virtio_memory_ops *mmops;
 
 	/** Private data */
 	void *priv;
@@ -280,6 +284,14 @@ struct virtio_dispatch {
 
 	/** Notify the other side that a virtio vring as been updated. */
 	void (*notify)(struct virtqueue *vq);
+};
+
+struct virtio_memory_ops {
+	/** Allocate memory from the virtio device. */
+	void *(*alloc)(struct virtio_device *dev, size_t size, size_t align);
+
+	/** Free memory allocated from the virtio device. */
+	void (*free)(struct virtio_device *dev, void *buf);
 };
 
 /**
@@ -496,6 +508,54 @@ static inline int virtio_reset_device(struct virtio_device *vdev)
 		return -ENXIO;
 
 	vdev->func->reset_device(vdev);
+	return 0;
+}
+
+/**
+ * @brief Allocate buffer from the virtio device
+ *
+ * @param vdev	Pointer to virtio device structure.
+ * @param buf	Pointer to the allocated buffer (virtual address).
+ * @param size	Allocated buffer size.
+ * @param align	Allocated buffer alignment.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_alloc_buf(struct virtio_device *vdev, void **buf,
+				   size_t size, size_t align)
+{
+	if (!vdev || !buf)
+		return -EINVAL;
+
+	if (!vdev->mmops || !vdev->mmops->alloc)
+		return -ENXIO;
+
+	*buf = vdev->mmops->alloc(vdev, size, align);
+	if (!*buf)
+		return -ENOMEM;
+
+	return 0;
+}
+
+/**
+ * @brief Free the buffer allocated by \ref virtio_alloc_buf from the virtio
+ * device.
+ *
+ * @param vdev	Pointer to virtio device structure.
+ * @param buf	Buffer need to be freed.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_free_buf(struct virtio_device *vdev, void *buf)
+{
+	if (!vdev)
+		return -EINVAL;
+
+	if (!vdev->mmops || !vdev->mmops->free)
+		return -ENXIO;
+
+	vdev->mmops->free(vdev, buf);
+
 	return 0;
 }
 
