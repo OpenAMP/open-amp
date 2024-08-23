@@ -139,5 +139,10 @@ if (DEFINED RPMSG_BUFFER_SIZE)
 endif (DEFINED RPMSG_BUFFER_SIZE)
 
 option (WITH_DOC "Build with documentation" OFF)
+option (WITH_RPMSG_TRACE "Enable Rpmsg Device Trace" OFF)
+
+if (WITH_RPMSG_TRACE)
+  add_definitions(-DRPMSG_TRACE)
+endif (WITH_RPMSG_TRACE)
 
 message ("-- C_FLAGS : ${CMAKE_C_FLAGS}")
