@@ -306,7 +306,7 @@ void remoteproc_init_mem(struct remoteproc_mem *mem, const char *name,
 	if (!mem || !io || size == 0)
 		return;
 	if (name)
-		strncpy(mem->name, name, sizeof(mem->name));
+		strncpy(mem->name, name, sizeof(mem->name) - 1);
 	else
 		mem->name[0] = 0;
 	mem->pa = pa;
