@@ -10,6 +10,7 @@ on:
       - docs/**
       - cmake/**
       - scripts/**
+      - .github/**
 
 jobs:
   checkpatch_review:
