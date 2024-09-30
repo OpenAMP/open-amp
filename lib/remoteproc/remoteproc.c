@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <internal/utilities.h>
 #include <metal/alloc.h>
 #include <metal/log.h>
 #include <metal/utilities.h>
@@ -306,7 +307,7 @@ void remoteproc_init_mem(struct remoteproc_mem *mem, const char *name,
 	if (!mem || !io || size == 0)
 		return;
 	if (name)
-		strncpy(mem->name, name, sizeof(mem->name));
+		(void)safe_strcpy(mem->name, sizeof(mem->name), name, sizeof(name));
 	else
 		mem->name[0] = 0;
 	mem->pa = pa;
