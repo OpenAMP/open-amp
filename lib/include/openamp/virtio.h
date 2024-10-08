@@ -449,6 +449,9 @@ static inline int virtio_get_features(struct virtio_device *vdev,
 		return -ENXIO;
 
 	*features = vdev->func->get_features(vdev);
+	if (VIRTIO_ROLE_IS_DEVICE(vdev))
+		vdev->features = *features;
+
 	return 0;
 }
 
@@ -563,6 +566,28 @@ static inline int virtio_free_buf(struct virtio_device *vdev, void *buf)
 	vdev->mmops->free(vdev, buf);
 
 	return 0;
+}
+
+/**
+ * @brief Check if the virtio device support a specific feature.
+ *
+ * @param vdev		Pointer to device structure.
+ * @param feature_bit	Feature bit to check.
+ *
+ * @return true if the feature is supported, otherwise false.
+ */
+static inline bool virtio_has_feature(struct virtio_device *vdev,
+				      unsigned int feature_bit)
+{
+	uint32_t features;
+
+	if (!vdev && feature_bit >= sizeof(features) * 8)
+		return false;
+
+	if (!vdev->features)
+		virtio_get_features(vdev, &features);
+
+	return (vdev->features & (1UL << feature_bit)) != 0;
 }
 
 #if defined __cplusplus
