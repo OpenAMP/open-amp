@@ -468,14 +468,15 @@ static inline int virtio_negotiate_features(struct virtio_device *vdev,
 					    uint32_t features,
 					    uint32_t *final_features)
 {
-	if (!vdev || !final_features)
+	if (!vdev)
 		return -EINVAL;
 
 	if (!vdev->func || !vdev->func->negotiate_features)
 		return -ENXIO;
 
-	*final_features = vdev->func->negotiate_features(vdev, features);
-	vdev->features = *final_features;
+	vdev->features = vdev->func->negotiate_features(vdev, features);
+	if (final_features)
+		*final_features = vdev->features;
 	return 0;
 }
 
