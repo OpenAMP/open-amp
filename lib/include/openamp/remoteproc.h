@@ -344,6 +344,23 @@ struct fw_rsc_vdev {
 } METAL_PACKED_END;
 
 /**
+ * struct fw_rsc_config - configuration space declaration
+ * @h2r_buf_size: the size of the buffer used to send data from host to remote
+ * @r2h_buf_size: the size of the buffer used to send data from remote to host
+ * @reserved: reserved (must be zero)
+ *
+ * This structure immediately follow fw_rsc_vdev to provide the config info.
+ */
+METAL_PACKED_BEGIN
+struct fw_rsc_config {
+	/* The individual buffer size(if VIRTIO_RPMSG_F_BUFSZ) */
+	uint32_t h2r_buf_size;
+	uint32_t r2h_buf_size;
+	uint32_t reserved[14]; /* Reserve for the future use */
+	/* Put the customize config here */
+} METAL_PACKED_END;
+
+/**
  * @brief Resource table remote processor vendor specific entry
  *
  * This resource entry tells the host the vendor specific resource
