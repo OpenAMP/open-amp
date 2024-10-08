@@ -475,6 +475,7 @@ static inline int virtio_negotiate_features(struct virtio_device *vdev,
 		return -ENXIO;
 
 	*final_features = vdev->func->negotiate_features(vdev, features);
+	vdev->features = *final_features;
 	return 0;
 }
 
