@@ -119,6 +119,12 @@ struct virtio_device_id {
 #define VIRTIO_F_NOTIFY_ON_EMPTY (1 << 24)
 
 /*
+ * This feature indicates that the device accepts arbitrary
+ * descriptor layouts.
+ */
+#define VIRTIO_F_ANY_LAYOUT (1 << 27)
+
+/*
  * The guest should never negotiate this feature; it
  * is used to detect faulty drivers.
  */
