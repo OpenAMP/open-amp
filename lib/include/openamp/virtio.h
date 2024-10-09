@@ -156,7 +156,7 @@ struct virtio_dispatch;
 /** @brief Device features. */
 struct virtio_feature_desc {
 	/** Unique feature ID, defined in the virtio specification. */
-	uint32_t vfd_val;
+	uint64_t vfd_val;
 
 	/** Name of the feature (for debug). */
 	const char *vfd_str;
@@ -221,7 +221,7 @@ struct virtio_device {
 const char *virtio_dev_name(uint16_t devid);
 
 __deprecated void virtio_describe(struct virtio_device *dev, const char *msg,
-				  uint32_t features,
+				  uint64_t features,
 				  struct virtio_feature_desc *feature_desc);
 
 /**
@@ -249,17 +249,17 @@ struct virtio_dispatch {
 	void (*set_status)(struct virtio_device *dev, uint8_t status);
 
 	/** Get the feature exposed by the virtio device. */
-	uint32_t (*get_features)(struct virtio_device *dev);
+	uint64_t (*get_features)(struct virtio_device *dev);
 
 	/** Set the supported `feature` (virtio driver only). */
-	void (*set_features)(struct virtio_device *dev, uint32_t feature);
+	void (*set_features)(struct virtio_device *dev, uint64_t feature);
 
 	/**
 	 * Set the supported features negotiate between the `features` parameter and features
 	 * supported by the device (virtio driver only).
 	 */
-	uint32_t (*negotiate_features)(struct virtio_device *dev,
-				       uint32_t features);
+	uint64_t (*negotiate_features)(struct virtio_device *dev,
+				       uint64_t features);
 
 	/**
 	 * Read a variable amount from the device specific (ie, network)
@@ -422,7 +422,7 @@ static inline int virtio_write_config(struct virtio_device *vdev,
  * @return 0 on success, otherwise error code.
  */
 static inline int virtio_get_features(struct virtio_device *vdev,
-				      uint32_t *features)
+				      uint64_t *features)
 {
 	if (!vdev || !features)
 		return -EINVAL;
@@ -443,7 +443,7 @@ static inline int virtio_get_features(struct virtio_device *vdev,
  * @return 0 on success, otherwise error code.
  */
 static inline int virtio_set_features(struct virtio_device *vdev,
-				      uint32_t features)
+				      uint64_t features)
 {
 	if (!vdev)
 		return -EINVAL;
@@ -465,8 +465,8 @@ static inline int virtio_set_features(struct virtio_device *vdev,
  * @return 0 on success, otherwise error code.
  */
 static inline int virtio_negotiate_features(struct virtio_device *vdev,
-					    uint32_t features,
-					    uint32_t *final_features)
+					    uint64_t features,
+					    uint64_t *final_features)
 {
 	if (!vdev || !final_features)
 		return -EINVAL;

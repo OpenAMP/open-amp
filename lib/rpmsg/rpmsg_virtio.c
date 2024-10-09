@@ -783,7 +783,7 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	struct rpmsg_device *rdev;
 	const char *vq_names[RPMSG_NUM_VRINGS];
 	vq_callback callback[RPMSG_NUM_VRINGS];
-	uint32_t features;
+	uint64_t features;
 	int status;
 	unsigned int i;
 
