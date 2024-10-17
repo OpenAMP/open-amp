@@ -24,6 +24,8 @@ jobs:
     steps:
     - name: Checkout open-amp
       uses: actions/checkout@v4
+      with:
+        path: open-amp
     - name: Checkout libmetal
       uses: actions/checkout@v4
       with:
@@ -31,16 +33,16 @@ jobs:
         path: libmetal
     - name: build for Linux
       id: build_linux
-      uses: ./.github/actions/build_ci
+      uses: ./open-amp/.github/actions/build_ci
       with:
         target: linux
     - name: build for Zephyr
       id: build_Zephyr
-      uses: ./.github/actions/build_ci
+      uses: ./open-amp/.github/actions/build_ci
       with:
         target: zephyr
     - name: build for generic arm
       id: build_generic
-      uses: ./.github/actions/build_ci
+      uses: ./open-amp/.github/actions/build_ci
       with:
         target: generic
