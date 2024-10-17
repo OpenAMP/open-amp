@@ -31,19 +31,20 @@ pre_build(){
 build_linux(){
 	echo  " Build for linux"
 	apt-get install -y libsysfs-dev libhugetlbfs-dev gcc || exit 1
+	export PROJECT_ROOT=$PWD
 	export || exit 1
 	pwd || exit 1
 	ls -l || exit 1
-	cd libmetal || exit 1
+	cd $PROJECT_ROOT/libmetal || exit 1
 	cmake . -Bbuild \
 	-DCMAKE_C_FLAGS="-Werror -Wall -Wextra -Wshadow -Wunused-but-set-variable" || exit 1
 	cd build || exit 1
 	make || exit 1
 	export || exit 1
-	cd ../.. || exit 1
+	cd $PROJECT_ROOT/open-amp || exit 1
 	cmake . -Bbuild -DCMAKE_C_FLAGS="-Werror -Wall -Wextra -Wshadow -Wunused-but-set-variable" \
-	-DWITH_APPS=on -DWITH_PROXY=on -DCMAKE_INCLUDE_PATH="./libmetal/build/lib/include"  \
-	-DCMAKE_LIBRARY_PATH="./libmetal/build/lib" || exit 1
+	-DWITH_APPS=on -DWITH_PROXY=on -DCMAKE_INCLUDE_PATH="$PROJECT_ROOT/libmetal/build/lib/include"  \
+	-DCMAKE_LIBRARY_PATH="$PROJECT_ROOT/libmetal/build/lib" || exit 1
 	cd build || exit 1
 	make VERBOSE=1 all || exit 1
 	exit 0
@@ -52,17 +53,18 @@ build_linux(){
 build_generic(){
 	echo  " Build for generic platform "
 	apt-get install -y gcc-arm-none-eabi || exit 1
-	cd libmetal || exit 1
+	export PROJECT_ROOT=$PWD
+	cd $PROJECT_ROOT/libmetal || exit 1
 	cmake . -Bbuild-generic -DCMAKE_TOOLCHAIN_FILE=template-generic \
 	-DCMAKE_C_FLAGS="-Werror -Wall -Wextra -Wshadow -Wunused-but-set-variable" || exit 1
 	cd build-generic || exit 1
 	make VERBOSE=1 || exit 1
-	cd ../../ || exit 1
+	cd $PROJECT_ROOT/open-amp || exit 1
 	cmake . -Bbuild-generic -DCMAKE_TRY_COMPILE_TARGET_TYPE="STATIC_LIBRARY" \
 	-DCMAKE_C_FLAGS="-Werror -Wall -Wextra -Wshadow -Wunused-but-set-variable" \
 	-DCMAKE_SYSTEM_PROCESSOR="arm" -DCMAKE_C_COMPILER=arm-none-eabi-gcc \
-	-DCMAKE_INCLUDE_PATH="./libmetal/build-generic/lib/include" \
-	-DCMAKE_LIBRARY_PATH="./libmetal/build-generic/lib" || exit 1
+	-DCMAKE_INCLUDE_PATH="$PROJECT_ROOT/libmetal/build-generic/lib/include" \
+	-DCMAKE_LIBRARY_PATH="$PROJECT_ROOT/libmetal/build-generic/lib" || exit 1
 	cd build-generic || exit 1
 	make VERBOSE=1 || exit 1
 	exit 0
@@ -89,6 +91,7 @@ build_zephyr(){
 	sudo apt-get install -y libc6-dev-i386 gperf g++ python3-ply python3-yaml device-tree-compiler ncurses-dev uglifyjs -qq || exit 1
 	pip3 install west || exit 1
 
+	export PROJECT_ROOT=$PWD
 	wget $ZEPHYR_SDK_DOWNLOAD_URL || exit 1
 	tar xvf $ZEPHYR_SDK_SETUP_TAR || exit 1
 	rm -rf $ZEPHYR_SDK_INSTALL_DIR || exit 1
@@ -100,11 +103,11 @@ build_zephyr(){
 	pip3 install  -r ./zephyr/scripts/requirements.txt || exit 1
 	echo  "Update zephyr OpenAMP repos"
 	#Update zephyr OpenAMP repos
-	cp -r ../lib modules/lib/open-amp/open-amp/ || exit 1
-	cp ../CMakeLists.txt modules/lib/open-amp/open-amp/ || exit 1
-	cp ../VERSION modules/lib/open-amp/open-amp/ || exit 1
-	cp -r ../cmake modules/lib/open-amp/open-amp/ || exit 1
-	cp -r ../libmetal modules/hal/libmetal/ || exit 1
+	cp -r $PROJECT_ROOT/open-amp/lib modules/lib/open-amp/open-amp/ || exit 1
+	cp $PROJECT_ROOT/open-amp/CMakeLists.txt modules/lib/open-amp/open-amp/ || exit 1
+	cp $PROJECT_ROOT/open-amp/VERSION modules/lib/open-amp/open-amp/ || exit 1
+	cp -r $PROJECT_ROOT/open-amp/cmake modules/lib/open-amp/open-amp/ || exit 1
+	cp -r $PROJECT_ROOT/libmetal modules/hal/libmetal/ || exit 1
 	cd ./zephyr || exit 1
 	source zephyr-env.sh || exit 1
 	echo  "build openamp sample"
