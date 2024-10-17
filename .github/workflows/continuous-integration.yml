@@ -41,13 +41,35 @@ jobs:
       uses: ./open-amp/.github/actions/build_ci
       with:
         target: linux
-    - name: build for Zephyr
-      id: build_Zephyr
-      uses: ./open-amp/.github/actions/build_ci
-      with:
-        target: zephyr
     - name: build for generic arm
       id: build_generic
       uses: ./open-amp/.github/actions/build_ci
       with:
         target: generic
+
+  # Break the zephyr builds into their own job as the common runner was
+  # running out of space when runs were together
+  # Also, as the longest running jobs, this allows them to run in ||
+  zephyr_build_known_good_version:
+    name: Zephyr build with a version that is known to work
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout open-amp
+      uses: actions/checkout@v4
+      with:
+        path: open-amp
+    - name: Checkout libmetal
+      uses: actions/checkout@v4
+      with:
+        repository: OpenAMP/libmetal
+        path: libmetal
+    - name: Checkout openamp-system-reference
+      uses: actions/checkout@v4
+      with:
+        repository: OpenAMP/openamp-system-reference
+        path: openamp-system-reference
+    - name: build for Zephyr (Known Good)
+      id: build_Zephyr
+      uses: ./open-amp/.github/actions/build_ci
+      with:
+        target: zephyr

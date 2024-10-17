@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2024 Linaro Limited.
+
+# The focus of this flow is to check for external changes that will effect
+# the project.  Even if no code changes are happening, changes in external
+# distros or projects can invalidate our work and this flow lets us know
+
+name: open-amp Heath Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - docs/**
+
+  # Allows you to run this workflow manually from the Actions tab or gh API
+  workflow_dispatch:
+
+  # run weekly on Sunday at 5:10 AM UTC (9:10 PM US western)
+  schedule:
+    - cron:  '10 5 * * 0'
+
+jobs:
+  zephyr_build_main:
+    name: 'Zephyr build from latest on main'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout open-amp
+      uses: actions/checkout@v4
+      with:
+        path: open-amp
+    - name: Checkout libmetal
+      uses: actions/checkout@v4
+      with:
+        repository: OpenAMP/libmetal
+        path: libmetal
+    - name: Checkout openamp-system-reference
+      uses: actions/checkout@v4
+      with:
+        repository: OpenAMP/openamp-system-reference
+        path: openamp-system-reference
+    - name: Zephyr Latest
+      id: build_Zephyr_latest
+      uses: ./open-amp/.github/actions/build_ci
+      with:
+        target: zephyr-latest

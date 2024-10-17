@@ -2,13 +2,15 @@
 
 readonly TARGET="$1"
 
+# Known good version for PR testing
+ZEPHYR_SDK_VERSION=v0.16.8
+ZEPHYR_VERSION=v3.7.0
+
 ZEPHYR_TOOLCHAIN_VARIANT=zephyr
 ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
-ZEPHYR_SDK_VERSION=0.16.1
-ZEPHYR_SDK_DOWNLOAD_FOLDER=https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION
-ZEPHYR_SDK_SETUP_DIR=zephyr-sdk-$ZEPHYR_SDK_VERSION
-ZEPHYR_SDK_SETUP_TAR=${ZEPHYR_SDK_SETUP_DIR}_linux-x86_64.tar.xz
-ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_TAR
+ZEPHYR_SDK_API_FOLDER=https://api.github.com/repos/zephyrproject-rtos/sdk-ng/releases
+ZEPHYR_SDK_VER_SELECT="tags/$ZEPHYR_SDK_VERSION"
+ZEPHYR_SDK_SETUP_TAR=zephyr-sdk-.*linux-x86_64.tar.xz
 
 FREERTOS_ZIP_URL=https://cfhcable.dl.sourceforge.net/project/freertos/FreeRTOS/V10.0.1/FreeRTOSv10.0.1.zip
 
@@ -21,10 +23,10 @@ pre_build(){
 	python3 -m venv ./.venv
 	source ./.venv/bin/activate
 
-	# add make and cmake
+	# add make, curl, and cmake
 	# cmake from packages will work for 22.04 and later but use pip3 to get the latest on any distro
-	apt update || exit 1
-   	apt-get install -y make || exit 1
+	apt update -qq || exit 1
+	apt-get install -qqy make curl || exit 1
 	pip3 install cmake || exit 1
 }
 
@@ -89,6 +91,17 @@ build_freertos(){
 }
 
 build_zephyr(){
+	# find the SDK download URL
+	ZEPHYR_SDK_DOWNLOAD_URL=`curl -s ${ZEPHYR_SDK_API_FOLDER}/${ZEPHYR_SDK_VER_SELECT} | \
+		grep -e "browser_download_url.*${ZEPHYR_SDK_SETUP_TAR}"| cut -d : -f 2,3 | tr -d \"`
+	echo "SDK URL=$ZEPHYR_SDK_DOWNLOAD_URL"
+	if [ -z "$ZEPHYR_SDK_DOWNLOAD_URL" ]; then
+		echo "error: Blank SDK download URL"
+		exit 2;
+	fi
+	ZEPHYR_SDK_TAR=`basename  $ZEPHYR_SDK_DOWNLOAD_URL`
+	ZEPHYR_SDK_SETUP_DIR=`echo $ZEPHYR_SDK_TAR | cut -d_ -f1`
+
 	echo  " Build for Zephyr OS "
 	sudo apt-get install -y git cmake ninja-build gperf pv || exit 1
   	sudo apt-get install -y ccache dfu-util device-tree-compiler wget || exit 1
@@ -103,7 +116,7 @@ build_zephyr(){
 	pv $ZEPHYR_SDK_TAR -i 3 -ptebr -f | tar xJ || exit 1
 	rm -rf $ZEPHYR_SDK_INSTALL_DIR || exit 1
 	yes | ./$ZEPHYR_SDK_SETUP_DIR/setup.sh || exit 1
-	west init ./zephyrproject || exit 1
+	west init --mr $ZEPHYR_VERSION ./zephyrproject || exit 1
 	cd ./zephyrproject || exit 1
 	west update || exit 1
 	west zephyr-export || exit 1
@@ -143,6 +156,11 @@ main(){
 	if [[ "$TARGET" == "zephyr" ]]; then
    		build_zephyr
    	fi
+	if [[ "$TARGET" == "zephyr-latest" ]]; then
+		ZEPHYR_SDK_VER_SELECT=latest
+		ZEPHYR_VERSION=main
+		build_zephyr
+	fi
 }
 
 main
