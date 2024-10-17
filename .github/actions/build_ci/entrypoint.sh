@@ -32,21 +32,27 @@ build_linux(){
 	echo  " Build for linux"
 	apt-get install -y libsysfs-dev libhugetlbfs-dev gcc || exit 1
 	export PROJECT_ROOT=$PWD
-	export || exit 1
-	pwd || exit 1
-	ls -l || exit 1
-	cd $PROJECT_ROOT/libmetal || exit 1
-	cmake . -Bbuild \
-	-DCMAKE_C_FLAGS="-Werror -Wall -Wextra -Wshadow -Wunused-but-set-variable" || exit 1
-	cd build || exit 1
-	make || exit 1
-	export || exit 1
-	cd $PROJECT_ROOT/open-amp || exit 1
-	cmake . -Bbuild -DCMAKE_C_FLAGS="-Werror -Wall -Wextra -Wshadow -Wunused-but-set-variable" \
-	-DWITH_APPS=on -DWITH_PROXY=on -DCMAKE_INCLUDE_PATH="$PROJECT_ROOT/libmetal/build/lib/include"  \
-	-DCMAKE_LIBRARY_PATH="$PROJECT_ROOT/libmetal/build/lib" || exit 1
-	cd build || exit 1
-	make VERBOSE=1 all || exit 1
+	echo " -- Build libmetal --"
+	cd $PROJECT_ROOT/libmetal &&
+	cmake . -Bbuild -DCMAKE_INSTALL_PREFIX=$PROJECT_ROOT/target \
+		-DCMAKE_C_FLAGS="-Werror -Wall -Wextra -Wshadow -Wunused-but-set-variable" || exit 1
+	make -C build install || exit 1
+	echo " -- Build open_amp --"
+	cd $PROJECT_ROOT/open-amp
+	cmake . -Bbuild -DCMAKE_INCLUDE_PATH=$PROJECT_ROOT/libmetal/build/lib/include/ \
+		-DCMAKE_LIBRARY_PATH=$PROJECT_ROOT/libmetal/build/lib/ \
+		-DCMAKE_INSTALL_PREFIX=$PROJECT_ROOT/target   -DWITH_PROXY=on \
+		-DCMAKE_C_FLAGS="-Werror -Wall -Wextra -Wshadow -Wunused-but-set-variable" || exit 1
+	make -C build install || exit 1
+	pwd
+	echo " -- Build legacy Apps --"
+	cd $PROJECT_ROOT/openamp-system-reference/examples/legacy_apps
+	cmake -Bbuild \
+		-DCMAKE_INCLUDE_PATH="$PROJECT_ROOT/libmetal/build/lib/include/;$PROJECT_ROOT/open-amp/build/lib/include/" \
+		-DCMAKE_LIBRARY_PATH="$PROJECT_ROOT/libmetal/build/lib/;$PROJECT_ROOT/open-amp/build/lib/" \
+		-DCMAKE_INSTALL_PREFIX=$PROJECT_ROOT/target  \
+		-DCMAKE_C_FLAGS="-Werror -Wall -Wextra -Wshadow -Wunused-but-set-variable" || exit 1
+	make -C build install || exit 1
 	exit 0
 }
 

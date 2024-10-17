@@ -31,6 +31,11 @@ jobs:
       with:
         repository: OpenAMP/libmetal
         path: libmetal
+    - name: Checkout openamp-system-reference
+      uses: actions/checkout@v4
+      with:
+        repository: OpenAMP/openamp-system-reference
+        path: openamp-system-reference
     - name: build for Linux
       id: build_linux
       uses: ./open-amp/.github/actions/build_ci
