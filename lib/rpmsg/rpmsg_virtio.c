@@ -394,7 +394,7 @@ static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 		if (status == RPMSG_EOPNOTSUPP) {
 			metal_sleep_usec(RPMSG_TICKS_PER_INTERVAL);
 			tick_count--;
-		} else if (status == RPMSG_SUCCESS) {
+		} else if (status != RPMSG_SUCCESS) {
 			break;
 		}
 	}
