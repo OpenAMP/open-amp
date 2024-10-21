@@ -576,7 +576,7 @@ int remoteproc_remove(struct remoteproc *rproc);
  * @brief Initialize remoteproc memory
  *
  * @param mem	Pointer to remoteproc memory
- * @param name	Memory name
+ * @param name	Memory name (max string size \ref RPROC_MAX_NAME_LEN)
  * @param pa	Physical address
  * @param da	Device address
  * @param size	Memory size
