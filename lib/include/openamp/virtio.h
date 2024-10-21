@@ -119,6 +119,12 @@ struct virtio_device_id {
 #define VIRTIO_F_NOTIFY_ON_EMPTY (1 << 24)
 
 /*
+ * This feature indicates that the device accepts arbitrary
+ * descriptor layouts.
+ */
+#define VIRTIO_F_ANY_LAYOUT (1 << 27)
+
+/*
  * The guest should never negotiate this feature; it
  * is used to detect faulty drivers.
  */
@@ -497,6 +503,23 @@ static inline int virtio_reset_device(struct virtio_device *vdev)
 
 	vdev->func->reset_device(vdev);
 	return 0;
+}
+
+/**
+ * @brief Check if the virtio device support a specific feature.
+ *
+ * @param vdev		Pointer to device structure.
+ * @param feature_bit	Feature bit to check.
+ *
+ * @return true if the feature is supported, otherwise false.
+ */
+static inline bool virtio_has_feature(struct virtio_device *vdev,
+				      unsigned int feature_bit)
+{
+	if (!vdev)
+		return false;
+
+	return (vdev->features & (1UL << feature_bit)) != 0;
 }
 
 #if defined __cplusplus
