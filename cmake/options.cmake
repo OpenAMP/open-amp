@@ -48,6 +48,10 @@ option (WITH_PROXY          "Build with proxy(access device controlled by other 
 option (WITH_APPS           "Build with sample applications" OFF)
 option (WITH_PROXY_APPS     "Build with proxy sample applications" OFF)
 if (WITH_APPS)
+  message(DEPRECATION
+    "Deprecated WITH_APPS cmake option. The applications have been moved to the "
+    "openamp-system-reference repository"
+  )
   if (WITH_PROXY)
     set (WITH_PROXY_APPS ON)
   endif (WITH_PROXY)
