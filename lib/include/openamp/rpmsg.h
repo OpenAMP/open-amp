@@ -564,7 +564,7 @@ static inline int rpmsg_send_nocopy(struct rpmsg_endpoint *ept,
  *
  * @param ept		Pointer to rpmsg endpoint
  * @param rdev		RPMsg device associated with the endpoint
- * @param name		Service name associated to the endpoint
+ * @param name		Service name associated to the endpoint (maximum size \ref RPMSG_NAME_SIZE)
  * @param src		Local address of the endpoint
  * @param dest		Target address of the endpoint
  * @param cb		Endpoint callback
