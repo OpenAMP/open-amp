@@ -295,6 +295,37 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 /**
  * @internal
  *
+ * @brief Returns next available buffer in the VirtIO queue
+ *
+ * @param vq		Pointer to VirtIO queue control block
+ * @param idx		Index of the buffer in vring desc table
+ * @param next_idx	Pointer to index of next buffer in vring desc table
+ * @param next_len	Pointer to length of next buffer in vring desc table
+ *
+ * @return Pointer to next available buffer
+ */
+void *virtqueue_get_next_avail_buffer(struct virtqueue *vq, uint16_t idx,
+				      uint16_t *next_idx, uint32_t *next_len);
+
+/**
+ * @internal
+ *
+ * @brief Get all the available buffers in the VirtIO queue
+ *
+ * @param vq		Pointer to VirtIO queue control block
+ * @param vb		Pointer to list of buffers
+ * @param vbsize	Size of buffer list
+ * @param vbcnt		Number of buffers returned
+ *
+ * @return 0 on success, otherwise error code.
+ */
+int virtqueue_get_available_buffers(struct virtqueue *vq,
+				    struct virtqueue_buf *vb, int vbsize,
+				    int *vbcnt);
+
+/**
+ * @internal
+ *
  * @brief Returns consumed buffer back to VirtIO queue
  *
  * @param vq		Pointer to VirtIO queue control block

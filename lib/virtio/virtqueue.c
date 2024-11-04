@@ -231,6 +231,63 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 	return buffer;
 }
 
+void *virtqueue_get_next_avail_buffer(struct virtqueue *vq, uint16_t idx,
+				      uint16_t *next_idx, uint32_t *next_len)
+{
+	void *buffer;
+	uint16_t next;
+
+	VRING_INVALIDATE(vq->vq_ring.desc[idx], sizeof(struct vring_desc));
+	if (!(vq->vq_ring.desc[idx].flags & VRING_DESC_F_NEXT))
+		return NULL;
+
+	next = vq->vq_ring.desc[idx].next;
+	if (next_idx)
+		*next_idx = next;
+
+	VRING_INVALIDATE(vq->vq_ring.desc[next], sizeof(struct vring_desc));
+	buffer = virtqueue_phys_to_virt(vq, vq->vq_ring.desc[next].addr);
+	if (next_len)
+		*next_len = vq->vq_ring.desc[next].len;
+
+	return buffer;
+}
+
+int virtqueue_get_available_buffers(struct virtqueue *vq,
+				    struct virtqueue_buf *vb, int vbsize,
+				    int *vbcnt)
+{
+	uint16_t head;
+	uint16_t idx;
+	uint32_t len;
+	void *buf;
+	int i;
+
+	buf = virtqueue_get_available_buffer(vq, &head, &len);
+	if (!buf)
+		return ERROR_VRING_NO_BUFF;
+
+	vb[0].buf = buf;
+	vb[0].len = len;
+
+	for (i = 1, idx = head; ; i++) {
+		buf = virtqueue_get_next_avail_buffer(vq, idx, &idx, &len);
+		if (!buf)
+			break;
+		else if (i >= vbsize) {
+			metal_log(METAL_LOG_ERROR, "vbsize %d is not enough\n",
+				  vbsize);
+			return ERROR_VQUEUE_INVLD_PARAM;
+		}
+
+		vb[i].buf = buf;
+		vb[i].len = len;
+	}
+
+	*vbcnt = i;
+	return head;
+}
+
 int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
 				  uint32_t len)
 {
