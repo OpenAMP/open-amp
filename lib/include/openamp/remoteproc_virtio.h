@@ -50,6 +50,9 @@ struct remoteproc_virtio {
 	/** Metal I/O region of vdev_info, can be NULL */
 	struct metal_io_region *vdev_rsc_io;
 
+	/** Metal I/O region of vdev share memory */
+	struct metal_io_region *shm_io;
+
 	/** Notification function */
 	rpvdev_notify_func notify;
 
@@ -87,6 +90,17 @@ rproc_virtio_create_vdev(unsigned int role, unsigned int notifyid,
  * @param vdev	Pointer to the virtio device
  */
 void rproc_virtio_remove_vdev(struct virtio_device *vdev);
+
+/**
+ * @brief Set the remoteproc virtio device share memory I/O region
+ *
+ * @param vdev		Pointer to the virtio device
+ * @param shm_io	Metal I/O region to set
+ *
+ * @return 0 for success, negative value for failure.
+ */
+int rproc_virtio_set_shm_io(struct virtio_device *vdev,
+			    struct metal_io_region *shm_io);
 
 /**
  * @brief Initialize rproc virtio vring
