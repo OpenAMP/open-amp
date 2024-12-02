@@ -86,18 +86,18 @@ extern "C" {
 
 #ifdef VIRTIO_DRIVER_SUPPORT
 #define VIRTIO_ROLE_IS_DRIVER(vdev) \
-	(VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && (vdev->role) == VIRTIO_DEV_DRIVER)
+	(VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && ((vdev)->role) == VIRTIO_DEV_DRIVER)
 #else
 /* Default definition without code size optimization */
-#define VIRTIO_ROLE_IS_DRIVER(vdev) (vdev->role == VIRTIO_DEV_DRIVER)
+#define VIRTIO_ROLE_IS_DRIVER(vdev) ((vdev)->role == VIRTIO_DEV_DRIVER)
 #endif
 
 #ifdef VIRTIO_DEVICE_SUPPORT
 #define VIRTIO_ROLE_IS_DEVICE(vdev) \
-	(VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && (vdev->role) == VIRTIO_DEV_DEVICE)
+	(VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && ((vdev)->role) == VIRTIO_DEV_DEVICE)
 #else
 /* Default definition without code size optimization */
-#define VIRTIO_ROLE_IS_DEVICE(vdev) (vdev->role == VIRTIO_DEV_DEVICE)
+#define VIRTIO_ROLE_IS_DEVICE(vdev) ((vdev)->role == VIRTIO_DEV_DEVICE)
 #endif
 
 /** @brief Virtio device identifier. */
