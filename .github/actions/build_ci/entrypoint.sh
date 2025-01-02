@@ -131,10 +131,10 @@ build_zephyr(){
 	cd ./zephyr || exit 1
 	source zephyr-env.sh || exit 1
 	echo  "build openamp sample"
-	west build --sysbuild -b lpcxpresso54114_m4 samples/subsys/ipc/openamp/ || exit 1
+	west build --sysbuild -b lpcxpresso54114/lpc54114/m4 samples/subsys/ipc/openamp/ || exit 1
 	rm -r build
 	echo  "build openamp/remote sample"
-	west build  --sysbuild -b lpcxpresso54114_m0 samples/subsys/ipc/openamp/remote/ || exit 1
+	west build  --sysbuild -b lpcxpresso54114/lpc54114/m0 samples/subsys/ipc/openamp/remote/ || exit 1
 	rm -r build
 	echo  "build openamp_rsc_table sample"
 	west build  --sysbuild -b stm32mp157c_dk2 samples/subsys/ipc/openamp_rsc_table || exit 1
