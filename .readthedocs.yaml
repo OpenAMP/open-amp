@@ -1,5 +1,16 @@
+# The main readthedocs build is in openamp-docs and includes this repo as a
+# sub-module.
+
+# This config file supports doc preview for PRs in this repo.
+# This allows us to see how a PR in this repo will look in the docs before it
+# is promoted to main and before the openamp-docs repo picks up the new version.
+
 version: 2
-formats: all
+# only do html, this is the case for PRs anyway but make sure
+formats: []
+sphinx:
+    # See comments in the file for why this is required
+    configuration: doc/readthedocs-conf.py
 build:
   os: "ubuntu-22.04"
   tools:
@@ -8,15 +19,10 @@ build:
     - cmake
     - libhugetlbfs-dev
     - libsysfs-dev
-  # here it would be nice to tell them that the conf.py will be in openamp-docs/conf.py
-  # sphinx:
-  #   configuration: openamp-docs/conf.py
-  # HOWEVER, if we say this they check right after they do checkout and it does not exist yet
-  # As of now they find it well enough right before the build stage
   jobs:
     post_checkout:
+      - echo "post_checkout"; pwd; echo $PATH; env; ls -la .
       # we ignore the checkout they did and make a new one of the whole openamp-docs project
-      - env
       - git log -n 1 --oneline
       - git rev-parse HEAD
       - git clone --recurse-submodules https://github.com/OpenAMP/openamp-docs.git
@@ -28,9 +34,18 @@ build:
       - (cd openamp-docs/open-amp; git log -n 1 --oneline)
       - (cd openamp-docs; git submodule status)
     post_install:
+      - echo "post_install"; pwd; echo $PATH; env; ls -la . openamp-docs
       - python -m pip install --exists-action=w --no-cache-dir -r openamp-docs/requirements.txt
     pre_build:
+      - echo "pre_build"; pwd; echo $PATH; env; ls -la . openamp-docs
       - echo "READTHEDOCS_OUTPUT=$READTHEDOCS_OUTPUT"
       - make -C openamp-docs BUILDDIR=$READTHEDOCS_OUTPUT doxygen
+    build:
+      html:
+        - echo "build"; pwd; echo $PATH; env; ls -la . openamp-docs
+        # This is the default build command as of 2025/01/12 but with
+        # "." changed to "openamp-docs"
+        - python -m sphinx -T -b html -d _build/doctrees -D language=en openamp-docs $READTHEDOCS_OUTPUT/html
     post_build:
+      - echo "post_build"; pwd; echo $PATH; ls -la . openamp-docs
       - make -C openamp-docs BUILDDIR=$READTHEDOCS_OUTPUT doxygen_copy
