@@ -1,11 +1,4 @@
-cmake_minimum_required (VERSION 3.0.2)
-if (POLICY CMP0048)
-  cmake_policy(SET CMP0048 NEW)
-endif()
-
-if (POLICY CMP0077)
-  cmake_policy(SET CMP0077 NEW)
-endif()
+cmake_minimum_required (VERSION 3.16)
 
 set (OPENAMP_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set (OPENAMP_BIN_ROOT "${CMAKE_CURRENT_BINARY_DIR}")
