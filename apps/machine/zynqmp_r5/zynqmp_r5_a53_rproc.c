@@ -180,7 +180,7 @@ static int zynqmp_r5_a53_proc_notify(struct remoteproc *rproc, uint32_t id)
 }
 
 /* processor operations from r5 to a53. It defines
- * notification operation and remote processor managementi operations. */
+ * notification operation and remote processor management operations. */
 const struct remoteproc_ops zynqmp_r5_a53_proc_ops = {
 	.init = zynqmp_r5_a53_proc_init,
 	.remove = zynqmp_r5_a53_proc_remove,
