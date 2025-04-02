@@ -45,17 +45,6 @@ string (TOUPPER ${MACHINE}                PROJECT_MACHINE_UPPER)
 
 # Select which components are in the openamp lib
 option (WITH_PROXY          "Build with proxy(access device controlled by other processor)" ON)
-option (WITH_APPS           "Build with sample applications" OFF)
-option (WITH_PROXY_APPS     "Build with proxy sample applications" OFF)
-if (WITH_APPS)
-  message(DEPRECATION
-    "Deprecated WITH_APPS cmake option. The applications have been moved to the "
-    "openamp-system-reference repository"
-  )
-  if (WITH_PROXY)
-    set (WITH_PROXY_APPS ON)
-  endif (WITH_PROXY)
-endif (WITH_APPS)
 
 # LOAD_FW only allowed for R5, otherwise turn off
 if (NOT ${MACHINE} STREQUAL "zynqmp_r5")
