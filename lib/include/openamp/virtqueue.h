@@ -72,6 +72,21 @@ struct virtqueue_buf {
 	int len;
 };
 
+/** @brief Virtqueue buffers descriptor. */
+struct virtqueue_bufs {
+	/** The descriptor index of the first available buffer */
+	uint16_t head;
+
+	/** The capacity of the virtqueue buffers */
+	unsigned int vb_capacity;
+
+	/** The real number of the virtqueue buffers */
+	unsigned int vb_num;
+
+	/** The virtqueue buffers */
+	struct virtqueue_buf vb[0];
+};
+
 /** @brief Vring descriptor extra information for buffer list management. */
 struct vq_desc_extra {
 	/** Pointer to first descriptor. */
@@ -289,8 +304,20 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx);
  *
  * @return Pointer to available buffer
  */
-void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
-				     uint32_t *len);
+void *virtqueue_get_first_avail_buffer(struct virtqueue *vq, uint16_t *avail_idx,
+				       uint32_t *len);
+
+/**
+ * @internal
+ *
+ * @brief Returns buffer available for use in the VirtIO queue
+ *
+ * @param vq	Pointer to VirtIO queue control block
+ * @param vbs	Pointer to virtqueue buffers to store available buffers
+ *
+ * @return Function status
+ */
+int virtqueue_get_available_buffer(struct virtqueue *vq, struct virtqueue_bufs *vbs);
 
 /**
  * @internal
