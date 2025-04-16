@@ -3,8 +3,8 @@
 readonly TARGET="$1"
 
 # Known good version for PR testing
-ZEPHYR_SDK_VERSION=v0.16.8
-ZEPHYR_VERSION=v3.7.0
+ZEPHYR_SDK_VERSION=v0.17.0
+ZEPHYR_VERSION=v4.1.0
 
 ZEPHYR_TOOLCHAIN_VARIANT=zephyr
 ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
