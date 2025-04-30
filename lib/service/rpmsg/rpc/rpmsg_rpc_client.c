@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <errno.h>
 #include <openamp/rpmsg_rpc_client_server.h>
 
 static int rpmsg_endpoint_client_cb(struct rpmsg_endpoint *, void *, size_t,
@@ -47,7 +48,7 @@ int rpmsg_rpc_client_init(struct rpmsg_rpc_clt *rpc,
 }
 
 int rpmsg_rpc_client_send(struct rpmsg_rpc_clt *rpc,
-			  unsigned int rpc_id, void *request_param,
+			  uint32_t rpc_id, void *request_param,
 			  size_t req_param_size)
 {
 	unsigned char tmpbuf[MAX_BUF_LEN];
@@ -81,8 +82,7 @@ void rpmsg_rpc_client_release(struct rpmsg_rpc_clt *rpc)
 {
 	if (!rpc)
 		return;
-	if (&rpc->ept)
-		rpmsg_destroy_ept(&rpc->ept);
+	rpmsg_destroy_ept(&rpc->ept);
 
 }
 

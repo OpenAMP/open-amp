@@ -78,29 +78,34 @@ extern "C" {
 #define VIRTIO_DEV_DRIVER	0UL
 #define VIRTIO_DEV_DEVICE	1UL
 
-#define VIRTIO_DEV_MASTER	deprecated_virtio_dev_master()
-#define VIRTIO_DEV_SLAVE	deprecated_virtio_dev_slave()
+#ifdef VIRTIO_DRIVER_ONLY
+#warning "VIRTIO_DRIVER_ONLY is deprecated, please use VIRTIO_DEVICE_SUPPORT=0"
+#define VIRTIO_DRIVER_SUPPORT 1
+#define VIRTIO_DEVICE_SUPPORT 0
+#endif /* VIRTIO_DRIVER_ONLY */
 
-__deprecated static inline int deprecated_virtio_dev_master(void)
-{
-	/* "VIRTIO_DEV_MASTER is deprecated, please use VIRTIO_DEV_DRIVER" */
-	return VIRTIO_DEV_DRIVER;
-}
+#ifdef VIRTIO_DEVICE_ONLY
+#warning "VIRTIO_DEVICE_ONLY is deprecated, please use VIRTIO_DRIVER_SUPPORT=0"
+#define VIRTIO_DRIVER_SUPPORT 0
+#define VIRTIO_DEVICE_SUPPORT 1
+#endif /* VIRTIO_DEVICE_ONLY */
 
-__deprecated static inline int deprecated_virtio_dev_slave(void)
-{
-	/* "VIRTIO_DEV_SLAVE is deprecated, please use VIRTIO_DEV_DEVICE" */
-	return VIRTIO_DEV_DEVICE;
-}
+#define VIRTIO_ENABLED(option) (option == 1)
 
-#ifdef VIRTIO_MASTER_ONLY
-#define VIRTIO_DRIVER_ONLY
-#warning "VIRTIO_MASTER_ONLY is deprecated, please use VIRTIO_DRIVER_ONLY"
+#ifdef VIRTIO_DRIVER_SUPPORT
+#define VIRTIO_ROLE_IS_DRIVER(vdev) \
+	(VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT) && ((vdev)->role) == VIRTIO_DEV_DRIVER)
+#else
+/* Default definition without code size optimization */
+#define VIRTIO_ROLE_IS_DRIVER(vdev) ((vdev)->role == VIRTIO_DEV_DRIVER)
 #endif
 
-#ifdef VIRTIO_SLAVE_ONLY
-#define VIRTIO_DEVICE_ONLY
-#warning "VIRTIO_SLAVE_ONLY is deprecated, please use VIRTIO_DEVICE_ONLY"
+#ifdef VIRTIO_DEVICE_SUPPORT
+#define VIRTIO_ROLE_IS_DEVICE(vdev) \
+	(VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT) && ((vdev)->role) == VIRTIO_DEV_DEVICE)
+#else
+/* Default definition without code size optimization */
+#define VIRTIO_ROLE_IS_DEVICE(vdev) ((vdev)->role == VIRTIO_DEV_DEVICE)
 #endif
 
 /** @brief Virtio device identifier. */
@@ -120,6 +125,12 @@ struct virtio_device_id {
  * completely used, even if we've suppressed them.
  */
 #define VIRTIO_F_NOTIFY_ON_EMPTY (1 << 24)
+
+/*
+ * This feature indicates that the device accepts arbitrary
+ * descriptor layouts.
+ */
+#define VIRTIO_F_ANY_LAYOUT (1 << 27)
 
 /*
  * The guest should never negotiate this feature; it
@@ -155,6 +166,7 @@ struct virtio_device_id {
 typedef void (*virtio_dev_reset_cb)(struct virtio_device *vdev);
 
 struct virtio_dispatch;
+struct virtio_memory_ops;
 
 /** @brief Device features. */
 struct virtio_feature_desc {
@@ -199,6 +211,9 @@ struct virtio_device {
 
 	/** Virtio dispatch table */
 	const struct virtio_dispatch *func;
+
+	/**< Virtio device memory operations */
+	const struct virtio_memory_ops *mmops;
 
 	/** Private data */
 	void *priv;
@@ -254,11 +269,11 @@ struct virtio_dispatch {
 	/** Get the feature exposed by the virtio device. */
 	uint32_t (*get_features)(struct virtio_device *dev);
 
-	/** Set the supported feature (virtio driver only). */
+	/** Set the supported `feature` (virtio driver only). */
 	void (*set_features)(struct virtio_device *dev, uint32_t feature);
 
 	/**
-	 * Set the supported feature negotiate between the \ref features parameter and features
+	 * Set the supported features negotiate between the `features` parameter and features
 	 * supported by the device (virtio driver only).
 	 */
 	uint32_t (*negotiate_features)(struct virtio_device *dev,
@@ -283,6 +298,14 @@ struct virtio_dispatch {
 
 	/** Notify the other side that a virtio vring as been updated. */
 	void (*notify)(struct virtqueue *vq);
+};
+
+struct virtio_memory_ops {
+	/** Allocate memory from the virtio device. */
+	void *(*alloc)(struct virtio_device *dev, size_t size, size_t align);
+
+	/** Free memory allocated from the virtio device. */
+	void (*free)(struct virtio_device *dev, void *buf);
 };
 
 /**
@@ -318,7 +341,7 @@ static inline void virtio_delete_virtqueues(struct virtio_device *vdev)
 /**
  * @brief Get device ID.
  *
- * @param dev Pointer to device structure.
+ * @param vdev Pointer to device structure.
  *
  * @return Device ID value.
  */
@@ -332,7 +355,7 @@ static inline uint32_t virtio_get_devid(const struct virtio_device *vdev)
 /**
  * @brief Retrieve device status.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param status	Pointer to the virtio device status.
  *
  * @return 0 on success, otherwise error code.
@@ -352,7 +375,7 @@ static inline int virtio_get_status(struct virtio_device *vdev, uint8_t *status)
 /**
  * @brief Set device status.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param status	Value to be set as device status.
  *
  * @return 0 on success, otherwise error code.
@@ -372,7 +395,7 @@ static inline int virtio_set_status(struct virtio_device *vdev, uint8_t status)
 /**
  * @brief Retrieve configuration data from the device.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param offset	Offset of the data within the configuration area.
  * @param dst		Address of the buffer that will hold the data.
  * @param len		Length of the data to be retrieved.
@@ -395,7 +418,7 @@ static inline int virtio_read_config(struct virtio_device *vdev,
 /**
  * @brief Write configuration data to the device.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param offset	Offset of the data within the configuration area.
  * @param src		Address of the buffer that holds the data to write.
  * @param len		Length of the data to be written.
@@ -418,7 +441,7 @@ static inline int virtio_write_config(struct virtio_device *vdev,
 /**
  * @brief Get the virtio device features.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param features	Pointer to features supported by both the driver and
  *			the device as a bitfield.
  *
@@ -434,13 +457,16 @@ static inline int virtio_get_features(struct virtio_device *vdev,
 		return -ENXIO;
 
 	*features = vdev->func->get_features(vdev);
+	if (VIRTIO_ROLE_IS_DEVICE(vdev))
+		vdev->features = *features;
+
 	return 0;
 }
 
 /**
  * @brief Set features supported by the VIRTIO driver.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param features	Features supported by the driver as a bitfield.
  *
  * @return 0 on success, otherwise error code.
@@ -461,7 +487,7 @@ static inline int virtio_set_features(struct virtio_device *vdev,
 /**
  * @brief Negotiate features between virtio device and driver.
  *
- * @param dev			Pointer to device structure.
+ * @param vdev			Pointer to device structure.
  * @param features		Supported features.
  * @param final_features	Pointer to the final features after negotiate.
  *
@@ -471,13 +497,15 @@ static inline int virtio_negotiate_features(struct virtio_device *vdev,
 					    uint32_t features,
 					    uint32_t *final_features)
 {
-	if (!vdev || !final_features)
+	if (!vdev)
 		return -EINVAL;
 
 	if (!vdev->func || !vdev->func->negotiate_features)
 		return -ENXIO;
 
-	*final_features = vdev->func->negotiate_features(vdev, features);
+	vdev->features = vdev->func->negotiate_features(vdev, features);
+	if (final_features)
+		*final_features = vdev->features;
 	return 0;
 }
 
@@ -498,6 +526,76 @@ static inline int virtio_reset_device(struct virtio_device *vdev)
 
 	vdev->func->reset_device(vdev);
 	return 0;
+}
+
+/**
+ * @brief Allocate buffer from the virtio device
+ *
+ * @param vdev	Pointer to virtio device structure.
+ * @param buf	Pointer to the allocated buffer (virtual address).
+ * @param size	Allocated buffer size.
+ * @param align	Allocated buffer alignment.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_alloc_buf(struct virtio_device *vdev, void **buf,
+				   size_t size, size_t align)
+{
+	if (!vdev || !buf)
+		return -EINVAL;
+
+	if (!vdev->mmops || !vdev->mmops->alloc)
+		return -ENXIO;
+
+	*buf = vdev->mmops->alloc(vdev, size, align);
+	if (!*buf)
+		return -ENOMEM;
+
+	return 0;
+}
+
+/**
+ * @brief Free the buffer allocated by \ref virtio_alloc_buf from the virtio
+ * device.
+ *
+ * @param vdev	Pointer to virtio device structure.
+ * @param buf	Buffer need to be freed.
+ *
+ * @return 0 on success, otherwise error code.
+ */
+static inline int virtio_free_buf(struct virtio_device *vdev, void *buf)
+{
+	if (!vdev)
+		return -EINVAL;
+
+	if (!vdev->mmops || !vdev->mmops->free)
+		return -ENXIO;
+
+	vdev->mmops->free(vdev, buf);
+
+	return 0;
+}
+
+/**
+ * @brief Check if the virtio device support a specific feature.
+ *
+ * @param vdev		Pointer to device structure.
+ * @param feature_bit	Feature bit to check.
+ *
+ * @return true if the feature is supported, otherwise false.
+ */
+static inline bool virtio_has_feature(struct virtio_device *vdev,
+				      unsigned int feature_bit)
+{
+	uint32_t features;
+
+	if (!vdev && feature_bit >= sizeof(features) * 8)
+		return false;
+
+	if (!vdev->features)
+		virtio_get_features(vdev, &features);
+
+	return (vdev->features & (1UL << feature_bit)) != 0;
 }
 
 #if defined __cplusplus

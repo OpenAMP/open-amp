@@ -147,13 +147,10 @@ struct virtio_mmio_device {
 	struct virtio_device vdev;
 
 	/** Device configuration space metal_io_region */
-	struct metal_io_region *cfg_io;
+	struct metal_io_region cfg_io;
 
 	/** Pre-shared memory space metal_io_region */
-	struct metal_io_region *shm_io;
-
-	/** Shared memory device */
-	struct metal_device shm_device;
+	struct metal_io_region shm_io;
 
 	/** VIRTIO device configuration space */
 	struct virtio_mmio_dev_mem cfg_mem;
@@ -261,7 +258,7 @@ struct virtio_mmio_dev {
 /**
  * @brief Register a VIRTIO device with the VIRTIO stack.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param vq_num	Number of virtqueues the device uses.
  * @param vqs		Array of pointers to vthe virtqueues used by the device.
  */
@@ -270,11 +267,12 @@ void virtio_mmio_register_device(struct virtio_device *vdev, int vq_num, struct 
 /**
  * @brief Setup a virtqueue structure.
  *
- * @param dev		Pointer to device structure.
+ * @param vdev		Pointer to device structure.
  * @param idx		Index of the virtqueue.
  * @param vq		Pointer to virtqueue structure.
  * @param cb		Pointer to virtqueue callback. Can be NULL.
  * @param cb_arg	Argument for the virtqueue callback.
+ * @param vq_name	Name of the virtqueue.
  *
  * @return pointer to virtqueue structure.
  */
@@ -288,10 +286,10 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 /**
  * @brief VIRTIO MMIO device initialization.
  *
- * @param vmdev			Pointer to virtio_mmio_device structure.
+ * @param vmdev		Pointer to virtio_mmio_device structure.
  * @param virt_mem_ptr	Guest virtio (shared) memory base address (virtual).
  * @param cfg_mem_ptr	Virtio device configuration memory base address (virtual).
- * @param user_data		Pointer to custom user data.
+ * @param user_data	Pointer to custom user data.
  *
  * @return int 0 for success.
  */

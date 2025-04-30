@@ -10,6 +10,7 @@ collect (PROJECT_LIB_SOURCES version.c)
 add_subdirectory (virtio)
 add_subdirectory (rpmsg)
 add_subdirectory (remoteproc)
+add_subdirectory (utils)
 if (WITH_VIRTIO_MMIO_DRV)
 add_subdirectory (virtio_mmio)
 endif (WITH_VIRTIO_MMIO_DRV)
@@ -23,6 +24,7 @@ set (OPENAMP_LIB open_amp)
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/openamp/version_def.h)
 collect (PROJECT_INC_DIRS " ${PROJECT_BINARY_DIR}/include/generated/openamp")
+collect (PROJECT_INC_DIRS " ${PROJECT_BINARY_DIR}/include/internal")
 
 if (NOT CMAKE_INSTALL_LIBDIR)
 	set (CMAKE_INSTALL_LIBDIR "lib")
@@ -61,6 +63,7 @@ else (WITH_ZEPHYR)
   if (WITH_STATIC_LIB)
     set (_lib ${OPENAMP_LIB}-static)
     add_library (${_lib} STATIC ${_sources})
+    target_include_directories(${_lib} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
     install (TARGETS ${_lib} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
     set_target_properties (${_lib} PROPERTIES
       OUTPUT_NAME       "${OPENAMP_LIB}"

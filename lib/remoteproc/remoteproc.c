@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <internal/utilities.h>
 #include <metal/alloc.h>
 #include <metal/log.h>
 #include <metal/utilities.h>
@@ -13,7 +14,8 @@
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_loader.h>
 #include <openamp/remoteproc_virtio.h>
-#include <openamp/rsc_table_parser.h>
+
+#include "rsc_table_parser.h"
 
 /******************************************************************************
  *  static functions
@@ -112,28 +114,27 @@ static void *remoteproc_get_rsc_table(struct remoteproc *rproc,
 	 * the caller should be responsible to release the memory
 	 */
 	rsc_table = metal_allocate_memory(len);
-	if (!rsc_table) {
-		return RPROC_ERR_PTR(-RPROC_ENOMEM);
-	}
+	if (!rsc_table)
+		return NULL;
+
 	ret = store_ops->load(store, offset, len, &img_data, RPROC_LOAD_ANYADDR,
 			      NULL, 1);
 	if (ret < 0 || ret < (int)len || !img_data) {
 		metal_log(METAL_LOG_ERROR,
 			  "get rsc failed: 0x%llx, 0x%llx\r\n", offset, len);
-		ret = -RPROC_EINVAL;
 		goto error;
 	}
 	memcpy(rsc_table, img_data, len);
 
 	ret = handle_rsc_table(rproc, rsc_table, len, NULL);
-	if (ret < 0) {
+	if (ret < 0)
 		goto error;
-	}
+
 	return rsc_table;
 
 error:
 	metal_free_memory(rsc_table);
-	return RPROC_ERR_PTR(ret);
+	return NULL;
 }
 
 static int remoteproc_parse_rsc_table(struct remoteproc *rproc,
@@ -179,10 +180,13 @@ struct remoteproc *remoteproc_init(struct remoteproc *rproc,
 
 	memset(rproc, 0, sizeof(*rproc));
 	rproc->state = RPROC_OFFLINE;
+	rproc->ops = ops;
+	rproc->priv = priv;
 	metal_mutex_init(&rproc->lock);
 	metal_list_init(&rproc->mems);
 	metal_list_init(&rproc->vdevs);
-	rproc = ops->init(rproc, ops, priv);
+	if (ops->init)
+		rproc = ops->init(rproc, ops, priv);
 	return rproc;
 }
 
@@ -219,7 +223,9 @@ int remoteproc_config(struct remoteproc *rproc, void *data)
 				ret = rproc->ops->config(rproc, data);
 			else
 				ret = 0;
-			rproc->state = RPROC_READY;
+
+			if (!ret)
+				rproc->state = RPROC_READY;
 		} else {
 			ret = -RPROC_EINVAL;
 		}
@@ -235,8 +241,10 @@ int remoteproc_start(struct remoteproc *rproc)
 	if (rproc) {
 		metal_mutex_acquire(&rproc->lock);
 		if (rproc->state == RPROC_READY) {
-			ret = rproc->ops->start(rproc);
-			rproc->state = RPROC_RUNNING;
+			if (rproc->ops->start)
+				ret = rproc->ops->start(rproc);
+			if (!ret)
+				rproc->state = RPROC_RUNNING;
 		} else {
 			ret = -RPROC_EINVAL;
 		}
@@ -255,7 +263,10 @@ int remoteproc_stop(struct remoteproc *rproc)
 		    rproc->state != RPROC_OFFLINE) {
 			if (rproc->ops->stop)
 				ret = rproc->ops->stop(rproc);
-			rproc->state = RPROC_STOPPED;
+			if (!ret) {
+				rproc->state = RPROC_STOPPED;
+				rproc->bitmap = 0;
+			}
 		} else {
 			ret = 0;
 		}
@@ -287,6 +298,29 @@ int remoteproc_shutdown(struct remoteproc *rproc)
 		metal_mutex_release(&rproc->lock);
 	}
 	return ret;
+}
+
+void remoteproc_init_mem(struct remoteproc_mem *mem, const char *name,
+			 metal_phys_addr_t pa, metal_phys_addr_t da,
+			 size_t size, struct metal_io_region *io)
+{
+	if (!mem || !io || size == 0)
+		return;
+	if (name)
+		(void)safe_strcpy(mem->name, sizeof(mem->name), name, RPROC_MAX_NAME_LEN);
+	else
+		mem->name[0] = 0;
+	mem->pa = pa;
+	mem->da = da;
+	mem->io = io;
+	mem->size = size;
+}
+
+void remoteproc_add_mem(struct remoteproc *rproc, struct remoteproc_mem *mem)
+{
+	if (!rproc || !mem)
+		return;
+	metal_list_add_tail(&rproc->mems, &mem->node);
 }
 
 struct metal_io_region *
@@ -915,12 +949,14 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 	unsigned int num_vrings, i;
 	struct metal_list *node;
 
-#ifdef VIRTIO_DRIVER_ONLY
-	role = (role != VIRTIO_DEV_DRIVER) ? 0xFFFFFFFFUL : role;
+#if !VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT)
+	if (role == VIRTIO_DEV_DRIVER)
+		return NULL;
 #endif
 
-#ifdef VIRTIO_DEVICE_ONLY
-	role = (role != VIRTIO_DEV_DEVICE) ? 0xFFFFFFFFUL : role;
+#if !VIRTIO_ENABLED(VIRTIO_DEVICE_SUPPORT)
+	if (role == VIRTIO_DEV_DEVICE)
+		return NULL;
 #endif
 
 	if (!rproc || (role != VIRTIO_DEV_DEVICE && role != VIRTIO_DEV_DRIVER))

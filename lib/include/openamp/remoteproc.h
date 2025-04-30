@@ -79,34 +79,43 @@ struct fw_rsc_hdr {
 } METAL_PACKED_END;
 
 /**
- * enum fw_resource_type - types of resource entries
- *
- * @RSC_CARVEOUT:   request for allocation of a physically contiguous
- *          memory region.
- * @RSC_DEVMEM:     request to iommu_map a memory-based peripheral.
- * @RSC_TRACE:      announces the availability of a trace buffer into which
- *          the remote remoteproc will be writing logs.
- * @RSC_VDEV:       declare support for a virtio device, and serve as its
- *          virtio header.
- * @RSC_VENDOR_START: start of the vendor specific resource types range
- * @RSC_VENDOR_END  : end of the vendor specific resource types range
- * @RSC_LAST:       just keep this one at the end
+ * @brief Types of resource entries
  *
  * For more details regarding a specific resource type, please see its
  * dedicated structure below.
  *
  * Please note that these values are used as indices to the rproc_handle_rsc
- * lookup table, so please keep them sane. Moreover, @RSC_LAST is used to
+ * lookup table, so please keep them sane. Moreover, \ref RSC_LAST is used to
  * check the validity of an index before the lookup table is accessed, so
  * please update it as needed.
  */
 enum fw_resource_type {
+	/** carveout resource
+	 *
+	 *  Request for allocation of a physically contiguous memory region.
+	 */
 	RSC_CARVEOUT = 0,
+	/** device memory resource
+	 *
+	 *  Request to iommu_map a memory-based peripheral.
+	 */
 	RSC_DEVMEM = 1,
+	/** trace resource
+	 *
+	 *  Announces the availability of a trace buffer into which the remote remoteproc will be
+	 *  writing logs.
+	 */
 	RSC_TRACE = 2,
+	/** virtio device resource
+	 *
+	 *  Declare support for a virtio device, and serve as its virtio header.
+	 */
 	RSC_VDEV = 3,
+	/** end of the generic resources */
 	RSC_LAST = 4,
+	/** Start of the vendor specific resource types range */
 	RSC_VENDOR_START = 128,
+	/** End of the vendor specific resource types range */
 	RSC_VENDOR_END = 512,
 };
 
@@ -520,24 +529,24 @@ static inline void *RPROC_ERR_PTR(long error)
 }
 
 /**
- * enum rproc_state - remote processor states
- * @RPROC_OFFLINE:	remote is offline
- * @RPROC_CONFIGURED:	remote is configured
- * @RPROC_READY:	remote is ready to start
- * @RPROC_RUNNING:	remote is up and running
- * @RPROC_SUSPENDED:	remote is suspended
- * @RPROC_ERROR:	remote has error; need to recover
- * @RPROC_STOPPED:	remote is stopped
- * @RPROC_LAST:		just keep this one at the end
+ * @brief Remote processor states
  */
 enum remoteproc_state {
+	/** Remote is offline */
 	RPROC_OFFLINE		= 0,
+	/** Remote is configured */
 	RPROC_CONFIGURED	= 1,
+	/** Remote is ready to start */
 	RPROC_READY		= 2,
+	/** Remote is up and running */
 	RPROC_RUNNING		= 3,
+	/** Remote is suspended */
 	RPROC_SUSPENDED		= 4,
+	/** Remote is has error; need to recover */
 	RPROC_ERROR		= 5,
+	/** Remote is stopped */
 	RPROC_STOPPED		= 6,
+	/** Just keep this one at the end */
 	RPROC_LAST		= 7,
 };
 
@@ -567,28 +576,15 @@ int remoteproc_remove(struct remoteproc *rproc);
  * @brief Initialize remoteproc memory
  *
  * @param mem	Pointer to remoteproc memory
- * @param name	Memory name
+ * @param name	Memory name (max string size \ref RPROC_MAX_NAME_LEN)
  * @param pa	Physical address
  * @param da	Device address
  * @param size	Memory size
  * @param io	Pointer to the I/O region
  */
-static inline void
-remoteproc_init_mem(struct remoteproc_mem *mem, const char *name,
-		    metal_phys_addr_t pa, metal_phys_addr_t da,
-		    size_t size, struct metal_io_region *io)
-{
-	if (!mem || !io || size == 0)
-		return;
-	if (name)
-		strncpy(mem->name, name, sizeof(mem->name));
-	else
-		mem->name[0] = 0;
-	mem->pa = pa;
-	mem->da = da;
-	mem->io = io;
-	mem->size = size;
-}
+void remoteproc_init_mem(struct remoteproc_mem *mem, const char *name,
+			 metal_phys_addr_t pa, metal_phys_addr_t da,
+			 size_t size, struct metal_io_region *io);
 
 /**
  * @brief Add remoteproc memory
@@ -596,13 +592,7 @@ remoteproc_init_mem(struct remoteproc_mem *mem, const char *name,
  * @param rproc	Pointer to remoteproc
  * @param mem	Pointer to remoteproc memory
  */
-static inline void
-remoteproc_add_mem(struct remoteproc *rproc, struct remoteproc_mem *mem)
-{
-	if (!rproc || !mem)
-		return;
-	metal_list_add_tail(&rproc->mems, &mem->node);
-}
+void remoteproc_add_mem(struct remoteproc *rproc, struct remoteproc_mem *mem);
 
 /**
  * @brief Get remoteproc memory I/O region with name

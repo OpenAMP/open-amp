@@ -368,7 +368,7 @@ static const void *elf_next_load_segment(void *elf_info, int *nseg,
 		if (!phdr)
 			return NULL;
 		elf_parse_segment(elf_info, phdr, &p_type, noffset,
-				  da, NULL, nfsize, nmsize);
+				  NULL, da, nfsize, nmsize);
 		*nseg = *nseg + 1;
 	}
 	return phdr;
@@ -571,20 +571,25 @@ int elf_load(struct remoteproc *rproc,
 		nsegment = *load_state & ELF_NEXT_SEGMENT_MASK;
 		phdr = elf_next_load_segment(*img_info, &nsegment, da,
 					     noffset, &nsize, &nsegmsize);
-		if (!phdr) {
-			metal_log(METAL_LOG_DEBUG, "cannot find more segment\r\n");
-			*load_state = (*load_state & (~ELF_NEXT_SEGMENT_MASK)) |
-				      (nsegment & ELF_NEXT_SEGMENT_MASK);
-			return *load_state;
-		}
-		*nlen = nsize;
-		*nmemsize = nsegmsize;
+
 		phnums = elf_phnum(*img_info);
-		metal_log(METAL_LOG_DEBUG, "segment: %d, total segs %d\r\n",
-			  nsegment, phnums);
+		if (phdr) {
+			*nlen = nsize;
+			*nmemsize = nsegmsize;
+			metal_log(METAL_LOG_DEBUG, "segment: %d, total segs %d\r\n",
+				  nsegment, phnums);
+		}
+
 		if (nsegment == phnums) {
-			*load_state = (*load_state & (~RPROC_LOADER_MASK)) |
+			if (phdr) {
+				*load_state = (*load_state & (~RPROC_LOADER_MASK)) |
 				      RPROC_LOADER_POST_DATA_LOAD;
+			} else {
+				metal_log(METAL_LOG_DEBUG, "no more segment to load\r\n");
+				*load_state = (*load_state & (~RPROC_LOADER_MASK)) |
+					RPROC_LOADER_LOAD_COMPLETE;
+					*da = RPROC_LOAD_ANYADDR;
+			}
 		}
 		*load_state = (*load_state & (~ELF_NEXT_SEGMENT_MASK)) |
 			      (nsegment & ELF_NEXT_SEGMENT_MASK);
