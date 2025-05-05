@@ -272,7 +272,7 @@ static int rpmsg_virtio_wait_remote_ready(struct rpmsg_virtio_device *rvdev)
 		} else if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK) {
 			return 0;
 		}
-		metal_yield();
+		metal_sleep_usec(1000);
 	}
 }
 

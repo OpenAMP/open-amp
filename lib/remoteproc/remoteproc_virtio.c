@@ -15,6 +15,7 @@
 #include <metal/sys.h>
 #include <metal/utilities.h>
 #include <metal/alloc.h>
+#include <metal/sleep.h>
 
 static void rproc_virtio_delete_virtqueues(struct virtio_device *vdev)
 {
@@ -412,6 +413,6 @@ void rproc_virtio_wait_remote_ready(struct virtio_device *vdev)
 		status = rproc_virtio_get_status(vdev);
 		if (status & VIRTIO_CONFIG_STATUS_DRIVER_OK)
 			return;
-		metal_yield();
+		metal_sleep_usec(1000);
 	}
 }
