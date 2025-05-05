@@ -148,6 +148,7 @@ static int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev,
 				       void *buffer, uint32_t len,
 				       uint16_t idx)
 {
+	int ret;
 	BUFFER_FLUSH(buffer, len);
 
 	if (VIRTIO_ROLE_IS_DRIVER(rvdev->vdev)) {
@@ -157,12 +158,17 @@ static int rpmsg_virtio_enqueue_buffer(struct rpmsg_virtio_device *rvdev,
 		/* Initialize buffer node */
 		vqbuf.buf = buffer;
 		vqbuf.len = len;
-		return virtqueue_add_buffer(rvdev->svq, &vqbuf, 1, 0, buffer);
+
+		ret = virtqueue_add_buffer(rvdev->svq, &vqbuf, 1, 0, buffer);
+		rpmsg_device_trace_release_tx_buffer(&rvdev->rdev, buffer);
+		return ret;
 	}
 
 	if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev)) {
 		(void)buffer;
-		return virtqueue_add_consumed_buffer(rvdev->svq, idx, len);
+		ret = virtqueue_add_consumed_buffer(rvdev->svq, idx, len);
+		rpmsg_device_trace_release_tx_buffer(&rvdev->rdev, buffer);
+		return ret;
 	}
 
 	return 0;
@@ -209,6 +215,8 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 	} else if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev)) {
 		data = virtqueue_get_available_buffer(rvdev->svq, idx, len);
 	}
+
+	rpmsg_device_trace_get_tx_buffer(&rvdev->rdev, data);
 
 	return data;
 }
@@ -482,6 +490,7 @@ static int rpmsg_virtio_release_tx_buffer(struct rpmsg_device *rdev, void *txbuf
 		 */
 		r_desc->idx = RPMSG_BUF_INDEX(rp_hdr);
 		metal_list_add_tail(&rvdev->reclaimer, &r_desc->node);
+		rpmsg_device_trace_release_tx_buffer(&rvdev->rdev, rp_hdr);
 	}
 
 	metal_mutex_release(&rdev->lock);
