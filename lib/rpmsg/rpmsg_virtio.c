@@ -207,7 +207,7 @@ static void *rpmsg_virtio_get_tx_buffer(struct rpmsg_virtio_device *rvdev,
 			*idx = 0;
 		}
 	} else if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev)) {
-		data = virtqueue_get_available_buffer(rvdev->svq, idx, len);
+		data = virtqueue_get_first_avail_buffer(rvdev->svq, idx, len);
 	}
 
 	return data;
@@ -235,7 +235,7 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 
 	if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev)) {
 		data =
-		    virtqueue_get_available_buffer(rvdev->rvq, idx, len);
+		    virtqueue_get_first_avail_buffer(rvdev->rvq, idx, len);
 	}
 
 	/* Invalidate the buffer before returning it */
