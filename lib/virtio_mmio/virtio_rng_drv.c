@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Wind River Systems, Inc.
+ * Copyright (c) 2022-2025 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -13,6 +13,7 @@ int virtio_rng_init(struct virtio_device *vdev, struct virtqueue **vqs,
 		    const char **vq_names, int vq_count)
 {
 	uint32_t devid, features = 0;
+	uint8_t status = 0;
 	int i;
 	int ret;
 
@@ -38,9 +39,23 @@ int virtio_rng_init(struct virtio_device *vdev, struct virtqueue **vqs,
 	}
 
 	virtio_set_status(vdev, VIRTIO_CONFIG_STATUS_DRIVER);
-	virtio_set_features(vdev, 0/*VIRTIO_F_NOTIFY_ON_EMPTY*/);
+	virtio_set_features(vdev, 0);
+
+	if (vdev->id.version > 1) {
+		virtio_set_status(vdev, VIRTIO_CONFIG_STATUS_FEATURES_OK);
+	}
+
 	(void)virtio_get_features(vdev, &features);
 	metal_log(METAL_LOG_DEBUG, "features: %08x\n", features);
+
+	(void)virtio_get_status(vdev, &status);
+	metal_log(METAL_LOG_DEBUG, "status: %08x\n", status);
+
+	if (vdev->id.version > 1 && !(status & VIRTIO_CONFIG_STATUS_FEATURES_OK)) {
+		metal_log(METAL_LOG_ERROR,
+			  "Expected VIRTIO_CONFIG_STATUS_FEATURES_OK to be set, got 0\n");
+		return -ENODEV;
+	}
 
 	ret = virtio_create_virtqueues(vdev, 0, vq_count, vq_names, NULL, NULL);
 	if (ret) {
