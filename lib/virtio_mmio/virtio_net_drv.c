@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Wind River Systems, Inc.
+ * Copyright (c) 2022-2025 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -49,6 +49,7 @@ int virtio_net_init(struct virtio_device *vdev, struct virtqueue **vqs, const ch
 		    void (**cbs)(void *), void **cb_args, int vq_count)
 {
 	uint32_t devid, features = 0;
+	uint8_t status = 0;
 	struct virtio_net_data *dev_data = NULL;
 	int ret;
 	int i;
@@ -78,43 +79,33 @@ int virtio_net_init(struct virtio_device *vdev, struct virtqueue **vqs, const ch
 
 	virtio_set_status(vdev, VIRTIO_CONFIG_STATUS_DRIVER);
 	virtio_set_features(vdev, VIRTIO_NET_F_MAC/*VIRTIO_F_NOTIFY_ON_EMPTY*/);
+
+	if (vdev->id.version > 1) {
+		virtio_set_status(vdev, VIRTIO_CONFIG_STATUS_FEATURES_OK);
+	}
+
 	(void)virtio_get_features(vdev, &features);
 	metal_log(METAL_LOG_DEBUG, "features: %08x\n", features);
 
-#if 1
+	(void)virtio_get_status(vdev, &status);
+	metal_log(METAL_LOG_DEBUG, "status: %08x\n", status);
+
+	if (vdev->id.version > 1 && (!(status & VIRTIO_CONFIG_STATUS_FEATURES_OK))) {
+		metal_log(METAL_LOG_ERROR,
+			  "Expected VIRTIO_CONFIG_STATUS_FEATURES_OK to be set, got 0\n");
+		return -ENODEV;
+	}
+
 	ret = virtio_create_virtqueues(vdev, 0, vq_count, vq_names, (vq_callback *)cbs, cb_args);
 	if (ret) {
 		metal_free_memory(vdev->vrings_info);
 		return ret;
 	}
-#else
-	struct virtqueue *vring_vq = NULL;
-
-	for (i = 0; i < vq_count; i++) {
-		/* TODO: update API for compatibility with other transports like
-		 * remoteproc virtio
-		 */
-		vring_vq = NULL;
-		if (vdev->vrings_info[i].vq)
-			vring_vq = vdev->vrings_info[i].vq;
-		vq = virtio_mmio_setup_virtqueue(
-				vdev,
-				i,
-				vring_vq, /*vqs[i],*/
-				cbs[i],
-				cb_args[i],
-				vq_names[i]
-				);
-		if (!vq) {
-			return -1;
-		}
-	}
-#endif
 
 	virtio_set_status(vdev, VIRTIO_CONFIG_STATUS_DRIVER_OK);
+
 	dev_data->vqin = vdev->vrings_info[0].vq;
 	dev_data->vqout = vdev->vrings_info[1].vq;
-
 	dev_data->hdrsize = sizeof(struct virtio_net_hdr);
 	if (!(features & VIRTIO_NET_F_MRG_RXBUF)) {
 		dev_data->hdrsize -= 2;
