@@ -23,6 +23,8 @@ static int vq_ring_must_notify(struct virtqueue *vq);
 static void vq_ring_notify(struct virtqueue *vq);
 static int virtqueue_nused(struct virtqueue *vq);
 static int virtqueue_navail(struct virtqueue *vq);
+static void *virtqueue_get_next_avail_buffer(struct virtqueue *vq, uint16_t idx,
+					     uint16_t *next_idx, uint32_t *next_len);
 
 /* Default implementation of P2V based on libmetal */
 static inline void *virtqueue_phys_to_virt(struct virtqueue *vq,
@@ -200,8 +202,8 @@ void virtqueue_free(struct virtqueue *vq)
 	}
 }
 
-void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
-				     uint32_t *len)
+void *virtqueue_get_first_avail_buffer(struct virtqueue *vq, uint16_t *avail_idx,
+				       uint32_t *len)
 {
 	uint16_t head_idx = 0;
 	void *buffer;
@@ -229,6 +231,40 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 	VQUEUE_IDLE(vq);
 
 	return buffer;
+}
+
+int virtqueue_get_available_buffer(struct virtqueue *vq, struct virtqueue_bufs *vbs)
+{
+	unsigned int i;
+	uint16_t head;
+	uint16_t idx;
+	uint32_t len;
+	void *buf;
+
+	buf = virtqueue_get_first_avail_buffer(vq, &head, &len);
+	if (!buf)
+		return ERROR_VRING_NO_BUFF;
+
+	vbs->head = head;
+	vbs->vb[0].buf = buf;
+	vbs->vb[0].len = len;
+
+	for (i = 1, idx = head; ; i++) {
+		buf = virtqueue_get_next_avail_buffer(vq, idx, &idx, &len);
+		if (!buf)
+			break;
+		else if (i >= vbs->vb_capacity) {
+			metal_log(METAL_LOG_ERROR, "capacity %u is not enough\n",
+				  vbs->vb_capacity);
+			return ERROR_VQUEUE_INVLD_PARAM;
+		}
+
+		vbs->vb[i].buf = buf;
+		vbs->vb[i].len = len;
+	}
+
+	vbs->vb_num = i;
+	return 0;
 }
 
 int virtqueue_add_consumed_buffer(struct virtqueue *vq, uint16_t head_idx,
@@ -696,4 +732,26 @@ static int virtqueue_navail(struct virtqueue *vq)
 	VQASSERT(vq, navail <= vq->vq_nentries, "avail more than available");
 
 	return navail;
+}
+
+static void *virtqueue_get_next_avail_buffer(struct virtqueue *vq, uint16_t idx,
+					     uint16_t *next_idx, uint32_t *next_len)
+{
+	void *buffer;
+	uint16_t next;
+
+	VRING_INVALIDATE(vq->vq_ring.desc[idx], sizeof(struct vring_desc));
+	if (!(vq->vq_ring.desc[idx].flags & VRING_DESC_F_NEXT))
+		return NULL;
+
+	next = vq->vq_ring.desc[idx].next;
+	if (next_idx)
+		*next_idx = next;
+
+	VRING_INVALIDATE(vq->vq_ring.desc[next], sizeof(struct vring_desc));
+	buffer = virtqueue_phys_to_virt(vq, vq->vq_ring.desc[next].addr);
+	if (next_len)
+		*next_len = vq->vq_ring.desc[next].len;
+
+	return buffer;
 }
