@@ -83,9 +83,20 @@ endif (NOT WITH_VQ_RX_EMPTY_NOTIFY)
 
 option (WITH_DCACHE "Build with all cache operations enabled" OFF)
 
-if (WITH_DCACHE)
-  add_definitions(-DVIRTIO_USE_DCACHE)
-endif (WITH_DCACHE)
+cmake_dependent_option(WITH_DCACHE_VRINGS "Build with vrings cache operations enabled" OFF "NOT WITH_DCACHE" ON)
+if (WITH_DCACHE_VRINGS)
+  add_definitions(-DVIRTIO_CACHED_VRINGS)
+endif (WITH_DCACHE_VRINGS)
+
+cmake_dependent_option (WITH_DCACHE_BUFFERS "Build with buffers cache operations enabled" OFF "NOT WITH_DCACHE" ON)
+if (WITH_DCACHE_BUFFERS)
+  add_definitions(-DVIRTIO_CACHED_BUFFERS)
+endif (WITH_DCACHE_BUFFERS)
+
+cmake_dependent_option (WITH_DCACHE_RSC_TABLE "Build with resource table cache operations enabled" OFF "NOT WITH_DCACHE" ON)
+if (WITH_DCACHE_RSC_TABLE)
+  add_definitions(-DVIRTIO_CACHED_RSC_TABLE)
+endif (WITH_DCACHE_RSC_TABLE)
 
 # Set the complication flags
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")

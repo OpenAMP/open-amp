@@ -48,13 +48,14 @@ extern "C" {
 /* Support to suppress interrupt until specific index is reached. */
 #define VIRTIO_RING_F_EVENT_IDX        (1 << 29)
 
-#if defined(VIRTIO_USE_DCACHE)
+/* cache invalidation helpers for vrings */
+#if defined(VIRTIO_CACHED_VRINGS)
 #define VRING_FLUSH(x, s)		metal_cache_flush(x, s)
 #define VRING_INVALIDATE(x, s)		metal_cache_invalidate(x, s)
 #else
 #define VRING_FLUSH(x, s)		do { } while (0)
 #define VRING_INVALIDATE(x, s)		do { } while (0)
-#endif /* VIRTIO_USE_DCACHE */
+#endif /* VIRTIO_CACHED_VRINGS */
 
 /** @brief Buffer descriptor. */
 struct virtqueue_buf {
