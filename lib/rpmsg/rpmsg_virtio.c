@@ -697,6 +697,9 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 		} else {
 			_ept->dest_addr = dest;
 			metal_mutex_release(&rdev->lock);
+			/* notify application the endpoint has been bound */
+			if (_ept->ns_bind_cb)
+				_ept->ns_bind_cb(_ept);
 		}
 	}
 

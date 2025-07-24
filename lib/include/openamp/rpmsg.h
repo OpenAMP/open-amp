@@ -87,6 +87,9 @@ struct rpmsg_endpoint {
 	 */
 	rpmsg_ept_cb cb;
 
+	/** Endpoint service bind callback, called when remote ept is created */
+	rpmsg_ns_unbind_cb ns_bind_cb;
+
 	/** Endpoint service unbind callback, called when remote ept is destroyed */
 	rpmsg_ns_unbind_cb ns_unbind_cb;
 
