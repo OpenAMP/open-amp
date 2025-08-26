@@ -714,22 +714,11 @@ int rpmsg_virtio_get_tx_buffer_size(struct rpmsg_device *rdev)
 	metal_mutex_acquire(&rdev->lock);
 	rvdev = (struct rpmsg_virtio_device *)rdev;
 
-	if (VIRTIO_ROLE_IS_DRIVER(rvdev->vdev)) {
-		/*
-		 * If device role is host then buffers are provided by us,
-		 * so just provide the macro.
-		 */
+	if (VIRTIO_ROLE_IS_DRIVER(rvdev->vdev))
 		size = rvdev->config.h2r_buf_size - sizeof(struct rpmsg_hdr);
-	}
 
-	if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev)) {
-		/*
-		 * If other core is host then buffers are provided by it,
-		 * so get the buffer size from the virtqueue.
-		 */
-		size = (int)virtqueue_get_desc_size(rvdev->svq) -
-		       sizeof(struct rpmsg_hdr);
-	}
+	if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev))
+		size = rvdev->config.r2h_buf_size - sizeof(struct rpmsg_hdr);
 
 	if (size <= 0)
 		size = RPMSG_ERR_NO_BUFF;
@@ -750,22 +739,11 @@ int rpmsg_virtio_get_rx_buffer_size(struct rpmsg_device *rdev)
 	metal_mutex_acquire(&rdev->lock);
 	rvdev = (struct rpmsg_virtio_device *)rdev;
 
-	if (VIRTIO_ROLE_IS_DRIVER(rvdev->vdev)) {
-		/*
-		 * If device role is host then buffers are provided by us,
-		 * so just provide the macro.
-		 */
+	if (VIRTIO_ROLE_IS_DRIVER(rvdev->vdev))
 		size = rvdev->config.r2h_buf_size - sizeof(struct rpmsg_hdr);
-	}
 
-	if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev)) {
-		/*
-		 * If other core is host then buffers are provided by it,
-		 * so get the buffer size from the virtqueue.
-		 */
-		size = (int)virtqueue_get_desc_size(rvdev->rvq) -
-		       sizeof(struct rpmsg_hdr);
-	}
+	if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev))
+		size = rvdev->config.h2r_buf_size - sizeof(struct rpmsg_hdr);
 
 	if (size <= 0)
 		size = RPMSG_ERR_NO_BUFF;
