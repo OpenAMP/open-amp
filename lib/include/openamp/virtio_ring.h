@@ -126,6 +126,7 @@ struct vring_used {
  * The standard layout for the ring is a continuous chunk of memory which
  * looks like this.  We assume num is a power of 2.
  *
+ * @code{.c}
  * struct vring {
  *      // The actual descriptors (16 bytes each)
  *      struct vring_desc desc[num];
@@ -145,6 +146,7 @@ struct vring_used {
  *      struct vring_used_elem used[num];
  *      __u16 avail_event_idx;
  * };
+ * @endcode
  *
  * NOTE: for VirtIO PCI, align is 4096.
  */
