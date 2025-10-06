@@ -200,8 +200,8 @@ void virtqueue_free(struct virtqueue *vq)
 	}
 }
 
-void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
-				     uint32_t *len)
+void *virtqueue_get_first_avail_buffer(struct virtqueue *vq, uint16_t *avail_idx,
+				       uint32_t *len)
 {
 	uint16_t head_idx = 0;
 	void *buffer;
@@ -227,6 +227,30 @@ void *virtqueue_get_available_buffer(struct virtqueue *vq, uint16_t *avail_idx,
 	*len = virtqueue_get_buffer_length(vq, *avail_idx);
 
 	VQUEUE_IDLE(vq);
+
+	return buffer;
+}
+
+void *virtqueue_get_next_avail_buffer(struct virtqueue *vq, uint16_t idx,
+				      uint16_t *next_idx, uint32_t *next_len)
+{
+	void *buffer;
+	uint16_t next;
+
+	if (!next_idx)
+		return NULL;
+
+	VRING_INVALIDATE(&vq->vq_ring.desc[idx], sizeof(struct vring_desc));
+	if (!(vq->vq_ring.desc[idx].flags & VRING_DESC_F_NEXT))
+		return NULL;
+
+	next = vq->vq_ring.desc[idx].next;
+	*next_idx = next;
+
+	VRING_INVALIDATE(&vq->vq_ring.desc[next], sizeof(struct vring_desc));
+	buffer = virtqueue_phys_to_virt(vq, vq->vq_ring.desc[next].addr);
+	if (next_len)
+		*next_len = vq->vq_ring.desc[next].len;
 
 	return buffer;
 }
