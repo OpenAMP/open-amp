@@ -115,7 +115,8 @@ struct vring_used {
  * @brief The virtqueue layout structure
  *
  * Each virtqueue consists of; descriptor table, available ring, used ring,
- * where each part is physically contiguous in guest memory.
+ * where each part is physically contiguous in guest memory, referenced
+ * by the pointers in this structure.
  *
  * When the driver wants to send a buffer to the device, it fills in a slot in
  * the descriptor table (or chains several together), and writes the descriptor
@@ -123,28 +124,33 @@ struct vring_used {
  * has finished a buffer, it writes the descriptor index into the used ring,
  * and sends an interrupt.
  *
- * The standard layout for the ring is a continuous chunk of memory which
- * looks like this.  We assume num is a power of 2.
+ * The standard layout for the ring, referenced by this structure, is a
+ * continuous chunk of memory exemplified by this table.  The maximum number
+ * of buffer descriptors, num, is a power of 2.
  *
- * struct vring {
- *      // The actual descriptors (16 bytes each)
- *      struct vring_desc desc[num];
+ * |vring| definition                      | description
+ * |-----|-------------------------------- |------------
+ * | desc| struct vring_desc desc[num]     | All num descriptors
+ * |avail| uint16_t avail_flags            | Device notification flags
+ * |     | uint16_t avail_idx              | Driver's next descriptor location
+ * |     | uint16_t available[num]         | The ring of descriptors
+ * |     | uint16_t used_event_idx         | Free running index
+ * |  pad| char pad[]                      | Padding for memory alignment
+ * | used| uint16_t used_flags             | Device notification flags
+ * |     | uint16_t used_idx               | Driver's next descriptor location
+ * |     | struct vring_used_elem used[num]| The ring of descriptors
+ * |     | uint16_t avail_event_idx        | Free running index
  *
- *      // A ring of available descriptor heads with free-running index.
- *      __u16 avail_flags;
- *      __u16 avail_idx;
- *      __u16 available[num];
- *      __u16 used_event_idx;
+ * Padding for alignment requirements:
  *
- *      // Padding to the next align boundary.
- *      char pad[];
+ * Some architectures require strict alignment for atomic operations or DMA
+ * transfer. The pad item should be inserted between avail and used memory
+ * sections to ensure that the used ring is aligned, as the available ring
+ * size is not necessarily a multiple of 4 or 8 bytes.
  *
- *      // A ring of used descriptor heads with free-running index.
- *      __u16 used_flags;
- *      __u16 used_idx;
- *      struct vring_used_elem used[num];
- *      __u16 avail_event_idx;
- * };
+ * The alignment may also be necessary for CPU cache line utilization,
+ * as padding can avoid crossing cache lines or memory pages in the
+ * shared memory.
  *
  * NOTE: for VirtIO PCI, align is 4096.
  */
