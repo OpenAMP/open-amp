@@ -34,8 +34,8 @@ extern "C" {
 #warning "VIRTIO_CACHED_BUFFERS is deprecated, please use VIRTIO_USE_DCACHE"
 #endif
 #if defined(VIRTIO_CACHED_BUFFERS) || defined(VIRTIO_USE_DCACHE)
-#define BUFFER_FLUSH(x, s)		CACHE_FLUSH(x, s)
-#define BUFFER_INVALIDATE(x, s)		CACHE_INVALIDATE(x, s)
+#define BUFFER_FLUSH(x, s)		metal_cache_flush(x, s)
+#define BUFFER_INVALIDATE(x, s)		metal_cache_invalidate(x, s)
 #else
 #define BUFFER_FLUSH(x, s)		do { } while (0)
 #define BUFFER_INVALIDATE(x, s)		do { } while (0)
