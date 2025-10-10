@@ -48,16 +48,12 @@ extern "C" {
 /* Support to suppress interrupt until specific index is reached. */
 #define VIRTIO_RING_F_EVENT_IDX        (1 << 29)
 
-/* cache invalidation helpers */
-#define CACHE_FLUSH(x, s)		metal_cache_flush(x, s)
-#define CACHE_INVALIDATE(x, s)		metal_cache_invalidate(x, s)
-
 #ifdef VIRTIO_CACHED_VRINGS
 #warning "VIRTIO_CACHED_VRINGS is deprecated, please use VIRTIO_USE_DCACHE"
 #endif
 #if defined(VIRTIO_CACHED_VRINGS) || defined(VIRTIO_USE_DCACHE)
-#define VRING_FLUSH(x, s)		CACHE_FLUSH(x, s)
-#define VRING_INVALIDATE(x, s)		CACHE_INVALIDATE(x, s)
+#define VRING_FLUSH(x, s)		metal_cache_flush(x, s)
+#define VRING_INVALIDATE(x, s)		metal_cache_invalidate(x, s)
 #else
 #define VRING_FLUSH(x, s)		do { } while (0)
 #define VRING_INVALIDATE(x, s)		do { } while (0)

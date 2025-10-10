@@ -29,8 +29,8 @@ extern "C" {
 #warning "VIRTIO_CACHED_RSC_TABLE is deprecated, please use VIRTIO_USE_DCACHE"
 #endif
 #if defined(VIRTIO_CACHED_RSC_TABLE) || defined(VIRTIO_USE_DCACHE)
-#define RSC_TABLE_FLUSH(x, s)		CACHE_FLUSH(x, s)
-#define RSC_TABLE_INVALIDATE(x, s)	CACHE_INVALIDATE(x, s)
+#define RSC_TABLE_FLUSH(x, s)		metal_cache_flush(x, s)
+#define RSC_TABLE_INVALIDATE(x, s)	metal_cache_invalidate(x, s)
 #else
 #define RSC_TABLE_FLUSH(x, s)		do { } while (0)
 #define RSC_TABLE_INVALIDATE(x, s)	do { } while (0)
