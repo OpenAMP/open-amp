@@ -121,8 +121,6 @@ int rproc_virtio_notified(struct virtio_device *vdev, uint32_t notifyid);
  * communications.
  *
  * @param vdev	Pointer to the virtio device
- *
- * @return true when remote processor is ready.
  */
 void rproc_virtio_wait_remote_ready(struct virtio_device *vdev);
 
