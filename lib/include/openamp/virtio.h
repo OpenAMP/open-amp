@@ -222,19 +222,6 @@ struct virtio_device {
  */
 
 /**
- * @brief Get the name of a virtio device.
- *
- * @param devid Id of the device.
- *
- * @return pointer to the device name string if found, otherwise null.
- */
-const char *virtio_dev_name(uint16_t devid);
-
-__deprecated void virtio_describe(struct virtio_device *dev, const char *msg,
-				  uint32_t features,
-				  struct virtio_feature_desc *feature_desc);
-
-/**
  * @brief Virtio device dispatcher functions.
  *
  * Functions for virtio device configuration as defined in Rusty Russell's paper.
