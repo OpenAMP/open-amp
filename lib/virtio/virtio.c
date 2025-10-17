@@ -50,15 +50,6 @@ const char *virtio_dev_name(unsigned short devid)
 	return NULL;
 }
 
-__deprecated void virtio_describe(struct virtio_device *dev, const char *msg,
-				  uint32_t features, struct virtio_feature_desc *desc)
-{
-	(void)dev;
-	(void)msg;
-	(void)features;
-	(void)desc;
-}
-
 int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 			     unsigned int nvqs, const char *names[],
 			     vq_callback callbacks[], void *callback_args[])

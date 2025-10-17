@@ -25,16 +25,13 @@ extern "C" {
 #define	RPROC_MAX_VRING_DESC	USHRT_MAX
 
 /* cache invalidation helpers for resource table */
-#ifdef VIRTIO_CACHED_RSC_TABLE
-#warning "VIRTIO_CACHED_RSC_TABLE is deprecated, please use VIRTIO_USE_DCACHE"
-#endif
-#if defined(VIRTIO_CACHED_RSC_TABLE) || defined(VIRTIO_USE_DCACHE)
+#if defined(VIRTIO_USE_DCACHE)
 #define RSC_TABLE_FLUSH(x, s)		metal_cache_flush(x, s)
 #define RSC_TABLE_INVALIDATE(x, s)	metal_cache_invalidate(x, s)
 #else
 #define RSC_TABLE_FLUSH(x, s)		do { } while (0)
 #define RSC_TABLE_INVALIDATE(x, s)	do { } while (0)
-#endif /* VIRTIO_CACHED_RSC_TABLE || VIRTIO_USE_DCACHE */
+#endif /* VIRTIO_USE_DCACHE */
 
 /* define vdev notification function user should implement */
 typedef int (*rpvdev_notify_func)(void *priv, uint32_t id);
