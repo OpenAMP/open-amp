@@ -1036,13 +1036,15 @@ void remoteproc_remove_virtio(struct remoteproc *rproc,
 	struct remoteproc_virtio *rpvdev;
 
 	(void)rproc;
-	metal_assert(vdev);
 
-	if (vdev) {
-		rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
-		metal_list_del(&rpvdev->node);
-		rproc_virtio_remove_vdev(&rpvdev->vdev);
+	if (!vdev) {
+		metal_err("vdev not unregistered as null\r\n");
+		return;
 	}
+
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	metal_list_del(&rpvdev->node);
+	rproc_virtio_remove_vdev(&rpvdev->vdev);
 }
 
 int remoteproc_get_notification(struct remoteproc *rproc, uint32_t notifyid)
