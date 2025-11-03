@@ -25,13 +25,8 @@ enable development of software applications for Asymmetric Multiprocessing
 |  |- remoteproc/ # remoteproc implementation
 |  |- proxy/      # implement one processor access device on the
 |  |              # other processor with file operations
-|- apps/        # demonstration/testing applications
-|  |- machine/  # common files for machine can be shared by applications
-|  |            # It is up to each app to decide whether to use these files.
-|  |- system/   # common files for system can be shared by applications
-|               # It is up to each app to decide whether to use these files.
-|- cmake        # CMake files
-|- script       # helper scripts (such as checkpatch) for contributors.
+|- cmake          # CMake files
+|- scripts        # helper scripts (such as checkpatch) for contributors.
 ```
 
 OpenAMP library libopen_amp is composed of the following directories in `lib/`:
@@ -40,9 +35,7 @@ OpenAMP library libopen_amp is composed of the following directories in `lib/`:
 *   `remoteproc/`
 *   `proxy/`
 
-OpenAMP system/machine support has been moved to libmetal, the system/machine
-layer in the `apps/` directory is for system application initialization, and
-resource table definition.
+OpenAMP system/machine support has been moved to libmetal.
 
 ### libmetal APIs used in OpenAMP
 Here are the libmetal APIs used by OpenAMP, if you want to port OpenAMP for your
@@ -79,7 +72,6 @@ flow easier.
 Some Cmake options are available to allow user to customize to the OpenAMP
 library for it project:
 * **WITH_PROXY** (default OFF): Include proxy support in the library.
-* **WITH_PROXY_APPS** (default OFF):Build with proxy sample applications.
 * **WITH_VIRTIO_DRIVER** (default ON): Build with virtio driver enabled.
   This option can be set to OFF if the only the remote mode is implemented.
 * **WITH_VIRTIO_DEVICE** (default ON): Build with virtio device enabled.
@@ -134,9 +126,7 @@ process.
   $ make VERBOSE=1 DESTDIR=$(pwd) install
   ```
 The OpenAMP library will be generated to `build/usr/local/lib` directory,
-headers will be generated to `build/usr/local/include` directory, and the
-applications executable will be generated to `build/usr/local/bin`
-directory.
+and the headers will be generated to `build/usr/local/include` directory.
 
 ## Example apps and tests
 * The openamp-system-reference is a new repository for the OpenAMP demos:
