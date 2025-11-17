@@ -15,6 +15,7 @@
 #include <metal/io.h>
 #include <metal/mutex.h>
 #include <metal/cache.h>
+#include <metal/compiler.h>
 #include <openamp/rpmsg.h>
 #include <openamp/virtio.h>
 
@@ -29,6 +30,9 @@ extern "C" {
 
 /* The feature bitmap for virtio rpmsg */
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
+#define VIRTIO_RPMSG_F_BUFSZ	1 /* fw provides tx and rx single buf size */
+
+#define RPMSG_VIRTIO_CONFIG_VERSION	1
 
 #if defined(VIRTIO_USE_DCACHE)
 #define BUFFER_FLUSH(x, s)		metal_cache_flush(x, s)
@@ -54,11 +58,26 @@ struct rpmsg_virtio_shm_pool {
 };
 
 /**
- * @brief Configuration of RPMsg device based on virtio
+ * @brief RPMsg virtio device configuration space
  *
- * This structure is used by the RPMsg virtio host to configure the virtiio
- * layer.
+ * This structure describes the virtio device configuration space ABI.
  */
+METAL_PACKED_BEGIN
+struct rpmsg_virtio_config_space {
+	/** version of this struct */
+	uint8_t version;
+
+	/** size of the config space */
+	uint16_t size;
+
+	/** The size of the buffer used to send data from driver to device */
+	uint32_t drv2dev_buf_size;
+
+	/** The size of the buffer used to send data from device to driver */
+	uint32_t dev2drv_buf_size;
+} METAL_PACKED_END;
+
+/** @brief Configuration of RPMsg device based on virtio */
 struct rpmsg_virtio_config {
 	/** The size of the buffer used to send data from host to remote */
 	uint32_t h2r_buf_size;
@@ -69,6 +88,9 @@ struct rpmsg_virtio_config {
 	/** The flag for splitting shared memory pool to TX and RX */
 	bool split_shpool;
 };
+
+#define RPMSG_VIRTIO_CONFIG_SIZE \
+	((uint16_t)sizeof(struct rpmsg_virtio_config_space))
 
 /** @brief Representation of a RPMsg device based on virtio */
 struct rpmsg_virtio_device {
