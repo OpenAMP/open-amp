@@ -62,6 +62,7 @@ struct vbuff_reclaimer_t {
 #if VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT)
 #define RPMSG_VIRTIO_DEFAULT_CONFIG                \
 	(&(const struct rpmsg_virtio_config) {     \
+		.version = 1,			   \
 		.h2r_buf_size = RPMSG_BUFFER_SIZE, \
 		.r2h_buf_size = RPMSG_BUFFER_SIZE, \
 		.split_shpool = false,             \
