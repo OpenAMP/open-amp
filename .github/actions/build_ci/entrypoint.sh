@@ -3,14 +3,7 @@
 readonly TARGET="$1"
 
 # Known good version for PR testing
-ZEPHYR_SDK_VERSION=v0.17.0
-ZEPHYR_VERSION=v4.1.0
-
-ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
-ZEPHYR_SDK_API_FOLDER=https://api.github.com/repos/zephyrproject-rtos/sdk-ng/releases
-ZEPHYR_SDK_VER_SELECT="tags/$ZEPHYR_SDK_VERSION"
-ZEPHYR_SDK_SETUP_TAR=zephyr-sdk-.*linux-x86_64.tar.xz
+ZEPHYR_VERSION=v4.3.0
 
 FREERTOS_ZIP_URL=https://cfhcable.dl.sourceforge.net/project/freertos/FreeRTOS/V10.0.1/FreeRTOSv10.0.1.zip
 
@@ -91,18 +84,8 @@ build_freertos(){
 }
 
 build_zephyr(){
-	# find the SDK download URL
-	ZEPHYR_SDK_DOWNLOAD_URL=`curl -s ${ZEPHYR_SDK_API_FOLDER}/${ZEPHYR_SDK_VER_SELECT} | \
-		grep -e "browser_download_url.*${ZEPHYR_SDK_SETUP_TAR}"| cut -d : -f 2,3 | tr -d \"`
-	echo "SDK URL=$ZEPHYR_SDK_DOWNLOAD_URL"
-	if [ -z "$ZEPHYR_SDK_DOWNLOAD_URL" ]; then
-		echo "error: Blank SDK download URL"
-		exit 2;
-	fi
-	ZEPHYR_SDK_TAR=`basename  $ZEPHYR_SDK_DOWNLOAD_URL`
-	ZEPHYR_SDK_SETUP_DIR=`echo $ZEPHYR_SDK_TAR | cut -d_ -f1`
-
 	echo  " Build for Zephyr OS "
+	echo  " install Zephyr environment"
 	sudo apt-get install -y git cmake ninja-build gperf pv || exit 1
   	sudo apt-get install -y ccache dfu-util device-tree-compiler wget || exit 1
 	sudo apt-get install -y python3-dev python3-setuptools python3-tk python3-wheel xz-utils file || exit 1
@@ -111,16 +94,12 @@ build_zephyr(){
 	pip3 install west || exit 1
 
 	export PROJECT_ROOT=$PWD
-	wget $ZEPHYR_SDK_DOWNLOAD_URL --progress=dot:giga || exit 1
-	echo "Extracting $ZEPHYR_SDK_TAR"
-	pv $ZEPHYR_SDK_TAR -i 3 -ptebr -f | tar xJ || exit 1
-	rm -rf $ZEPHYR_SDK_INSTALL_DIR || exit 1
-	yes | ./$ZEPHYR_SDK_SETUP_DIR/setup.sh || exit 1
 	west init --mr $ZEPHYR_VERSION ./zephyrproject || exit 1
 	cd ./zephyrproject || exit 1
-	west update || exit 1
+	west update -n || exit 1
 	west zephyr-export || exit 1
-	pip3 install  -r ./zephyr/scripts/requirements.txt || exit 1
+	west packages pip --install || exit 1
+
 	echo  "Update zephyr OpenAMP repos"
 	#Update zephyr OpenAMP repos
 	cp -r $PROJECT_ROOT/open-amp/lib modules/lib/open-amp/open-amp/ || exit 1
@@ -128,8 +107,11 @@ build_zephyr(){
 	cp $PROJECT_ROOT/open-amp/VERSION modules/lib/open-amp/open-amp/ || exit 1
 	cp -r $PROJECT_ROOT/open-amp/cmake modules/lib/open-amp/open-amp/ || exit 1
 	cp -r $PROJECT_ROOT/libmetal modules/hal/libmetal/ || exit 1
-	cd ./zephyr || exit 1
-	source zephyr-env.sh || exit 1
+
+	# only arm target tested for now
+	cd zephyr
+	west -q sdk install -t arm-zephyr-eabi
+
 	echo  "build openamp sample"
 	west build --sysbuild -b lpcxpresso54114/lpc54114/m4 samples/subsys/ipc/openamp/ || exit 1
 	rm -r build
