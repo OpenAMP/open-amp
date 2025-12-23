@@ -6,11 +6,6 @@ name: open-amp lib compliance checks
 on:
   pull_request:
     branches: [ main ]
-    paths-ignore:
-      - docs/**
-      - cmake/**
-      - scripts/**
-      - .github/**
 
 jobs:
   checkpatch_review:
@@ -22,11 +17,61 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
+
+    - name: Detect changed files
+      id: changes
+      run: |
+        git fetch origin ${{ github.base_ref }} --depth=1
+
+        files=$(git diff --name-only origin/${{ github.base_ref }}...${{ github.event.pull_request.head.sha }})
+
+        echo "Changed files:"
+        printf '%s\n' "$files"
+
+        files_spaced=$(echo "$files" | tr '\n' ' ')
+        files_spaced=$(echo "$files_spaced" | sed 's/[[:space:]]*$//')
+
+        echo "files=$files_spaced" >> "$GITHUB_OUTPUT"
+
+    - name: Check if only ignored paths changed
+      id: skip
+      run: |
+        IGNORED_PATHS=("docs/" "scripts/" ".github/")
+
+        only_ignored="true"
+
+        for f in ${{ steps.changes.outputs.files }}; do
+          echo "Processing file: $f"
+          is_ignored="false"
+          for p in "${IGNORED_PATHS[@]}"; do
+            if [[ "$f" == "$p"* ]]; then
+              is_ignored="true"
+              break
+            fi
+          done
+
+          if [[ "$is_ignored" == "false" ]]; then
+            only_ignored="false"
+            break
+          fi
+        done
+
+        echo "only_ignored=$only_ignored" >> "$GITHUB_OUTPUT"
+
+    - name: Skip compliance if only ignored paths changed
+      if: steps.skip.outputs.only_ignored == 'true'
+      run: |
+        echo "Only ignored paths changed; skipping compliance checks."
+        echo "<testsuite name=\"compliance\" tests=\"0\" failures=\"0\"/>" > compliance.xml
+
     - name: Install python dependencies
+      if: steps.skip.outputs.only_ignored != 'true'
       run: |
         pip3 install setuptools
         pip3 install python-magic junitparser gitlint codespell lxml
+
     - name: Run Compliance Tests
+      if: steps.skip.outputs.only_ignored != 'true'
       continue-on-error: true
       id: compliance
       env:
@@ -48,6 +93,7 @@ jobs:
         path: compliance.xml
 
     - name: check-warns
+      if: steps.skip.outputs.only_ignored != 'true'
       run: |
         if [[ ! -s "compliance.xml" ]]; then
           exit 1;
@@ -57,7 +103,7 @@ jobs:
         for file in "${files[@]}"; do
           f="${file}.txt"
           if [[ -s $f ]]; then
-            errors=$(cat $f)
+            errors=$(cat "$f")
             errors="${errors//'%'/'%25'}"
             errors="${errors//$'\n'/'%0A'}"
             errors="${errors//$'\r'/'%0D'}"
