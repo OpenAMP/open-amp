@@ -507,7 +507,12 @@ static void vq_ring_init(struct virtqueue *vq, void *ring_mem, int alignment)
 	size = vq->vq_nentries;
 	vr = &vq->vq_ring;
 
-	vring_init(vr, size, ring_mem, alignment);
+	vr->num = size;
+	vr->desc = (struct vring_desc *)ring_mem;
+	vr->avail = (struct vring_avail *)(ring_mem + size * sizeof(struct vring_desc));
+	vr->used = (struct vring_used *)
+	    (((unsigned long)&vr->avail->ring[size] + sizeof(uint16_t) +
+	      alignment - 1) & ~(alignment - 1));
 
 	if (VIRTIO_ROLE_IS_DRIVER(vq->vq_dev)) {
 		int i;
@@ -622,6 +627,19 @@ void virtqueue_notification(struct virtqueue *vq)
 	atomic_thread_fence(memory_order_seq_cst);
 	if (vq->callback)
 		vq->callback(vq);
+}
+
+/*
+ * The following is used with VIRTIO_RING_F_EVENT_IDX.
+ *
+ * Assuming a given event_idx value from the other size, if we have
+ * just incremented index from old to new_idx, should we trigger an
+ * event?
+ */
+static int vring_need_event(uint16_t event_idx, uint16_t new_idx, uint16_t old)
+{
+	return (uint16_t)(new_idx - event_idx - 1) <
+	    (uint16_t)(new_idx - old);
 }
 
 /*
