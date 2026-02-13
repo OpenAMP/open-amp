@@ -292,6 +292,7 @@ int remoteproc_shutdown(struct remoteproc *rproc)
 					ret = rproc->ops->shutdown(rproc);
 				if (!ret) {
 					rproc->state = RPROC_OFFLINE;
+					rproc->bitmap = 0;
 				}
 			}
 		}
