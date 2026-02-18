@@ -341,6 +341,20 @@ err:
 	return NULL;
 }
 
+int rproc_virtio_set_shm_io(struct virtio_device *vdev,
+			    struct metal_io_region *shm_io)
+{
+	struct remoteproc_virtio *rpvdev;
+
+	if (!vdev || !shm_io)
+		return -RPROC_EINVAL;
+
+	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
+	rpvdev->shm_io = shm_io;
+
+	return 0;
+}
+
 void rproc_virtio_remove_vdev(struct virtio_device *vdev)
 {
 	struct remoteproc_virtio *rpvdev;
