@@ -760,6 +760,7 @@ WARN_LOGFILE           =
 
 INPUT = @PROJECT_SOURCE_DIR@/README.md
 INPUT += @PROJECT_SOURCE_DIR@/LICENSE.md
+INPUT += @PROJECT_SOURCE_DIR@/MAINTAINERS.md
 INPUT += @PROJECT_SOURCE_DIR@/lib
 
 # This tag can be used to specify the character encoding of the source files
