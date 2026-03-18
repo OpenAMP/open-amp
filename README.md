@@ -129,8 +129,8 @@ The OpenAMP library will be generated to `build/usr/local/lib` directory,
 and the headers will be generated to `build/usr/local/include` directory.
 
 ## Example apps and tests
-* The openamp-system-reference is a new repository for the OpenAMP demos:
-  https://github.com/OpenAMP/openamp-system-reference
+* The [openamp-system-reference](https://github.com/OpenAMP/openamp-system-reference) is a new
+repository for the OpenAMP demos.
 
 ## Documentation
 OpenAMP project documentation is available at:
