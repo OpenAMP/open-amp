@@ -31,25 +31,13 @@ message ("-- Host:    ${_host}")
 set (_target "${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}")
 message ("-- Target:  ${_target}")
 
-if (NOT DEFINED MACHINE)
-  set (MACHINE "Generic")
-endif (NOT DEFINED MACHINE)
-message ("-- Machine: ${MACHINE}")
-
 string (TOLOWER ${CMAKE_SYSTEM_NAME}      PROJECT_SYSTEM)
 string (TOUPPER ${CMAKE_SYSTEM_NAME}      PROJECT_SYSTEM_UPPER)
 string (TOLOWER ${CMAKE_SYSTEM_PROCESSOR} PROJECT_PROCESSOR)
 string (TOUPPER ${CMAKE_SYSTEM_PROCESSOR} PROJECT_PROCESSOR_UPPER)
-string (TOLOWER ${MACHINE}                PROJECT_MACHINE)
-string (TOUPPER ${MACHINE}                PROJECT_MACHINE_UPPER)
 
 # Select which components are in the openamp lib
 option (WITH_PROXY          "Build with proxy(access device controlled by other processor)" ON)
-
-# LOAD_FW only allowed for R5, otherwise turn off
-if (NOT ${MACHINE} STREQUAL "zynqmp_r5")
- set (WITH_LOAD_FW OFF)
-endif(NOT ${MACHINE} STREQUAL "zynqmp_r5")
 
 option (WITH_VIRTIO_DRIVER "Build with virtio driver (front end)  enabled" ON)
 option (WITH_VIRTIO_DEVICE "Build with virtio device (back end)  enabled" ON)
