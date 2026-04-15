@@ -33,8 +33,6 @@ message ("-- Target:  ${_target}")
 
 string (TOLOWER ${CMAKE_SYSTEM_NAME}      PROJECT_SYSTEM)
 string (TOUPPER ${CMAKE_SYSTEM_NAME}      PROJECT_SYSTEM_UPPER)
-string (TOLOWER ${CMAKE_SYSTEM_PROCESSOR} PROJECT_PROCESSOR)
-string (TOUPPER ${CMAKE_SYSTEM_PROCESSOR} PROJECT_PROCESSOR_UPPER)
 
 # Select which components are in the openamp lib
 option (WITH_PROXY          "Build with proxy(access device controlled by other processor)" ON)
