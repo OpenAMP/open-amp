@@ -30,13 +30,14 @@ extern "C" {
 /* The feature bitmap for virtio rpmsg */
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
 
-#if defined(VIRTIO_USE_DCACHE)
+/* cache invalidation helpers for virtio buffers */
+#if defined(VIRTIO_CACHED_BUFFERS)
 #define BUFFER_FLUSH(x, s)		metal_cache_flush(x, s)
 #define BUFFER_INVALIDATE(x, s)		metal_cache_invalidate(x, s)
 #else
 #define BUFFER_FLUSH(x, s)		do { } while (0)
 #define BUFFER_INVALIDATE(x, s)		do { } while (0)
-#endif /* VIRTIO_USE_DCACHE */
+#endif /* VIRTIO_CACHED_BUFFERS */
 
 /* Callback handler for rpmsg virtio service */
 typedef int (*rpmsg_virtio_notify_wait_cb)(struct rpmsg_device *rdev, uint32_t id);
