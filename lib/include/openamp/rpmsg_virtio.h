@@ -15,6 +15,7 @@
 #include <metal/io.h>
 #include <metal/mutex.h>
 #include <metal/cache.h>
+#include <metal/compiler.h>
 #include <openamp/rpmsg.h>
 #include <openamp/virtio.h>
 
@@ -29,6 +30,7 @@ extern "C" {
 
 /* The feature bitmap for virtio rpmsg */
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
+#define VIRTIO_RPMSG_F_BUFSZ    1 /* fw provides tx and rx single buf size */
 
 #if defined(VIRTIO_USE_DCACHE)
 #define BUFFER_FLUSH(x, s)		metal_cache_flush(x, s)
@@ -59,7 +61,11 @@ struct rpmsg_virtio_shm_pool {
  * This structure is used by the RPMsg virtio host to configure the virtiio
  * layer.
  */
+METAL_PACKED_BEGIN
 struct rpmsg_virtio_config {
+	/** version of this struct */
+	uint16_t version;
+
 	/** The size of the buffer used to send data from host to remote */
 	uint32_t h2r_buf_size;
 
@@ -68,7 +74,7 @@ struct rpmsg_virtio_config {
 
 	/** The flag for splitting shared memory pool to TX and RX */
 	bool split_shpool;
-};
+} METAL_PACKED_END;
 
 /** @brief Representation of a RPMsg device based on virtio */
 struct rpmsg_virtio_device {
