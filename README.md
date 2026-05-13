@@ -83,12 +83,6 @@ library for it project:
 * **WITH_SHARED_LIB** (default ON): Build with a shared library.
 * **WITH_ZEPHYR** (default OFF): Build open-amp as a zephyr library. This option
   is mandatory in a Zephyr environment.
-* **WITH_DCACHE_VRINGS** (default OFF): Build with data cache operations
-  enabled on vrings.
-* **WITH_DCACHE_BUFFERS** (default OFF): Build with data cache operations
-  enabled on buffers.
-* **WITH_DCACHE_RSC_TABLE** (default OFF): Build with data cache operations
-  enabled on resource table.
 * **WITH_DCACHE** (default OFF): Build with all cache operations
   enabled. When set to ON, cache operations for vrings, buffers and resource
   table are enabled.
