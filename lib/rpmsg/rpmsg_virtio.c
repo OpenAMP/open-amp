@@ -62,6 +62,7 @@ struct vbuff_reclaimer_t {
 #if VIRTIO_ENABLED(VIRTIO_DRIVER_SUPPORT)
 #define RPMSG_VIRTIO_DEFAULT_CONFIG                \
 	(&(const struct rpmsg_virtio_config) {     \
+		.version = 1,			   \
 		.h2r_buf_size = RPMSG_BUFFER_SIZE, \
 		.r2h_buf_size = RPMSG_BUFFER_SIZE, \
 		.split_shpool = false,             \
@@ -742,7 +743,7 @@ int rpmsg_virtio_get_tx_buffer_size(struct rpmsg_device *rdev)
 int rpmsg_virtio_get_rx_buffer_size(struct rpmsg_device *rdev)
 {
 	struct rpmsg_virtio_device *rvdev;
-	int size = 0;
+	int size = 0, buf_size;
 
 	if (!rdev)
 		return RPMSG_ERR_PARAM;
@@ -761,10 +762,16 @@ int rpmsg_virtio_get_rx_buffer_size(struct rpmsg_device *rdev)
 	if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev)) {
 		/*
 		 * If other core is host then buffers are provided by it,
-		 * so get the buffer size from the virtqueue.
+		 * so get the buffer size from the virtqueue. If failed to get
+		 * by the vq, and device config space has it, then use it from
+		 * there.
 		 */
-		size = (int)virtqueue_get_desc_size(rvdev->rvq) -
-		       sizeof(struct rpmsg_hdr);
+		buf_size = (int)virtqueue_get_desc_size(rvdev->rvq);
+		if (buf_size == 0 && rvdev->config.r2h_buf_size) {
+			size = rvdev->config.r2h_buf_size - sizeof(struct rpmsg_hdr);
+		} else {
+			size = buf_size - sizeof(struct rpmsg_hdr);
+		}
 	}
 
 	if (size <= 0)
@@ -830,10 +837,14 @@ int rpmsg_init_vdev_with_config(struct rpmsg_virtio_device *rvdev,
 	}
 
 	if (VIRTIO_ROLE_IS_DEVICE(vdev)) {
+		if (config)
+			rvdev->config = *config;
+
 		/* wait synchro with the host */
 		status = rpmsg_virtio_wait_remote_ready(rvdev);
 		if (status)
 			return status;
+
 	}
 
 	status = virtio_get_features(vdev, &features);
