@@ -571,6 +571,8 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 		int shstrndx;
 		void *shdr;
 		void **shstrtab;
+		bool range_contained;
+		int ret;
 
 		metal_log(METAL_LOG_DEBUG, "Loading ELF shstrtab.\r\n");
 		shstrndx = elf_shstrndx(*img_info);
@@ -581,8 +583,11 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 				  NULL, &shstrtab_offset,
 				  &shstrtab_size, NULL, NULL,
 				  NULL, NULL);
-		if (offset > shstrtab_offset ||
-		    offset + len < shstrtab_offset + shstrtab_size) {
+		ret = OPENAMP_RANGE_CONTAINS(offset, len, shstrtab_offset,
+					     shstrtab_size, &range_contained);
+		if (ret)
+			return -RPROC_EINVAL;
+		if (!range_contained) {
 			*noffset = shstrtab_offset;
 			*nlen = shstrtab_size;
 			return *load_state;
