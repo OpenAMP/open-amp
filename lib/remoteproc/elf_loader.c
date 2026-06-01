@@ -490,14 +490,22 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 	if (*load_state == ELF_STATE_WAIT_FOR_PHDRS) {
 		size_t phdrs_size;
 		size_t phdrs_offset;
+		bool range_contained;
+		int ret;
 		void **phdrs;
 		const void *img_phdrs;
 
 		metal_log(METAL_LOG_DEBUG, "Loading ELF program header.\r\n");
 		phdrs_offset = elf_phoff(*img_info);
-		phdrs_size = elf_phnum(*img_info) * elf_phentsize(*img_info);
-		if (offset > phdrs_offset ||
-		    offset + len < phdrs_offset + phdrs_size) {
+		ret = OPENAMP_MUL_SAFE(elf_phnum(*img_info),
+				       elf_phentsize(*img_info), &phdrs_size);
+		if (ret)
+			return -RPROC_EINVAL;
+		ret = OPENAMP_RANGE_CONTAINS(offset, len, phdrs_offset,
+					     phdrs_size, &range_contained);
+		if (ret)
+			return -RPROC_EINVAL;
+		if (!range_contained) {
 			*noffset = phdrs_offset;
 			*nlen = phdrs_size;
 			return *load_state;
@@ -517,6 +525,8 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 	if ((*load_state & ELF_STATE_WAIT_FOR_SHDRS) != 0) {
 		size_t shdrs_size;
 		size_t shdrs_offset;
+		bool range_contained;
+		int ret;
 		void **shdrs;
 		const void *img_shdrs;
 
@@ -528,9 +538,15 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 			*nlen = 0;
 			return *load_state;
 		}
-		shdrs_size = elf_shnum(*img_info) * elf_shentsize(*img_info);
-		if (offset > shdrs_offset ||
-		    offset + len < shdrs_offset + shdrs_size) {
+		ret = OPENAMP_MUL_SAFE(elf_shnum(*img_info),
+				       elf_shentsize(*img_info), &shdrs_size);
+		if (ret)
+			return -RPROC_EINVAL;
+		ret = OPENAMP_RANGE_CONTAINS(offset, len, shdrs_offset,
+					     shdrs_size, &range_contained);
+		if (ret)
+			return -RPROC_EINVAL;
+		if (!range_contained) {
 			*noffset = shdrs_offset;
 			*nlen = shdrs_size;
 			return *load_state;
