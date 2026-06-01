@@ -233,6 +233,15 @@ static void **elf_shstrtab_ptr(void *elf_info)
 	}
 }
 
+static void elf_set_shstrtab_size(void *elf_info, size_t size)
+{
+	if (elf_is_64(elf_info) == 0) {
+		((struct elf32_info *)elf_info)->shstrtab_size = size;
+	} else {
+		((struct elf64_info *)elf_info)->shstrtab_size = size;
+	}
+}
+
 static int *elf_load_state(void *elf_info)
 {
 	if (elf_is_64(elf_info) == 0) {
@@ -613,6 +622,7 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 		*shstrtab = metal_allocate_memory(shstrtab_size);
 		if (!*shstrtab)
 			return -RPROC_ENOMEM;
+		elf_set_shstrtab_size(*img_info, shstrtab_size);
 		memcpy(*shstrtab,
 		       (const char *)img_data + shstrtab_offset,
 		       shstrtab_size);
