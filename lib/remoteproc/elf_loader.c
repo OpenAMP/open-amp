@@ -507,14 +507,21 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 	if (*load_state == ELF_STATE_WAIT_FOR_PHDRS) {
 		size_t phdrs_size;
 		size_t phdrs_offset;
+		int range_in_chunk;
 		void **phdrs;
 		const void *img_phdrs;
 
 		metal_log(METAL_LOG_DEBUG, "Loading ELF program header.\r\n");
 		phdrs_offset = elf_phoff(*img_info);
-		phdrs_size = elf_phnum(*img_info) * elf_phentsize(*img_info);
-		if (offset > phdrs_offset ||
-		    offset + len < phdrs_offset + phdrs_size) {
+		if (elf_mul_size(elf_phnum(*img_info),
+				 elf_phentsize(*img_info),
+				 &phdrs_size) < 0)
+			return -RPROC_EINVAL;
+		range_in_chunk = elf_range_in_chunk(offset, len, phdrs_offset,
+						    phdrs_size);
+		if (range_in_chunk < 0)
+			return range_in_chunk;
+		if (!range_in_chunk) {
 			*noffset = phdrs_offset;
 			*nlen = phdrs_size;
 			return *load_state;
@@ -534,6 +541,7 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 	if ((*load_state & ELF_STATE_WAIT_FOR_SHDRS) != 0) {
 		size_t shdrs_size;
 		size_t shdrs_offset;
+		int range_in_chunk;
 		void **shdrs;
 		const void *img_shdrs;
 
@@ -545,9 +553,15 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 			*nlen = 0;
 			return *load_state;
 		}
-		shdrs_size = elf_shnum(*img_info) * elf_shentsize(*img_info);
-		if (offset > shdrs_offset ||
-		    offset + len < shdrs_offset + shdrs_size) {
+		if (elf_mul_size(elf_shnum(*img_info),
+				 elf_shentsize(*img_info),
+				 &shdrs_size) < 0)
+			return -RPROC_EINVAL;
+		range_in_chunk = elf_range_in_chunk(offset, len, shdrs_offset,
+						    shdrs_size);
+		if (range_in_chunk < 0)
+			return range_in_chunk;
+		if (!range_in_chunk) {
 			*noffset = shdrs_offset;
 			*nlen = shdrs_size;
 			return *load_state;
