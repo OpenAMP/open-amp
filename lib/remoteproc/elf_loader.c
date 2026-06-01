@@ -586,6 +586,7 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 		int shstrndx;
 		void *shdr;
 		void **shstrtab;
+		int range_in_chunk;
 
 		metal_log(METAL_LOG_DEBUG, "Loading ELF shstrtab.\r\n");
 		shstrndx = elf_shstrndx(*img_info);
@@ -596,8 +597,12 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 				  NULL, &shstrtab_offset,
 				  &shstrtab_size, NULL, NULL,
 				  NULL, NULL);
-		if (offset > shstrtab_offset ||
-		    offset + len < shstrtab_offset + shstrtab_size) {
+		range_in_chunk = elf_range_in_chunk(offset, len,
+						    shstrtab_offset,
+						    shstrtab_size);
+		if (range_in_chunk < 0)
+			return range_in_chunk;
+		if (!range_in_chunk) {
 			*noffset = shstrtab_offset;
 			*nlen = shstrtab_size;
 			return *load_state;
