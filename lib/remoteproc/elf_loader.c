@@ -124,6 +124,50 @@ static int elf_shstrndx(const void *elf_info)
 	}
 }
 
+/**
+ * @brief Validate that an ELF header matches the supported header layout.
+ *
+ * @param elf_info	ELF information containing a copied ELF header.
+ *
+ * @return 0 on success, otherwise -RPROC_EINVAL.
+ */
+static int elf_validate_header(const void *elf_info)
+{
+	if (elf_is_64(elf_info) != 0) {
+		const Elf64_Ehdr *ehdr = elf_info;
+
+		if (ehdr->e_ident[EI_CLASS] != ELFCLASS64)
+			return -RPROC_EINVAL;
+		if (ehdr->e_ehsize != sizeof(Elf64_Ehdr))
+			return -RPROC_EINVAL;
+		if (ehdr->e_phnum != 0 &&
+		    ehdr->e_phentsize != sizeof(Elf64_Phdr))
+			return -RPROC_EINVAL;
+		if (ehdr->e_shnum != 0 &&
+		    ehdr->e_shentsize != sizeof(Elf64_Shdr))
+			return -RPROC_EINVAL;
+	} else {
+		const Elf32_Ehdr *ehdr = elf_info;
+
+		if (ehdr->e_ident[EI_CLASS] != ELFCLASS32)
+			return -RPROC_EINVAL;
+		if (ehdr->e_ehsize != sizeof(Elf32_Ehdr))
+			return -RPROC_EINVAL;
+		if (ehdr->e_phnum != 0 &&
+		    ehdr->e_phentsize != sizeof(Elf32_Phdr))
+			return -RPROC_EINVAL;
+		if (ehdr->e_shnum != 0 &&
+		    ehdr->e_shentsize != sizeof(Elf32_Shdr))
+			return -RPROC_EINVAL;
+	}
+
+	if (elf_shnum(elf_info) != 0 &&
+	    elf_shstrndx(elf_info) >= elf_shnum(elf_info))
+		return -RPROC_EINVAL;
+
+	return 0;
+}
+
 static void **elf_phtable_ptr(void *elf_info)
 {
 	if (elf_is_64(elf_info) == 0) {
@@ -414,14 +458,25 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 			return ELF_STATE_INIT;
 		} else {
 			size_t infosize = elf_info_size(img_data);
+			bool info_allocated = false;
+			int ret;
 
 			if (!*img_info) {
 				*img_info = metal_allocate_memory(infosize);
 				if (!*img_info)
 					return -RPROC_ENOMEM;
 				memset(*img_info, 0, infosize);
+				info_allocated = true;
 			}
 			memcpy(*img_info, img_data, tmpsize);
+			ret = elf_validate_header(*img_info);
+			if (ret < 0) {
+				if (info_allocated) {
+					metal_free_memory(*img_info);
+					*img_info = NULL;
+				}
+				return ret;
+			}
 			load_state = elf_load_state(*img_info);
 			*load_state = ELF_STATE_WAIT_FOR_PHDRS;
 			last_load_state = ELF_STATE_WAIT_FOR_PHDRS;
