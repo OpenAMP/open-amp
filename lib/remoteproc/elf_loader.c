@@ -6,10 +6,45 @@
  */
 
 #include <string.h>
+#include <stdint.h>
 #include <metal/alloc.h>
 #include <metal/log.h>
 #include <openamp/elf_loader.h>
 #include <openamp/remoteproc.h>
+
+static int elf_mul_size(size_t a, size_t b, size_t *out)
+{
+	if (a != 0 && b > SIZE_MAX / a)
+		return -RPROC_EINVAL;
+
+	*out = a * b;
+	return 0;
+}
+
+static int elf_add_size(size_t a, size_t b, size_t *out)
+{
+	if (b > SIZE_MAX - a)
+		return -RPROC_EINVAL;
+
+	*out = a + b;
+	return 0;
+}
+
+static int elf_range_in_chunk(size_t chunk_offset, size_t chunk_len,
+			      size_t range_offset, size_t range_len)
+{
+	size_t chunk_end;
+	size_t range_end;
+
+	if (elf_add_size(chunk_offset, chunk_len, &chunk_end) < 0 ||
+	    elf_add_size(range_offset, range_len, &range_end) < 0)
+		return -RPROC_EINVAL;
+
+	if (chunk_offset > range_offset || chunk_end < range_end)
+		return 0;
+
+	return 1;
+}
 
 static int elf_is_64(const void *elf_info)
 {
