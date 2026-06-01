@@ -5,7 +5,9 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <stdbool.h>
 #include <string.h>
+#include <internal/utilities.h>
 #include <metal/alloc.h>
 #include <metal/log.h>
 #include <openamp/elf_loader.h>
