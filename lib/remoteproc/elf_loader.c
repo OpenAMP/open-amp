@@ -6,10 +6,45 @@
  */
 
 #include <string.h>
+#include <stdint.h>
 #include <metal/alloc.h>
 #include <metal/log.h>
 #include <openamp/elf_loader.h>
 #include <openamp/remoteproc.h>
+
+static int elf_mul_size(size_t a, size_t b, size_t *out)
+{
+	if (a != 0 && b > SIZE_MAX / a)
+		return -RPROC_EINVAL;
+
+	*out = a * b;
+	return 0;
+}
+
+static int elf_add_size(size_t a, size_t b, size_t *out)
+{
+	if (b > SIZE_MAX - a)
+		return -RPROC_EINVAL;
+
+	*out = a + b;
+	return 0;
+}
+
+static int elf_range_in_chunk(size_t chunk_offset, size_t chunk_len,
+			      size_t range_offset, size_t range_len)
+{
+	size_t chunk_end;
+	size_t range_end;
+
+	if (elf_add_size(chunk_offset, chunk_len, &chunk_end) < 0 ||
+	    elf_add_size(range_offset, range_len, &range_end) < 0)
+		return -RPROC_EINVAL;
+
+	if (chunk_offset > range_offset || chunk_end < range_end)
+		return 0;
+
+	return 1;
+}
 
 static int elf_is_64(const void *elf_info)
 {
@@ -122,6 +157,43 @@ static int elf_shstrndx(const void *elf_info)
 	}
 }
 
+static int elf_validate_header(const void *elf_info)
+{
+	if (elf_is_64(elf_info) == 0) {
+		const Elf32_Ehdr *ehdr = elf_info;
+
+		if (ehdr->e_ident[EI_CLASS] != ELFCLASS32)
+			return -RPROC_EINVAL;
+		if (ehdr->e_ehsize != sizeof(Elf32_Ehdr))
+			return -RPROC_EINVAL;
+		if (ehdr->e_phnum != 0 &&
+		    ehdr->e_phentsize != sizeof(Elf32_Phdr))
+			return -RPROC_EINVAL;
+		if (ehdr->e_shnum != 0 &&
+		    ehdr->e_shentsize != sizeof(Elf32_Shdr))
+			return -RPROC_EINVAL;
+		if (ehdr->e_shnum != 0 && ehdr->e_shstrndx >= ehdr->e_shnum)
+			return -RPROC_EINVAL;
+	} else {
+		const Elf64_Ehdr *ehdr = elf_info;
+
+		if (ehdr->e_ident[EI_CLASS] != ELFCLASS64)
+			return -RPROC_EINVAL;
+		if (ehdr->e_ehsize != sizeof(Elf64_Ehdr))
+			return -RPROC_EINVAL;
+		if (ehdr->e_phnum != 0 &&
+		    ehdr->e_phentsize != sizeof(Elf64_Phdr))
+			return -RPROC_EINVAL;
+		if (ehdr->e_shnum != 0 &&
+		    ehdr->e_shentsize != sizeof(Elf64_Shdr))
+			return -RPROC_EINVAL;
+		if (ehdr->e_shnum != 0 && ehdr->e_shstrndx >= ehdr->e_shnum)
+			return -RPROC_EINVAL;
+	}
+
+	return 0;
+}
+
 static void **elf_phtable_ptr(void *elf_info)
 {
 	if (elf_is_64(elf_info) == 0) {
@@ -161,6 +233,15 @@ static void **elf_shstrtab_ptr(void *elf_info)
 	}
 }
 
+static void elf_set_shstrtab_size(void *elf_info, size_t size)
+{
+	if (elf_is_64(elf_info) == 0) {
+		((struct elf32_info *)elf_info)->shstrtab_size = size;
+	} else {
+		((struct elf64_info *)elf_info)->shstrtab_size = size;
+	}
+}
+
 static int *elf_load_state(void *elf_info)
 {
 	if (elf_is_64(elf_info) == 0) {
@@ -172,6 +253,25 @@ static int *elf_load_state(void *elf_info)
 
 		return &einfo->load_state;
 	}
+}
+
+static int elf_section_name_matches(const char *name, const char *name_table,
+				    size_t name_table_size, size_t sh_name)
+{
+	size_t name_len;
+	size_t remaining;
+	const char *candidate;
+
+	if (sh_name >= name_table_size)
+		return 0;
+
+	remaining = name_table_size - sh_name;
+	name_len = strlen(name);
+	if (name_len >= remaining)
+		return 0;
+
+	candidate = name_table + sh_name;
+	return memcmp(name, candidate, name_len + 1) == 0;
 }
 
 static void elf_parse_segment(void *elf_info, const void *elf_phdr,
@@ -242,6 +342,7 @@ static void *elf_get_section_from_name(void *elf_info, const char *name)
 {
 	unsigned int i;
 	const char *name_table;
+	size_t name_table_size;
 
 	if (elf_is_64(elf_info) == 0) {
 		struct elf32_info *einfo = elf_info;
@@ -249,10 +350,13 @@ static void *elf_get_section_from_name(void *elf_info, const char *name)
 		Elf32_Shdr *shdr = einfo->shdrs;
 
 		name_table = einfo->shstrtab;
+		name_table_size = einfo->shstrtab_size;
 		if (!shdr || !name_table)
 			return NULL;
 		for (i = 0; i < ehdr->e_shnum; i++, shdr++) {
-			if (strcmp(name, name_table + shdr->sh_name))
+			if (!elf_section_name_matches(name, name_table,
+						      name_table_size,
+						      shdr->sh_name))
 				continue;
 			else
 				return shdr;
@@ -263,10 +367,13 @@ static void *elf_get_section_from_name(void *elf_info, const char *name)
 		Elf64_Shdr *shdr = einfo->shdrs;
 
 		name_table = einfo->shstrtab;
+		name_table_size = einfo->shstrtab_size;
 		if (!shdr || !name_table)
 			return NULL;
 		for (i = 0; i < ehdr->e_shnum; i++, shdr++) {
-			if (strcmp(name, name_table + shdr->sh_name))
+			if (!elf_section_name_matches(name, name_table,
+						      name_table_size,
+						      shdr->sh_name))
 				continue;
 			else
 				return shdr;
@@ -420,6 +527,8 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 				memset(*img_info, 0, infosize);
 			}
 			memcpy(*img_info, img_data, tmpsize);
+			if (elf_validate_header(*img_info) < 0)
+				return -RPROC_EINVAL;
 			load_state = elf_load_state(*img_info);
 			*load_state = ELF_STATE_WAIT_FOR_PHDRS;
 			last_load_state = ELF_STATE_WAIT_FOR_PHDRS;
@@ -433,14 +542,21 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 	if (*load_state == ELF_STATE_WAIT_FOR_PHDRS) {
 		size_t phdrs_size;
 		size_t phdrs_offset;
+		int range_in_chunk;
 		void **phdrs;
 		const void *img_phdrs;
 
 		metal_log(METAL_LOG_DEBUG, "Loading ELF program header.\r\n");
 		phdrs_offset = elf_phoff(*img_info);
-		phdrs_size = elf_phnum(*img_info) * elf_phentsize(*img_info);
-		if (offset > phdrs_offset ||
-		    offset + len < phdrs_offset + phdrs_size) {
+		if (elf_mul_size(elf_phnum(*img_info),
+				 elf_phentsize(*img_info),
+				 &phdrs_size) < 0)
+			return -RPROC_EINVAL;
+		range_in_chunk = elf_range_in_chunk(offset, len, phdrs_offset,
+						    phdrs_size);
+		if (range_in_chunk < 0)
+			return range_in_chunk;
+		if (!range_in_chunk) {
 			*noffset = phdrs_offset;
 			*nlen = phdrs_size;
 			return *load_state;
@@ -460,6 +576,7 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 	if ((*load_state & ELF_STATE_WAIT_FOR_SHDRS) != 0) {
 		size_t shdrs_size;
 		size_t shdrs_offset;
+		int range_in_chunk;
 		void **shdrs;
 		const void *img_shdrs;
 
@@ -471,9 +588,15 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 			*nlen = 0;
 			return *load_state;
 		}
-		shdrs_size = elf_shnum(*img_info) * elf_shentsize(*img_info);
-		if (offset > shdrs_offset ||
-		    offset + len < shdrs_offset + shdrs_size) {
+		if (elf_mul_size(elf_shnum(*img_info),
+				 elf_shentsize(*img_info),
+				 &shdrs_size) < 0)
+			return -RPROC_EINVAL;
+		range_in_chunk = elf_range_in_chunk(offset, len, shdrs_offset,
+						    shdrs_size);
+		if (range_in_chunk < 0)
+			return range_in_chunk;
+		if (!range_in_chunk) {
 			*noffset = shdrs_offset;
 			*nlen = shdrs_size;
 			return *load_state;
@@ -498,6 +621,7 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 		int shstrndx;
 		void *shdr;
 		void **shstrtab;
+		int range_in_chunk;
 
 		metal_log(METAL_LOG_DEBUG, "Loading ELF shstrtab.\r\n");
 		shstrndx = elf_shstrndx(*img_info);
@@ -508,8 +632,12 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 				  NULL, &shstrtab_offset,
 				  &shstrtab_size, NULL, NULL,
 				  NULL, NULL);
-		if (offset > shstrtab_offset ||
-		    offset + len < shstrtab_offset + shstrtab_size) {
+		range_in_chunk = elf_range_in_chunk(offset, len,
+						    shstrtab_offset,
+						    shstrtab_size);
+		if (range_in_chunk < 0)
+			return range_in_chunk;
+		if (!range_in_chunk) {
 			*noffset = shstrtab_offset;
 			*nlen = shstrtab_size;
 			return *load_state;
@@ -520,6 +648,7 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 		*shstrtab = metal_allocate_memory(shstrtab_size);
 		if (!*shstrtab)
 			return -RPROC_ENOMEM;
+		elf_set_shstrtab_size(*img_info, shstrtab_size);
 		memcpy(*shstrtab,
 		       (const char *)img_data + shstrtab_offset,
 		       shstrtab_size);

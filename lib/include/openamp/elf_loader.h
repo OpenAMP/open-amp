@@ -290,6 +290,7 @@ struct elf32_info {
 	Elf32_Phdr *phdrs;
 	Elf32_Shdr *shdrs;
 	void *shstrtab;
+	size_t shstrtab_size;
 };
 
 struct elf64_info {
@@ -298,6 +299,7 @@ struct elf64_info {
 	Elf64_Phdr *phdrs;
 	Elf64_Shdr *shdrs;
 	void *shstrtab;
+	size_t shstrtab_size;
 };
 
 #define ELF_STATE_INIT              0x0L
