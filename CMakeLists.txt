@@ -13,6 +13,7 @@ project (open_amp C)
 
 include (CheckIncludeFiles)
 include (CheckCSourceCompiles)
+include (CMakeDependentOption)
 include (collect)
 include (options)
 include (depends)
