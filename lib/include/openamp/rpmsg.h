@@ -562,7 +562,10 @@ static inline int rpmsg_send_nocopy(struct rpmsg_endpoint *ept,
  * As an option Some rpmsg clients can specify an endpoint with a specific
  * source address.
  *
- * @param ept		Pointer to rpmsg endpoint
+ * @param ept		Pointer to rpmsg endpoint. The release_cb field of the endpoint must be
+ *			explicitly set by the caller: assign it to a valid callback if endpoint
+ *			destruction notification is needed, or set it to NULL otherwise.
+ *			Other fields do not require caller pre-initialization.
  * @param rdev		RPMsg device associated with the endpoint
  * @param name		Service name associated to the endpoint (maximum size \ref RPMSG_NAME_SIZE)
  * @param src		Local address of the endpoint
