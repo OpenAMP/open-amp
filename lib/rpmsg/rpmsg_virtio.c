@@ -653,7 +653,12 @@ static int rpmsg_virtio_ns_callback(struct rpmsg_endpoint *ept, void *data,
 		return RPMSG_SUCCESS;
 	metal_io_block_read(io,
 			    metal_io_virt_to_offset(io, ns_msg->name),
-			    &name, sizeof(name));
+			    name, sizeof(name));
+	/*
+	 * Don't trust the remote processor for null terminating the name.
+	 * Match upstream Linux RPMsg by terminating within the name field.
+	 */
+	name[RPMSG_NAME_SIZE - 1] = '\0';
 	dest = ns_msg->addr;
 
 	/* check if a Ept has been locally registered */
