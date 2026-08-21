@@ -137,7 +137,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_endpoint *ept, uint32_t src,
 
 int rpmsg_send_ns_message(struct rpmsg_endpoint *ept, unsigned long flags)
 {
-	struct rpmsg_ns_msg ns_msg;
+	struct rpmsg_ns_msg ns_msg = { 0 };
 	int ret;
 
 	ns_msg.flags = flags;
