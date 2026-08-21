@@ -176,7 +176,8 @@ int rpmsg_rpc_server_init(struct rpmsg_rpc_svr *rpcs, struct rpmsg_device *rdev,
  *				data
  * @param rpc_id		Function id
  * @param request_param		Pointer to request buffer
- * @param req_param_size	Length of the request data
+ * @param req_param_size	Length of the request data; must not exceed
+ *				MAX_BUF_LEN - MAX_FUNC_ID_LEN
  *
  * @return Length of the received response, negative value for failure.
  */
