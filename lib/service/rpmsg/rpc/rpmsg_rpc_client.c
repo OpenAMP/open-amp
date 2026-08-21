@@ -93,6 +93,8 @@ static int rpmsg_endpoint_client_cb(struct rpmsg_endpoint *ept,
 	struct rpmsg_rpc_clt *rpc;
 	const struct rpmsg_rpc_client_services *service;
 	struct rpmsg_rpc_answer *msg;
+	size_t header_size;
+	size_t params_len;
 	(void)priv;
 	(void)src;
 
@@ -100,6 +102,11 @@ static int rpmsg_endpoint_client_cb(struct rpmsg_endpoint *ept,
 		return -EINVAL;
 
 	msg = (struct rpmsg_rpc_answer *)data;
+	header_size = sizeof(*msg) - sizeof(msg->params);
+	/* Validate the fixed header before reading its fields. */
+	if (len < header_size)
+		return -EINVAL;
+	params_len = len - header_size;
 
 	rpc = metal_container_of(ept,
 				 struct rpmsg_rpc_clt,
@@ -108,8 +115,8 @@ static int rpmsg_endpoint_client_cb(struct rpmsg_endpoint *ept,
 	if (!service)
 		return -EINVAL;
 
-	/* Invoke the callback function of the rpc */
-	service->cb(rpc, msg->status, msg->params, len);
+	/* Pass only bytes following the fixed reply header. */
+	service->cb(rpc, msg->status, msg->params, params_len);
 
 	return RPMSG_SUCCESS;
 }
