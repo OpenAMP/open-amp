@@ -161,6 +161,25 @@ static void **elf_shstrtab_ptr(void *elf_info)
 	}
 }
 
+/**
+ * @brief Store the loaded ELF section string table size.
+ *
+ * @param elf_info	ELF information.
+ * @param size		Loaded section string table size.
+ */
+static void elf_set_shstrtab_size(void *elf_info, size_t size)
+{
+	if (elf_is_64(elf_info) == 0) {
+		struct elf32_info *einfo = elf_info;
+
+		einfo->shstrtab_size = size;
+	} else {
+		struct elf64_info *einfo = elf_info;
+
+		einfo->shstrtab_size = size;
+	}
+}
+
 static int *elf_load_state(void *elf_info)
 {
 	if (elf_is_64(elf_info) == 0) {
@@ -172,6 +191,33 @@ static int *elf_load_state(void *elf_info)
 
 		return &einfo->load_state;
 	}
+}
+
+/**
+ * @brief Compare a section name with a bounded string table entry.
+ *
+ * @param name			Section name to match.
+ * @param name_table		Loaded section string table.
+ * @param name_table_size	Size of the loaded section string table.
+ * @param sh_name		Offset of the candidate section name.
+ *
+ * @return true if the section name matches, otherwise false.
+ */
+static bool elf_section_name_matches(const char *name, const char *name_table,
+				     size_t name_table_size, size_t sh_name)
+{
+	size_t name_len;
+	size_t remaining;
+
+	if (sh_name >= name_table_size)
+		return false;
+
+	remaining = name_table_size - sh_name;
+	name_len = strlen(name);
+	if (name_len >= remaining)
+		return false;
+
+	return memcmp(name, name_table + sh_name, name_len + 1) == 0;
 }
 
 static void elf_parse_segment(void *elf_info, const void *elf_phdr,
@@ -242,6 +288,7 @@ static void *elf_get_section_from_name(void *elf_info, const char *name)
 {
 	unsigned int i;
 	const char *name_table;
+	size_t name_table_size;
 
 	if (elf_is_64(elf_info) == 0) {
 		struct elf32_info *einfo = elf_info;
@@ -249,10 +296,14 @@ static void *elf_get_section_from_name(void *elf_info, const char *name)
 		Elf32_Shdr *shdr = einfo->shdrs;
 
 		name_table = einfo->shstrtab;
+		name_table_size = einfo->shstrtab_size;
 		if (!shdr || !name_table)
 			return NULL;
 		for (i = 0; i < ehdr->e_shnum; i++, shdr++) {
-			if (strcmp(name, name_table + shdr->sh_name))
+			/* Validate the ELF32 name before comparing it. */
+			if (!elf_section_name_matches(name, name_table,
+						      name_table_size,
+						      shdr->sh_name))
 				continue;
 			else
 				return shdr;
@@ -263,10 +314,14 @@ static void *elf_get_section_from_name(void *elf_info, const char *name)
 		Elf64_Shdr *shdr = einfo->shdrs;
 
 		name_table = einfo->shstrtab;
+		name_table_size = einfo->shstrtab_size;
 		if (!shdr || !name_table)
 			return NULL;
 		for (i = 0; i < ehdr->e_shnum; i++, shdr++) {
-			if (strcmp(name, name_table + shdr->sh_name))
+			/* Validate the ELF64 name before comparing it. */
+			if (!elf_section_name_matches(name, name_table,
+						      name_table_size,
+						      shdr->sh_name))
 				continue;
 			else
 				return shdr;
@@ -520,6 +575,8 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 		*shstrtab = metal_allocate_memory(shstrtab_size);
 		if (!*shstrtab)
 			return -RPROC_ENOMEM;
+		/* Save the allocation size for bounded section name lookups. */
+		elf_set_shstrtab_size(*img_info, shstrtab_size);
 		memcpy(*shstrtab,
 		       (const char *)img_data + shstrtab_offset,
 		       shstrtab_size);
