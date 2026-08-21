@@ -177,7 +177,8 @@ void virtio_mmio_register_device(struct virtio_device *vdev, int vq_num, struct 
  * @brief Setup a virtqueue structure.
  *
  * @param vdev		Pointer to device structure.
- * @param idx		Index of the virtqueue.
+ * @param idx		Index of the virtqueue; must be less than the vq_num
+ *			passed to virtio_mmio_register_device().
  * @param vq		Pointer to virtqueue structure.
  * @param cb		Pointer to virtqueue callback. Can be NULL.
  * @param cb_arg	Argument for the virtqueue callback.
