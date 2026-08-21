@@ -27,7 +27,8 @@ size_t safe_strcpy(char *dst, size_t d_size, const char *src, size_t s_size)
 
 	/* Fill last characters with '\0' */
 	if (size < d_size)
-		memset(dst, '\0',  d_size - size + nleft);
+		/* Clear only bytes remaining after the copied data. */
+		memset(dst, '\0', d_size - (size_t)(dst - d));
 	else
 		d[d_size - 1] = '\0';
 
