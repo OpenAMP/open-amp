@@ -155,14 +155,84 @@ static const rsc_handler rsc_handler_table[] = {
 	handle_vdev_rsc, /**< virtio resource */
 };
 
+/**
+ * @brief Validate the complete extent of a resource table entry.
+ *
+ * @param hdr		Resource entry header.
+ * @param available	Bytes remaining in the resource table.
+ *
+ * @return 0 on success, otherwise -RPROC_ERR_RSC_TAB_TRUNC.
+ */
+static int validate_rsc_entry(struct fw_rsc_hdr *hdr, size_t available)
+{
+	size_t entry_size;
+
+	if (available < sizeof(*hdr))
+		return -RPROC_ERR_RSC_TAB_TRUNC;
+
+	switch (hdr->type) {
+	case RSC_CARVEOUT:
+		entry_size = sizeof(struct fw_rsc_carveout);
+		break;
+	case RSC_DEVMEM:
+		entry_size = sizeof(struct fw_rsc_devmem);
+		break;
+	case RSC_TRACE:
+		entry_size = sizeof(struct fw_rsc_trace);
+		break;
+	case RSC_VDEV: {
+		struct fw_rsc_vdev *vdev_rsc = (void *)hdr;
+
+		entry_size = sizeof(*vdev_rsc);
+		if (entry_size > available)
+			return -RPROC_ERR_RSC_TAB_TRUNC;
+		if (vdev_rsc->num_of_vrings >
+		    (available - entry_size) /
+		    sizeof(struct fw_rsc_vdev_vring))
+			return -RPROC_ERR_RSC_TAB_TRUNC;
+		entry_size += vdev_rsc->num_of_vrings *
+			      sizeof(struct fw_rsc_vdev_vring);
+		if (vdev_rsc->config_len > available - entry_size)
+			return -RPROC_ERR_RSC_TAB_TRUNC;
+		entry_size += vdev_rsc->config_len;
+		break;
+	}
+	default:
+		if (hdr->type >= RSC_VENDOR_START &&
+		    hdr->type <= RSC_VENDOR_END) {
+			struct fw_rsc_vendor *vend_rsc = (void *)hdr;
+
+			if (available < sizeof(*vend_rsc))
+				return -RPROC_ERR_RSC_TAB_TRUNC;
+			entry_size = vend_rsc->len;
+			if (entry_size < sizeof(*vend_rsc))
+				return -RPROC_ERR_RSC_TAB_TRUNC;
+		} else {
+			entry_size = sizeof(*hdr);
+		}
+		break;
+	}
+
+	if (entry_size > available)
+		return -RPROC_ERR_RSC_TAB_TRUNC;
+
+	return 0;
+}
+
 int handle_rsc_table(struct remoteproc *rproc,
 		     struct resource_table *rsc_table, size_t size,
 		     struct metal_io_region *io)
 {
 	struct fw_rsc_hdr *hdr;
 	uint32_t rsc_type;
-	unsigned int idx, offset;
+	uint32_t num_entries;
+	unsigned int idx;
+	size_t offset;
+	size_t rsc_offset;
 	int status = 0;
+
+	if (!rsc_table)
+		return -RPROC_EINVAL;
 
 	/* Validate rsc table header fields */
 
@@ -170,6 +240,11 @@ int handle_rsc_table(struct remoteproc *rproc,
 	if (sizeof(struct resource_table) > size) {
 		return -RPROC_ERR_RSC_TAB_TRUNC;
 	}
+	if (io &&
+	    (metal_io_virt_to_offset(io, rsc_table) == METAL_BAD_OFFSET ||
+	     metal_io_virt_to_offset(io, (char *)rsc_table + size - 1) ==
+	     METAL_BAD_OFFSET))
+		return -RPROC_ERR_RSC_TAB_TRUNC;
 
 	/* Supported version */
 	if (rsc_table->ver != RSC_TAB_SUPPORTED_VERSION) {
@@ -177,12 +252,13 @@ int handle_rsc_table(struct remoteproc *rproc,
 	}
 
 	/* Offset array */
-	offset = sizeof(struct resource_table)
-		 + rsc_table->num * sizeof(rsc_table->offset[0]);
-
-	if (offset > size) {
+	num_entries = rsc_table->num;
+	if (num_entries > (size - sizeof(struct resource_table)) /
+			  sizeof(rsc_table->offset[0])) {
 		return -RPROC_ERR_RSC_TAB_TRUNC;
 	}
+	offset = sizeof(struct resource_table) +
+		 num_entries * sizeof(rsc_table->offset[0]);
 
 	/* Reserved fields - must be zero */
 	if (rsc_table->reserved[0] != 0 || rsc_table->reserved[1] != 0) {
@@ -190,10 +266,16 @@ int handle_rsc_table(struct remoteproc *rproc,
 	}
 
 	/* Loop through the offset array and parse each resource entry */
-	for (idx = 0; idx < rsc_table->num; idx++) {
-		hdr = (void *)((char *)rsc_table + rsc_table->offset[idx]);
-		if (io && metal_io_virt_to_offset(io, hdr) == METAL_BAD_OFFSET)
+	for (idx = 0; idx < num_entries; idx++) {
+		rsc_offset = rsc_table->offset[idx];
+		/* Keep writable resources outside the table metadata. */
+		if (rsc_offset < offset || rsc_offset > size ||
+		    size - rsc_offset < sizeof(*hdr))
 			return -RPROC_ERR_RSC_TAB_TRUNC;
+		hdr = (void *)((char *)rsc_table + rsc_offset);
+		status = validate_rsc_entry(hdr, size - rsc_offset);
+		if (status)
+			return status;
 		rsc_type = hdr->type;
 		if (rsc_type < RSC_LAST)
 			status = rsc_handler_table[rsc_type](rproc, hdr);
