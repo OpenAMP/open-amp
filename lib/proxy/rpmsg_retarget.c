@@ -271,16 +271,20 @@ int _write(int fd, const char *ptr, int len)
 	int ret;
 	struct rpmsg_rpc_syscall *syscall;
 	struct rpmsg_rpc_syscall resp;
-	int payload_size = sizeof(*syscall) + len;
+	size_t payload_size;
 	struct rpmsg_rpc_data *rpc = rpmsg_default_rpc;
 	unsigned char tmpbuf[MAX_BUF_LEN];
 	unsigned char *tmpptr;
 	int null_term = 0;
 
-	if (!rpc)
+	if (!rpc || !ptr || len < 0)
 		return -EINVAL;
 	if (fd == 1)
 		null_term = 1;
+	/* Reserve space for the payload and stdout's trailing NUL byte. */
+	if ((size_t)len > MAX_BUF_LEN - sizeof(*syscall) - null_term)
+		return -EINVAL;
+	payload_size = sizeof(*syscall) + (size_t)len + null_term;
 
 	syscall = (void *)tmpbuf;
 	syscall->id = WRITE_SYSCALL_ID;
@@ -289,10 +293,8 @@ int _write(int fd, const char *ptr, int len)
 	syscall->args.data_len = len + null_term;
 	tmpptr = tmpbuf + sizeof(*syscall);
 	memcpy(tmpptr, ptr, len);
-	if (null_term == 1) {
-		*(char *)(tmpptr + len + null_term) = 0;
-		payload_size += 1;
-	}
+	if (null_term == 1)
+		tmpptr[len] = '\0';
 	resp.id = 0;
 	ret = rpmsg_rpc_send(rpc, tmpbuf, payload_size,
 			     (void *)&resp, sizeof(resp));
