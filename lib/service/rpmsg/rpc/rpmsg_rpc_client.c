@@ -53,12 +53,16 @@ int rpmsg_rpc_client_send(struct rpmsg_rpc_clt *rpc,
 {
 	unsigned char tmpbuf[MAX_BUF_LEN];
 
-	if (!rpc)
+	if (!rpc || (!request_param && req_param_size != 0))
+		return -EINVAL;
+	/* Reserve space for the function ID before copying parameters. */
+	if (req_param_size > MAX_BUF_LEN - MAX_FUNC_ID_LEN)
 		return -EINVAL;
 
 	/* to optimize with the zero copy API */
 	memcpy(tmpbuf, &rpc_id, MAX_FUNC_ID_LEN);
-	memcpy(&tmpbuf[MAX_FUNC_ID_LEN], request_param, req_param_size);
+	if (req_param_size != 0)
+		memcpy(&tmpbuf[MAX_FUNC_ID_LEN], request_param, req_param_size);
 	return rpmsg_send(&rpc->ept, tmpbuf, MAX_FUNC_ID_LEN + req_param_size);
 }
 
