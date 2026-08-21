@@ -231,6 +231,8 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 
 	if (VIRTIO_ROLE_IS_DRIVER(rvdev->vdev)) {
 		data = virtqueue_get_buffer(rvdev->rvq, len, idx);
+		if (data && *len > rvdev->config.r2h_buf_size)
+			*len = rvdev->config.r2h_buf_size;
 	}
 
 	if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev)) {
@@ -557,7 +559,6 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 	struct virtio_device *vdev = vq->vq_dev;
 	struct rpmsg_virtio_device *rvdev = vdev->priv;
 	struct rpmsg_device *rdev = &rvdev->rdev;
-	struct rpmsg_endpoint *ept;
 	struct rpmsg_hdr *rp_hdr;
 	bool release = false;
 	uint32_t len;
@@ -565,6 +566,15 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 	int status;
 
 	while (1) {
+		/*
+		 * Scoped to the loop body so that every iteration starts
+		 * without an endpoint. The lookup below is skipped for
+		 * malformed buffers, so a function-scope variable would keep
+		 * the endpoint found by an earlier iteration and that stale
+		 * pointer would be dispatched to and dereferenced again.
+		 */
+		struct rpmsg_endpoint *ept = NULL;
+
 		/* Process the received data from remote node */
 		metal_mutex_acquire(&rdev->lock);
 		rp_hdr = rpmsg_virtio_get_rx_buffer(rvdev, &len, &idx);
@@ -580,9 +590,16 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 
 		rp_hdr->reserved = idx;
 
-		/* Get the channel node from the remote device channels list. */
-		ept = rpmsg_get_ept_from_addr(rdev, rp_hdr->dst);
-		rpmsg_ept_incref(ept);
+		/*
+		 * Deliver the message only if the announced payload fits in
+		 * the received buffer, otherwise just release the buffer.
+		 */
+		if (len >= sizeof(*rp_hdr) &&
+		    rp_hdr->len <= len - sizeof(*rp_hdr)) {
+			/* Get the channel node from the remote device channels list. */
+			ept = rpmsg_get_ept_from_addr(rdev, rp_hdr->dst);
+			rpmsg_ept_incref(ept);
+		}
 		RPMSG_BUF_HELD_INC(rp_hdr);
 		metal_mutex_release(&rdev->lock);
 
