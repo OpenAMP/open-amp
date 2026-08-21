@@ -122,6 +122,34 @@ static int elf_shstrndx(const void *elf_info)
 	}
 }
 
+/**
+ * @brief Validate ELF program and section header table entry sizes.
+ *
+ * @param elf_info	ELF information containing a complete ELF header.
+ *
+ * @return 0 on success, otherwise -RPROC_EINVAL.
+ */
+static int elf_validate_table_entry_sizes(const void *elf_info)
+{
+	if (elf_is_64(elf_info) == 0) {
+		const struct elf32_info *einfo = elf_info;
+
+		if (einfo->ehdr.e_phnum != 0 && einfo->ehdr.e_phentsize != sizeof(*einfo->phdrs))
+			return -RPROC_EINVAL;
+		if (einfo->ehdr.e_shnum != 0 && einfo->ehdr.e_shentsize != sizeof(*einfo->shdrs))
+			return -RPROC_EINVAL;
+	} else {
+		const struct elf64_info *einfo = elf_info;
+
+		if (einfo->ehdr.e_phnum != 0 && einfo->ehdr.e_phentsize != sizeof(*einfo->phdrs))
+			return -RPROC_EINVAL;
+		if (einfo->ehdr.e_shnum != 0 && einfo->ehdr.e_shentsize != sizeof(*einfo->shdrs))
+			return -RPROC_EINVAL;
+	}
+
+	return 0;
+}
+
 static void **elf_phtable_ptr(void *elf_info)
 {
 	if (elf_is_64(elf_info) == 0) {
@@ -467,6 +495,12 @@ int elf_load_header(const void *img_data, size_t offset, size_t len,
 			return ELF_STATE_INIT;
 		} else {
 			size_t infosize = elf_info_size(img_data);
+			int ret;
+
+			/* Validate table strides before loading either table. */
+			ret = elf_validate_table_entry_sizes(img_data);
+			if (ret < 0)
+				return ret;
 
 			if (!*img_info) {
 				*img_info = metal_allocate_memory(infosize);
