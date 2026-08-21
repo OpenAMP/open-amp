@@ -220,7 +220,7 @@ int _read(int fd, char *buffer, int buflen)
 	unsigned char tmpbuf[MAX_BUF_LEN];
 	int ret;
 
-	if (!rpc || !buffer || buflen == 0)
+	if (!rpc || !buffer || buflen <= 0)
 		return -EINVAL;
 
 	/* Construct rpc payload */
@@ -238,12 +238,18 @@ int _read(int fd, char *buffer, int buflen)
 	if (ret >= 0) {
 		if (resp->id == READ_SYSCALL_ID) {
 			if (resp->args.int_field1 > 0) {
-				int tmplen = resp->args.data_len;
+				size_t tmplen = resp->args.data_len;
+				size_t payload_capacity;
 				unsigned char *tmpptr = tmpbuf;
 
 				tmpptr += sizeof(*resp);
-				if (tmplen > buflen)
-					tmplen = buflen;
+				payload_capacity = MAX_BUF_LEN - sizeof(*resp);
+				/* Clamp to the source capacity first. */
+				if (tmplen > payload_capacity)
+					tmplen = payload_capacity;
+				/* Only reduce the clamped length for the destination. */
+				if (tmplen > (size_t)buflen)
+					tmplen = (size_t)buflen;
 				memcpy(buffer, tmpptr, tmplen);
 			}
 			ret = resp->args.int_field1;
