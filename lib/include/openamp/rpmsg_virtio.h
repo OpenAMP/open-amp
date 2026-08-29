@@ -29,6 +29,7 @@ extern "C" {
 
 /* The feature bitmap for virtio rpmsg */
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
+#define VIRTIO_RPMSG_F_ACK	1 /* RP supports name service acknowledge */
 
 #if defined(VIRTIO_USE_DCACHE)
 #define BUFFER_FLUSH(x, s)		metal_cache_flush(x, s)
