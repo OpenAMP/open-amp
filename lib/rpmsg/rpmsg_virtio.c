@@ -599,8 +599,10 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 			status = ept->cb(ept, RPMSG_LOCATE_DATA(rp_hdr),
 					 rp_hdr->len, rp_hdr->src, ept->priv);
 
-			RPMSG_ASSERT(status >= 0,
-				     "unexpected callback status\r\n");
+			if (status < 0) {
+				metal_err("ept %s, return status %d\r\n", ept->name, status);
+				RPMSG_ASSERT(0, "unexpected callback status\r\n");
+			}
 		}
 
 		metal_mutex_acquire(&rdev->lock);
