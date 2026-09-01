@@ -41,7 +41,7 @@
 	((rp_hdr)->reserved -= 1 << RPMSG_BUF_HELD_SHIFT)
 
 /* Get the buffer index */
-#define RPMSG_BUF_INDEX(rphdr)                  \
+#define RPMSG_BUF_INDEX(rp_hdr)                  \
 	((uint16_t)((rp_hdr)->reserved & ~RPMSG_BUF_HELD_MASK))
 
 /**
