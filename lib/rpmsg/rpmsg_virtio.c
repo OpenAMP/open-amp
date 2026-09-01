@@ -310,7 +310,7 @@ static void rpmsg_virtio_hold_rx_buffer(struct rpmsg_device *rdev, void *rxbuf)
 	metal_mutex_release(&rdev->lock);
 }
 
-static bool rpmsg_virtio_release_rx_buffer_nolock(struct rpmsg_virtio_device *rvdev,
+static void rpmsg_virtio_release_rx_buffer_nolock(struct rpmsg_virtio_device *rvdev,
 						  struct rpmsg_hdr *rp_hdr)
 {
 	uint16_t idx;
@@ -321,8 +321,6 @@ static bool rpmsg_virtio_release_rx_buffer_nolock(struct rpmsg_virtio_device *rv
 	/* Return buffer on virtqueue. */
 	len = virtqueue_get_buffer_length(rvdev->rvq, idx);
 	rpmsg_virtio_return_buffer(rvdev, rp_hdr, len, idx);
-
-	return true;
 }
 
 static void rpmsg_virtio_release_rx_buffer(struct rpmsg_device *rdev,
