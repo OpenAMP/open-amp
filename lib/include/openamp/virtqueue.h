@@ -402,6 +402,16 @@ uint32_t virtqueue_get_buffer_length(struct virtqueue *vq, uint16_t idx);
 void *virtqueue_get_buffer_addr(struct virtqueue *vq, uint16_t idx);
 
 /**
+ * @brief Test if buffer is marked as device-writable
+ *
+ * @param vq	Pointer to VirtIO queue control block
+ * @param idx	Index used in vring desc table
+ *
+ * @return true if the buffer is marked as device-writable, false otherwise
+ */
+bool virtqueue_is_buffer_device_writable(struct virtqueue *vq, uint16_t idx);
+
+/**
  * @brief Test if virtqueue is empty
  *
  * @param vq	Pointer to VirtIO queue control block

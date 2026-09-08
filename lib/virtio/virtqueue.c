@@ -187,6 +187,14 @@ void *virtqueue_get_buffer_addr(struct virtqueue *vq, uint16_t idx)
 	return virtqueue_phys_to_virt(vq, vq->vq_ring.desc[idx].addr);
 }
 
+bool virtqueue_is_buffer_device_writable(struct virtqueue *vq, uint16_t idx)
+{
+	/* Invalidate the desc entry written by driver before accessing it */
+	VRING_INVALIDATE(&vq->vq_ring.desc[idx].flags,
+			 sizeof(vq->vq_ring.desc[idx].flags));
+	return !!(vq->vq_ring.desc[idx].flags & VRING_DESC_F_WRITE);
+}
+
 void virtqueue_free(struct virtqueue *vq)
 {
 	if (vq) {
