@@ -526,9 +526,13 @@ int remoteproc_load(struct remoteproc *rproc, const char *path,
 		} else if ((ret & RPROC_LOADER_READY_TO_LOAD) != 0) {
 			if (nlen == 0)
 				break;
-			else if ((noffset > (offset + len)) &&
+			else if ((noffset > offset && noffset - offset > len) &&
 				 (store_ops->features & SUPPORT_SEEK) == 0) {
-				/* Required data is not continued, however
+				/*
+				 * Use noffset - offset instead of offset + len
+				 * in the check above to avoid wrapping.
+				 *
+				 * Required data is not continued, however
 				 * seek is not supported, stop to load
 				 * headers such as ELF section headers which
 				 * is usually located to the end of image.
