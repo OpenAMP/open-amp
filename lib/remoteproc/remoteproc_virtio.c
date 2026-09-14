@@ -361,8 +361,11 @@ int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
 	struct virtio_vring_info *vring_info;
 	unsigned int num_vrings;
 
+	if (!vdev)
+		return -RPROC_EINVAL;
 	num_vrings = vdev->vrings_num;
-	if ((index >= num_vrings) || (num_descs > RPROC_MAX_VRING_DESC))
+	/* Recheck the resource values before storing the vring metadata. */
+	if (index >= num_vrings || num_descs > RPROC_MAX_VRING_DESC || !align)
 		return -RPROC_EINVAL;
 	vring_info = &vdev->vrings_info[index];
 	vring_info->io = io;

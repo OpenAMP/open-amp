@@ -1017,6 +1017,9 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 		da = vring_rsc->da;
 		num_descs = vring_rsc->num;
 		align = vring_rsc->align;
+		/* A zero alignment makes vring_init() compute a NULL used ring. */
+		if (!align)
+			goto err1;
 		size = vring_size(num_descs, align);
 		va = remoteproc_mmap(rproc, NULL, &da, size, 0, &io);
 		if (!va)

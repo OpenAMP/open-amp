@@ -94,7 +94,7 @@ void rproc_virtio_remove_vdev(struct virtio_device *vdev);
  * @param va		vring virtual address
  * @param io		Pointer to vring I/O region
  * @param num_descs	Number of descriptors
- * @param align		vring alignment
+ * @param align		vring alignment, must be nonzero
  *
  * @return 0 for success, negative value for failure.
  */
