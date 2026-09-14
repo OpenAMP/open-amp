@@ -51,14 +51,14 @@ static int rpmsg_endpoint_server_cb(struct rpmsg_endpoint *ept, void *data,
 				    size_t len,
 				    uint32_t src, void *priv)
 {
-	unsigned char buf[MAX_BUF_LEN];
+	unsigned char buf[MAX_BUF_LEN] = { 0 };
 	unsigned int id;
 	const struct rpmsg_rpc_services *service;
 	struct rpmsg_rpc_svr *rpcs;
 	(void)priv;
 	(void)src;
 
-	if (len > MAX_BUF_LEN)
+	if (len < MAX_FUNC_ID_LEN || len > MAX_BUF_LEN)
 		return -EINVAL;
 
 	rpcs = metal_container_of(ept, struct rpmsg_rpc_svr, ept);

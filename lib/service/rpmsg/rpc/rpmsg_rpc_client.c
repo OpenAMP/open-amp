@@ -53,12 +53,16 @@ int rpmsg_rpc_client_send(struct rpmsg_rpc_clt *rpc,
 {
 	unsigned char tmpbuf[MAX_BUF_LEN];
 
-	if (!rpc)
+	if (!rpc || (!request_param && req_param_size != 0))
+		return -EINVAL;
+	/* Reserve space for the function ID before copying parameters. */
+	if (req_param_size > MAX_BUF_LEN - MAX_FUNC_ID_LEN)
 		return -EINVAL;
 
 	/* to optimize with the zero copy API */
 	memcpy(tmpbuf, &rpc_id, MAX_FUNC_ID_LEN);
-	memcpy(&tmpbuf[MAX_FUNC_ID_LEN], request_param, req_param_size);
+	if (req_param_size != 0)
+		memcpy(&tmpbuf[MAX_FUNC_ID_LEN], request_param, req_param_size);
 	return rpmsg_send(&rpc->ept, tmpbuf, MAX_FUNC_ID_LEN + req_param_size);
 }
 
@@ -93,6 +97,8 @@ static int rpmsg_endpoint_client_cb(struct rpmsg_endpoint *ept,
 	struct rpmsg_rpc_clt *rpc;
 	const struct rpmsg_rpc_client_services *service;
 	struct rpmsg_rpc_answer *msg;
+	size_t header_size;
+	size_t params_len;
 	(void)priv;
 	(void)src;
 
@@ -100,6 +106,11 @@ static int rpmsg_endpoint_client_cb(struct rpmsg_endpoint *ept,
 		return -EINVAL;
 
 	msg = (struct rpmsg_rpc_answer *)data;
+	header_size = sizeof(*msg) - sizeof(msg->params);
+	/* Validate the fixed header before reading its fields. */
+	if (len < header_size)
+		return -EINVAL;
+	params_len = len - header_size;
 
 	rpc = metal_container_of(ept,
 				 struct rpmsg_rpc_clt,
@@ -108,8 +119,8 @@ static int rpmsg_endpoint_client_cb(struct rpmsg_endpoint *ept,
 	if (!service)
 		return -EINVAL;
 
-	/* Invoke the callback function of the rpc */
-	service->cb(rpc, msg->status, msg->params, len);
+	/* Pass only bytes following the fixed reply header. */
+	service->cb(rpc, msg->status, msg->params, params_len);
 
 	return RPMSG_SUCCESS;
 }
