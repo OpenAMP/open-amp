@@ -50,7 +50,14 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 {
 	int status = VQUEUE_SUCCESS;
 
-	VQ_PARAM_CHK(ring == NULL, status, ERROR_VQUEUE_INVLD_PARAM);
+	if (!ring)
+		return ERROR_VQUEUE_INVLD_PARAM;
+	/*
+	 * vring_init() masks the used ring address with ~(align - 1),
+	 * a zero alignment would place the used ring at NULL.
+	 */
+	if (ring->align == 0)
+		return ERROR_VRING_ALIGN;
 	VQ_PARAM_CHK(ring->num_descs == 0, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(ring->num_descs & (ring->num_descs - 1), status,
 		     ERROR_VRING_ALIGN);
