@@ -1017,8 +1017,14 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 		da = vring_rsc->da;
 		num_descs = vring_rsc->num;
 		align = vring_rsc->align;
-		/* A zero alignment makes vring_init() compute a NULL used ring. */
-		if (!align)
+		/*
+		 * vring_init() rounds the used ring address with a
+		 * ~(align - 1) mask, which only clears low order bits for a
+		 * power of two. A zero alignment computes a NULL used ring
+		 * and any other non power of two value moves the used ring
+		 * outside the vring memory.
+		 */
+		if (!align || (align & (align - 1)))
 			goto err1;
 		size = vring_size(num_descs, align);
 		va = remoteproc_mmap(rproc, NULL, &da, size, 0, &io);
