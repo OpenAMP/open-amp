@@ -166,6 +166,17 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 			 sizeof(vq->vq_ring.used->ring[used_idx]));
 
 	desc_idx = (uint16_t)uep->id;
+	/*
+	 * The used ring is written by the remote processor, so the reported
+	 * descriptor index is untrusted. vq_descx[] and the descriptor table
+	 * both hold vq_nentries elements, so an out of range index would
+	 * access memory past either array. Drop the buffer instead.
+	 */
+	if (desc_idx >= vq->vq_nentries) {
+		VQUEUE_IDLE(vq);
+		return NULL;
+	}
+
 	if (len)
 		*len = uep->len;
 
@@ -485,6 +496,13 @@ static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx)
 	if ((dp->flags & VRING_DESC_F_INDIRECT) == 0) {
 		while (dp->flags & VRING_DESC_F_NEXT) {
 			VQ_RING_ASSERT_VALID_IDX(vq, dp->next);
+			/*
+			 * The assert above is compiled out unless VQ_DEBUG is
+			 * enabled, so bound the walk here as well to keep a
+			 * truncated chain from leaving the descriptor table.
+			 */
+			if (dp->next >= vq->vq_nentries)
+				break;
 			dp = &vq->vq_ring.desc[dp->next];
 			dxp->ndescs--;
 		}
