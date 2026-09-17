@@ -53,10 +53,13 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 	if (!ring)
 		return ERROR_VQUEUE_INVLD_PARAM;
 	/*
-	 * vring_init() masks the used ring address with ~(align - 1),
-	 * a zero alignment would place the used ring at NULL.
+	 * vring_init() masks the used ring address with ~(align - 1). That
+	 * mask only clears the low order bits when the alignment is a power
+	 * of two. A zero alignment would place the used ring at NULL, and
+	 * any other non power of two value clears bits of the computed
+	 * address and moves the used ring outside the vring memory.
 	 */
-	if (ring->align == 0)
+	if (ring->align == 0 || (ring->align & (ring->align - 1)) != 0)
 		return ERROR_VRING_ALIGN;
 	VQ_PARAM_CHK(ring->num_descs == 0, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(ring->num_descs & (ring->num_descs - 1), status,
