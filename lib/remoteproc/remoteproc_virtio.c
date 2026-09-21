@@ -51,6 +51,14 @@ static int rproc_virtio_create_virtqueue(struct virtio_device *vdev,
 	if (vring_info->vq)
 		return ERROR_VQUEUE_INVLD_PARAM;
 
+	/*
+	 * vring_size() rounds with a ~(align - 1) mask, so a non power of
+	 * two alignment understates the region cleared below.
+	 */
+	if (!vring_alloc->align ||
+	    (vring_alloc->align & (vring_alloc->align - 1)))
+		return ERROR_VRING_ALIGN;
+
 	/* Alloc the virtqueue and init it */
 	vring_info->vq = virtqueue_allocate(vring_alloc->num_descs);
 	if (!vring_info->vq)
@@ -361,8 +369,17 @@ int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
 	struct virtio_vring_info *vring_info;
 	unsigned int num_vrings;
 
+	if (!vdev)
+		return -RPROC_EINVAL;
 	num_vrings = vdev->vrings_num;
-	if ((index >= num_vrings) || (num_descs > RPROC_MAX_VRING_DESC))
+	/*
+	 * Recheck the resource values before storing the vring metadata.
+	 * vring_init() masks the used ring address with ~(align - 1), so the
+	 * alignment has to be a power of two for that mask to clear only low
+	 * order bits.
+	 */
+	if (index >= num_vrings || num_descs > RPROC_MAX_VRING_DESC ||
+	    !align || (align & (align - 1)))
 		return -RPROC_EINVAL;
 	vring_info = &vdev->vrings_info[index];
 	vring_info->io = io;
