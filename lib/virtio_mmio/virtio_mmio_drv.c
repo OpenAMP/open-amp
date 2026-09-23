@@ -213,16 +213,24 @@ int virtio_mmio_device_init(struct virtio_mmio_device *vmdev, uintptr_t virt_mem
 }
 
 /* Register preallocated virtqueues */
-void virtio_mmio_register_device(struct virtio_device *vdev, int vq_num, struct virtqueue **vqs)
+int virtio_mmio_register_device(struct virtio_device *vdev, int vq_num, struct virtqueue **vqs)
 {
+	struct virtio_vring_info *vrings_info;
 	int i;
 
-	vdev->vrings_info = metal_allocate_memory(sizeof(struct virtio_vring_info) * vq_num);
-	/* TODO: handle error case */
+	if (!vdev || !vqs || vq_num <= 0)
+		return -EINVAL;
+	vrings_info = metal_allocate_memory(sizeof(*vrings_info) * vq_num);
+	if (!vrings_info)
+		return -ENOMEM;
+
 	for (i = 0; i < vq_num; i++) {
-		vdev->vrings_info[i].vq = vqs[i];
+		vrings_info[i].vq = vqs[i];
 	}
+	vdev->vrings_info = vrings_info;
 	vdev->vrings_num = vq_num;
+
+	return 0;
 }
 
 struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
@@ -236,8 +244,13 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 	struct virtio_vring_info _vring_info = {0};
 	struct virtio_vring_info *vring_info = &_vring_info;
 	struct vring_alloc_info *vring_alloc_info;
-	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
-							      struct virtio_mmio_device, vdev);
+	struct virtio_mmio_device *vmdev;
+
+	if (!vdev || !vdev->vrings_info || idx >= vdev->vrings_num) {
+		metal_log(METAL_LOG_ERROR, "Invalid virtqueue setup\n");
+		return NULL;
+	}
+	vmdev = metal_container_of(vdev, struct virtio_mmio_device, vdev);
 
 	if (vdev->role != (unsigned int)VIRTIO_DEV_DRIVER) {
 		metal_log(METAL_LOG_ERROR, "Only VIRTIO_DEV_DRIVER is currently supported\n");
@@ -300,8 +313,11 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 			    ((uintptr_t)metal_io_virt_to_phys(&vmdev->shm_io,
 			    (char *)vq->vq_ring.desc)) / 4096);
 
-	vdev->vrings_info[vdev->vrings_num].vq = vq;
-	vdev->vrings_num++;
+	/*
+	 * Registration already set vrings_num to the allocated slot count.
+	 * Configuring a slot does not increase that count.
+	 */
+	vdev->vrings_info[idx].vq = vq;
 	virtqueue_enable_cb(vq);
 
 	return vq;
@@ -341,7 +357,7 @@ static int virtio_mmio_create_virtqueues(struct virtio_device *vdev, unsigned in
 
 	(void)flags;
 
-	if (!vdev || !names || !vdev->vrings_info)
+	if (!vdev || !names || !vdev->vrings_info || nvqs > vdev->vrings_num)
 		return -EINVAL;
 
 	for (i = 0; i < nvqs; i++) {
