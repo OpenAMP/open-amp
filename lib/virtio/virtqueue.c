@@ -50,7 +50,17 @@ int virtqueue_create(struct virtio_device *virt_dev, unsigned short id,
 {
 	int status = VQUEUE_SUCCESS;
 
-	VQ_PARAM_CHK(ring == NULL, status, ERROR_VQUEUE_INVLD_PARAM);
+	if (!ring)
+		return ERROR_VQUEUE_INVLD_PARAM;
+	/*
+	 * vring_init() masks the used ring address with ~(align - 1). That
+	 * mask only clears the low order bits when the alignment is a power
+	 * of two. A zero alignment would place the used ring at NULL, and
+	 * any other non power of two value clears bits of the computed
+	 * address and moves the used ring outside the vring memory.
+	 */
+	if (ring->align == 0 || (ring->align & (ring->align - 1)) != 0)
+		return ERROR_VRING_ALIGN;
 	VQ_PARAM_CHK(ring->num_descs == 0, status, ERROR_VQUEUE_INVLD_PARAM);
 	VQ_PARAM_CHK(ring->num_descs & (ring->num_descs - 1), status,
 		     ERROR_VRING_ALIGN);
@@ -156,6 +166,17 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 			 sizeof(vq->vq_ring.used->ring[used_idx]));
 
 	desc_idx = (uint16_t)uep->id;
+	/*
+	 * The used ring is written by the remote processor, so the reported
+	 * descriptor index is untrusted. vq_descx[] and the descriptor table
+	 * both hold vq_nentries elements, so an out of range index would
+	 * access memory past either array. Drop the buffer instead.
+	 */
+	if (desc_idx >= vq->vq_nentries) {
+		VQUEUE_IDLE(vq);
+		return NULL;
+	}
+
 	if (len)
 		*len = uep->len;
 
@@ -483,6 +504,13 @@ static void vq_ring_free_chain(struct virtqueue *vq, uint16_t desc_idx)
 	if ((dp->flags & VRING_DESC_F_INDIRECT) == 0) {
 		while (dp->flags & VRING_DESC_F_NEXT) {
 			VQ_RING_ASSERT_VALID_IDX(vq, dp->next);
+			/*
+			 * The assert above is compiled out unless VQ_DEBUG is
+			 * enabled, so bound the walk here as well to keep a
+			 * truncated chain from leaving the descriptor table.
+			 */
+			if (dp->next >= vq->vq_nentries)
+				break;
 			dp = &vq->vq_ring.desc[dp->next];
 			dxp->ndescs--;
 		}
