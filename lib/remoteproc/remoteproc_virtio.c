@@ -32,6 +32,20 @@ static void rproc_virtio_delete_virtqueues(struct virtio_device *vdev)
 	}
 }
 
+static void rpvdev_notify(struct remoteproc_virtio *rpvdev, uint32_t id)
+{
+	int ret;
+
+	if (!rpvdev->notify)
+		return;
+
+	ret = rpvdev->notify(rpvdev->priv, id);
+	if (ret != 0)
+		metal_log(METAL_LOG_ERROR,
+			  "notify failed: id=%lu, ret=%d\r\n",
+			  (unsigned long)id, ret);
+}
+
 static int rproc_virtio_create_virtqueue(struct virtio_device *vdev,
 					 unsigned int flags,
 					 unsigned int idx,
@@ -110,7 +124,7 @@ static void rproc_virtio_virtqueue_notify(struct virtqueue *vq)
 	rpvdev = metal_container_of(vdev, struct remoteproc_virtio, vdev);
 	metal_assert(vq_id < vdev->vrings_num);
 	vring_info = &vdev->vrings_info[vq_id];
-	rpvdev->notify(rpvdev->priv, vring_info->notifyid);
+	rpvdev_notify(rpvdev, vring_info->notifyid);
 }
 
 static unsigned char rproc_virtio_get_status(struct virtio_device *vdev)
@@ -144,7 +158,7 @@ static void rproc_virtio_set_status(struct virtio_device *vdev,
 			metal_io_virt_to_offset(io, &vdev_rsc->status),
 			status);
 	RSC_TABLE_FLUSH(vdev_rsc, sizeof(struct fw_rsc_vdev));
-	rpvdev->notify(rpvdev->priv, vdev->notifyid);
+	rpvdev_notify(rpvdev, vdev->notifyid);
 }
 #endif
 
@@ -199,7 +213,7 @@ static void rproc_virtio_set_features(struct virtio_device *vdev,
 			 metal_io_virt_to_offset(io, &vdev_rsc->gfeatures),
 			 features);
 	RSC_TABLE_FLUSH(vdev_rsc, sizeof(struct fw_rsc_vdev));
-	rpvdev->notify(rpvdev->priv, vdev->notifyid);
+	rpvdev_notify(rpvdev, vdev->notifyid);
 }
 
 static uint32_t rproc_virtio_negotiate_features(struct virtio_device *vdev,
@@ -253,7 +267,7 @@ static void rproc_virtio_write_config(struct virtio_device *vdev,
 				metal_io_virt_to_offset(io, config + offset),
 				src, length);
 		RSC_TABLE_FLUSH(config + offset, length);
-		rpvdev->notify(rpvdev->priv, vdev->notifyid);
+		rpvdev_notify(rpvdev, vdev->notifyid);
 	}
 }
 
