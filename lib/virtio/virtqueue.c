@@ -138,10 +138,13 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 	void *cookie;
 	uint16_t used_idx, desc_idx;
 
+	if (!vq)
+		return NULL;
+
 	/* Used.idx is updated by the virtio device, so we need to invalidate */
 	VRING_INVALIDATE(&vq->vq_ring.used->idx, sizeof(vq->vq_ring.used->idx));
 
-	if (!vq || vq->vq_used_cons_idx == vq->vq_ring.used->idx)
+	if (vq->vq_used_cons_idx == vq->vq_ring.used->idx)
 		return NULL;
 
 	VQUEUE_BUSY(vq);

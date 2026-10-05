@@ -97,7 +97,7 @@ static int rproc_virtio_create_virtqueues(struct virtio_device *vdev,
 	(void)callback_args;
 
 	/* Check virtqueue numbers and the vrings_info */
-	if (nvqs > vdev->vrings_num || !vdev || !vdev->vrings_info)
+	if (!vdev || !vdev->vrings_info || nvqs > vdev->vrings_num)
 		return ERROR_VQUEUE_INVLD_PARAM;
 
 	/* set the notification id for vrings */
