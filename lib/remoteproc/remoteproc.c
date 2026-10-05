@@ -911,22 +911,34 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 				    unsigned int start,
 				    unsigned int end)
 {
-	unsigned int notifyid = RSC_NOTIFY_ID_ANY;
+	unsigned int bitmap_bits;
+	unsigned int notifyid;
 
+	if (!rproc)
+		return RSC_NOTIFY_ID_ANY;
+
+	bitmap_bits = 8U * sizeof(rproc->bitmap);
 	if (start == RSC_NOTIFY_ID_ANY)
 		start = 0;
 	if (end == RSC_NOTIFY_ID_ANY)
-		end = METAL_BITS_PER_ULONG;
-	if ((start < (8U * sizeof(rproc->bitmap))) &&
-	    (end <= (8U * sizeof(rproc->bitmap)))) {
-		notifyid = metal_bitmap_next_clear_bit(&rproc->bitmap,
-						       start, end);
-		if (notifyid != end)
-			metal_bitmap_set_bit(&rproc->bitmap, notifyid);
-		else
-			notifyid = RSC_NOTIFY_ID_ANY;
+		end = bitmap_bits;
+	if (start >= end || end > bitmap_bits)
+		return RSC_NOTIFY_ID_ANY;
+
+	/*
+	 * The bitmap is a single word. Search only the requested range so a
+	 * fixed ID or exhausted range is never redirected to another ID.
+	 */
+	for (notifyid = start; notifyid < end; notifyid++) {
+		unsigned long mask = metal_bit(notifyid);
+
+		if (!(rproc->bitmap & mask)) {
+			rproc->bitmap |= mask;
+			return notifyid;
+		}
 	}
-	return notifyid;
+
+	return RSC_NOTIFY_ID_ANY;
 }
 
 static int remoteproc_virtio_notify(void *priv, uint32_t id)
