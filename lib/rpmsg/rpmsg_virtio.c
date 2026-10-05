@@ -236,9 +236,26 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 	}
 
 	if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev)) {
-		data =
-		    virtqueue_get_first_avail_buffer(rvdev->rvq, idx, len);
+		struct metal_io_region *io = rvdev->shbuf_io;
+		size_t offset;
+
+		while (1) {
+			*idx = UINT16_MAX;
+			data = virtqueue_get_first_avail_buffer(rvdev->rvq, idx, len);
+			if (*idx == UINT16_MAX)
+				return NULL;
+			offset = data ? metal_io_virt_to_offset(io, data) : METAL_BAD_OFFSET;
+			if (offset != METAL_BAD_OFFSET &&
+			    *len <= metal_io_region_size(io) - offset &&
+			    *len >= sizeof(struct rpmsg_hdr))
+				break;
+
+			/* Return malformed descriptors without accessing their buffers. */
+			virtqueue_add_consumed_buffer(rvdev->rvq, *idx, 0);
+			virtqueue_kick(rvdev->rvq);
+		}
 	}
+
 
 	/* Invalidate the buffer before returning it */
 	if (data)
@@ -586,6 +603,13 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 				virtqueue_kick(rvdev->rvq);
 			metal_mutex_release(&rdev->lock);
 			break;
+		}
+
+		if (len < sizeof(*rp_hdr)) {
+			rpmsg_virtio_return_buffer(rvdev, rp_hdr, len, idx);
+			virtqueue_kick(rvdev->rvq);
+			metal_mutex_release(&rdev->lock);
+			continue;
 		}
 
 		rp_hdr->reserved = idx;
