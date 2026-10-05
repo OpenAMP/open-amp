@@ -251,6 +251,11 @@ void *virtqueue_get_first_avail_buffer(struct virtqueue *vq, uint16_t *avail_idx
 	VRING_INVALIDATE(&vq->vq_ring.avail->ring[head_idx],
 			 sizeof(vq->vq_ring.avail->ring[head_idx]));
 	*avail_idx = vq->vq_ring.avail->ring[head_idx];
+	if (*avail_idx >= vq->vq_nentries) {
+		*avail_idx = UINT16_MAX;
+		VQUEUE_IDLE(vq);
+		return NULL;
+	}
 
 	buffer = virtqueue_get_buffer_addr(vq, *avail_idx);
 	*len = virtqueue_get_buffer_length(vq, *avail_idx);
