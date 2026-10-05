@@ -12,6 +12,7 @@
 #ifndef REMOTEPROC_VIRTIO_H
 #define REMOTEPROC_VIRTIO_H
 
+#include <limits.h>
 #include <metal/io.h>
 #include <metal/list.h>
 #include <openamp/virtio.h>
@@ -23,6 +24,29 @@ extern "C" {
 
 /* maximum number of vring descriptors for a vdev limited by 16-bit data type */
 #define	RPROC_MAX_VRING_DESC	USHRT_MAX
+
+/* Return zero when the vring size cannot be represented by vring_size(). */
+static inline size_t rproc_virtio_vring_size(unsigned int num, unsigned int align)
+{
+	size_t size, used_size;
+
+	if (!num || num > RPROC_MAX_VRING_DESC || (num & (num - 1)) ||
+	    !align || (align & (align - 1)))
+		return 0;
+
+	size = num * sizeof(struct vring_desc) + sizeof(struct vring_avail) +
+	       num * sizeof(uint16_t) + sizeof(uint16_t);
+	used_size = sizeof(struct vring_used) +
+		    num * sizeof(struct vring_used_elem) + sizeof(uint16_t);
+	/* Bound the rounding expression as well as the final signed result. */
+	if (align - 1 > (size_t)INT_MAX - size)
+		return 0;
+	size = (size + align - 1) & ~((size_t)align - 1);
+	if (used_size > (size_t)INT_MAX - size)
+		return 0;
+
+	return size + used_size;
+}
 
 /* cache invalidation helpers for resource table */
 #if defined(VIRTIO_USE_DCACHE)

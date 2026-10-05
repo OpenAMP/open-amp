@@ -1026,7 +1026,9 @@ remoteproc_create_virtio(struct remoteproc *rproc,
 		 */
 		if (!align || (align & (align - 1)))
 			goto err1;
-		size = vring_size(num_descs, align);
+		size = rproc_virtio_vring_size(num_descs, align);
+		if (!size)
+			goto err1;
 		va = remoteproc_mmap(rproc, NULL, &da, size, 0, &io);
 		if (!va)
 			goto err1;
