@@ -55,6 +55,7 @@ static int rproc_virtio_create_virtqueue(struct virtio_device *vdev,
 	struct virtio_vring_info *vring_info;
 	struct vring_alloc_info *vring_alloc;
 	int ret;
+	size_t size;
 	(void)flags;
 
 	/* Get the vring information */
@@ -65,6 +66,18 @@ static int rproc_virtio_create_virtqueue(struct virtio_device *vdev,
 	if (vring_info->vq)
 		return ERROR_VQUEUE_INVLD_PARAM;
 
+	/*
+	 * vring_size() rounds with a ~(align - 1) mask, so a non power of
+	 * two alignment understates the region cleared below.
+	 */
+	if (!vring_alloc->align ||
+	    (vring_alloc->align & (vring_alloc->align - 1)))
+		return ERROR_VRING_ALIGN;
+
+	size = rproc_virtio_vring_size(vring_alloc->num_descs, vring_alloc->align);
+	if (!size)
+		return ERROR_VQUEUE_INVLD_PARAM;
+
 	/* Alloc the virtqueue and init it */
 	vring_info->vq = virtqueue_allocate(vring_alloc->num_descs);
 	if (!vring_info->vq)
@@ -72,7 +85,6 @@ static int rproc_virtio_create_virtqueue(struct virtio_device *vdev,
 
 	if (VIRTIO_ROLE_IS_DRIVER(vdev)) {
 		size_t offset = metal_io_virt_to_offset(vring_info->io, vring_alloc->vaddr);
-		size_t size = vring_size(vring_alloc->num_descs, vring_alloc->align);
 
 		metal_io_block_set(vring_info->io, offset, 0, size);
 	}
@@ -378,8 +390,14 @@ int rproc_virtio_init_vring(struct virtio_device *vdev, unsigned int index,
 	if (!vdev)
 		return -RPROC_EINVAL;
 	num_vrings = vdev->vrings_num;
-	/* Recheck the resource values before storing the vring metadata. */
-	if (index >= num_vrings || num_descs > RPROC_MAX_VRING_DESC || !align)
+	/*
+	 * Recheck the resource values before storing the vring metadata.
+	 * vring_init() masks the used ring address with ~(align - 1), so the
+	 * alignment has to be a power of two for that mask to clear only low
+	 * order bits.
+	 */
+	if (index >= num_vrings || num_descs > RPROC_MAX_VRING_DESC ||
+	    !rproc_virtio_vring_size(num_descs, align))
 		return -RPROC_EINVAL;
 	vring_info = &vdev->vrings_info[index];
 	vring_info->io = io;
