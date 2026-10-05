@@ -22,6 +22,16 @@
  *************************************************************************/
 static struct rpmsg_rpc_data *rpmsg_default_rpc;
 
+static size_t rpmsg_retarget_strnlen(const char *str, size_t max_len)
+{
+	size_t len = 0;
+
+	while (len < max_len && str[len] != '\0')
+		len++;
+
+	return len;
+}
+
 static int rpmsg_rpc_ept_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 			    uint32_t src, void *priv)
 {
@@ -166,14 +176,20 @@ int _open(const char *filename, int flags, int mode)
 	struct rpmsg_rpc_data *rpc = rpmsg_default_rpc;
 	struct rpmsg_rpc_syscall *syscall;
 	struct rpmsg_rpc_syscall resp;
-	int filename_len = strlen(filename) + 1;
-	unsigned int payload_size = sizeof(*syscall) + filename_len;
+	const size_t max_filename_len = MAX_BUF_LEN - sizeof(*syscall);
+	size_t filename_len;
+	size_t payload_size;
 	unsigned char tmpbuf[MAX_BUF_LEN];
 	int ret;
 
-	if (!filename || payload_size > (int)MAX_BUF_LEN) {
+	if (!filename)
 		return -EINVAL;
-	}
+
+	filename_len = rpmsg_retarget_strnlen(filename, max_filename_len);
+	if (filename_len == max_filename_len)
+		return -EINVAL;
+	filename_len++;
+	payload_size = sizeof(*syscall) + filename_len;
 
 	if (!rpc)
 		return -EINVAL;
@@ -183,7 +199,7 @@ int _open(const char *filename, int flags, int mode)
 	syscall->id = OPEN_SYSCALL_ID;
 	syscall->args.int_field1 = flags;
 	syscall->args.int_field2 = mode;
-	syscall->args.data_len = filename_len;
+	syscall->args.data_len = (uint32_t)filename_len;
 	memcpy(tmpbuf + sizeof(*syscall), filename, filename_len);
 
 	resp.id = 0;
