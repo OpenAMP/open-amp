@@ -44,7 +44,7 @@ struct remoteproc_virtio {
 	/** Address of vdev resource */
 	void *vdev_rsc;
 
-	/** Metal I/O region of vdev_info, can be NULL */
+	/** Metal I/O region containing the vdev resource */
 	struct metal_io_region *vdev_rsc_io;
 
 	/** Notification function */
@@ -63,7 +63,8 @@ struct remoteproc_virtio {
  * @param role		VIRTIO_DEV_DRIVER or VIRTIO_DEV_DEVICE
  * @param notifyid	Virtio device notification id
  * @param rsc		Pointer to the virtio device resource
- * @param rsc_io	Pointer to the virtio device resource I/O region
+ * @param rsc_io	Pointer to the I/O region containing the complete
+ *			virtio device resource
  * @param priv		Pointer to the private data
  * @param notify	vdev and virtqueue notification function
  * @param rst_cb	Reset virtio device callback
