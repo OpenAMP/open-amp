@@ -256,7 +256,6 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 		}
 	}
 
-
 	/* Invalidate the buffer before returning it */
 	if (data)
 		BUFFER_INVALIDATE(data, *len);
