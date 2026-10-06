@@ -353,6 +353,27 @@ static int rpmsg_virtio_notify_wait(struct rpmsg_virtio_device *rvdev, struct vi
 	return rvdev->notify_wait_cb(&rvdev->rdev, vring_info->notifyid);
 }
 
+/* Give back a TX buffer without accessing its header. */
+static void rpmsg_virtio_drop_tx_buffer(struct rpmsg_virtio_device *rvdev,
+					struct rpmsg_hdr *rp_hdr, uint16_t idx)
+{
+	struct rpmsg_device *rdev = &rvdev->rdev;
+	void *vbuff = rp_hdr;
+	struct vbuff_reclaimer_t *r_desc = (struct vbuff_reclaimer_t *)vbuff;
+
+	metal_mutex_acquire(&rdev->lock);
+	if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev)) {
+		/* Return the descriptor without accessing its buffer. */
+		virtqueue_add_consumed_buffer(rvdev->svq, idx, 0);
+		virtqueue_kick(rvdev->svq);
+	} else {
+		/* The driver owns the buffer, recycle it. */
+		r_desc->idx = idx;
+		metal_list_add_tail(&rvdev->reclaimer, &r_desc->node);
+	}
+	metal_mutex_release(&rdev->lock);
+}
+
 static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 						uint32_t *len, int wait)
 {
@@ -399,6 +420,12 @@ static void *rpmsg_virtio_get_tx_payload_buffer(struct rpmsg_device *rdev,
 
 	if (!rp_hdr)
 		return NULL;
+
+	/* The length is controlled by the remote, check it before accessing the header. */
+	if (*len < sizeof(struct rpmsg_hdr)) {
+		rpmsg_virtio_drop_tx_buffer(rvdev, rp_hdr, idx);
+		return NULL;
+	}
 
 	/* Store the index into the reserved field to be used when sending */
 	rp_hdr->reserved = idx;
