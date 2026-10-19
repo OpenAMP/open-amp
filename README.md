@@ -20,13 +20,21 @@ enable development of software applications for Asymmetric Multiprocessing
 ## OpenAMP Source Structure
 ```
 |- lib/
+|  |- include/    # library include files
 |  |- virtio/     # virtio implementation
 |  |- rpmsg/      # rpmsg implementation
 |  |- remoteproc/ # remoteproc implementation
 |  |- proxy/      # implement one processor access device on the
-|  |              # other processor with file operations
+|  |- utils/      # utilities
+|  |- virtio/     # virtio implementation
+|  |- virtio-mmio # mmio implementation of virtio
+|  |- service
+|     |- rpmsg
+|        |- rpc   # remote procedure call implementation
+|
 |- cmake          # CMake files
 |- scripts        # helper scripts (such as checkpatch) for contributors.
+|- doc            # doxygen setup files
 ```
 
 OpenAMP library libopen_amp is composed of the following directories in `lib/`:
