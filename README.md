@@ -24,7 +24,7 @@ enable development of software applications for Asymmetric Multiprocessing
 |  |- virtio/     # virtio implementation
 |  |- rpmsg/      # rpmsg implementation
 |  |- remoteproc/ # remoteproc implementation
-|  |- proxy/      # implement one processor access device on the
+|  |- proxy/      # implementation of remote access to main processor services
 |  |- utils/      # utilities
 |  |- virtio/     # virtio implementation
 |  |- virtio-mmio # mmio implementation of virtio
