@@ -37,12 +37,6 @@ enable development of software applications for Asymmetric Multiprocessing
 |- doc            # doxygen setup files
 ```
 
-OpenAMP library libopen_amp is composed of the following directories in `lib/`:
-*   `virtio/`
-*   `rpmsg/`
-*   `remoteproc/`
-*   `proxy/`
-
 OpenAMP system/machine support has been moved to libmetal.
 
 ### libmetal APIs used in OpenAMP
