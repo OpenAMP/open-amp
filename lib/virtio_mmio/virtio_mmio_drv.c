@@ -69,10 +69,9 @@ static void virtio_mmio_read_config(struct virtio_device *vdev,
 {
 	int i;
 	uint8_t *d = dst;
-	(void)(offset);
 
 	for (i = 0; i < length; i++)
-		d[i] = virtio_mmio_read8(vdev, VIRTIO_MMIO_CONFIG + i);
+		d[i] = virtio_mmio_read8(vdev, VIRTIO_MMIO_CONFIG + offset + i);
 }
 
 static uint32_t _virtio_mmio_get_features(struct virtio_device *vdev, int idx)
