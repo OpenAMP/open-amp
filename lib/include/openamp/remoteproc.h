@@ -796,10 +796,12 @@ int remoteproc_load_noblock(struct remoteproc *rproc,
  * @brief Allocate notifyid for resource
  *
  * @param rproc	Pointer to the remoteproc instance
- * @param start	Start of the id range
- * @param end	End of the id range
+ * @param start	Start of the id range, or RSC_NOTIFY_ID_ANY for 0
+ * @param end	Exclusive end of the id range, or RSC_NOTIFY_ID_ANY for
+ *		the number of bits in the remoteproc bitmap
  *
- * @return Allocated notify id
+ * @return Allocated notify id, or RSC_NOTIFY_ID_ANY if the range is invalid
+ *	   or has no free id
  */
 unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 				    unsigned int start,
