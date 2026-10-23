@@ -133,6 +133,47 @@ void rpmsg_ept_incref(struct rpmsg_endpoint *ept);
  */
 void rpmsg_ept_decref(struct rpmsg_endpoint *ept);
 
+#ifdef RPMSG_TRACE
+/**
+ * @internal
+ *
+ * @brief Trace the get tx buffer process
+ *
+ * This function is used to trace the get tx buffer process
+ *
+ * @param rdev	pointer to rpmsg endpoint
+ * @param hdr	pointer to rpmsg header
+ *
+ */
+static inline void
+rpmsg_device_trace_get_tx_buffer(struct rpmsg_device *rdev, void *hdr)
+{
+	if (rdev->trace.get_tx_buffer && hdr)
+		rdev->trace.get_tx_buffer(rdev, hdr);
+}
+
+/**
+ * @internal
+ *
+ * @brief Trace the release tx buffer process
+ *
+ * This function is used to trace the release tx buffer process
+ *
+ * @param rdev	pointer to rpmsg endpoint
+ * @param hdr	pointer to rpmsg header
+ *
+ */
+static inline void
+rpmsg_device_trace_release_tx_buffer(struct rpmsg_device *rdev, void *hdr)
+{
+	if (rdev->trace.release_tx_buffer && hdr)
+		rdev->trace.release_tx_buffer(rdev, hdr);
+}
+#else
+#define rpmsg_device_trace_get_tx_buffer(rdev, hdr)
+#define rpmsg_device_trace_release_tx_buffer(rdev, hdr)
+#endif
+
 #if defined __cplusplus
 }
 #endif
