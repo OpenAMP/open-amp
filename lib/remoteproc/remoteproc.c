@@ -930,12 +930,10 @@ unsigned int remoteproc_allocate_id(struct remoteproc *rproc,
 	 * fixed ID or exhausted range is never redirected to another ID.
 	 */
 	for (notifyid = start; notifyid < end; notifyid++) {
-		unsigned long mask = metal_bit(notifyid);
-
-		if (!(rproc->bitmap & mask)) {
-			rproc->bitmap |= mask;
+		if (metal_bitmap_is_clear(&rproc->bitmap, notifyid,
+					  bitmap_bits) == 1 &&
+		    metal_bitmap_set(&rproc->bitmap, notifyid, bitmap_bits) == 0)
 			return notifyid;
-		}
 	}
 
 	return RSC_NOTIFY_ID_ANY;

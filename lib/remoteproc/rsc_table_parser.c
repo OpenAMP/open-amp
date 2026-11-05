@@ -74,8 +74,9 @@ static int handle_trace_rsc(struct remoteproc *rproc, void *rsc)
 static void rsc_release_notifyid(struct remoteproc *rproc,
 				 unsigned int notifyid)
 {
-	if (notifyid < 8U * sizeof(rproc->bitmap))
-		rproc->bitmap &= ~metal_bit(notifyid);
+	/* Rollback only releases IDs returned by successful bounded allocation. */
+	(void)metal_bitmap_clear(&rproc->bitmap, notifyid,
+				 8U * sizeof(rproc->bitmap));
 }
 
 static int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
