@@ -212,6 +212,7 @@ int virtio_mmio_device_init(struct virtio_mmio_device *vmdev, uintptr_t virt_mem
 }
 
 /* Register preallocated virtqueues */
+__deprecated
 void virtio_mmio_register_device(struct virtio_device *vdev, int vq_num, struct virtqueue **vqs)
 {
 	int i;
