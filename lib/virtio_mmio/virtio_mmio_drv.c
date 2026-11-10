@@ -361,15 +361,17 @@ static int virtio_mmio_create_virtqueues(struct virtio_device *vdev, unsigned in
 		return -EINVAL;
 
 	/*
-	 * Drivers using virtio_create_virtqueues() allocate vrings_info
-	 * themselves but do not register a count, so take it from nvqs.
+	 * Callers provide vrings_info storage for nvqs queues. Initialize an
+	 * unset count from nvqs; otherwise, require the counts to match.
 	 */
 	if (vdev->vrings_num == 0) {
 		vdev->vrings_num = nvqs;
 		set_vrings_num = true;
 	}
-	if (nvqs > vdev->vrings_num)
+	if (vdev->vrings_num != nvqs) {
+		metal_log(METAL_LOG_ERROR, "incoherent number of virtqueues\n");
 		return -EINVAL;
+	}
 
 	for (i = 0; i < nvqs; i++) {
 		vring_vq = NULL;
