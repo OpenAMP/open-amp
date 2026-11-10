@@ -167,17 +167,25 @@ struct virtio_mmio_device {
 /**
  * @brief Register a VIRTIO device with the VIRTIO stack.
  *
+ * @deprecated Initialize vdev->vrings_info and use virtio_create_virtqueues().
+ *             Provide storage for nvqs entries with preallocated virtqueues.
+ *             Leave vdev->vrings_num zero to initialize it from nvqs, or set
+ *             it to nvqs before creating the queues.
+ *
  * @param vdev		Pointer to device structure.
  * @param vq_num	Number of virtqueues the device uses.
  * @param vqs		Array of pointers to vthe virtqueues used by the device.
+ *
+ * @return 0 on success, negative error code on failure.
  */
-void virtio_mmio_register_device(struct virtio_device *vdev, int vq_num, struct virtqueue **vqs);
+int virtio_mmio_register_device(struct virtio_device *vdev, int vq_num, struct virtqueue **vqs);
 
 /**
  * @brief Setup a virtqueue structure.
  *
  * @param vdev		Pointer to device structure.
- * @param idx		Index of the virtqueue.
+ * @param idx		Index of the virtqueue; must be less than
+ *			vdev->vrings_num, which must be initialized before setup.
  * @param vq		Pointer to virtqueue structure.
  * @param cb		Pointer to virtqueue callback. Can be NULL.
  * @param cb_arg	Argument for the virtqueue callback.
