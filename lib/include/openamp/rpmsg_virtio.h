@@ -70,11 +70,11 @@ struct rpmsg_virtio_config_space {
 	/** size of the config space */
 	uint16_t size;
 
-	/** The size of the buffer used to send data from driver to device */
-	uint32_t drv2dev_buf_size;
-
 	/** The size of the buffer used to send data from device to driver */
 	uint32_t dev2drv_buf_size;
+
+	/** The size of the buffer used to send data from driver to device */
+	uint32_t drv2dev_buf_size;
 } METAL_PACKED_END;
 
 /** @brief Configuration of RPMsg device based on virtio */
