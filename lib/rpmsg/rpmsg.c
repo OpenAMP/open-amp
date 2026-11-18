@@ -25,16 +25,15 @@
  *
  * @return A unique address
  */
-static uint32_t rpmsg_get_address(unsigned long *bitmap, unsigned int start, int size)
+static uint32_t rpmsg_get_address(unsigned long *bitmap, unsigned int start,
+				  unsigned int size)
 {
 	unsigned int addr = RPMSG_ADDR_ANY;
 	unsigned int nextbit;
 
 	nextbit = metal_bitmap_next_clear_bit(bitmap, start, size);
-	if (nextbit < (uint32_t)size) {
+	if (nextbit < size && metal_bitmap_set(bitmap, nextbit, size) == 0)
 		addr = RPMSG_RESERVED_ADDRESSES + nextbit;
-		metal_bitmap_set_bit(bitmap, nextbit);
-	}
 
 	return addr;
 }
@@ -51,9 +50,13 @@ static uint32_t rpmsg_get_address(unsigned long *bitmap, unsigned int start, int
 static void rpmsg_release_address(unsigned long *bitmap, int size,
 				  int addr)
 {
+	if (addr < RPMSG_RESERVED_ADDRESSES)
+		return;
+
 	addr -= RPMSG_RESERVED_ADDRESSES;
-	if (addr >= 0 && addr < size)
-		metal_bitmap_clear_bit(bitmap, addr);
+	if (addr < size)
+		(void)metal_bitmap_clear(bitmap, (unsigned int)addr,
+					(unsigned int)size);
 }
 
 /**
@@ -69,11 +72,18 @@ static void rpmsg_release_address(unsigned long *bitmap, int size,
  */
 static int rpmsg_is_address_set(unsigned long *bitmap, int size, int addr)
 {
-	addr -= RPMSG_RESERVED_ADDRESSES;
-	if (addr >= 0 && addr < size)
-		return metal_bitmap_is_bit_set(bitmap, addr);
-	else
+	int ret;
+
+	if (addr < RPMSG_RESERVED_ADDRESSES)
 		return RPMSG_ERR_PARAM;
+
+	addr -= RPMSG_RESERVED_ADDRESSES;
+	if (addr >= size)
+		return RPMSG_ERR_PARAM;
+
+	ret = metal_bitmap_is_set(bitmap, (unsigned int)addr,
+				  (unsigned int)size);
+	return ret < 0 ? RPMSG_ERR_PARAM : ret;
 }
 
 /**
@@ -89,13 +99,16 @@ static int rpmsg_is_address_set(unsigned long *bitmap, int size, int addr)
  */
 static int rpmsg_set_address(unsigned long *bitmap, int size, int addr)
 {
-	addr -= RPMSG_RESERVED_ADDRESSES;
-	if (addr >= 0 && addr < size) {
-		metal_bitmap_set_bit(bitmap, addr);
-		return RPMSG_SUCCESS;
-	} else {
+	if (addr < RPMSG_RESERVED_ADDRESSES)
 		return RPMSG_ERR_PARAM;
-	}
+
+	addr -= RPMSG_RESERVED_ADDRESSES;
+	if (addr >= size)
+		return RPMSG_ERR_PARAM;
+
+	return metal_bitmap_set(bitmap, (unsigned int)addr,
+				(unsigned int)size) == 0 ?
+		RPMSG_SUCCESS : RPMSG_ERR_PARAM;
 }
 
 void rpmsg_ept_incref(struct rpmsg_endpoint *ept)

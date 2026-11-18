@@ -71,6 +71,14 @@ static int handle_trace_rsc(struct remoteproc *rproc, void *rsc)
 	return -RPROC_ERR_RSC_TAB_NS;
 }
 
+static void rsc_release_notifyid(struct remoteproc *rproc,
+				 unsigned int notifyid)
+{
+	/* Rollback only releases IDs returned by successful bounded allocation. */
+	(void)metal_bitmap_clear(&rproc->bitmap, notifyid,
+				 8U * sizeof(rproc->bitmap));
+}
+
 static int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
 {
 	struct fw_rsc_vdev *vdev_rsc = rsc;
@@ -108,9 +116,9 @@ static int handle_vdev_rsc(struct remoteproc *rproc, void *rsc)
 err:
 	for (i--; i >= 0; i--) {
 		vring_rsc = &vdev_rsc->vring[i];
-		metal_bitmap_clear_bit(&rproc->bitmap, vring_rsc->notifyid);
+		rsc_release_notifyid(rproc, vring_rsc->notifyid);
 	}
-	metal_bitmap_clear_bit(&rproc->bitmap, vdev_rsc->notifyid);
+	rsc_release_notifyid(rproc, vdev_rsc->notifyid);
 
 	return -RPROC_ERR_RSC_TAB_NP;
 }

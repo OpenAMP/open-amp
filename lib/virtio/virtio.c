@@ -60,10 +60,10 @@ int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 	int ret;
 	(void)flags;
 
-	if (!vdev)
+	if (!vdev || !vdev->func)
 		return -EINVAL;
 
-	if (vdev->func && vdev->func->create_virtqueues) {
+	if (vdev->func->create_virtqueues) {
 		return vdev->func->create_virtqueues(vdev, flags, nvqs,
 						     names, callbacks, callback_args);
 	}
@@ -94,4 +94,3 @@ int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
 	}
 	return 0;
 }
-
