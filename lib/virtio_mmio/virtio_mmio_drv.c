@@ -212,6 +212,7 @@ int virtio_mmio_device_init(struct virtio_mmio_device *vmdev, uintptr_t virt_mem
 }
 
 /* Register preallocated virtqueues */
+__deprecated
 void virtio_mmio_register_device(struct virtio_device *vdev, int vq_num, struct virtqueue **vqs)
 {
 	int i;
@@ -235,8 +236,13 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 	struct virtio_vring_info _vring_info = {0};
 	struct virtio_vring_info *vring_info = &_vring_info;
 	struct vring_alloc_info *vring_alloc_info;
-	struct virtio_mmio_device *vmdev = metal_container_of(vdev,
-							      struct virtio_mmio_device, vdev);
+	struct virtio_mmio_device *vmdev;
+
+	if (!vdev || !vdev->vrings_info || idx >= vdev->vrings_num) {
+		metal_log(METAL_LOG_ERROR, "Invalid virtqueue setup\n");
+		return NULL;
+	}
+	vmdev = metal_container_of(vdev, struct virtio_mmio_device, vdev);
 
 	if (vdev->role != (unsigned int)VIRTIO_DEV_DRIVER) {
 		metal_log(METAL_LOG_ERROR, "Only VIRTIO_DEV_DRIVER is currently supported\n");
@@ -299,8 +305,11 @@ struct virtqueue *virtio_mmio_setup_virtqueue(struct virtio_device *vdev,
 			    ((uintptr_t)metal_io_virt_to_phys(&vmdev->shm_io,
 			    (char *)vq->vq_ring.desc)) / 4096);
 
-	vdev->vrings_info[vdev->vrings_num].vq = vq;
-	vdev->vrings_num++;
+	/*
+	 * Registration already set vrings_num to the allocated slot count.
+	 * Configuring a slot does not increase that count.
+	 */
+	vdev->vrings_info[idx].vq = vq;
 	virtqueue_enable_cb(vq);
 
 	return vq;
@@ -317,7 +326,7 @@ void virtio_mmio_isr(struct virtio_device *vdev)
 	if (isr & VIRTIO_MMIO_INT_VRING) {
 		for (i = 0; i < vdev->vrings_num; i++) {
 			vq = vrings_info[i].vq;
-			if (vq->callback)
+			if (vq && vq->callback)
 				vq->callback(vq->priv);
 		}
 	}
@@ -337,11 +346,25 @@ static int virtio_mmio_create_virtqueues(struct virtio_device *vdev, unsigned in
 	void (*cb)(void *);
 	void *cb_arg;
 	unsigned int i;
+	bool set_vrings_num = false;
 
 	(void)flags;
 
 	if (!vdev || !names || !vdev->vrings_info)
 		return -EINVAL;
+
+	/*
+	 * Callers provide vrings_info storage for nvqs queues. Initialize an
+	 * unset count from nvqs; otherwise, require the counts to match.
+	 */
+	if (vdev->vrings_num == 0) {
+		vdev->vrings_num = nvqs;
+		set_vrings_num = true;
+	}
+	if (vdev->vrings_num != nvqs) {
+		metal_log(METAL_LOG_ERROR, "incoherent number of virtqueues\n");
+		return -EINVAL;
+	}
 
 	for (i = 0; i < nvqs; i++) {
 		vring_vq = NULL;
@@ -354,8 +377,11 @@ static int virtio_mmio_create_virtqueues(struct virtio_device *vdev, unsigned in
 		if (callback_args)
 			cb_arg = callback_args[i];
 		vq = virtio_mmio_setup_virtqueue(vdev, i, vring_vq, cb, cb_arg, names[i]);
-		if (!vq)
+		if (!vq) {
+			if (set_vrings_num)
+				vdev->vrings_num = 0;
 			return -ENODEV;
+		}
 	}
 
 	return 0;
