@@ -146,7 +146,8 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 {
 	struct vring_used_elem *uep;
 	void *cookie;
-	uint16_t used_idx, desc_idx;
+	uint16_t used_idx;
+	uint32_t desc_idx;
 
 	/* Used.idx is updated by the virtio device, so we need to invalidate */
 	VRING_INVALIDATE(&vq->vq_ring.used->idx, sizeof(vq->vq_ring.used->idx));
@@ -165,14 +166,17 @@ void *virtqueue_get_buffer(struct virtqueue *vq, uint32_t *len, uint16_t *idx)
 	VRING_INVALIDATE(&vq->vq_ring.used->ring[used_idx],
 			 sizeof(vq->vq_ring.used->ring[used_idx]));
 
-	desc_idx = (uint16_t)uep->id;
+	desc_idx = uep->id;
 	/*
 	 * The used ring is written by the remote processor, so the reported
 	 * descriptor index is untrusted. vq_descx[] and the descriptor table
 	 * both hold vq_nentries elements, so an out of range index would
-	 * access memory past either array. Drop the buffer instead.
+	 * access memory past either array. Keep the full 32-bit ID so values
+	 * such as 0x10000 cannot truncate to a valid index. An entry without a
+	 * cookie is not outstanding, so freeing its chain would corrupt the
+	 * free list. Drop the buffer instead.
 	 */
-	if (desc_idx >= vq->vq_nentries) {
+	if (desc_idx >= vq->vq_nentries || !vq->vq_descx[desc_idx].cookie) {
 		VQUEUE_IDLE(vq);
 		return NULL;
 	}

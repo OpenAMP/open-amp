@@ -96,6 +96,21 @@ void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
 	shpool->avail = size;
 }
 
+/*
+ * A DEVICE-side RX descriptor address and length are written by the peer.
+ * Accept the span only if every byte lies in the shared-buffer I/O region,
+ * so cache maintenance and header access cannot reach other memory.
+ */
+static bool rpmsg_virtio_rx_span_valid(struct rpmsg_virtio_device *rvdev,
+				       void *buffer, uint32_t len)
+{
+	struct metal_io_region *io = rvdev->shbuf_io;
+	size_t offset = buffer ? metal_io_virt_to_offset(io, buffer) : METAL_BAD_OFFSET;
+	size_t size = metal_io_region_size(io);
+
+	return offset != METAL_BAD_OFFSET && offset < size && len <= size - offset;
+}
+
 /**
  * @internal
  *
@@ -230,24 +245,18 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 	void *data = NULL;
 
 	if (VIRTIO_ROLE_IS_DRIVER(rvdev->vdev)) {
+		/* The callback validates the peer-reported used length. */
 		data = virtqueue_get_buffer(rvdev->rvq, len, idx);
-		if (data && *len > rvdev->config.r2h_buf_size)
-			*len = rvdev->config.r2h_buf_size;
 	}
 
 	if (VIRTIO_ROLE_IS_DEVICE(rvdev->vdev)) {
-		struct metal_io_region *io = rvdev->shbuf_io;
-		size_t offset;
-
 		while (1) {
 			*idx = UINT16_MAX;
 			data = virtqueue_get_first_avail_buffer(rvdev->rvq, idx, len);
 			if (*idx == UINT16_MAX)
 				return NULL;
-			offset = data ? metal_io_virt_to_offset(io, data) : METAL_BAD_OFFSET;
-			if (offset != METAL_BAD_OFFSET &&
-			    *len <= metal_io_region_size(io) - offset &&
-			    *len >= sizeof(struct rpmsg_hdr))
+			if (*len >= sizeof(struct rpmsg_hdr) &&
+			    rpmsg_virtio_rx_span_valid(rvdev, data, *len))
 				break;
 
 			/* Return malformed descriptors without accessing their buffers. */
@@ -256,10 +265,10 @@ static void *rpmsg_virtio_get_rx_buffer(struct rpmsg_virtio_device *rvdev,
 		}
 	}
 
-	/* Invalidate the buffer before returning it */
-	if (data)
-		BUFFER_INVALIDATE(data, *len);
-
+	/*
+	 * Cache invalidation is done by the caller after the receive span has
+	 * been validated, so a malformed length never selects the range.
+	 */
 	return data;
 }
 
@@ -359,8 +368,24 @@ static void rpmsg_virtio_release_rx_buffer_nolock(struct rpmsg_virtio_device *rv
 
 	/* The reserved field contains buffer index */
 	idx = RPMSG_BUF_INDEX(rp_hdr);
-	/* Return buffer on virtqueue. */
-	len = virtqueue_get_buffer_length(rvdev->rvq, idx);
+	/*
+	 * Return the buffer with a trusted length. A DRIVER posted each RX
+	 * buffer with r2h_buf_size and its saved idx is a used-ring slot, so it
+	 * cannot select a descriptor length. A DEVICE descriptor is shared with
+	 * the peer and is checked again before cache maintenance.
+	 */
+	if (VIRTIO_ROLE_IS_DRIVER(rvdev->vdev)) {
+		len = rvdev->config.r2h_buf_size;
+	} else {
+		if (idx >= rvdev->rvq->vq_nentries)
+			return;
+		len = virtqueue_get_buffer_length(rvdev->rvq, idx);
+		if (!rpmsg_virtio_rx_span_valid(rvdev, rp_hdr, len)) {
+			/* Complete it without touching an invalid span. */
+			virtqueue_add_consumed_buffer(rvdev->rvq, idx, 0);
+			return;
+		}
+	}
 	rpmsg_virtio_return_buffer(rvdev, rp_hdr, len, idx);
 }
 
@@ -605,14 +630,9 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 	int status;
 
 	while (1) {
-		/*
-		 * Scoped to the loop body so that every iteration starts
-		 * without an endpoint. The lookup below is skipped for
-		 * malformed buffers, so a function-scope variable would keep
-		 * the endpoint found by an earlier iteration and that stale
-		 * pointer would be dispatched to and dereferenced again.
-		 */
-		struct rpmsg_endpoint *ept = NULL;
+		struct rpmsg_endpoint *ept;
+		uint16_t payload_len;
+		uint32_t src;
 
 		/* Process the received data from remote node */
 		metal_mutex_acquire(&rdev->lock);
@@ -627,7 +647,32 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 			break;
 		}
 
-		if (len < sizeof(*rp_hdr)) {
+		/*
+		 * A DRIVER owns the RX buffer capacity, so reject a used length
+		 * that is shorter than a header or larger than the posted
+		 * buffer. The buffer is reposted at its original capacity.
+		 */
+		if (VIRTIO_ROLE_IS_DRIVER(vdev) &&
+		    (len < sizeof(*rp_hdr) || len > rvdev->config.r2h_buf_size)) {
+			rpmsg_virtio_return_buffer(rvdev, rp_hdr,
+						   rvdev->config.r2h_buf_size, idx);
+			virtqueue_kick(rvdev->rvq);
+			metal_mutex_release(&rdev->lock);
+			continue;
+		}
+
+		/*
+		 * Read the header only after the receive span is validated.
+		 * Copy the peer-controlled length and source once so the
+		 * values checked here are the values passed to the endpoint.
+		 */
+		BUFFER_INVALIDATE(rp_hdr, len);
+		payload_len = ((volatile struct rpmsg_hdr *)rp_hdr)->len;
+		src = rp_hdr->src;
+		/* Drop frames whose payload extends past the received buffer. */
+		if (payload_len > len - sizeof(*rp_hdr)) {
+			if (VIRTIO_ROLE_IS_DRIVER(vdev))
+				len = rvdev->config.r2h_buf_size;
 			rpmsg_virtio_return_buffer(rvdev, rp_hdr, len, idx);
 			virtqueue_kick(rvdev->rvq);
 			metal_mutex_release(&rdev->lock);
@@ -635,17 +680,8 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 		}
 
 		rp_hdr->reserved = idx;
-
-		/*
-		 * Deliver the message only if the announced payload fits in
-		 * the received buffer, otherwise just release the buffer.
-		 */
-		if (len >= sizeof(*rp_hdr) &&
-		    rp_hdr->len <= len - sizeof(*rp_hdr)) {
-			/* Get the channel node from the remote device channels list. */
-			ept = rpmsg_get_ept_from_addr(rdev, rp_hdr->dst);
-			rpmsg_ept_incref(ept);
-		}
+		ept = rpmsg_get_ept_from_addr(rdev, rp_hdr->dst);
+		rpmsg_ept_incref(ept);
 		RPMSG_BUF_HELD_INC(rp_hdr);
 		metal_mutex_release(&rdev->lock);
 
@@ -655,10 +691,10 @@ static void rpmsg_virtio_rx_callback(struct virtqueue *vq)
 				 * First message received from the remote side,
 				 * update channel destination address
 				 */
-				ept->dest_addr = rp_hdr->src;
+				ept->dest_addr = src;
 			}
 			status = ept->cb(ept, RPMSG_LOCATE_DATA(rp_hdr),
-					 rp_hdr->len, rp_hdr->src, ept->priv);
+					 payload_len, src, ept->priv);
 
 			RPMSG_ASSERT(status >= 0,
 				     "unexpected callback status\r\n");
