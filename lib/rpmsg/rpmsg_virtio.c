@@ -100,6 +100,9 @@ void rpmsg_virtio_init_shm_pool(struct rpmsg_virtio_shm_pool *shpool,
  * A DEVICE-side RX descriptor address and length are written by the peer.
  * Accept the span only if every byte lies in the shared-buffer I/O region,
  * so cache maintenance and header access cannot reach other memory.
+ * The vrings can share that region, so also reject spans that overlap a
+ * vring. Otherwise a received message, or a write to its header, could
+ * corrupt descriptors or ring indexes.
  */
 static bool rpmsg_virtio_rx_span_valid(struct rpmsg_virtio_device *rvdev,
 				       void *buffer, uint32_t len)
@@ -107,8 +110,27 @@ static bool rpmsg_virtio_rx_span_valid(struct rpmsg_virtio_device *rvdev,
 	struct metal_io_region *io = rvdev->shbuf_io;
 	size_t offset = buffer ? metal_io_virt_to_offset(io, buffer) : METAL_BAD_OFFSET;
 	size_t size = metal_io_region_size(io);
+	uintptr_t buf_start = (uintptr_t)buffer;
+	unsigned int i;
 
-	return offset != METAL_BAD_OFFSET && offset < size && len <= size - offset;
+	if (offset == METAL_BAD_OFFSET || offset >= size || len > size - offset)
+		return false;
+
+	for (i = 0; i < RPMSG_NUM_VRINGS; i++) {
+		struct virtio_vring_info *vring = &rvdev->vdev->vrings_info[i];
+		uintptr_t ring_start = (uintptr_t)vring->vq->vq_ring.desc;
+		uintptr_t ring_size = vring_size(vring->vq->vq_nentries,
+						 vring->info.align);
+
+		if (buf_start < ring_start) {
+			if (ring_start - buf_start < len)
+				return false;
+		} else if (buf_start - ring_start < ring_size) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 /**
