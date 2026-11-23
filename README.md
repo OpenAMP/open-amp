@@ -39,7 +39,7 @@ enable development of software applications for Asymmetric Multiprocessing
 
 OpenAMP system/machine support has been moved to libmetal.
 
-### libmetal APIs used in OpenAMP
+### Libmetal APIs Used in OpenAMP
 Here are the libmetal APIs used by OpenAMP, if you want to port OpenAMP for your
 system, you will need to implement the following libmetal APIs in the libmetal's
 `lib/system/<SYS>` directory:
@@ -93,7 +93,7 @@ library for it project:
   coded value. If you AMP configuration is Linux kernel host/ OpenAMP remote,
   this option must not be used.
 
-### Example to compile OpenAMP for Zephyr
+### Example to Compile OpenAMP for Zephyr
 The [Zephyr open-amp repo](https://github.com/zephyrproject-rtos/open-amp)
 implements the open-amp library for the Zephyr project. It is mainly a fork of
 this repository, with some add-ons for integration in the Zephyr project.
@@ -103,7 +103,7 @@ environment. Please refer to
 for examples and [Zephyr documentation](https://docs.zephyrproject.org/latest/) for the build
 process.
 
-### Example to compile OpenAMP for communication between Linux processes:
+### Example to Compile OpenAMP for Communication Between Linux Processes:
 * Install libsysfs devel and libhugetlbfs devel packages on your Linux host.
 * build libmetal library on your host as follows:
 ```shell
@@ -124,7 +124,7 @@ make VERBOSE=1 DESTDIR=$(pwd) install
 The OpenAMP library will be generated to `build/usr/local/lib` directory,
 and the headers will be generated to `build/usr/local/include` directory.
 
-## Example apps and tests
+## Example Apps and Tests
 * The [openamp-system-reference](https://github.com/OpenAMP/openamp-system-reference) is a new
 repository for the OpenAMP demos.
 
@@ -132,7 +132,7 @@ repository for the OpenAMP demos.
 OpenAMP project documentation is available at:
 https://openamp.readthedocs.io/en/latest/
 
-## How to contribute:
+## How to Contribute:
 As an open-source project, we welcome and encourage the community to submit patches directly to the
 project. As a contributor you  should be familiar with common developer tools such as Git and CMake,
 and platforms such as GitHub.
@@ -147,7 +147,7 @@ instead of the full license text in the individual files:
   SPDX-License-Identifier:    BSD-3-Clause
   SPDX-License-Identifier:    BSD-2-Clause
   ```
-### Signed-off-by
+### Signed-Off-By
 Commit message must contain Signed-off-by: line and your email must match the change authorship
 information. Make sure your .gitconfig is set up correctly:
   ```shell
@@ -155,7 +155,7 @@ information. Make sure your .gitconfig is set up correctly:
   git config --global user.email "yourmail@company.com"
   ```
 
-### Assisted-by
+### Assisted-By
 When AI tools are used to contribute to the OpenAMP project, proper attribution helps
 track the evolving role of AI in the development process. Contributions should include
 an Assisted-by tag in the following format:
@@ -172,7 +172,7 @@ Basic development tools (git, gcc, make, editors) should not be listed.
 
 Example: Assisted-by: Claude:claude-3-opus coccinelle sparse
 
-### gitlint
+### Gitlint
 Before you submit a pull request to the project, verify your commit messages meet the requirements.
 The check can be  performed locally using the the gitlint command.
 
@@ -184,7 +184,7 @@ Note, gitlint only checks HEAD (the most recent commit), so you should run it af
 use the --commits option to specify a commit range covering all the development patches to be
 submitted.
 
-### Code style
+### Code Style
 In general, follow the Linux kernel coding style, with the following exceptions:
 
 * Use /**  */ for doxygen comments that need to appear in the documentation.
@@ -196,7 +196,7 @@ To check your \<n\> commits in your git branch:
   ```shell
   ./scripts/checkpatch.pl --strict  -g HEAD-<n>
   ```
-### Send a pull request
+### Send a Pull Request
 We use standard github mechanism for pull request. Please refer to github documentation for help.
 
 ## Communication and Collaboration
