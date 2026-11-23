@@ -13,5 +13,5 @@ set of names to be CC'd when submitting a patch.
 Ed Mooring <ed.mooring@gmail.com>
 Arnaud Pouliquen <arnaud.pouliquen@st.com>
 
-### All patches CC here
+### All Patches CC Here
 openamp-rp@lists.openampproject.org

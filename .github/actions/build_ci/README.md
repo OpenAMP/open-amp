@@ -1,10 +1,10 @@
-# OpenAMP lib build check docker action
+# OpenAMP Lib Build Check Docker Action
 
 This action test builds for a specified target.
 
 ## Inputs
 
-### `target`
+### `Target`
 
 **Required** the build target. Default `"linux"`.
 
@@ -15,7 +15,7 @@ The supported targets are:
 * zephyr
 
 
-## Example usage
+## Example Usage
 
 Inside a github action use:
 ```
@@ -24,7 +24,7 @@ with:
   target: linux
 ```
 
-## Desktop testing
+## Desktop Testing
 
 Right now the directory expectations of the CI script are very messy.
 This should be cleaned up in a future PR.
