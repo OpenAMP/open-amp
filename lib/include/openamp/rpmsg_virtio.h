@@ -65,7 +65,7 @@ struct rpmsg_virtio_shm_pool {
 METAL_PACKED_BEGIN
 struct rpmsg_virtio_config_space {
 	/** version of this struct */
-	uint8_t version;
+	uint16_t version;
 
 	/** size of the config space */
 	uint16_t size;
