@@ -129,6 +129,19 @@ struct rpmsg_device_ops {
 	int (*get_tx_buffer_size)(struct rpmsg_device *rdev);
 };
 
+/**
+ * struct rpmsg_device_trace - trace operation for debugging
+ *
+ * This structure is used by the rpmsg device to trace the various events.
+ *
+ * @get_tx_buffer: trace callback, called when get a tx buffer
+ * @release_tx_buffer: trace callback, called when release a tx buffer
+ */
+struct rpmsg_device_trace {
+	void (*get_tx_buffer)(struct rpmsg_device *rvdev, void *hdr);
+	void (*release_tx_buffer)(struct rpmsg_device *rvdev, void *hdr);
+};
+
 /** @brief Representation of a RPMsg device */
 struct rpmsg_device {
 	/** List of endpoints */
@@ -152,6 +165,8 @@ struct rpmsg_device {
 
 	/** RPMsg device operations */
 	struct rpmsg_device_ops ops;
+
+	struct rpmsg_device_trace trace;
 
 	/** Create/destroy namespace message */
 	bool support_ns;
